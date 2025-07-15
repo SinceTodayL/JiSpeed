@@ -32,7 +32,7 @@ front-end/
 
  
 
-在运行前先安装 `axios` `router` （要在当前目录下运行）
+在运行前先安装 `axios` `router` 等依赖（要在当前目录下运行）
 
 ```bash
 npm install vue axios vue-router
@@ -40,6 +40,6 @@ npm install vue axios vue-router
 
 
 
+* 使用 `utils/request.js` 统一向后端发送数据请求，即，每一次向后端要数据的时候都要经过`request.js`
+* 使用 `router/index.js` 实现界面跳传，如 `http://localhost:5173/test` 中 `/test` 是自定义的跳转逻辑
 
-
-* 使用 `utils/request.js` 中的
