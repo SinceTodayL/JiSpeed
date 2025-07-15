@@ -1,0 +1,66 @@
+# ASP.NET Core
+bin/
+obj/
+.vs/
+.vscode/
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Publishing
+**/Properties/PublishProfiles/
+*.pubxml
+*.publishproj
+*.pubxml.user
+orleans.codegen.cs
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# Database
+*.mdf
+*.ldf
+*.ndf
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Local development settings
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+
+# IDE
+.idea/
+*.swp
+*.swo
