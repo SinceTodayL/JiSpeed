@@ -1,14 +1,13 @@
 using System.Net;
 using System.Text.Json;
 using JISpeed.Api.Common;
+using JISpeed.Core.Constants;
 using JISpeed.Core.Exceptions;
 
 namespace JISpeed.Api.Middleware
 {
-    /// <summary>
-    /// 全局异常处理中间件
-    /// 统一处理应用程序中的所有未捕获异常，并返回标准化的API响应格式
-    /// </summary>
+    // 全局异常处理中间件
+    // 统一处理应用程序中的所有未捕获异常，并返回标准化的API响应格式
     public class GlobalExceptionMiddleware
     {
         private readonly RequestDelegate _next;
@@ -71,70 +70,54 @@ namespace JISpeed.Api.Middleware
             await context.Response.WriteAsync(jsonResponse);
         }
 
-        /// <summary>
-        /// 处理自定义基础异常
-        /// </summary>
+        // 处理自定义基础异常
         private ApiResponse HandleBaseException(BaseException exception)
         {
             return ApiResponse.Fail(exception.ErrorCode, exception.Message);
         }
 
-        /// <summary>
-        /// 处理未授权访问异常
-        /// </summary>
+        // 处理未授权访问异常
         private ApiResponse HandleUnauthorizedAccessException()
         {
             return ApiResponse.Fail(ErrorCodes.Unauthorized, "未授权访问");
         }
 
-        /// <summary>
-        /// 处理参数异常
-        /// </summary>
+        // 处理参数异常
         private ApiResponse HandleArgumentException(ArgumentException exception)
         {
             return ApiResponse.Fail(ErrorCodes.ParameterValidationFailed, 
                 $"参数错误: {exception.Message}");
         }
 
-        /// <summary>
-        /// 处理空参数异常
-        /// </summary>
+        // 处理空参数异常
         private ApiResponse HandleArgumentNullException(ArgumentNullException exception)
         {
             return ApiResponse.Fail(ErrorCodes.MissingRequiredParameter, 
                 $"缺少必填参数: {exception.ParamName}");
         }
 
-        /// <summary>
-        /// 处理无效操作异常
-        /// </summary>
+        // 处理无效操作异常
         private ApiResponse HandleInvalidOperationException(InvalidOperationException exception)
         {
             return ApiResponse.Fail(ErrorCodes.InvalidState, 
                 $"操作无效: {exception.Message}");
         }
 
-        /// <summary>
-        /// 处理不支持的操作异常
-        /// </summary>
+        // 处理不支持的操作异常
         private ApiResponse HandleNotSupportedException(NotSupportedException exception)
         {
             return ApiResponse.Fail(ErrorCodes.MethodNotSupported, 
                 $"不支持的操作: {exception.Message}");
         }
 
-        /// <summary>
-        /// 处理超时异常
-        /// </summary>
+        // 处理超时异常
         private ApiResponse HandleTimeoutException(TimeoutException exception)
         {
             return ApiResponse.Fail(ErrorCodes.ServiceUnavailable, 
                 $"请求超时: {exception.Message}");
         }
 
-        /// <summary>
-        /// 处理通用异常
-        /// </summary>
+        // 处理通用异常
         private ApiResponse HandleGenericException(Exception exception)
         {
             // 在开发环境下返回详细错误信息，生产环境下返回通用错误信息
@@ -145,9 +128,7 @@ namespace JISpeed.Api.Middleware
             return ApiResponse.Fail(ErrorCodes.GeneralSystemError, message);
         }
 
-        /// <summary>
-        /// 记录异常日志
-        /// </summary>
+        // 记录异常日志
         private void LogException(Exception exception, HttpContext context)
         {
             var requestPath = context.Request.Path;
@@ -171,9 +152,7 @@ namespace JISpeed.Api.Middleware
             }
         }
 
-        /// <summary>
-        /// 获取HTTP状态码
-        /// </summary>
+        // 获取HTTP状态码
         private static int GetHttpStatusCode(Exception exception)
         {
             return exception switch
@@ -192,9 +171,7 @@ namespace JISpeed.Api.Middleware
             };
         }
 
-        /// <summary>
-        /// 获取客户端IP地址
-        /// </summary>
+        // 获取客户端IP地址
         private static string GetClientIpAddress(HttpContext context)
         {
             // 优先从X-Forwarded-For头获取（考虑代理/负载均衡器）

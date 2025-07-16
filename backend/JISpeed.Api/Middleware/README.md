@@ -19,6 +19,7 @@ BaseException (抽象基类)
 
 ### 2. 主要文件说明
 
+- **Core/Constants/ErrorCodes.cs**: 定义错误码常量
 - **Core/Exceptions/**: 自定义异常类定义
 - **Api/Middleware/GlobalExceptionMiddleware.cs**: 核心异常处理中间件
 - **Api/Extensions/MiddlewareExtensions.cs**: 中间件扩展方法
