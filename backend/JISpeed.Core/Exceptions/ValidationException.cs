@@ -1,4 +1,4 @@
-using JISpeed.Api.Common;
+using JISpeed.Core.Constants;
 
 namespace JISpeed.Core.Exceptions
 {
