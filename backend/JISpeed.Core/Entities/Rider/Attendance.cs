@@ -11,21 +11,23 @@ namespace JISpeed.Core.Entities.Rider
     public class Attendance
     {
         [Key]
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string AttendanceId { get; set; } //考勤编号 PK
 
-        public required DateTime CheckDate { get; set; } //考勤日期 (DATE 类型映射为 DateTime)
+        public required DateTime CheckDate { get; set; } //考勤日期 
 
-        public TimeSpan? CheckInAt { get; set; } //签到时间 (可为空，TIME 类型映射为 TimeSpan)
+        public DateTime? CheckInAt { get; set; } //签到时间 
 
-        public TimeSpan? CheckoutAt { get; set; } //签退时间 (可为空，TIME 类型映射为 TimeSpan)
+        public DateTime? CheckoutAt { get; set; } //签退时间 
 
-        public required bool IsLate { get; set; } //是否迟到 (BOOLEAN)
+        public required int IsLate { get; set; } //是否迟到 
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string RiderId { get; set; } //骑手Id fk->rider(riderId)
 
-        public required bool IsAbsent { get; set; } //是否缺勤 (BOOLEAN)
+        public required int IsAbsent { get; set; } //是否缺勤
 
         //导航属性
         [ForeignKey("RiderId")]
@@ -33,5 +35,19 @@ namespace JISpeed.Core.Entities.Rider
 
         //多对多联结表
         public virtual ICollection<ScheduleAttendance> ScheduleAttendances { get; set; } = new List<ScheduleAttendance>();
+
+        public Attendance(string riderId, DateTime checkDate, int isLate, int isAbsent,
+                          DateTime? checkInAt = null, DateTime? checkoutAt = null)
+        {
+            AttendanceId = Guid.NewGuid().ToString("N"); //生成唯一的考勤编号
+            RiderId = riderId;
+            CheckDate = checkDate;
+            IsLate = isLate;
+            IsAbsent = isAbsent;
+            CheckInAt = checkInAt; //默认未签到
+            CheckoutAt = checkoutAt; //默认未签退
+        }
+
+        private Attendance() { } 
     }
 }

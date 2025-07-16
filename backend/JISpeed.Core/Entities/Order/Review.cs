@@ -14,12 +14,15 @@ namespace JISpeed.Core.Entities.Order
     public class Review
     {
         [Key]
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string ReviewId { get; set; } //评价ID pk
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string OrderId { get; set; } //订单ID fk->Order(orderId)
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string UserId { get; set; } //用户ID fk->User(userId)
 
@@ -41,5 +44,18 @@ namespace JISpeed.Core.Entities.Order
 
         // 多对多联结表
         public virtual ICollection<DishReview> DishReviews { get; set; } = new List<DishReview>();
+
+        public Review(string orderId, string userId, int rating, string? content = null, int isAnonymous = 2)
+        {
+            ReviewId = Guid.NewGuid().ToString("N");
+            OrderId = orderId;
+            UserId = userId;
+            Rating = rating;
+            Content = content;
+            IsAnonymous = isAnonymous;
+            ReviewAt = DateTime.UtcNow; //默认评价时间为当前时间
+        }
+
+        private Review() { }
     }
 }

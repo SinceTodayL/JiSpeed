@@ -14,9 +14,11 @@ namespace JISpeed.Core.Entities.Junctions
     [PrimaryKey(nameof(DishId), nameof(ReviewId))] //复合主键
     public class DishReview
     {
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string DishId { get; set; } //菜品ID pk,fk->Dish(dishId)
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string ReviewId { get; set; } //评论ID pk,fk->Review(reviewId)
 
@@ -26,5 +28,13 @@ namespace JISpeed.Core.Entities.Junctions
 
         [ForeignKey("ReviewId")]
         public virtual required Review Review { get; set; }
+
+        public DishReview(string dishId, string reviewId)
+        {
+            DishId = dishId;
+            ReviewId = reviewId;
+        }
+
+        private DishReview() { }
     }
 }

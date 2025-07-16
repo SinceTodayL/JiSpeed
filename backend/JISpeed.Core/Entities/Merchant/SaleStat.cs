@@ -15,15 +15,25 @@ namespace JISpeed.Core.Entities.Merchant
 
         public required int SalesQty { get; set; } //销量
 
-        [Required]
         [Column(TypeName = "DECIMAL(10, 2)")]
         public required decimal SalesAmount { get; set; } //销售额
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string MerchantId { get; set; } //商家ID pk,fk->Merchant(merchantId)
 
         //导航属性
         [ForeignKey("MerchantId")]
         public virtual required Merchant Merchant { get; set; }
+
+        public SalesStat(DateTime statDate, string merchantId, int salesQty, decimal salesAmount)
+        {
+            StatDate = statDate;
+            MerchantId = merchantId;
+            SalesQty = salesQty;
+            SalesAmount = salesAmount;
+        }
+
+        private SalesStat() { }
     }
 }

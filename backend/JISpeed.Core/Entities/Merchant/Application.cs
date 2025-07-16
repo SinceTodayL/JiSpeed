@@ -12,25 +12,27 @@ namespace JISpeed.Core.Entities.Merchant
     public class Application
     {
         [Key]
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string ApplyId { get; set; } //申请ID pk
 
-        [Required]
-        [Column(TypeName = "CHAR(255)")] // CHAR without length defaults to 255
+        [StringLength(255)]
         public required string CompanyName { get; set; } //店名称
 
         public required DateTime SubmittedAt { get; set; } //提交时间
 
-        public required int AudiStatus { get; set; } //审核状态
+        public required int AuditStatus { get; set; } //审核状态
 
-        public DateTime? AutitAt { get; set; } //审核时间 (可为空)
+        public DateTime? AuditAt { get; set; } //审核时间 (可为空)
 
         [StringLength(65535)] // TEXT 类型
         public string? RejectReason { get; set; } //驳回原因
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
-        public string? AdminId { get; set; } //管理员ID fk->Admin(admainId) (可为空)
+        public string? AdminId { get; set; } //管理员ID fk->Admin(adminId) (可为空)
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string MerchantId { get; set; } //商家ID fk->Merchant(merchantId)
 
@@ -40,5 +42,16 @@ namespace JISpeed.Core.Entities.Merchant
 
         [ForeignKey("MerchantId")]
         public virtual required Merchant Merchant { get; set; } // 关联到 Merchant 实体
+
+        public Application(string companyName, string merchantId)
+        {
+            ApplyId = Guid.NewGuid().ToString("N"); //生成唯一的申请ID
+            CompanyName = companyName;
+            MerchantId = merchantId;
+            SubmittedAt = DateTime.UtcNow; //设置提交时间为当前时间
+            AuditStatus = 0; //默认审核状态为0（待审核）
+        }
+
+        private Application() { }
     }
 }

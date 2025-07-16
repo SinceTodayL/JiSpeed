@@ -11,17 +11,28 @@ namespace JISpeed.Core.Entities.Rider
     public class Schedule
     {
         [Key]
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string ScheduleId { get; set; } //排班编号 PK
 
-        public required DateTime WorkDate { get; set; } //工作日期 (DATE 类型映射为 DateTime)
+        public required DateTime WorkDate { get; set; } //工作日期
 
-        public required TimeSpan ShiftStart { get; set; } //班次开始 (TIME 类型映射为 TimeSpan)
+        public required DateTime ShiftStart { get; set; } //班次开始
 
-        public required TimeSpan ShiftEnd { get; set; } //班次结束 (TIME 类型映射为 TimeSpan)
+        public required DateTime ShiftEnd { get; set; } //班次结束
 
         //导航属性
         public virtual ICollection<RiderSchedule> RiderSchedules { get; set; } = new List<RiderSchedule>(); // 一个排班可以有多个骑手
         public virtual ICollection<ScheduleAttendance> ScheduleAttendances { get; set; } = new List<ScheduleAttendance>(); // 多对多联结表
+
+        public Schedule(DateTime workDate, DateTime shiftStart, DateTime shiftEnd)
+        {
+            ScheduleId = Guid.NewGuid().ToString("N"); //生成唯一的排班编号
+            WorkDate = workDate;
+            ShiftStart = shiftStart;
+            ShiftEnd = shiftEnd;
+        }
+
+        private Schedule() { }
     }
 }

@@ -13,12 +13,15 @@ namespace JISpeed.Core.Entities.Order
     public class Complaint
     {
         [Key]
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string ComplaintId { get; set; } //投诉ID pk
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string OrderId { get; set; } //订单ID fk->Order(orderId)
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string ComplainantId { get; set; } //投诉人ID fk->User(userId)
 
@@ -37,5 +40,17 @@ namespace JISpeed.Core.Entities.Order
 
         [ForeignKey("ComplainantId")]
         public virtual required User Complainant { get; set; } // 关联到 User 实体
+
+        public Complaint(string orderId, int role, string? description = null)
+        {
+            OrderId = orderId;
+            ComplainantId = Guid.NewGuid().ToString("N");
+            Role = role;
+            Description = description;
+            Status = 1; //默认状态为待处理
+            CreatedAt = DateTime.UtcNow; //设置创建时间为当前时间
+        }
+
+        private Complaint() { }
     }
 }

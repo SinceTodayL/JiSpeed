@@ -17,16 +17,18 @@ namespace JISpeed.Core.Entities.Order
     public class Order
     {
         [Key]
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string OrderId { get; set; } //订单ID pk
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string UserId { get; set; } //用户ID fk->User(userId)
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string AddressId { get; set; } //地址ID fk->Address(addrId)
 
-        [Required]
         [Column(TypeName = "DECIMAL(10, 2)")]
         public required decimal OrderAmount { get; set; } //订单金额
 
@@ -34,12 +36,15 @@ namespace JISpeed.Core.Entities.Order
 
         public required int OrderStatus { get; set; } //订单状态 (TINYINT)
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public string? ReconId { get; set; } //对账异常ID fk->Reconciliation(reconId) (可为空)
-
+    
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public string? CouponId { get; set; } //优惠券ID fk->Coupon(couponId) (可为空)
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public string? AssignId { get; set; } //分配编号 fk->Assignment(assignID) (可为空)
 
@@ -65,6 +70,6 @@ namespace JISpeed.Core.Entities.Order
         public required virtual ICollection<OrderLog> OrderLogs { get; set; }
         public virtual ICollection<Complaint> Complaints { get; set; } = new List<Complaint>(); //订单可以有多个投诉
         public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
-        public virtual ICollection<OrderDish> OrderDishes { get; set; } = new List<OrderDish>(); // 多对多联结表
+        public virtual ICollection<OrderDish> OrderDishes { get; set; } = new List<OrderDish>(); //多对多联结表
     }
 }

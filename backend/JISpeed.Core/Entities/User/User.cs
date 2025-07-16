@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace JISpeed.Core.Entities.User
 {
     using JISpeed.Core.Entities.Order; //引用 Order 命名空间下的 Complaint 和 Review
+    using JISpeed.Core.Entities.Common; //引用 Common 命名空间下的 Coupon
 
     //用户实体
     //对应数据库表: User
@@ -15,14 +16,13 @@ namespace JISpeed.Core.Entities.User
     public class User
     {
         [Key]
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string UserId { get; set; } //用户ID pk
 
-        [Required]
         [StringLength(50)]
         public required string Account { get; set; } //账号 unique
 
-        [Required]
         [StringLength(64)]
         [Column(TypeName = "CHAR(64)")]
         public required string PasswordHash { get; set; } //密码哈希
@@ -40,12 +40,24 @@ namespace JISpeed.Core.Entities.User
 
         //导航属性
         public required virtual UserProfile UserProfile { get; set; }
-        public virtual ICollection<Favorite> Favorites { get; set; } = new List<Favorite>(); 
+        public virtual ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
         public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
         public virtual ICollection<Address> Addresses { get; set; } = new List<Address>();
         public virtual ICollection<Complaint> Complaints { get; set; } = new List<Complaint>();
         public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         public virtual ICollection<Refund> Refunds { get; set; } = new List<Refund>();
+        public virtual ICollection<Coupon> Coupons { get; set; } = new List<Coupon>(); //用户拥有的优惠券
+
+        public User(string account, string passwordHash)
+        {
+            UserId = Guid.NewGuid().ToString("N"); //生成唯一的用户ID
+            Account = account;
+            PasswordHash = passwordHash;
+            Status = 1; //默认状态为 active
+            CreatedAt = DateTime.UtcNow; //设置注册时间为当前时间
+        }
+
+        private User() { }
     }
 }

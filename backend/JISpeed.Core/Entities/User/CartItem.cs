@@ -15,15 +15,19 @@ namespace JISpeed.Core.Entities.User
     public class CartItem
     {
         [Key] //CartItemId 仍然是主要的PK标识
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string CartItemId { get; set; } //购物车ID pk
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string UserId { get; set; } //用户ID pk,fk->User(userId)
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string MerchantId { get; set; } //商家ID fk->Merchant()
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string DishId { get; set; } //菜品ID fk->Dish(dishId)
 
@@ -38,5 +42,16 @@ namespace JISpeed.Core.Entities.User
 
         [ForeignKey("DishId")]
         public virtual required Dish Dish { get; set; }
+
+        public CartItem(string userId, string merchantId, string dishId)
+        {
+            UserId = userId;
+            MerchantId = merchantId;
+            DishId = dishId;
+            CartItemId = Guid.NewGuid().ToString("N"); //生成唯一的CartItemId
+            AddedAt = DateTime.UtcNow; //使用 UTC 时间
+        }
+
+        private CartItem(){ }
     }
 }

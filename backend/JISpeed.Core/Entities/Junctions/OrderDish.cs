@@ -13,9 +13,11 @@ namespace JISpeed.Core.Entities.Junctions
     [PrimaryKey(nameof(OrderId), nameof(DishId))] //复合主键
     public class OrderDish
     {
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string OrderId { get; set; } //订单ID pk,fk->Order(orderId)
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string DishId { get; set; } //菜品ID pk,fk->Dish(dishId)
 
@@ -25,5 +27,14 @@ namespace JISpeed.Core.Entities.Junctions
 
         [ForeignKey("DishId")]
         public virtual required Dish Dish { get; set; }
+
+        public OrderDish(string orderId, string dishId)
+        {
+            OrderId = orderId;
+            DishId = dishId;
+        }
+
+        private OrderDish() { }
+
     }
 }

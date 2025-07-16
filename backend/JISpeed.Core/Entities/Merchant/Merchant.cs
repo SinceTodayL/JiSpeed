@@ -14,10 +14,10 @@ namespace JISpeed.Core.Entities.Merchant
     public class Merchant
     {
         [Key]
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string MerchantId { get; set; } //商家ID pk
 
-        [Required]
         [StringLength(20)]
         public required string MerchantName { get; set; } //商家名
 
@@ -35,5 +35,16 @@ namespace JISpeed.Core.Entities.Merchant
         public virtual ICollection<SalesStat> SalesStats { get; set; } = new List<SalesStat>();
         public virtual ICollection<Settlement> Settlements { get; set; } = new List<Settlement>();
         public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>(); //Merchant 可以出现在多个购物车项中
+
+        public Merchant(string merchantName, int status = 1, string? contactInfo = null, string? location = null)
+        {
+            MerchantId = Guid.NewGuid().ToString("N"); //生成唯一的MerchantId
+            MerchantName = merchantName;
+            Status = status;
+            ContactInfo = contactInfo;
+            Location = location;
+        }
+
+        private Merchant() { }
     }
 }

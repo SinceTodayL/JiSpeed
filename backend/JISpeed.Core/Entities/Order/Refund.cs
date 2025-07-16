@@ -12,19 +12,23 @@ namespace JISpeed.Core.Entities.Order
     public class Refund
     {
         [Key]
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string RefundId { get; set; } //退款ID pk
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string OrderId { get; set; } //订单ID fk->Order(orderId)
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string ApplicationId { get; set; } //申请人ID fk->User(userId)
 
         [StringLength(65535)] //TEXT类型
         public string? Reason { get; set; } //退款原因
 
-        public required int RefundAmount { get; set; } //退款金额
+        [Column(TypeName = "DECIMAL(10, 2)")]
+        public required decimal RefundAmount { get; set; } //退款金额
 
         public required DateTime ApplyAt { get; set; } //申请时间
 
@@ -38,5 +42,18 @@ namespace JISpeed.Core.Entities.Order
 
         [ForeignKey("ApplicationId")]
         public virtual required User Applicant { get; set; } //关联到 User 实体
+        public Refund(string orderId, string applicationId, decimal refundAmount, string? reason = null)
+        {
+            RefundId = Guid.NewGuid().ToString("N");
+            OrderId = orderId;
+            ApplicationId = applicationId;
+            RefundAmount = refundAmount;
+            Reason = reason;
+            ApplyAt = DateTime.UtcNow; //默认申请时间为当前时间
+            AudisStatus = 0; //默认审核状态为未审核
+            FinishAt = null; //默认退款完成时间为空
+        }
+
+        private Refund() { }
     }
 }

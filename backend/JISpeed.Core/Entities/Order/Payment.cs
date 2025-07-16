@@ -10,17 +10,19 @@ namespace JISpeed.Core.Entities.Order
     public class Payment
     {
         [Key]
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string PayId { get; set; } //支付ID pk
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string OrderId { get; set; } //订单ID fk->Order(orderId)
 
-        [Required]
         [StringLength(20)]
         public required string Channel { get; set; } //支付渠道
 
-        public required int PayAmount { get; set; } //应付金额
+        [Column(TypeName = "DECIMAL(10, 2)")]
+        public required decimal PayAmount { get; set; } //应付金额
 
         public required int PayStatus { get; set; } //支付状态
 
@@ -29,5 +31,17 @@ namespace JISpeed.Core.Entities.Order
         //导航属性
         [ForeignKey("OrderId")]
         public virtual required Order Order { get; set; }
+
+        public Payment(string orderId, string channel, decimal payAmount, int payStatus)
+        {
+            PayId = Guid.NewGuid().ToString("N");
+            OrderId = orderId;
+            Channel = channel;
+            PayAmount = payAmount;
+            PayStatus = payStatus;
+            PayTime = null; //默认支付时间为空
+        }
+
+        private Payment() { }
     }
 }

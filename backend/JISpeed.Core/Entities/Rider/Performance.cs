@@ -11,6 +11,7 @@ namespace JISpeed.Core.Entities.Rider
     [PrimaryKey(nameof(RiderId), nameof(StatsMonth))] //复合主键
     public class Performance
     {
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string RiderId { get; set; } //骑手编号 pk,fk->rider(riderId)
 
@@ -18,24 +19,34 @@ namespace JISpeed.Core.Entities.Rider
 
         public required int TotalOrders { get; set; } //总订单量
 
-        [Required]
         [Column(TypeName = "DECIMAL(5, 2)")]
         public required decimal OnTimeRate { get; set; } //准时率
 
-        [Required]
         [Column(TypeName = "DECIMAL(5, 2)")]
         public required decimal GoodReviewRate { get; set; } //好评率
 
-        [Required]
         [Column(TypeName = "DECIMAL(5, 2)")]
         public required decimal BadReviewRate { get; set; } //差评率
 
-        [Required]
         [Column(TypeName = "DECIMAL(10, 2)")]
         public required decimal Income { get; set; } //总收入
 
         //导航属性
         [ForeignKey("RiderId")]
         public virtual required Rider Rider { get; set; }
+
+        public Performance(string riderId, DateTime statsMonth, int totalOrders, decimal onTimeRate,
+                           decimal goodReviewRate, decimal badReviewRate, decimal income)
+        {
+            RiderId = riderId;
+            StatsMonth = statsMonth;
+            TotalOrders = totalOrders;
+            OnTimeRate = onTimeRate;
+            GoodReviewRate = goodReviewRate;
+            BadReviewRate = badReviewRate;
+            Income = income;
+        }
+
+        private Performance() { } 
     }
 }

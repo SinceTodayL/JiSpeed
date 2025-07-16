@@ -12,9 +12,11 @@ namespace JISpeed.Core.Entities.Rider
     public class Assignment
     {
         [Key]
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string AssignId { get; set; } //分配编号 PK
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string RiderId { get; set; } //骑手编号 fk->rider(riderId)
 
@@ -32,5 +34,16 @@ namespace JISpeed.Core.Entities.Rider
 
         // Assignment 与 Order 是一对一关系，Order 的 AssignId 是外键
         public required virtual Order Order { get; set; }// 反向导航属性
+
+        public Assignment(string riderId, DateTime assignedAt, int acceptedStatus,
+                          DateTime? acceptedAt = null, int? timeOut = null)
+        {
+            AssignId = Guid.NewGuid().ToString("N"); //生成唯一的分配编号
+            RiderId = riderId;
+            AssignedAt = assignedAt;
+            AcceptedStatus = acceptedStatus;
+            AcceptedAt = acceptedAt; //默认未接单
+            TimeOut = timeOut; //默认无超时
+        }
     }
 }

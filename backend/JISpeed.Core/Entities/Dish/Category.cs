@@ -7,21 +7,22 @@ namespace JISpeed.Core.Entities.Dish
 {
     //菜品分类实体
     //对应数据库表: Category (隐含)
-    [Table("Category")] 
+    [Table("Category")]
     public class Category
     {
         [Key]
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string CategoryId { get; set; } //分类ID pk
 
-        [Required]
         [StringLength(50)]
         public required string CategoryName { get; set; } //分类名称
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public string? ParentId { get; set; } //父级分类ID (可为空，表示顶级分类)
 
-        public int? SortOrder { get; set; } //排序顺序 (可为空)
+        public required int SortOrder { get; set; } //排序顺序
 
         //导航属性
         /// 自引用导航属性：父级分类
@@ -33,5 +34,15 @@ namespace JISpeed.Core.Entities.Dish
 
         //该分类下的菜品集合
         public virtual ICollection<Dish> Dishes { get; set; } = new List<Dish>(); //一个分类可以有多个菜品
+
+        public Category(string categoryName, string? parentId = null, int sortOrder = 0)
+        {
+            CategoryId = Guid.NewGuid().ToString("N"); //生成唯一的分类ID
+            CategoryName = categoryName;
+            ParentId = parentId;
+            SortOrder = sortOrder;
+        }
+        
+        private Category() { } 
     }
 }

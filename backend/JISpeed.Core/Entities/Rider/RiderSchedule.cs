@@ -10,9 +10,11 @@ namespace JISpeed.Core.Entities.Rider
     [PrimaryKey(nameof(RiderId), nameof(ScheduleId))] //复合主键
     public class RiderSchedule
     {
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string RiderId { get; set; } //骑手编号 pk,fk->rider(riderId)
 
+        [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string ScheduleId { get; set; } //排班编号 pk,fk->schedule(schduleId)
 
@@ -22,5 +24,13 @@ namespace JISpeed.Core.Entities.Rider
 
         [ForeignKey("ScheduleId")]
         public virtual required Schedule Schedule { get; set; }
+
+        public RiderSchedule(string riderId, string scheduleId)
+        {
+            RiderId = riderId;
+            ScheduleId = scheduleId;
+        }
+
+        private RiderSchedule() { } 
     }
 }

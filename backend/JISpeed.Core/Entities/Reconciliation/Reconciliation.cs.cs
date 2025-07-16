@@ -13,7 +13,8 @@ namespace JISpeed.Core.Entities.Reconciliation
     public class Reconciliation
     {
         [Key]
-        [Column(TypeName = "CHAR(20)")]
+        [StringLength(32)]
+        [Column(TypeName = "CHAR(32)")]
         public required string ReconId { get; set; } //对账异常ID pk
 
         public required DateTime PeriodStart { get; set; } //账期起
@@ -34,5 +35,20 @@ namespace JISpeed.Core.Entities.Reconciliation
 
         //导航属性
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>(); //一个对账异常可能涉及多个订单
+
+        public Reconciliation(DateTime periodStart, DateTime periodEnd, DateTime foundAt,
+                              int reconType, decimal diffAmount, int affectedOrders, bool isResolved)
+        {
+            ReconId = Guid.NewGuid().ToString("N");
+            PeriodStart = periodStart;
+            PeriodEnd = periodEnd;
+            FoundAt = foundAt;
+            ReconType = reconType;
+            DiffAmount = diffAmount;
+            AffectedOrders = affectedOrders;
+            IsResolved = isResolved;
+        }
+
+        private Reconciliation() { }
     }
 }
