@@ -2,32 +2,35 @@ using JISpeed.Api.Common;
 
 namespace JISpeed.Core.Exceptions
 {
-    /// <summary>
-    /// 业务逻辑异常 - 用于处理可预期的业务场景异常
-    /// 这类异常通常不需要记录完整的堆栈信息
-    /// </summary>
+    // 业务逻辑异常：用于处理可预期的业务场景异常
     public class BusinessException : BaseException
     {
-        public BusinessException(string message) 
-            : base(ErrorCodes.GeneralBusinessError, message)
+        // 构造函数1：创建一个基本的业务异常，只提供错误消息，使用通用业务错误码
+        public BusinessException(string message)
+            : base(ErrorCodes.GeneralBusinessError, message)  // 使用通用业务错误码
         {
-            ShouldLog = false; // 业务异常通常不需要记录完整日志
+            ShouldLog = false;
         }
 
-        public BusinessException(int errorCode, string message) 
+        // 构造函数2：创建特定错误码的业务异常
+        public BusinessException(int errorCode, string message)
             : base(errorCode, message)
         {
             ShouldLog = false;
         }
 
-        public BusinessException(string message, Exception innerException) 
+        // 构造函数3：接收消息和内部异常
+        public BusinessException(string message, Exception innerException)
             : base(ErrorCodes.GeneralBusinessError, message, innerException)
         {
+            // 接收内部异常，使用日志
         }
 
-        public BusinessException(int errorCode, string message, Exception innerException) 
+        // 构造函数4：接收自定义错误码、消息和内部异常
+        public BusinessException(int errorCode, string message, Exception innerException)
             : base(errorCode, message, innerException)
         {
+            // 接收内部异常，使用日志
         }
     }
 }
