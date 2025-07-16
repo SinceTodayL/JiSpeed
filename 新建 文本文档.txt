@@ -1,0 +1,255 @@
+User				
+字段名	数据类型	长度	说明	备注
+userId	CHAR	20	用户ID	pk
+account	VARCHAR	50	账号	unique
+passwordHash	CHAR	64	密码哈希	
+status	TINYINT	3	账号状态	1: active, 2: deleted
+createdAt	DATETIME		注册时间	
+deletedAt	DATETIME		注销时间	
+lastLoginAt	DATETIME		最后登录时间	
+lastLoginIp	VARCHAR	20	最后登录IP	
+				
+UserProfile				
+字段名	数据类型	长度	说明	备注
+userId	CHAR	20	用户ID	pk, fk->User(userId)
+nickname	VARCHAR	50	昵称	
+avatarUrl	VARCHAR	200	头像地址	
+gender	TINYINT	3	性别	1: male, 2: female, 3: other
+birthday	DATE		生日	
+level	TINYINT	3	会员等级	
+defaultAddrId	CHAR	20	默认地址ID	fk->Address(addrId)
+				
+Favorite				
+字段名	数据类型	长度	说明	备注
+userId	CHAR	20	用户ID	pk, fk->User(userId)
+dishId	CHAR	20	菜品ID	pk, fk->Dish(dishId)
+favorAt	DATETIME		收藏时间	
+				
+CartItem				
+字段名	数据类型	长度	说明	备注
+cartItemId	CHAR	20	购物车ID	pk
+userId	CHAR	20	用户ID	pk,fk->User(userId)
+merchantId	CHAR	                              20	商家ID	pk,fk->Merchant()
+dishId	CHAR	20	菜品ID	pk,fk->Dish(dishId)
+addedAt	DATETIME		加入时间	
+				
+Refund				
+字段名	数据类型	长度	说明	备注
+refundId	CHAR	20	退款ID	pk
+orderId	CHAR	20	订单ID	fk->Order(orderId)
+applicationId	CHAR	20	申请人ID	fk->User(userId)
+reason	TEXT	65,535	退款原因	
+refundAmount	INT	10	退款金额	
+applyAt	DATETIME		申请时间	
+audisStatus	TINYINT	3	审核状态	
+finishAt	DATETIME		退款完成时间	
+				
+Payment				
+字段名	数据类型	长度	说明	备注
+payId	CHAR	20	支付ID	pk
+orderId	CHAR	20	订单ID	fk->Order(orderId)
+channel	VARCHAR	20	支付渠道	
+payAmount	INT	10	应付金额	
+payStatus	TINYINT	3	支付状态	
+payTime	DATETIME		支付完成时间	
+				
+OrderLog				
+字段名	数据类型	长度	说明	备注
+logId	CHAR	20	记录ID	pk
+statusCode	TINYINT	3	状态码	
+loggedAt	DATETIME		时间戳	
+actor	VARCHAR	20	触发方	
+remark	TEXT	65,535	备注	
+orderId	CHAR	20	订单ID	pk,fk->Order(orderId)
+				
+Address				
+字段名	数据类型	长度	说明	备注
+addressId	CHAR	20	地址ID	pk
+userId	CHAR	20	用户ID	fk->User(userId)
+receiverName	VARCHAR	50	收货人姓名	
+receiverPhone	VARCHAR	20	收货人电话	
+detailedAddress	VARCHAR	200	详细地址	
+isDefault	TINYINT	3	是否默认地址	1: 是, 2: 否
+				
+Complaint				
+字段名	数据类型	长度	说明	备注
+complaintId	CHAR	20	投诉ID	pk
+orderId	CHAR	20	订单ID	fk->Order(orderId)
+complainantId	CHAR	20	投诉人ID	fk->User(userId)
+role	TINYINT	3	投诉人角色	1: 用户, 2: 商家, 3: 骑手
+description	TEXT		投诉描述	
+status	TINYINT	3	投诉状态	1: 待处理, 2: 处理中, 3: 已解决, 4: 已关闭
+createdAt	DATETIME		投诉创建时间	
+				
+Review				
+字段名	数据类型	长度	说明	备注
+reviewId	CHAR	20	评价ID	pk
+orderId	CHAR	20	订单ID	fk->Order(orderId)
+userId	CHAR	20	用户ID	fk->User(userId)
+rating	TINYINT	3	评分	1-5分
+content	TEXT		评价内容	
+isAnonymous	TINYINT	3	是否匿名	1: 是, 2: 否
+reviewAt	DATETIME		评价时间	
+				
+Admin				
+字段名	数据类型	长度	说明	备注
+admainId	CHAR	20	管理员ID	pk
+roleId	CHAR	20	角色ID	
+permId	CHAR	20	权限ID	
+grantedAt	DATETIME		授权时间	
+				
+Application				
+字段名	数据类型	长度	说明	备注
+applyId	CHAR	20	申请ID	pk
+companyName	CHAR		店名称	
+submittedAt	DATETIME		提交时间	
+audiStatus	TINYINT	3	审核状态	
+autitAt	DATETIME		审核时间	
+rejectReason	TEXT		驳回原因	
+admainId	CHAR	20	管理员ID	fk->Admin(admainId)
+merchantId	CHAR	20	商家ID	fk->Merchant(merchantId)
+				
+Dish				
+字段名	数据类型	长度	说明	备注
+dishId	CHAR	20	菜品ID	pk
+categoryId	CHAR	20	分类ID	pk,fk->Category(categoryId)
+dishName	VARCHAR	20	菜品名	
+price	DECIMAL(10,2)	10	售价	
+originPrice	DECIMAL(10,2)	10	原价	
+coverUrl	VARCHAR	20	封面图	
+monthlySales	INT	10	月销量	
+rating	DECIMAL(5,2)	5	好评率	
+onSale	TINYINT	3	上架标志	
+merchantId	CHAR	20	商家ID	pk,fk->Merchant(merchantId)
+quantity	INT	10	评论数目	
+				
+Merchant				
+字段名	数据类型	长度	说明	备注
+merchantId	CHAR	20	商家ID	pk
+merchantName	VARCHAR	20	商家名	
+status	TINYINT	3	商家状态	
+contactInfo	VARCHAR	20	联系方式	
+location	VARCHAR	20	地址	
+				
+SalesStat				
+字段名	数据类型	长度	说明	备注
+statDate	DATETIME		统计日期	pk
+salesQty	INT	10	销量	
+salesAmount	DECIMAL(10,2)	10	销售额	
+merchantId	CHAR	20	商家ID	pk,fk->Merchant(merchantId)
+				
+Settlement				
+字段名	数据类型	长度	说明	备注
+settleId	CHAR	20	结算单ID	pk
+periodStart	DATETIME		周期起	
+periodEnd	DATETIME		周期止	
+grossAmount	DECIMAL(10,2)	10	毛收入	
+commissionFee	DECIMAL(10,2)	10	抽佣	
+netAmount	DECIMAL(10,2)	10	应结金额	
+settledAt	DATETIME		结算完成时间	
+merchantId	CHAR	20	商家ID	pk,fk->Merchant(merchantId)
+				
+Announcement				
+字段名	数据类型	长度	说明	备注
+announceId	CHAR	20	公告ID	pk
+title	VARCHAR	20	标题	
+content	TEXT	65,535	正文	
+targetRole	VARCHAR	20	目标角色	
+startAt	DATETIME		生效起	
+endAt	DATETIME		生效止	
+				
+Order				
+字段名	数据类型	长度	说明	备注
+orderId	CHAR	20	订单ID	pk
+userId	CHAR	20	用户ID	
+addressId	CHAR	20	地址ID	
+orderAmount	DECIMAL(10,2)	10	订单金额	
+createAt	DATETIME		创建时间	
+orderStatus	TINYINT	3	订单状态	
+reconId	CHAR	20	对账异常ID	fk->Reconciliation(reconId)
+couponId	CHAR	20	优惠券ID	fk->Coupon(couponId)
+assignid	CHAR	20	分配编号	fk->Assignment(assignID)
+				
+Reconciliation				
+字段名	数据类型	长度	说明	备注
+reconId	CHAR	20	对账异常ID	pk
+periodStart	DATETIME		账期起	
+periodEnd	DATETIME		账期止	
+foundAt	DATETIME		发现时间	
+reconType	TINYINT	3	异常类型	
+diffAmount	DECIMAL(10,2)	10	差额金额	
+affectedOrders	INT	10	受影响订单数	
+isResolved			是否解决	
+				
+Coupon				
+字段名	数据类型	长度	说明	备注
+couponId	CHAR	20	优惠券ID	pk
+faceValue	DECIMAL(10,2)	10	面额	
+threshold	DECIMAL(10,2)	10	满减门槛	
+totalQty	INT	10	总量	
+issuedQty	INT	10	已发量	
+startTime	DATETIME		可用起始	
+endTime	DATETIME		可用截止	
+				
+dish_review				
+字段名	数据类型	长度	说明	备注
+dishId	CHAR	20	菜品ID	pk,fk->Dish(dishId)
+reviewId	CHAR	20	评论ID	pk,fk->Review(reviewId)
+				
+order_dish				
+orderId	CHAR	20	订单ID	pk,fk->Order(orderId)
+dishId	CHAR	20	菜品ID	pk,fk->Dish(dishId)
+				
+rider				
+字段名	数据类型	长度	说明	备注
+riderId	char	10	骑手编号	PK
+name	varchar	20	骑手姓名	
+phoneNumber	char	11	联系电话	
+vehicleNumber	char	10	车牌号	
+				
+assignment				
+字段名	数据类型	长度	说明	备注
+assignId	char	20	分配编号	PK
+riderId	char	10	骑手编号	fk->rider(riderId)
+assignedAt	datetime	-	派单时间	
+acceptedStatus	boolean	-	接单状态	
+acceptedAt	datetime	-	接单时间	
+timeOut	int	-	超时分钟数	
+				
+performance				
+字段名	数据类型	长度	说明	备注
+riderId	char	10	骑手编号	pk,fk->tider(riderId)
+statsMonth	date	-	统计月份	pk
+totalOrders	int	-	总订单量	
+onTimeRate	decimal	5,2	准时率	示例：97.50%
+goodReviewRate	decimal	5,2	好评率	
+badReviewRate	decimal	5,2	差评率	
+income	decimal	10,2	总收入	单位：元
+ 				
+attendance				
+字段名	数据类型	长度	说明	备注
+attendanceId	char	20	考勤编号	PK 
+checkDate	date	-	考勤日期	
+checkInAt	time	-	签到时间	
+checkoutAt	time	-	签退时间	
+isLate	boolean	-	是否迟到	
+riderId	char	10	骑手Id	fk->rider(riderId)
+isAbsent	boolean	-	是否缺勤	
+				
+		rider_schedule		
+字段名	数据类型	长度	说明	备注
+riderId	char		骑手编号	pk,fk->rider(riderId)
+scheduleId	char	20	排班编号	pk,fk->schedule(schduleId)
+				
+schedule				
+字段名	数据类型	长度	说明	备注
+scheduleId	char	20	排班编号	PK
+workDate	date	-	工作日期	
+shiftStart	time	-	班次开始	
+shiftEnd	time	-	班次结束	
+				
+				
+		schedule_attendance		
+字段名	数据类型	长度	说明	备注
+scheduleId	char	20	排班编号	PK,fk->schedule(scheduleId)
+attendanceId	char	20	考勤编号	PK ,fk->attendance(attendanceId)

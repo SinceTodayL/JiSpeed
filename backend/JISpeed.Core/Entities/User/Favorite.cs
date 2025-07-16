@@ -1,0 +1,31 @@
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore; 
+
+namespace JISpeed.Core.Entities.User
+{
+    using JISpeed.Core.Entities.Dish; // 引用 Dish 实体所在的命名空间
+
+    //收藏实体
+    //对应数据库表: Favorite
+    [Table("Favorite")]
+    [PrimaryKey(nameof(UserId), nameof(DishId))]  //复合主键
+    public class Favorite
+    {
+        [Column(TypeName = "CHAR(32)")]
+        public required string UserId { get; set; } //用户ID pk, fk->User(userId)
+
+        [Column(TypeName = "CHAR(32)")]
+        public required string DishId { get; set; } //菜品ID pk, fk->Dish(dishId)
+
+        public required DateTime FavorAt { get; set; } //收藏时间
+
+        //导航属性
+        [ForeignKey("UserId")]
+        public virtual required User User { get; set; }
+
+        [ForeignKey("DishId")]
+        public virtual required Dish Dish { get; set; }
+    }
+}
