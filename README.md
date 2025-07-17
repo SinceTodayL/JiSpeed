@@ -7,8 +7,10 @@
 #### 文件夹结构规范
 
 ```bash
-front-end/
+../
 ├── public/                     # 静态资源目录，打包时复制
+├── components/                 # 组件库
+├── 
 │
 ├── src/                        # 项目源代码目录（核心开发）
 │   ├── api/                    # 所有接口封装（对接后端/Apifox）
@@ -24,16 +26,11 @@ front-end/
 ├── .gitignore                  # Git 忽略配置
 ├── index.html                  # 入口 HTML 模板，Vite 注入内容的容器
 ├── package.json                # 项目依赖管理 + 脚本定义
-├── package-lock.json           # 依赖锁定文件（自动生成）
 ├── README.md                   # 项目说明文档
 └── vite.config.js              # Vite 配置文件（可定义路径别名、代理等）
 ```
 
  
-
-前端界面跳转逻辑：
-
-
 
 
 

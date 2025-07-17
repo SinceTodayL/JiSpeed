@@ -4,10 +4,10 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
-const router = useRouter() 
+// import { useRouter } from 'vue-router'
+// const router = useRouter() 
 
 function goToMerchant(){
-    router.push('/merchant')
+    window.location.href = 'http://localhost:9527';
 }
 </script>
