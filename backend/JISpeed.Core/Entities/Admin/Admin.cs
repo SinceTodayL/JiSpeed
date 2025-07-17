@@ -5,8 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JISpeed.Core.Entities.Admin
 {
-    using JISpeed.Core.Entities.Merchant; //引用 Merchant 实体所在的命名空间
-    using JISpeed.Core.Entities.Common; //引用 Common 命名空间下的 Announcement
+    using JISpeed.Core.Entities.Merchant; //引用 Application 实体所在的命名空间
 
     //管理员实体
     //对应数据库表: Admin
@@ -31,9 +30,9 @@ namespace JISpeed.Core.Entities.Admin
         public virtual ICollection<Application>? Applications { get; set; } = new List<Application>(); //管理员可以审批多个申请
         public virtual ICollection<Announcement>? Announcements { get; set; } = new List<Announcement>(); //管理员可以发布多个公告
 
-        public Admin(string roleId, string permId)
+        public Admin(string adminId, string roleId, string permId)
         {
-            AdminId = Guid.NewGuid().ToString("N"); //生成唯一的管理员编号
+            AdminId = adminId;
             RoleId = roleId;
             PermId = permId;
             GrantedAt = DateTime.UtcNow; //设置授权时间为当前时间

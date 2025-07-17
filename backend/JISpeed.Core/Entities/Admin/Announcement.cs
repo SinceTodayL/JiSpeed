@@ -2,10 +2,8 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JISpeed.Core.Entities.Common
+namespace JISpeed.Core.Entities.Admin
 {
-    using JISpeed.Core.Entities.Admin; //引用 Admin 实体所在的命名空间
-
     //公告实体
     //对应数据库表: Announcement
     [Table("Announcement")]

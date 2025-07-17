@@ -36,9 +36,9 @@ namespace JISpeed.Core.Entities.Merchant
         public virtual ICollection<Settlement> Settlements { get; set; } = new List<Settlement>();
         public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>(); //Merchant 可以出现在多个购物车项中
 
-        public Merchant(string merchantName, int status = 1, string? contactInfo = null, string? location = null)
+        public Merchant(string merchantId, string merchantName, int status = 1, string? contactInfo = null, string? location = null)
         {
-            MerchantId = Guid.NewGuid().ToString("N"); //生成唯一的MerchantId
+            MerchantId = merchantId;
             MerchantName = merchantName;
             Status = status;
             ContactInfo = contactInfo;

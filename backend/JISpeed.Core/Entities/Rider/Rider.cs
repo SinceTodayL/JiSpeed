@@ -31,12 +31,12 @@ namespace JISpeed.Core.Entities.Rider
         public virtual ICollection<Performance> Performances { get; set; } = new List<Performance>(); //一个骑手可以有多条绩效记录
         public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>(); //一个骑手可以有多条考勤记录
 
-        public Rider(string name, string phoneNumber, string? vehicleNumber = null)
+        public Rider(string riderId, string name, string phoneNumber, string? vehicleNumber = null)
         {
-            RiderId = Guid.NewGuid().ToString("N"); //生成唯一的骑手编号
+            RiderId = riderId;
             Name = name;
             PhoneNumber = phoneNumber;
-            VehicleNumber = vehicleNumber; 
+            VehicleNumber = vehicleNumber;
         }
 
         private Rider() { }

@@ -25,7 +25,7 @@ namespace JISpeed.Core.Entities.Dish
         public required int SortOrder { get; set; } //排序顺序
 
         //导航属性
-        /// 自引用导航属性：父级分类
+        //自引用导航属性：父级分类
         [ForeignKey("ParentId")]
         public virtual Category? ParentCategory { get; set; } //关联到自身，表示父级分类
 

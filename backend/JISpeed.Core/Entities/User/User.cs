@@ -12,31 +12,12 @@ namespace JISpeed.Core.Entities.User
     //用户实体
     //对应数据库表: User
     [Table("User")]
-    [Index(nameof(Account), IsUnique = true)]
     public class User
     {
         [Key]
         [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string UserId { get; set; } //用户ID pk
-
-        [StringLength(50)]
-        public required string Account { get; set; } //账号 unique
-
-        [StringLength(64)]
-        [Column(TypeName = "CHAR(64)")]
-        public required string PasswordHash { get; set; } //密码哈希
-
-        public required int Status { get; set; } //账号状态 1: active, 2: deleted
-
-        public required DateTime CreatedAt { get; set; } //注册时间
-
-        public DateTime? DeletedAt { get; set; } //注销时间 (可为空)
-
-        public DateTime? LastLoginAt { get; set; } //最后登录时间 (可为空)
-
-        [StringLength(20)]
-        public string? LastLoginIp { get; set; } //最后登录IP (可为空)
 
         //导航属性
         public required virtual UserProfile UserProfile { get; set; }
@@ -49,13 +30,9 @@ namespace JISpeed.Core.Entities.User
         public virtual ICollection<Refund> Refunds { get; set; } = new List<Refund>();
         public virtual ICollection<Coupon> Coupons { get; set; } = new List<Coupon>(); //用户拥有的优惠券
 
-        public User(string account, string passwordHash)
+        public User(string userId)
         {
-            UserId = Guid.NewGuid().ToString("N"); //生成唯一的用户ID
-            Account = account;
-            PasswordHash = passwordHash;
-            Status = 1; //默认状态为 active
-            CreatedAt = DateTime.UtcNow; //设置注册时间为当前时间
+            UserId = userId;
         }
 
         private User() { }
