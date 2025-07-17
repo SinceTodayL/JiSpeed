@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using JISpeed.Core.Repositories;
 using Microsoft.Extensions.Logging;
-
+using JISpeed.Core.Entities;
 namespace JISpeed.Core.Services
 {
     public class UserService : IUserService
@@ -33,5 +33,9 @@ namespace JISpeed.Core.Services
             _logger.LogInformation($"登录成功，用户ID: {id}");
             return true;
         }
+        // public async Task<List<UUser>> GetAllUsersAsync()
+        // {
+        //     return await _userRepository.GetAllUsersAsync();
+        // }
     }
 }

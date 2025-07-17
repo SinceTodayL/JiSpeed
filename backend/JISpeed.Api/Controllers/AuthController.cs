@@ -37,5 +37,11 @@ namespace JISpeed.Api.Controllers
             _logger.LogInformation($"登录接口：成功，用户ID={request.Id}");
             return Ok("登录成功");
         }
+        // [HttpGet("login")]
+        // public async Task<IActionResult> GetAllUsers()
+        // {
+        //     var users = await _userService.GetAllUsersAsync();
+        //     return Ok(users);
+        // }
     }
 }

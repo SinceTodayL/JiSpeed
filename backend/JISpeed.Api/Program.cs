@@ -7,7 +7,12 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. 读取连接字符串（从 appsettings.json）
-string connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+//string connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+string connectionString ="这里要写数据库的连接，需要空着";
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new Exception("数据库连接字符串为空，请检查 appsettings.json 配置");
+}
 
 // 2. 注册 Oracle 数据库上下文
 builder.Services.AddDbContext<AppDbContext>(options =>

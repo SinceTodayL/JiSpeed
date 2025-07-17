@@ -9,6 +9,7 @@ namespace JISpeed.Infrastructure.Data
             : base(options)
         { }
 
-        public DbSet<User> Users { get; set; }
+        public DbSet<UUser> Users { get; set; }
+
     }
 }
