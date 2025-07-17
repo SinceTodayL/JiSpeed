@@ -10,5 +10,8 @@ namespace JISpeed.Core.Entities
 
         [Column("PASSWORD")]
         public string Password { get; set; }
+        
+        [Column("ROLE")]
+        public string Role { get; set; } // 用户角色
     }
 }

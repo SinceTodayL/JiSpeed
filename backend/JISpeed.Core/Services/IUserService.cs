@@ -5,7 +5,13 @@ namespace JISpeed.Core.Services
 {
     public interface IUserService
     {
+        // 登录
         Task<bool> LoginAsync(string id, string password);
-        //Task<List<UUser>> GetAllUsersAsync();
+        
+        // 测试登录
+        Task<List<UUser>> GetAllUsersAsync();
+        
+        //注册
+        Task<bool> RegiAsync(string id, string password, string role);
     }
 }

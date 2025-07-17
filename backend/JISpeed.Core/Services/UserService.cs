@@ -33,9 +33,24 @@ namespace JISpeed.Core.Services
             _logger.LogInformation($"登录成功，用户ID: {id}");
             return true;
         }
-        // public async Task<List<UUser>> GetAllUsersAsync()
-        // {
-        //     return await _userRepository.GetAllUsersAsync();
-        // }
+        public async Task<List<UUser>> GetAllUsersAsync()
+        {
+             return await _userRepository.GetAllUsersAsync();
+        }
+        
+        public async Task<bool> RegiAsync(string id, string password,string role)
+        {
+            _logger.LogInformation($"尝试注册，用户ID: {id}");
+            var user = await _userRepository.GetUserByIdAsync(id);
+            if (user != null)
+            {
+                _logger.LogWarning($"注册失败，用户存在，ID: {id}");
+                return false;
+            }
+
+
+            _logger.LogInformation($"登录成功，用户ID: {id}");
+            return true;
+        }
     }
 }

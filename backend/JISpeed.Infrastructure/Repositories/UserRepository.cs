@@ -19,9 +19,9 @@ namespace JISpeed.Infrastructure.Repositories
         {
             return await _context.Users.SingleOrDefaultAsync(u => u.Id == id);
         }
-        // public async Task<List<UUser>> GetAllUsersAsync()
-        // {
-        //     return await _context.Users.ToListAsync();
-        // }
+        public async Task<List<UUser>> GetAllUsersAsync()
+        {
+            return await _context.Users.ToListAsync();
+        }
     }
 }

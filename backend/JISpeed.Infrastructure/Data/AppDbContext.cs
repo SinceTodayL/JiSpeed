@@ -11,5 +11,9 @@ namespace JISpeed.Infrastructure.Data
 
         public DbSet<UUser> Users { get; set; }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<UUser>().HasIndex(u => u.Id).IsUnique();
+        }
     }
 }

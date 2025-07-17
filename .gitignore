@@ -64,3 +64,5 @@ secrets.json
 .idea/
 *.swp
 *.swo
+
+*.DS_Store
