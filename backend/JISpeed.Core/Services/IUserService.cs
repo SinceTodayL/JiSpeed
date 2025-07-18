@@ -12,6 +12,6 @@ namespace JISpeed.Core.Services
         Task<List<UUser>> GetAllUsersAsync();
         
         //注册
-        Task<bool> RegiAsync(string id, string password, string role);
+        Task<bool> RegiAsync(string id, string password);
     }
 }
