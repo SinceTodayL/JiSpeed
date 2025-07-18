@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using JISpeed.Core.Entities;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace JISpeed.Infrastructure.Data
@@ -82,10 +81,5 @@ namespace JISpeed.Infrastructure.Data
 
             });
         }
-
-        // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        // {
-        //     base.OnConfiguring(optionsBuilder);
-        // }
     }
 }

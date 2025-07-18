@@ -1,15 +1,7 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using JISpeed.Core.Services;
 using JISpeed.Api.Models;
-using Microsoft.Extensions.Logging;
-using JISpeed.Infrastructure;
 using JISpeed.Core.Entities;
-using JISpeed.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-
 
 namespace JISpeed.Api.Controllers
 {
@@ -19,12 +11,10 @@ namespace JISpeed.Api.Controllers
     {
         private readonly ILogger<AuthController> _logger;
         private readonly UserManager<UUser> _userManager;
-        private readonly AppDbContext _db;
-        public AuthController(ILogger<AuthController> logger, UserManager<UUser> userManager, AppDbContext db)
+        public AuthController(ILogger<AuthController> logger, UserManager<UUser> userManager)
         {
             _logger = logger;
             _userManager = userManager;
-            _db = db;
         }
 
 
@@ -32,27 +22,22 @@ namespace JISpeed.Api.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var user = await _userManager.FindByNameAsync(request.UserName);
+            if (user == null)
+            {
+                _logger.LogWarning($"登录接口：失败，用户ID={request.UserName}");
+                return Unauthorized("登录失败，ID不存在");
+            }
             var result = await _userManager.CheckPasswordAsync(user, request.Password);
             if (!result)
             {
                 _logger.LogWarning($"登录接口：失败，用户ID={request.UserName}");
-                return Unauthorized("登录失败，ID或密码错误");
+                return Unauthorized("登录失败，密码错误");
             }
 
             _logger.LogInformation($"登录接口：成功，用户ID={request.UserName}");
             return Ok("登录成功");
         }
         
-        [HttpGet("login/test")]
-        public async Task<IActionResult> GetAllUsers()
-        {
-
-            _logger.LogInformation("返回所有用户");
-             var users = await _db.Users.ToListAsync();
-             //var users = await _db.Users.Take(1).ToListAsync();
-
-             return Ok(users);
-        }
         
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
