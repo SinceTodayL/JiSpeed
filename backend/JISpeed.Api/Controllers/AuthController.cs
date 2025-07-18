@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using JISpeed.Api.Models;
 using JISpeed.Core.Entities;
+using JISpeed.Core.Entities.Common;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.Data;
+using JISpeed.Api.Models;
 
 namespace JISpeed.Api.Controllers
 {
@@ -10,8 +12,8 @@ namespace JISpeed.Api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly ILogger<AuthController> _logger;
-        private readonly UserManager<UUser> _userManager;
-        public AuthController(ILogger<AuthController> logger, UserManager<UUser> userManager)
+        private readonly UserManager<ApplicationUser> _userManager;
+        public AuthController(ILogger<AuthController> logger, UserManager<ApplicationUser> userManager)
         {
             _logger = logger;
             _userManager = userManager;
@@ -19,7 +21,7 @@ namespace JISpeed.Api.Controllers
 
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        public async Task<IActionResult> Login([FromBody] UserLoginRequest request)
         {
             var user = await _userManager.FindByNameAsync(request.UserName);
             if (user == null)
@@ -27,7 +29,7 @@ namespace JISpeed.Api.Controllers
                 _logger.LogWarning($"登录接口：失败，用户ID={request.UserName}");
                 return Unauthorized("登录失败，ID不存在");
             }
-            var result = await _userManager.CheckPasswordAsync(user, request.Password);
+            var result = await _userManager.CheckPasswordAsync(user, request.PassWord);
             if (!result)
             {
                 _logger.LogWarning($"登录接口：失败，用户ID={request.UserName}");
@@ -40,15 +42,10 @@ namespace JISpeed.Api.Controllers
         
         
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        public async Task<IActionResult> Register([FromBody] UserRegisterRequest request)
         {
-            var newUser = new UUser
-            {
-                Id = Guid.NewGuid().ToString(),
-                UserName = request.UserName
-                
-            };
-            var result = await _userManager.CreateAsync(newUser, request.Password);
+            var newUser = new ApplicationUser(request.UserName, request.UserType);
+            var result = await _userManager.CreateAsync(newUser, request.PassWord);
             _logger.LogInformation($"注册成功，用户userName: {request.UserName}");
             if (result.Succeeded)
             {

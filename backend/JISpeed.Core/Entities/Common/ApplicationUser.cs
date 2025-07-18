@@ -17,8 +17,6 @@ namespace JISpeed.Core.Entities.Common
         // 创建时间
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
-        // 删除时间（如果已删除）
-        public DateTime? DeletedAt { get; set; }
         
         // 导航属性 - 各类型的具体实体
         [InverseProperty("ApplicationUser")]
@@ -36,6 +34,7 @@ namespace JISpeed.Core.Entities.Common
         // 主构造函数
         public ApplicationUser(string userName, int userType, string ?email = null) : base(userName)
         {
+            Id = Guid.NewGuid().ToString();
             Email = email;
             UserType = userType;
             Status = 1;
