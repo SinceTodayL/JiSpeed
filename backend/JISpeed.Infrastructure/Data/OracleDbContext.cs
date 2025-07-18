@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using JISpeed.Core.Entities.User;
 using JISpeed.Core.Entities.Admin;
 using JISpeed.Core.Entities.Common;

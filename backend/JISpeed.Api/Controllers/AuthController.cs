@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using JISpeed.Core.Entities;
 using JISpeed.Core.Entities.Common;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.Data;
 using JISpeed.Api.Models;
 
 namespace JISpeed.Api.Controllers
