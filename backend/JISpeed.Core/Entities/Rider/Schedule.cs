@@ -6,8 +6,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace JISpeed.Core.Entities.Rider
 {
     //排班实体
-    //对应数据库表: schedule
-    [Table("schedule")]
+    //对应数据库表: Schedule
+    [Table("SCHEDULE")]
     public class Schedule
     {
         [Key]

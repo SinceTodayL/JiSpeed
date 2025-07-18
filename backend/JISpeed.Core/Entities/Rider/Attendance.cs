@@ -7,7 +7,7 @@ namespace JISpeed.Core.Entities.Rider
 {
     //考勤实体
     //对应数据库表: attendance
-    [Table("attendance")]
+    [Table("ATTENDANCE")]
     public class Attendance
     {
         [Key]

@@ -10,7 +10,7 @@ namespace JISpeed.Core.Entities.Junctions
 
     //菜品评论联结实体 (多对多)
     //对应数据库表: dish_review
-    [Table("dish_review")]
+    [Table("DISH_REVIEW")]
     [PrimaryKey(nameof(DishId), nameof(ReviewId))] //复合主键
     public class DishReview
     {

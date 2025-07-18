@@ -7,7 +7,7 @@ namespace JISpeed.Core.Entities.Dish
 {
     //菜品分类实体
     //对应数据库表: Category (隐含)
-    [Table("Category")]
+    [Table("CATEGORY")]
     public class Category
     {
         [Key]

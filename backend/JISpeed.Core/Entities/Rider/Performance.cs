@@ -7,7 +7,7 @@ namespace JISpeed.Core.Entities.Rider
 {
     //骑手绩效实体
     //对应数据库表: performance
-    [Table("performance")]
+    [Table("PERFORMANCE")]
     [PrimaryKey(nameof(RiderId), nameof(StatsMonth))] //复合主键
     public class Performance
     {

@@ -10,7 +10,7 @@ namespace JISpeed.Core.Entities.Common
 
     //优惠券实体
     //对应数据库表: Coupon
-    [Table("Coupon")]
+    [Table("COUPON")]
     public class Coupon
     {
         [Key]

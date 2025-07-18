@@ -8,7 +8,7 @@ namespace JISpeed.Core.Entities.Order
 
     //退款实体
     //对应数据库表: Refund
-    [Table("Refund")]
+    [Table("REFUND")]
     public class Refund
     {
         [Key]
@@ -32,7 +32,7 @@ namespace JISpeed.Core.Entities.Order
 
         public required DateTime ApplyAt { get; set; } //申请时间
 
-        public required int AudisStatus { get; set; } //审核状态
+        public required int AuditStatus { get; set; } //审核状态
 
         public DateTime? FinishAt { get; set; } //退款完成时间 (可为空)
 
@@ -50,7 +50,7 @@ namespace JISpeed.Core.Entities.Order
             RefundAmount = refundAmount;
             Reason = reason;
             ApplyAt = DateTime.UtcNow; //默认申请时间为当前时间
-            AudisStatus = 0; //默认审核状态为未审核
+            AuditStatus = 0; //默认审核状态为未审核
             FinishAt = null; //默认退款完成时间为空
         }
 

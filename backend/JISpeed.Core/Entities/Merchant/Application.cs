@@ -8,7 +8,7 @@ namespace JISpeed.Core.Entities.Merchant
 
     //申请实体
     //对应数据库表: Application
-    [Table("Application")]
+    [Table("APPLICATION")]
     public class Application
     {
         [Key]

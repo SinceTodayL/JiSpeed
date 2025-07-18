@@ -6,7 +6,7 @@ namespace JISpeed.Core.Entities.Merchant
 {
     //结算实体
     //对应数据库表: Settlement
-    [Table("Settlement")]
+    [Table("SETTLEMENT")]
     public class Settlement
     {
         [Key]
@@ -37,7 +37,7 @@ namespace JISpeed.Core.Entities.Merchant
         [ForeignKey("MerchantId")]
         public virtual required Merchant Merchant { get; set; }
 
-        public Settlement(DateTime periodStart, DateTime periodEnd, decimal grossAmount, decimal commissionFee, decimal netAmount, string merchantId)
+        public Settlement(DateTime periodStart, DateTime periodEnd, decimal grossAmount, decimal commissionFee, decimal netAmount, string merchantId, DateTime? settledAt = null)
         {
             PeriodStart = periodStart;
             PeriodEnd = periodEnd;
@@ -46,6 +46,7 @@ namespace JISpeed.Core.Entities.Merchant
             NetAmount = netAmount;
             MerchantId = merchantId;
             SettleId = Guid.NewGuid().ToString("N"); //生成唯一的SettleId
+            SettledAt = settledAt;
         }
 
         private Settlement() { }

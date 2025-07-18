@@ -10,7 +10,7 @@ namespace JISpeed.Core.Entities.User
 
     //购物车项实体
     //对应数据库表: CartItem
-    [Table("CartItem")]
+    [Table("CARTITEM")]
     [PrimaryKey(nameof(CartItemId), nameof(UserId))] //复合主键
     public class CartItem
     {

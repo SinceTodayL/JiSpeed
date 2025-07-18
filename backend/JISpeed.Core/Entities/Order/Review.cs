@@ -10,7 +10,7 @@ namespace JISpeed.Core.Entities.Order
 
     //评价实体
     //对应数据库表: Review
-    [Table("Review")]
+    [Table("REVIEW")]
     public class Review
     {
         [Key]

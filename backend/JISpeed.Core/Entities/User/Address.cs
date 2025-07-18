@@ -6,7 +6,7 @@ namespace JISpeed.Core.Entities.User
 {
     //地址实体
     //对应数据库表: Address
-    [Table("Address")]
+    [Table("ADDRESS")]
     public class Address
     {
         [Key]

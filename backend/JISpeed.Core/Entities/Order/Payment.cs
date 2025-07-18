@@ -6,7 +6,7 @@ namespace JISpeed.Core.Entities.Order
 {
     //支付实体
     //对应数据库表: Payment
-    [Table("Payment")]
+    [Table("PAYMENT")]
     public class Payment
     {
         [Key]

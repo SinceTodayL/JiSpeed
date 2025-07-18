@@ -8,10 +8,11 @@ namespace JISpeed.Core.Entities.Dish
 {
     using JISpeed.Core.Entities.Merchant; //引用 Merchant 实体所在的命名空间
     using JISpeed.Core.Entities.Junctions; //引用联结表命名空间
+    using JISpeed.Core.Entities.User; //引入 User 实体相关的命名空间
 
     //菜品实体
     //对应数据库表: Dish
-    [Table("Dish")]
+    [Table("DISH")]
     public class Dish
     {
         [Key]
@@ -54,6 +55,9 @@ namespace JISpeed.Core.Entities.Dish
 
         [ForeignKey("MerchantId")]
         public virtual required Merchant Merchant { get; set; }
+
+        public virtual ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
+        public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
 
         // 多对多联结表
         public virtual ICollection<DishReview> DishReviews { get; set; } = new List<DishReview>();

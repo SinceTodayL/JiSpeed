@@ -7,7 +7,7 @@ namespace JISpeed.Core.Entities.Merchant
 {
     //销售统计实体
     //对应数据库表: SalesStat
-    [Table("SalesStat")]
+    [Table("SALESSTAT")]
     [PrimaryKey(nameof(StatDate), nameof(MerchantId))] //复合主键
     public class SalesStat
     {

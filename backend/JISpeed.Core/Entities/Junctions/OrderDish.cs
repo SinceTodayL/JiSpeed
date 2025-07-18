@@ -9,7 +9,7 @@ namespace JISpeed.Core.Entities.Junctions
 
     //订单菜品联结实体 (多对多)
     //对应数据库表: order_dish
-    [Table("order_dish")]
+    [Table("ORDER_DISH")]
     [PrimaryKey(nameof(OrderId), nameof(DishId))] //复合主键
     public class OrderDish
     {

@@ -6,7 +6,7 @@ namespace JISpeed.Core.Entities.Rider
 {
     //骑手排班联结实体 (多对多)
     //对应数据库表: rider_schedule
-    [Table("rider_schedule")]
+    [Table("RIDER_SCHEDULE")]
     [PrimaryKey(nameof(RiderId), nameof(ScheduleId))] //复合主键
     public class RiderSchedule
     {

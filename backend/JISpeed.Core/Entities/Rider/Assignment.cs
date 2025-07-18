@@ -8,7 +8,7 @@ namespace JISpeed.Core.Entities.Rider
 
     //分配实体 (派单)
     //对应数据库表: assignment
-    [Table("assignment")]
+    [Table("ASSIGNMENT")]
     public class Assignment
     {
         [Key]

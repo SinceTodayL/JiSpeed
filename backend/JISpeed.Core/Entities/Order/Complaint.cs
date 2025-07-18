@@ -9,7 +9,7 @@ namespace JISpeed.Core.Entities.Order
 
     //投诉实体
     //对应数据库表: Complaint
-    [Table("Complaint")]
+    [Table("COMPLAINT")]
     public class Complaint
     {
         [Key]
@@ -25,12 +25,12 @@ namespace JISpeed.Core.Entities.Order
         [Column(TypeName = "CHAR(32)")]
         public required string ComplainantId { get; set; } //投诉人ID fk->User(userId)
 
-        public required int Role { get; set; } //投诉人角色 1: 用户, 2: 商家, 3: 骑手
+        public required int CmplRole { get; set; } //投诉人角色 1: 用户, 2: 商家, 3: 骑手
 
         [StringLength(65535)] //TEXT类型
-        public string? Description { get; set; } //投诉描述
+        public string? CmplDescription { get; set; } //投诉描述
 
-        public required int Status { get; set; } //投诉状态 1: 待处理, 2: 处理中, 3: 已解决, 4: 已关闭
+        public required int CmplStatus { get; set; } //投诉状态 1: 待处理, 2: 处理中, 3: 已解决, 4: 已关闭
 
         public required DateTime CreatedAt { get; set; } //投诉创建时间
 
@@ -45,9 +45,9 @@ namespace JISpeed.Core.Entities.Order
         {
             OrderId = orderId;
             ComplainantId = Guid.NewGuid().ToString("N");
-            Role = role;
-            Description = description;
-            Status = 1; //默认状态为待处理
+            CmplRole = role;
+            CmplDescription = description;
+            CmplStatus = 1; //默认状态为待处理
             CreatedAt = DateTime.UtcNow; //设置创建时间为当前时间
         }
 

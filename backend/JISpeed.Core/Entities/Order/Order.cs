@@ -12,8 +12,8 @@ namespace JISpeed.Core.Entities.Order
     using JISpeed.Core.Entities.Junctions; //引用 OrderDish 联结表所在的命名空间
 
     //订单实体
-    //对应数据库表: Order
-    [Table("Order")]
+    //对应数据库表: Orders
+    [Table("ORDERS")]
     public class Order
     {
         [Key]

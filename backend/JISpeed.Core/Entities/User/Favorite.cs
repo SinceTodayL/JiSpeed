@@ -10,7 +10,7 @@ namespace JISpeed.Core.Entities.User
 
     //收藏实体
     //对应数据库表: Favorite
-    [Table("Favorite")]
+    [Table("FAVORITE")]
     [PrimaryKey(nameof(UserId), nameof(DishId))]  //复合主键
     public class Favorite
     {

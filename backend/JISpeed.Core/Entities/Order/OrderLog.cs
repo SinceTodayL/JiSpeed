@@ -7,7 +7,7 @@ namespace JISpeed.Core.Entities.Order
 {
     //订单日志实体
     //对应数据库表: OrderLog
-    [Table("OrderLog")]
+    [Table("ORDERLOG")]
     [PrimaryKey(nameof(LogId), nameof(OrderId))] //复合主键
     public class OrderLog
     {

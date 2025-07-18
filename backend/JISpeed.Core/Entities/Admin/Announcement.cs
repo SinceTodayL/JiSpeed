@@ -6,7 +6,7 @@ namespace JISpeed.Core.Entities.Admin
 {
     //公告实体
     //对应数据库表: Announcement
-    [Table("Announcement")]
+    [Table("ANNOUNCEMENT")]
     public class Announcement
     {
         [Key]

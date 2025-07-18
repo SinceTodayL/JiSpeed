@@ -9,7 +9,7 @@ namespace JISpeed.Core.Entities.Reconciliation
 
     //对账实体
     //对应数据库表: Reconciliation
-    [Table("Reconciliation")]
+    [Table("RECONCILIATION")]
     public class Reconciliation
     {
         [Key]
@@ -25,7 +25,6 @@ namespace JISpeed.Core.Entities.Reconciliation
 
         public required int ReconType { get; set; } //异常类型 (TINYINT)
 
-        [Required]
         [Column(TypeName = "DECIMAL(10, 2)")]
         public required decimal DiffAmount { get; set; } //差额金额
 
