@@ -18,8 +18,8 @@ namespace JISpeed.Core.Entities.Merchant
         [Column(TypeName = "DECIMAL(10, 2)")]
         public required decimal SalesAmount { get; set; } //销售额
 
-        [StringLength(32)]
-        [Column(TypeName = "CHAR(32)")]
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
         public required string MerchantId { get; set; } //商家ID pk,fk->Merchant(merchantId)
 
         //导航属性

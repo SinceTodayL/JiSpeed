@@ -16,8 +16,8 @@ namespace JISpeed.Core.Entities.Rider
         [Column(TypeName = "CHAR(32)")]
         public required string AssignId { get; set; } //分配编号 PK
 
-        [StringLength(32)]
-        [Column(TypeName = "CHAR(32)")]
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
         public required string RiderId { get; set; } //骑手编号 fk->rider(riderId)
 
         public required DateTime AssignedAt { get; set; } //派单时间

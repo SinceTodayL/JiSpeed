@@ -14,8 +14,8 @@ namespace JISpeed.Core.Entities.User
     [PrimaryKey(nameof(UserId), nameof(DishId))]  //复合主键
     public class Favorite
     {
-        [StringLength(32)]
-        [Column(TypeName = "CHAR(32)")]
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
         public required string UserId { get; set; } //用户ID pk, fk->User(userId)
 
         [StringLength(32)]

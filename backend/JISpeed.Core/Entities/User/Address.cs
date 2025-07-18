@@ -14,8 +14,8 @@ namespace JISpeed.Core.Entities.User
         [Column(TypeName = "CHAR(32)")]
         public required string AddressId { get; set; } //地址ID pk
 
-        [StringLength(32)]
-        [Column(TypeName = "CHAR(32)")]
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
         public required string UserId { get; set; } //用户ID fk->User(userId)
 
         [StringLength(50)]

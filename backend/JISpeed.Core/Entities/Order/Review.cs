@@ -22,8 +22,8 @@ namespace JISpeed.Core.Entities.Order
         [Column(TypeName = "CHAR(32)")]
         public required string OrderId { get; set; } //订单ID fk->Order(orderId)
 
-        [StringLength(32)]
-        [Column(TypeName = "CHAR(32)")]
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
         public required string UserId { get; set; } //用户ID fk->User(userId)
 
         public required int Rating { get; set; } //评分 1-5分

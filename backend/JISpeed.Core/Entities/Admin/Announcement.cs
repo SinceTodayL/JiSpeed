@@ -15,6 +15,8 @@ namespace JISpeed.Core.Entities.Admin
         public required string AnnounceId { get; set; } //公告ID pk
 
         [ForeignKey("AdminId")]
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
         public required string AdminId { get; set; } //管理员ID fk->Admin(adminId) 
 
         [StringLength(20)]

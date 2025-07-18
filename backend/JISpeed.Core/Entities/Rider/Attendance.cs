@@ -23,8 +23,8 @@ namespace JISpeed.Core.Entities.Rider
 
         public required int IsLate { get; set; } //是否迟到 
 
-        [StringLength(32)]
-        [Column(TypeName = "CHAR(32)")]
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
         public required string RiderId { get; set; } //骑手Id fk->rider(riderId)
 
         public required int IsAbsent { get; set; } //是否缺勤

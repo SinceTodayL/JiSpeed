@@ -11,8 +11,8 @@ namespace JISpeed.Core.Entities.Rider
     [PrimaryKey(nameof(RiderId), nameof(StatsMonth))] //复合主键
     public class Performance
     {
-        [StringLength(32)]
-        [Column(TypeName = "CHAR(32)")]
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
         public required string RiderId { get; set; } //骑手编号 pk,fk->rider(riderId)
 
         public required DateTime StatsMonth { get; set; } //统计月份 pk (DATE 类型映射为 DateTime)

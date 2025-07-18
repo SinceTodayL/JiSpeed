@@ -29,8 +29,8 @@ namespace JISpeed.Core.Entities.Merchant
 
         public DateTime? SettledAt { get; set; } //结算完成时间 (可为空)
 
-        [StringLength(32)]
-        [Column(TypeName = "CHAR(32)")]
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
         public required string MerchantId { get; set; } //商家ID fk->Merchant(merchantId)
 
         //导航属性

@@ -43,8 +43,8 @@ namespace JISpeed.Core.Entities.Dish
 
         public required int OnSale { get; set; } //上架标志
 
-        [StringLength(32)]
-        [Column(TypeName = "CHAR(32)")]
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
         public required string MerchantId { get; set; } //商家ID fk->Merchant(merchantId)
 
         public required int ReviewQuantity { get; set; } //评论数目

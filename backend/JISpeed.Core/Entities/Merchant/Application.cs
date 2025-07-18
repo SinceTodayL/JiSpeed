@@ -28,12 +28,12 @@ namespace JISpeed.Core.Entities.Merchant
         [StringLength(65535)] // TEXT 类型
         public string? RejectReason { get; set; } //驳回原因
 
-        [StringLength(32)]
-        [Column(TypeName = "CHAR(32)")]
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
         public string? AdminId { get; set; } //管理员ID fk->Admin(adminId) (可为空)
 
-        [StringLength(32)]
-        [Column(TypeName = "CHAR(32)")]
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
         public required string MerchantId { get; set; } //商家ID fk->Merchant(merchantId)
 
         //导航属性

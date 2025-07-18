@@ -10,8 +10,8 @@ namespace JISpeed.Core.Entities.Rider
     [PrimaryKey(nameof(RiderId), nameof(ScheduleId))] //复合主键
     public class RiderSchedule
     {
-        [StringLength(32)]
-        [Column(TypeName = "CHAR(32)")]
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
         public required string RiderId { get; set; } //骑手编号 pk,fk->rider(riderId)
 
         [StringLength(32)]
