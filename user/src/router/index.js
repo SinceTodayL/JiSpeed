@@ -1,12 +1,23 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 import home from '@/views/home.vue'
+import ApiTest from '@/views/ApiTest.vue'
 
 const routes = [
   {
     path: '/',
-    component: home
+    component: home,
+    meta: {
+      title: '首页'
+    }
   },
+  {
+    path: '/api-test',
+    component: ApiTest,
+    meta: {
+      title: 'API测试页面'
+    }
+  }
   // add more routes
 ]
 
