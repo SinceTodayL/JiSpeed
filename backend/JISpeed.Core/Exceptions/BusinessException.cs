@@ -1,13 +1,14 @@
 using JISpeed.Core.Constants;
+using System;
 
 namespace JISpeed.Core.Exceptions
 {
     // 业务逻辑异常：用于处理可预期的业务场景异常
     public class BusinessException : BaseException
     {
-        // 构造函数1：创建一个基本的业务异常，只提供错误消息，使用通用业务错误码
+        // 构造函数1：创建一个基本的业务异常，只提供错误消息，使用通用错误码
         public BusinessException(string message)
-            : base(ErrorCodes.GeneralBusinessError, message)  // 使用通用业务错误码
+            : base(ErrorCodes.GeneralError, message)  // 使用通用错误码
         {
             ShouldLog = false;
         }
@@ -21,7 +22,7 @@ namespace JISpeed.Core.Exceptions
 
         // 构造函数3：接收消息和内部异常
         public BusinessException(string message, Exception innerException)
-            : base(ErrorCodes.GeneralBusinessError, message, innerException)
+            : base(ErrorCodes.GeneralError, message, innerException)  // 使用通用错误码
         {
             // 接收内部异常，使用日志
         }
