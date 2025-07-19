@@ -20,7 +20,7 @@ namespace JISpeed.Infrastructure.Data
         }
 
         // User 相关实体
-        public DbSet<User> Users { get; set; }
+        public DbSet<User> CustomUsers { get; set; }
         public DbSet<Address> Addresses { get; set; }
         public DbSet<CartItem> CartItems { get; set; }
         public DbSet<Favorite> Favorites { get; set; }
