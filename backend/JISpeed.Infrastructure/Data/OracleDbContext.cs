@@ -77,74 +77,64 @@ namespace JISpeed.Infrastructure.Data
             modelBuilder.Entity<ApplicationUser>(b =>
             {
                 b.ToTable("APP_USERS");
+                // 指出使用者是否已确认其电子邮件地址 BOOL
                 b.Property(u => u.EmailConfirmed)
-                    .HasColumnName("EMAIL_CONFIRMED")
-                    .HasColumnType("NUMBER(1,0)"); 
-                
+                    .HasColumnName("EMAIL_CONFIRMED");
+                // 自定义属性，用户属性 10位数字
                 b.Property(u => u.UserType)
-                    .HasColumnName("USERTYPE")
-                    .HasColumnType("NUMBER(10)"); 
-                
+                    .HasColumnName("USERTYPE");
+                // 自定义属性，用户状态 10位数字
                 b.Property(u => u.Status)
-                    .HasColumnName("STATUS")
-                    .HasColumnType("NUMBER(10)"); 
-
+                    .HasColumnName("STATUS");
+                // 指出使用者是否已确认其手机号码 BOOL
                 b.Property(u => u.PhoneNumberConfirmed)
-                    .HasColumnName("PHONE_NUMBER_CONFIRMED")
-                    .HasColumnType("NUMBER(1,0)");
-
+                    .HasColumnName("PHONE_NUMBER_CONFIRMED");
+                // 指出是否为此使用者启用双因素验证 BOOL
                 b.Property(u => u.TwoFactorEnabled)
-                    .HasColumnName("TWO_FACTOR_ENABLED")
-                    .HasColumnType("NUMBER(1,0)");
-
+                    .HasColumnName("TWO_FACTOR_ENABLED");
+                // 指出使用者是否可以锁定 BOOL
                 b.Property(u => u.LockoutEnabled)
-                    .HasColumnName("LOCKOUT_ENABLED")
-                    .HasColumnType("NUMBER(1,0)");
+                    .HasColumnName("LOCKOUT_ENABLED");
 
                 // // 2. 日期时间类型映射
+                // 取得或设定任何使用者锁定结束时，以UTC为单位的日期和时间。
                 b.Property(u => u.LockoutEnd)
-                    .HasColumnName("LOCKOUT_END")
-                    .HasConversion(
-                        v => v.HasValue ? v.Value.DateTime : (DateTime?)null, // 转换为 DateTime
-                        v => v.HasValue ? new DateTimeOffset(v.Value) : (DateTimeOffset?)null // 转换回来
-                    )
-                    .HasColumnType("TIMESTAMP(7)");
-
+                    .HasColumnName("LOCKOUT_END");
+                // 自定义属性，取得或设定任何使用者创建时间，以UTC为单位的日期和时间。
                 b.Property(u => u.CreatedAt)
                     .HasColumnName("CREATEDAT");
 
-                b.Property(u => u.SecurityStamp)
-                    .HasColumnName("SECURITY_STAMP")
-                    .HasMaxLength(256);
-
-                // // 3. 字符串长度和类型
+                // 3. 字符串长度和类型
+                // 用户名
                 b.Property(u => u.UserName)
                     .HasColumnName("USER_NAME")
-                    .HasMaxLength(256)
                     .IsRequired();
-
+                // 每当使用者认证变更(密码变更时，都必须变更的随机值，登入已移除) 
+                b.Property(u => u.SecurityStamp)
+                    .HasColumnName("SECURITY_STAMP");
+                // 密码
                 b.Property(u => u.PasswordHash)
-                    .HasColumnName("PASSWORD_HASH")
-                    .HasMaxLength(255);
-
+                    .HasColumnName("PASSWORD_HASH");
+                // 每当使用者保存到存放区时，都必须变更的随机值
                 b.Property(u => u.ConcurrencyStamp)
-                    .HasColumnName("CONCURRENCY_STAMP")
-                    .HasMaxLength(256);
+                    .HasColumnName("CONCURRENCY_STAMP");
+                // 取得或设定此使用者的正规化使用者名称。
                 b.Property(u => u.NormalizedUserName)
-                    .HasColumnName("NORMALIZED_USER_NAME")
-                    .HasMaxLength(256);
+                    .HasColumnName("NORMALIZED_USER_NAME");
+                // 取得或设定使用者的电话号码。
                 b.Property(u => u.PhoneNumber)
-                    .HasColumnName("PHONE_NUMBER")
-                    .HasMaxLength(50);
+                    .HasColumnName("PHONE_NUMBER");
+                // 取得或设定此使用者的电子邮件地址。
                 b.Property(u => u.Email)
-                    .HasColumnName("EMAIL")
-                    .HasMaxLength(256);
+                    .HasColumnName("EMAIL");
+                // 取得或设定此使用者的正规化电子邮件地址。
                 b.Property(u => u.NormalizedEmail)
-                    .HasColumnName("NORMALIZED_EMAIL")
-                    .HasMaxLength(256);
+                    .HasColumnName("NORMALIZED_EMAIL");
                 // // 4. 整数类型
+                // 取得或设定目前使用者的失败登入尝试次数。
                 b.Property(u => u.AccessFailedCount)
                     .HasColumnName("ACCESS_FAILED_COUNT");
+                // 取得或设定此使用者的主键。
                 b.Property(u => u.Id)
                     .HasColumnName("ID");
             });
