@@ -8,7 +8,7 @@ using Oracle.EntityFrameworkCore.Metadata;
 
 #nullable disable
 
-namespace backend.Migrations
+namespace JISpeed.Infrastructure.Migrations
 {
     [DbContext(typeof(OracleDbContext))]
     partial class OracleDbContextModelSnapshot : ModelSnapshot
@@ -85,103 +85,89 @@ namespace backend.Migrations
                     b.ToTable("ANNOUNCEMENT", (string)null);
                 });
 
-            modelBuilder.Entity("JISpeed.Core.Entities.Common.ApplicationRole", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("NVARCHAR2(450)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("NVARCHAR2(2000)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(256)
-                        .HasColumnType("NVARCHAR2(256)");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(256)
-                        .HasColumnType("NVARCHAR2(256)");
-
-                    b.Property<string>("NormalizedName")
-                        .HasMaxLength(256)
-                        .HasColumnType("NVARCHAR2(256)");
-
-                    b.Property<int>("RoleType")
-                        .HasColumnType("NUMBER(10)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasDatabaseName("RoleNameIndex")
-                        .HasFilter("\"NormalizedName\" IS NOT NULL");
-
-                    b.ToTable("APP_ROLES", (string)null);
-                });
-
             modelBuilder.Entity("JISpeed.Core.Entities.Common.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("NVARCHAR2(450)")
+                        .HasColumnName("ID");
 
                     b.Property<int>("AccessFailedCount")
-                        .HasColumnType("NUMBER(10)");
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("ACCESS_FAILED_COUNT");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasMaxLength(256)
+                        .HasColumnType("NVARCHAR2(256)")
+                        .HasColumnName("CONCURRENCY_STAMP");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TIMESTAMP(7)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("TIMESTAMP(7)");
+                        .HasColumnType("TIMESTAMP(7)")
+                        .HasColumnName("CREATEDAT");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
-                        .HasColumnType("NVARCHAR2(256)");
+                        .HasColumnType("NVARCHAR2(256)")
+                        .HasColumnName("EMAIL");
 
                     b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("NUMBER(1)");
+                        .HasColumnType("NUMBER(1,0)")
+                        .HasColumnName("EMAIL_CONFIRMED");
 
                     b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("NUMBER(1)");
+                        .HasColumnType("NUMBER(1,0)")
+                        .HasColumnName("LOCKOUT_ENABLED");
 
-                    b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                    b.Property<DateTime?>("LockoutEnd")
+                        .HasColumnType("TIMESTAMP(7)")
+                        .HasColumnName("LOCKOUT_END");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
-                        .HasColumnType("NVARCHAR2(256)");
+                        .HasColumnType("NVARCHAR2(256)")
+                        .HasColumnName("NORMALIZED_EMAIL");
 
                     b.Property<string>("NormalizedUserName")
                         .HasMaxLength(256)
-                        .HasColumnType("NVARCHAR2(256)");
+                        .HasColumnType("NVARCHAR2(256)")
+                        .HasColumnName("NORMALIZED_USER_NAME");
 
                     b.Property<string>("PasswordHash")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasMaxLength(255)
+                        .HasColumnType("NVARCHAR2(255)")
+                        .HasColumnName("PASSWORD_HASH");
 
                     b.Property<string>("PhoneNumber")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasMaxLength(50)
+                        .HasColumnType("NVARCHAR2(50)")
+                        .HasColumnName("PHONE_NUMBER");
 
                     b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("NUMBER(1)");
+                        .HasColumnType("NUMBER(1,0)")
+                        .HasColumnName("PHONE_NUMBER_CONFIRMED");
 
                     b.Property<string>("SecurityStamp")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasMaxLength(256)
+                        .HasColumnType("NVARCHAR2(256)")
+                        .HasColumnName("SECURITY_STAMP");
 
                     b.Property<int>("Status")
-                        .HasColumnType("NUMBER(10)");
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("STATUS");
 
                     b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("NUMBER(1)");
+                        .HasColumnType("NUMBER(1,0)")
+                        .HasColumnName("TWO_FACTOR_ENABLED");
 
                     b.Property<string>("UserName")
+                        .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("NVARCHAR2(256)");
+                        .HasColumnType("NVARCHAR2(256)")
+                        .HasColumnName("USER_NAME");
 
                     b.Property<int>("UserType")
-                        .HasColumnType("NUMBER(10)");
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("USERTYPE");
 
                     b.HasKey("Id");
 
@@ -191,7 +177,7 @@ namespace backend.Migrations
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex")
-                        .HasFilter("\"NormalizedUserName\" IS NOT NULL");
+                        .HasFilter("\"NORMALIZED_USER_NAME\" IS NOT NULL");
 
                     b.ToTable("APP_USERS", (string)null);
                 });
@@ -1055,6 +1041,35 @@ namespace backend.Migrations
                     b.ToTable("CUSTOMUSER", (string)null);
                 });
 
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("NVARCHAR2(2000)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("NVARCHAR2(256)");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("NVARCHAR2(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex")
+                        .HasFilter("\"NormalizedName\" IS NOT NULL");
+
+                    b.ToTable("AspNetRoles", (string)null);
+
+                    b.UseTptMappingStrategy();
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.Property<int>("Id")
@@ -1159,6 +1174,20 @@ namespace backend.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("APP_USER_TOKENS", (string)null);
+                });
+
+            modelBuilder.Entity("JISpeed.Core.Entities.Common.ApplicationRole", b =>
+                {
+                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityRole");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(256)
+                        .HasColumnType("NVARCHAR2(256)");
+
+                    b.Property<int>("RoleType")
+                        .HasColumnType("NUMBER(10)");
+
+                    b.ToTable("APP_ROLES", (string)null);
                 });
 
             modelBuilder.Entity("JISpeed.Core.Entities.Admin.Admin", b =>
@@ -1582,7 +1611,7 @@ namespace backend.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
-                    b.HasOne("JISpeed.Core.Entities.Common.ApplicationRole", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1609,7 +1638,7 @@ namespace backend.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
                 {
-                    b.HasOne("JISpeed.Core.Entities.Common.ApplicationRole", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1627,6 +1656,15 @@ namespace backend.Migrations
                     b.HasOne("JISpeed.Core.Entities.Common.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("JISpeed.Core.Entities.Common.ApplicationRole", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithOne()
+                        .HasForeignKey("JISpeed.Core.Entities.Common.ApplicationRole", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

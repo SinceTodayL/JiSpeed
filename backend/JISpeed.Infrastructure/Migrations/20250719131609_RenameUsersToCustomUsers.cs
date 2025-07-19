@@ -3,57 +3,54 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace backend.Migrations
+namespace JISpeed.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class RenameUsersToCustomUsers : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "APP_ROLES",
+                name: "APP_USERS",
+                columns: table => new
+                {
+                    ID = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
+                    USERTYPE = table.Column<int>(type: "NUMBER(10)", nullable: false),
+                    STATUS = table.Column<int>(type: "NUMBER(10)", nullable: false),
+                    CREATEDAT = table.Column<DateTime>(type: "TIMESTAMP(7)", nullable: false),
+                    USER_NAME = table.Column<string>(type: "NVARCHAR2(256)", maxLength: 256, nullable: false),
+                    NORMALIZED_USER_NAME = table.Column<string>(type: "NVARCHAR2(256)", maxLength: 256, nullable: true),
+                    EMAIL = table.Column<string>(type: "NVARCHAR2(256)", maxLength: 256, nullable: true),
+                    NORMALIZED_EMAIL = table.Column<string>(type: "NVARCHAR2(256)", maxLength: 256, nullable: true),
+                    EMAIL_CONFIRMED = table.Column<bool>(type: "NUMBER(1,0)", nullable: false),
+                    PASSWORD_HASH = table.Column<string>(type: "NVARCHAR2(255)", maxLength: 255, nullable: true),
+                    SECURITY_STAMP = table.Column<string>(type: "NVARCHAR2(256)", maxLength: 256, nullable: true),
+                    CONCURRENCY_STAMP = table.Column<string>(type: "NVARCHAR2(256)", maxLength: 256, nullable: true),
+                    PHONE_NUMBER = table.Column<string>(type: "NVARCHAR2(50)", maxLength: 50, nullable: true),
+                    PHONE_NUMBER_CONFIRMED = table.Column<bool>(type: "NUMBER(1,0)", nullable: false),
+                    TWO_FACTOR_ENABLED = table.Column<bool>(type: "NUMBER(1,0)", nullable: false),
+                    LOCKOUT_END = table.Column<DateTime>(type: "TIMESTAMP(7)", nullable: true),
+                    LOCKOUT_ENABLED = table.Column<bool>(type: "NUMBER(1,0)", nullable: false),
+                    ACCESS_FAILED_COUNT = table.Column<int>(type: "NUMBER(10)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_APP_USERS", x => x.ID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetRoles",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
-                    Description = table.Column<string>(type: "NVARCHAR2(256)", maxLength: 256, nullable: true),
-                    RoleType = table.Column<int>(type: "NUMBER(10)", nullable: false),
                     Name = table.Column<string>(type: "NVARCHAR2(256)", maxLength: 256, nullable: true),
                     NormalizedName = table.Column<string>(type: "NVARCHAR2(256)", maxLength: 256, nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_APP_ROLES", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "APP_USERS",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
-                    UserType = table.Column<int>(type: "NUMBER(10)", nullable: false),
-                    Status = table.Column<int>(type: "NUMBER(10)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "TIMESTAMP(7)", nullable: false),
-                    DeletedAt = table.Column<DateTime>(type: "TIMESTAMP(7)", nullable: true),
-                    UserName = table.Column<string>(type: "NVARCHAR2(256)", maxLength: 256, nullable: true),
-                    NormalizedUserName = table.Column<string>(type: "NVARCHAR2(256)", maxLength: 256, nullable: true),
-                    Email = table.Column<string>(type: "NVARCHAR2(256)", maxLength: 256, nullable: true),
-                    NormalizedEmail = table.Column<string>(type: "NVARCHAR2(256)", maxLength: 256, nullable: true),
-                    EmailConfirmed = table.Column<bool>(type: "NUMBER(1)", nullable: false),
-                    PasswordHash = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
-                    SecurityStamp = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
-                    ConcurrencyStamp = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
-                    PhoneNumber = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
-                    PhoneNumberConfirmed = table.Column<bool>(type: "NUMBER(1)", nullable: false),
-                    TwoFactorEnabled = table.Column<bool>(type: "NUMBER(1)", nullable: false),
-                    LockoutEnd = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: true),
-                    LockoutEnabled = table.Column<bool>(type: "NUMBER(1)", nullable: false),
-                    AccessFailedCount = table.Column<int>(type: "NUMBER(10)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_APP_USERS", x => x.Id);
+                    table.PrimaryKey("PK_AspNetRoles", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -109,27 +106,6 @@ namespace backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "APP_ROLE_CLAIMS",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "NUMBER(10)", nullable: false)
-                        .Annotation("Oracle:Identity", "START WITH 1 INCREMENT BY 1"),
-                    RoleId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
-                    ClaimType = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
-                    ClaimValue = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_APP_ROLE_CLAIMS", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_APP_ROLE_CLAIMS_APP_ROLES_RoleId",
-                        column: x => x.RoleId,
-                        principalTable: "APP_ROLES",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ADMIN",
                 columns: table => new
                 {
@@ -145,7 +121,7 @@ namespace backend.Migrations
                         name: "FK_ADMIN_APP_USERS_ApplicationUserId",
                         column: x => x.ApplicationUserId,
                         principalTable: "APP_USERS",
-                        principalColumn: "Id");
+                        principalColumn: "ID");
                 });
 
             migrationBuilder.CreateTable(
@@ -165,7 +141,7 @@ namespace backend.Migrations
                         name: "FK_APP_USER_CLAIMS_APP_USERS_UserId",
                         column: x => x.UserId,
                         principalTable: "APP_USERS",
-                        principalColumn: "Id",
+                        principalColumn: "ID",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -185,31 +161,7 @@ namespace backend.Migrations
                         name: "FK_APP_USER_LOGINS_APP_USERS_UserId",
                         column: x => x.UserId,
                         principalTable: "APP_USERS",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "APP_USER_ROLES",
-                columns: table => new
-                {
-                    UserId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
-                    RoleId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_APP_USER_ROLES", x => new { x.UserId, x.RoleId });
-                    table.ForeignKey(
-                        name: "FK_APP_USER_ROLES_APP_ROLES_RoleId",
-                        column: x => x.RoleId,
-                        principalTable: "APP_ROLES",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_APP_USER_ROLES_APP_USERS_UserId",
-                        column: x => x.UserId,
-                        principalTable: "APP_USERS",
-                        principalColumn: "Id",
+                        principalColumn: "ID",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -229,7 +181,7 @@ namespace backend.Migrations
                         name: "FK_APP_USER_TOKENS_APP_USERS_UserId",
                         column: x => x.UserId,
                         principalTable: "APP_USERS",
-                        principalColumn: "Id",
+                        principalColumn: "ID",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -251,7 +203,7 @@ namespace backend.Migrations
                         name: "FK_MERCHANT_APP_USERS_ApplicationUserId",
                         column: x => x.ApplicationUserId,
                         principalTable: "APP_USERS",
-                        principalColumn: "Id");
+                        principalColumn: "ID");
                 });
 
             migrationBuilder.CreateTable(
@@ -271,7 +223,71 @@ namespace backend.Migrations
                         name: "FK_RIDER_APP_USERS_ApplicationUserId",
                         column: x => x.ApplicationUserId,
                         principalTable: "APP_USERS",
-                        principalColumn: "Id");
+                        principalColumn: "ID");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "APP_ROLE_CLAIMS",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "NUMBER(10)", nullable: false)
+                        .Annotation("Oracle:Identity", "START WITH 1 INCREMENT BY 1"),
+                    RoleId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
+                    ClaimType = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
+                    ClaimValue = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_APP_ROLE_CLAIMS", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_APP_ROLE_CLAIMS_AspNetRoles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "AspNetRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "APP_ROLES",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
+                    Description = table.Column<string>(type: "NVARCHAR2(256)", maxLength: 256, nullable: true),
+                    RoleType = table.Column<int>(type: "NUMBER(10)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_APP_ROLES", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_APP_ROLES_AspNetRoles_Id",
+                        column: x => x.Id,
+                        principalTable: "AspNetRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "APP_USER_ROLES",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
+                    RoleId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_APP_USER_ROLES", x => new { x.UserId, x.RoleId });
+                    table.ForeignKey(
+                        name: "FK_APP_USER_ROLES_APP_USERS_UserId",
+                        column: x => x.UserId,
+                        principalTable: "APP_USERS",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_APP_USER_ROLES_AspNetRoles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "AspNetRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -562,7 +578,7 @@ namespace backend.Migrations
                         name: "FK_CUSTOMUSER_APP_USERS_ApplicationUserId",
                         column: x => x.ApplicationUserId,
                         principalTable: "APP_USERS",
-                        principalColumn: "Id");
+                        principalColumn: "ID");
                 });
 
             migrationBuilder.CreateTable(
@@ -899,13 +915,6 @@ namespace backend.Migrations
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
-                name: "RoleNameIndex",
-                table: "APP_ROLES",
-                column: "NormalizedName",
-                unique: true,
-                filter: "\"NormalizedName\" IS NOT NULL");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_APP_USER_CLAIMS_UserId",
                 table: "APP_USER_CLAIMS",
                 column: "UserId");
@@ -923,14 +932,14 @@ namespace backend.Migrations
             migrationBuilder.CreateIndex(
                 name: "EmailIndex",
                 table: "APP_USERS",
-                column: "NormalizedEmail");
+                column: "NORMALIZED_EMAIL");
 
             migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
                 table: "APP_USERS",
-                column: "NormalizedUserName",
+                column: "NORMALIZED_USER_NAME",
                 unique: true,
-                filter: "\"NormalizedUserName\" IS NOT NULL");
+                filter: "\"NORMALIZED_USER_NAME\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_APPLICATION_AdminId",
@@ -941,6 +950,13 @@ namespace backend.Migrations
                 name: "IX_APPLICATION_MerchantId",
                 table: "APPLICATION",
                 column: "MerchantId");
+
+            migrationBuilder.CreateIndex(
+                name: "RoleNameIndex",
+                table: "AspNetRoles",
+                column: "NormalizedName",
+                unique: true,
+                filter: "\"NormalizedName\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ASSIGNMENT_RiderId",
@@ -1138,6 +1154,9 @@ namespace backend.Migrations
                 name: "APP_ROLE_CLAIMS");
 
             migrationBuilder.DropTable(
+                name: "APP_ROLES");
+
+            migrationBuilder.DropTable(
                 name: "APP_USER_CLAIMS");
 
             migrationBuilder.DropTable(
@@ -1192,7 +1211,7 @@ namespace backend.Migrations
                 name: "SETTLEMENT");
 
             migrationBuilder.DropTable(
-                name: "APP_ROLES");
+                name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "ADMIN");
