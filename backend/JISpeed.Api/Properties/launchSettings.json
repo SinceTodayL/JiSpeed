@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "JISpeed.Api": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:11477;http://localhost:11478"
+    }
+  }
+}
