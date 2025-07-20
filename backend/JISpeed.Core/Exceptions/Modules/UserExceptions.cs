@@ -37,7 +37,7 @@ namespace JISpeed.Core.Exceptions
         // addressId: 地址ID
         // userId: 用户ID
         // 返回: 未找到异常
-        public static NotFoundException UserAddressNotFound(string addressId, string userId = null)
+        public static NotFoundException UserAddressNotFound(string addressId, string? userId = null)
         {
             if (userId != null)
                 return new NotFoundException(ErrorCodes.UserAddressNotFound, $"用户 (ID: {userId}) 的地址 (ID: {addressId}) 未找到");
@@ -88,7 +88,7 @@ namespace JISpeed.Core.Exceptions
         // account: 用户账号
         // reason: 失败原因
         // 返回: 业务异常
-        public static BusinessException UserLoginFailed(string account, string reason = null)
+        public static BusinessException UserLoginFailed(string account, string? reason = null)
         {
             if (string.IsNullOrEmpty(reason))
                 return new BusinessException(ErrorCodes.UserLoginFailed,

@@ -3,6 +3,10 @@ using JISpeed.Infrastructure.Data; // 引入 OracleDbContext
 using Microsoft.EntityFrameworkCore; // 用于配置 DbContext
 using Microsoft.AspNetCore.Identity;
 using JISpeed.Api.Extensions; // 引入全局异常处理扩展
+using JISpeed.Core.Interfaces.IRepositories; // 引入仓储接口
+using JISpeed.Core.Interfaces.IServices; // 引入服务接口
+using JISpeed.Infrastructure.Repositories; // 引入仓储实现
+using JISpeed.Application.Services; // 引入服务实现
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +24,12 @@ builder.Services.AddDbContext<OracleDbContext>(options => options.UseOracle(conn
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
     .AddEntityFrameworkStores<OracleDbContext>()
     .AddDefaultTokenProviders();
+
+// 注册仓储层服务
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// 注册业务逻辑层服务
+builder.Services.AddScoped<IUserService, UserService>();
 
 // 4. 控制器和日志等默认配置
 builder.Services.AddControllers();

@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\JISpeed.Application\JISpeed.Application.csproj" />
     <ProjectReference Include="..\JISpeed.Core\JISpeed.Core.csproj" />
     <ProjectReference Include="..\JISpeed.Infrastructure\JISpeed.Infrastructure.csproj" />
   </ItemGroup>
