@@ -2,7 +2,7 @@ using JISpeed.Core.Entities.Common; // 引入 ApplicationUser 和 ApplicationRol
 using JISpeed.Infrastructure.Data; // 引入 OracleDbContext
 using Microsoft.EntityFrameworkCore; // 用于配置 DbContext
 using Microsoft.AspNetCore.Identity;
-
+using JISpeed.Api.Extensions; // 引入全局异常处理扩展
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,21 +14,34 @@ if (string.IsNullOrEmpty(connectionString))
 }
 // 2. 注册 Oracle 数据库上下文
 builder.Services.AddDbContext<OracleDbContext>(options => options.UseOracle(connectionString));
-    
+
 // 3. 注册依赖注入（仓储、服务）
 // 注册Identity服务（它内部会注册PasswordHasher等）
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
     .AddEntityFrameworkStores<OracleDbContext>()
     .AddDefaultTokenProviders();
 
-
 // 4. 控制器和日志等默认配置
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer(); 
+builder.Services.AddEndpointsApiExplorer();
+
+// 5. 添加 Swagger
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// 5. 中间件配置
+// 6. 中间件配置 - 全局异常处理中间件应该在管道的最前面
+app.UseGlobalExceptionHandling();
+
+// 7. 开发环境配置
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+// 8. 其他中间件
+app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthorization();
 app.MapControllers();
