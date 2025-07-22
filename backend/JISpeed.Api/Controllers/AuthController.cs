@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using JISpeed.Core.Entities.Common;
-using Microsoft.AspNetCore.Identity;
+using JISpeed.Core.Interfaces.IServices;
+using JISpeed.Api.Common;
 using JISpeed.Api.Models;
+using JISpeed.Core.Constants;
+using Microsoft.AspNetCore.Identity;
 
 namespace JISpeed.Api.Controllers
 {
@@ -11,10 +14,16 @@ namespace JISpeed.Api.Controllers
     {
         private readonly ILogger<AuthController> _logger;
         private readonly UserManager<ApplicationUser> _userManager;
-        public AuthController(ILogger<AuthController> logger, UserManager<ApplicationUser> userManager)
+        private readonly IRegistrationService _registrationService;
+
+        public AuthController(
+            ILogger<AuthController> logger,
+            UserManager<ApplicationUser> userManager,
+            IRegistrationService registrationService)
         {
             _logger = logger;
             _userManager = userManager;
+            _registrationService = registrationService;
         }
 
 
@@ -37,22 +46,64 @@ namespace JISpeed.Api.Controllers
             _logger.LogInformation($"登录接口：成功，用户ID={request.UserName}");
             return Ok("登录成功");
         }
+
+
         
+        /// 用户注册
         
+        /// <param name="request">注册请求</param>
+        /// <returns>注册结果</returns>
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] UserRegisterRequest request)
+        [ProducesResponseType(typeof(ApiResponse<object>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 500)]
+        public async Task<ActionResult<ApiResponse<object>>> Register([FromBody] UserRegisterRequest request)
         {
-            var newUser = new ApplicationUser(request.UserName, request.UserType);
-            var result = await _userManager.CreateAsync(newUser, request.PassWord);
-            _logger.LogInformation($"注册成功，用户userName: {request.UserName}");
-            if (result.Succeeded)
+            try
             {
-                // 可选：设置角色、邮箱确认等
-                return Ok("注册成功");
+                _logger.LogInformation("收到用户注册请求, UserName: {UserName}, UserType: {UserType}",
+                    request.UserName, request.UserType);
+
+                // 使用注册服务进行注册
+                var result = await _registrationService.RegisterUserAsync(
+                    request.UserName,
+                    request.PassWord,
+                    request.UserType,
+                    request.Email,
+                    request.Nickname);
+
+                if (result.IsSuccess)
+                {
+                    _logger.LogInformation("用户注册成功, UserName: {UserName}, ApplicationUserId: {ApplicationUserId}, BusinessEntityId: {BusinessEntityId}",
+                        request.UserName, result.ApplicationUserId, result.BusinessEntityId);
+
+                    var responseData = new
+                    {
+                        ApplicationUserId = result.ApplicationUserId,
+                        BusinessEntityId = result.BusinessEntityId,
+                        UserType = request.UserType
+                    };
+
+                    return Ok(ApiResponse<object>.Success(responseData, "注册成功"));
+                }
+                else
+                {
+                    _logger.LogWarning("用户注册失败, UserName: {UserName}, Errors: {Errors}",
+                        request.UserName, string.Join(", ", result.Errors));
+
+                    return BadRequest(ApiResponse<object>.Fail(
+                        ErrorCodes.ValidationFailed,
+                        string.Join("; ", result.Errors)));
+                }
             }
-            
-            return BadRequest(result.Errors);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "用户注册时发生异常, UserName: {UserName}", request.UserName);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "注册失败，请稍后重试"));
+            }
         }
     }
-    
+
 }

@@ -30,7 +30,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // 注册业务逻辑层服务
 builder.Services.AddScoped<IUserService, UserService>();
-
+builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 // 4. 控制器和日志等默认配置
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
