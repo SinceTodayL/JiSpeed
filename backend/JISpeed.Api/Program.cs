@@ -31,6 +31,11 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 // 注册业务逻辑层服务
 builder.Services.AddScoped<IUserService, UserService>();
 
+// 注册骑手模块的仓储层服务
+builder.Services.AddScoped<IRiderRepository, RiderRepository>();
+// 注册骑手模块的业务逻辑层服务
+builder.Services.AddScoped<IRiderService, RiderService>();
+
 // 4. 控制器和日志等默认配置
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
