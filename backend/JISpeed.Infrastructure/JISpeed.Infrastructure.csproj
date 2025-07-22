@@ -14,6 +14,7 @@
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
       <PackageReference Include="Oracle.EntityFrameworkCore" Version="8.21.121" />
+      <PackageReference Include="StackExchange.Redis" Version="2.8.47" />
     </ItemGroup>
 
     <ItemGroup>

@@ -2,7 +2,11 @@ using JISpeed.Core.Entities.Common; // 引入 ApplicationUser 和 ApplicationRol
 using JISpeed.Infrastructure.Data; // 引入 OracleDbContext
 using Microsoft.EntityFrameworkCore; // 用于配置 DbContext
 using Microsoft.AspNetCore.Identity;
-using JISpeed.Api.Extensions; // 引入全局异常处理扩展
+using JISpeed.Api.Extensions;
+using JISpeed.Application.Services.Common;
+using JISpeed.Application.Services.Email;
+using JISpeed.Core.Interfaces.IServices;
+using JISpeed.Infrastructure.Redis; // 引入全局异常处理扩展
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +28,10 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
 // 4. 控制器和日志等默认配置
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSingleton<RedisService>();
+// 注册：接口 -> 实现类
+builder.Services.AddScoped<IRegisterService, RegisterService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // 5. 添加 Swagger
 builder.Services.AddSwaggerGen();
