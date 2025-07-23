@@ -31,21 +31,38 @@ namespace JISpeed.Api.Controllers
         [HttpPost("login")]
         public async Task<ApiResponse> Login([FromBody] UserLoginRequest request)
         {
-            var user = await _userManager.FindByEmailAsync(request.Email);
+            ApplicationUser? user; 
+            string? key;
+            if (request.Email != null)
+            {
+                user = await _userManager.FindByEmailAsync(request.Email);
+                key =request.Email;
+            }
+            else if (request.UserName != null)
+            {
+                user = await _userManager.FindByNameAsync(request.UserName);
+                key = request.UserName;
+            }
+            else
+            {
+                _logger.LogWarning("登录失败，缺少参数");
+                return ApiResponse.Fail(3002,"登录失败，请填写用户名或邮箱");
+            }
+           
             if (user == null)
             {
-                _logger.LogWarning($"登录接口：失败，用户邮箱={request.Email}");
+                _logger.LogWarning("登录失败，用户不存在");
                 return ApiResponse.Fail(3002,"登录失败，用户不存在");
             }
 
             var result = await _userManager.CheckPasswordAsync(user, request.PassWord);
             if (!result)
             {
-                _logger.LogWarning($"登录接口：失败，用户邮箱={request.Email}");
+                _logger.LogWarning($"登录接口：失败，登录名{key}");
                 return ApiResponse.Fail(3007,"登录失败，密码错误");
             }
 
-            _logger.LogInformation($"登录接口：成功，用户邮箱={request.Email}");
+            _logger.LogInformation($"登录接口：成功，登录名{key}");
             return ApiResponse.Success("登录成功！");
         }
 
