@@ -18,7 +18,7 @@ namespace JISpeed.Application.Services.Admin
             _adminRepository = adminRepository;
             _logger = logger;
         }
-        /// 创建用户实体（当ApplicationUser的UserType=1时调用）
+        /// 创建用户实体（当ApplicationUser的UserType=4时调用）
         
         /// <param name="applicationUser">已创建的ApplicationUser</param>
         /// <param name="nickname">用户昵称，默认使用用户名</param>
@@ -35,9 +35,9 @@ namespace JISpeed.Application.Services.Admin
                     throw new ValidationException("ApplicationUser不能为空");
                 }
             
-                if (applicationUser.UserType != 1)
+                if (applicationUser.UserType != 4)
                 {
-                    throw new ValidationException($"UserType必须为1，当前值: {applicationUser.UserType}");
+                    throw new ValidationException($"UserType必须为4，当前值: {applicationUser.UserType}");
                 }
             
                 // 检查是否已存在关联的Admin实体

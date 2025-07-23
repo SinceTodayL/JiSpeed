@@ -1,7 +1,5 @@
-using System.Net;
 using JISpeed.Core.Configurations;
 using JISpeed.Core.Entities.Common;
-using JISpeed.Core.Interfaces.IRepositories;
 using JISpeed.Core.Interfaces.IServices;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
