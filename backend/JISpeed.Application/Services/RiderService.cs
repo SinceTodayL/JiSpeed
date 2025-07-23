@@ -34,7 +34,7 @@ namespace JISpeed.Application.Services
                 if (string.IsNullOrWhiteSpace(riderId))
                 {
                     _logger.LogWarning("骑手ID参数为空");
-                    throw new ValidationException("骑手ID不能为空");
+                    throw CommonExceptions.ValidationFailed("riderId", "不能为空");
                 }
 
                 var rider = await _riderRepository.GetByIdAsync(riderId);
@@ -53,7 +53,7 @@ namespace JISpeed.Application.Services
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
             {
                 _logger.LogError(ex, "获取骑手信息时发生异常, RiderId: {RiderId}", riderId);
-                throw new BusinessException(ErrorCodes.GeneralError, "获取骑手信息失败");
+                throw CommonExceptions.GeneralError($"获取骑手信息失败: {ex.Message}");
             }
         }
 
@@ -70,17 +70,17 @@ namespace JISpeed.Application.Services
                 // 参数验证
                 if (rider == null)
                 {
-                    throw new ValidationException("骑手信息不能为空");
+                    throw CommonExceptions.ValidationFailed("rider", "骑手信息不能为空");
                 }
 
                 if (string.IsNullOrWhiteSpace(rider.Name))
                 {
-                    throw new ValidationException("骑手姓名不能为空");
+                    throw CommonExceptions.ValidationFailed("name", "骑手名称不能为空");
                 }
 
                 if (string.IsNullOrWhiteSpace(rider.PhoneNumber))
                 {
-                    throw new ValidationException("骑手手机号不能为空");
+                    throw CommonExceptions.ValidationFailed("phoneNumber", "骑手手机号不能为空");
                 }
 
                 // 检查手机号是否已存在
@@ -109,7 +109,7 @@ namespace JISpeed.Application.Services
             {
                 _logger.LogError(ex, "创建骑手时发生异常, Name: {Name}, Phone: {Phone}",
                     rider.Name, rider.PhoneNumber);
-                throw new BusinessException(ErrorCodes.GeneralError, "创建骑手失败");
+                throw CommonExceptions.GeneralError($"创建骑手失败: {ex.Message}");
             }
         }
 
@@ -125,7 +125,7 @@ namespace JISpeed.Application.Services
                 // 参数验证
                 if (rider == null || string.IsNullOrWhiteSpace(rider.RiderId))
                 {
-                    throw new ValidationException("骑手ID不能为空");
+                    throw CommonExceptions.ValidationFailed("riderId", "骑手ID不能为空");
                 }
 
                 // 检查骑手是否存在
@@ -146,7 +146,7 @@ namespace JISpeed.Application.Services
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
             {
                 _logger.LogError(ex, "更新骑手信息时发生异常, RiderId: {RiderId}", rider.RiderId);
-                throw new BusinessException(ErrorCodes.GeneralError, "更新骑手信息失败");
+                throw CommonExceptions.GeneralError($"更新骑手信息失败: {ex.Message}");
             }
         }
 
@@ -163,7 +163,7 @@ namespace JISpeed.Application.Services
 
                 if (string.IsNullOrWhiteSpace(riderId))
                 {
-                    throw new ValidationException("骑手ID不能为空");
+                    throw CommonExceptions.ValidationFailed("riderId", "骑手ID不能为空");
                 }
 
                 // 检查骑手是否存在
@@ -191,7 +191,7 @@ namespace JISpeed.Application.Services
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
             {
                 _logger.LogError(ex, "获取骑手订单分配列表时发生异常, RiderId: {RiderId}", riderId);
-                throw new BusinessException(ErrorCodes.GeneralError, "获取骑手订单分配列表失败");
+                throw CommonExceptions.GeneralError($"获取骑手订单分配列表失败: {ex.Message}");
             }
         }
 
@@ -210,12 +210,12 @@ namespace JISpeed.Application.Services
                 // 参数验证
                 if (string.IsNullOrWhiteSpace(riderId))
                 {
-                    throw new ValidationException("骑手ID不能为空");
+                    throw CommonExceptions.ValidationFailed("riderId", "骑手ID不能为空");
                 }
 
                 if (string.IsNullOrWhiteSpace(assignId))
                 {
-                    throw new ValidationException("订单分配ID不能为空");
+                    throw CommonExceptions.ValidationFailed("assignId", "订单分配ID不能为空");
                 }
 
                 // 检查骑手是否存在
@@ -239,7 +239,7 @@ namespace JISpeed.Application.Services
                 {
                     _logger.LogWarning("订单分配不属于该骑手, RiderId: {RiderId}, AssignId: {AssignId}",
                         riderId, assignId);
-                    throw new BusinessException(ErrorCodes.Forbidden, "无权操作此订单分配");
+                    throw AuthExceptions.Forbidden(riderId, $"订单分配 (ID: {assignId})");
                 }
 
                 // 验证订单状态是否允许更新
@@ -247,7 +247,7 @@ namespace JISpeed.Application.Services
                 {
                     _logger.LogWarning("订单分配状态不允许更新, AssignId: {AssignId}, CurrentStatus: {CurrentStatus}",
                         assignId, assignment.AcceptedStatus);
-                    throw new BusinessException(ErrorCodes.OrderStatusError, "订单分配状态不允许更新");
+                    throw OrderExceptions.OrderStatusError(assignId, assignment.AcceptedStatus, 0);
                 }
 
                 // 更新订单分配状态
@@ -265,7 +265,7 @@ namespace JISpeed.Application.Services
             {
                 _logger.LogError(ex, "更新订单分配状态时发生异常, RiderId: {RiderId}, AssignId: {AssignId}",
                     riderId, assignId);
-                throw new BusinessException(ErrorCodes.GeneralError, "更新订单分配状态失败");
+                throw CommonExceptions.GeneralError($"更新订单分配状态失败: {ex.Message}");
             }
         }
     }

@@ -10,6 +10,8 @@ using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Core.Entities.Rider;
 using JISpeed.Core.Exceptions;
 using JISpeed.Core.Constants;
+using Microsoft.EntityFrameworkCore;
+using JISpeed.Infrastructure.Data;
 
 namespace JISpeed.Api.Controllers
 {
@@ -20,11 +22,13 @@ namespace JISpeed.Api.Controllers
     {
         private readonly IRiderService _riderService;
         private readonly ILogger<RidersController> _logger;
+        private readonly OracleDbContext _dbContext;
 
-        public RidersController(IRiderService riderService, ILogger<RidersController> logger)
+        public RidersController(IRiderService riderService, ILogger<RidersController> logger, OracleDbContext dbContext)
         {
             _riderService = riderService;
             _logger = logger;
+            _dbContext = dbContext;
         }
 
         // 获取骑手信息
@@ -331,6 +335,37 @@ namespace JISpeed.Api.Controllers
                 return StatusCode(500, ApiResponse<object>.Fail(
                     ErrorCodes.SystemError,
                     "更新订单分配状态失败"));
+            }
+        }
+
+        // 测试数据库连接
+        [HttpGet("test-db-connection")]
+        public async Task<IActionResult> TestDbConnection()
+        {
+            try
+            {
+                // 直接检查数据库连接
+                bool canConnect = await _dbContext.Database.CanConnectAsync();
+
+                if (canConnect)
+                {
+                    return Ok(ApiResponse<object>.Success(new
+                    {
+                        message = "数据库连接成功!"
+                    }));
+                }
+                else
+                {
+                    return StatusCode(500, ApiResponse<object>.Fail(
+                        ErrorCodes.DatabaseError,
+                        "数据库连接失败: 无法建立连接"));
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.DatabaseError,
+                    $"数据库连接失败: {ex.Message}"));
             }
         }
     }
