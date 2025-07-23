@@ -8,7 +8,7 @@ namespace JISpeed.Api.DTOS
     {
         [Required(ErrorMessage = "用户名不能为空")]
         [Display(Name = "邮箱")]
-        public required string Emil { get; set; }
+        public required string Email { get; set; }
         
         [Required(ErrorMessage = "密码不能为空")]
         [MinLength(6, ErrorMessage = "密码长度不能少于6位")]

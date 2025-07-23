@@ -3,6 +3,7 @@ using JISpeed.Core.Entities.Common;
 using Microsoft.AspNetCore.Identity;
 using JISpeed.Api.DTOS;
 using JISpeed.Core.Interfaces.IServices;
+using JISpeed.Api.Common;
 
 namespace JISpeed.Api.Controllers
 {
@@ -28,45 +29,45 @@ namespace JISpeed.Api.Controllers
 
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] UserLoginRequest request)
+        public async Task<ApiResponse> Login([FromBody] UserLoginRequest request)
         {
-            var user = await _userManager.FindByEmailAsync(request.Emil);
+            var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
             {
-                _logger.LogWarning($"登录接口：失败，用户邮箱={request.Emil}");
-                return Unauthorized("登录失败，用户不存在");
+                _logger.LogWarning($"登录接口：失败，用户邮箱={request.Email}");
+                return ApiResponse.Fail(3002,"登录失败，用户不存在");
             }
 
             var result = await _userManager.CheckPasswordAsync(user, request.PassWord);
             if (!result)
             {
-                _logger.LogWarning($"登录接口：失败，用户邮箱={request.Emil}");
-                return Unauthorized("登录失败，密码错误");
+                _logger.LogWarning($"登录接口：失败，用户邮箱={request.Email}");
+                return ApiResponse.Fail(3007,"登录失败，密码错误");
             }
 
-            _logger.LogInformation($"登录接口：成功，用户邮箱={request.Emil}");
-            return Ok("登录成功");
+            _logger.LogInformation($"登录接口：成功，用户邮箱={request.Email}");
+            return ApiResponse.Success("登录成功！");
         }
 
         // 用户前端填入预注册表单，后端发送验证邮件
         [HttpPost("register")]
-        public async Task<IActionResult> Register(int userType,[FromBody] UserRegisterRequest request)
+        public async Task<ApiResponse> Register(int userType,[FromBody] UserRegisterRequest request)
         {
             // 1. 验证请求模型有效性
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage));
                 _logger.LogWarning("注册请求参数无效: {Errors}", string.Join(", ", errors));
-                return BadRequest(new { message = "输入信息有误", errors });
+                return ApiResponse.Fail(1003,"输入信息有误");
             }
 
             try
             {
                 // 2. 检查邮箱格式
-                var res = await _emailService.IsValidEmail(request.Email);
+                var res = await _emailService.IsValidEmailAsync(request.Email);
                 if (!res)
                 {
-                    return BadRequest(new { message = "邮箱格式无效" });
+                    return ApiResponse.Fail(3008,"邮箱格式无效");
                 }
 
                 // 3. 创建用户对象
@@ -87,38 +88,32 @@ namespace JISpeed.Api.Controllers
                 if (!result.IsSuccess)
                 {
                     _logger.LogWarning("预注册失败，用户名: {UserName}", request.UserName);
-                    return BadRequest(new { message = "注册失败，请检查邮箱是否已被使用" });
+                    return ApiResponse.Fail(3001,"注册失败，请检查邮箱是否已被使用");
                 }
 
                 _logger.LogInformation("预注册成功，已发送验证邮件，用户名: {UserName}", request.UserName);
-                //newUser.Id = "";
-                return Ok(new
-                {
-                    message = "验证邮件已发送，请在1小时内点击链接完成注册",
-                    email = request.Email // 提示用户查看的邮箱
-                });
+                return ApiResponse.Success("验证邮件已发送，请在1小时内点击链接完成注册");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "注册接口异常，用户名: {UserName}", request.UserName);
-                return StatusCode(500, new { message = "服务器处理失败，请稍后重试" });
+                return ApiResponse.Fail(5000,"服务器处理失败，请稍后重试" );
             }
         }
 
 
 
         [HttpGet("verify-email")]
-        public async Task<IActionResult> VerifyEmail(string userId, string token)
+        public async Task<ApiResponse> VerifyEmail(string userId, string token)
         {
             _logger.LogInformation($"收到验证: {userId}");
             var result = await _registerService.RegisterUserAsync(userId, token);
             if (!result.IsSuccess)
             {
                 _logger.LogInformation($"创建失败，用户userId: {userId}");
-                return BadRequest("创建失败");
+                return ApiResponse.Fail(5001,"服务器处理失败，请稍后重试" );
             }
-
-            return Ok("注册成功");
+            return ApiResponse.Success("注册成功!");
         }
     }
 }

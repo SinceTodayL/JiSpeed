@@ -47,6 +47,11 @@ namespace JISpeed.Application.Services.Common
             try
             {
                 // 1. 参数验证
+                if (newUser.Email == null)
+                {
+                    _logger.LogWarning("邮箱为空");
+                    return PreRegistrationResult.Failure("邮箱为空");
+                }
                 var existingUser = await _userManager.FindByEmailAsync(newUser.Email);
                 if (existingUser != null)
                 {

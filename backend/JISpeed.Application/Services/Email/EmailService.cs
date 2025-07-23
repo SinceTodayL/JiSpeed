@@ -9,7 +9,7 @@ using JISpeed.Core.Configurations;
 using Microsoft.Extensions.Configuration;
 using MailKit.Net.Smtp;
 using MimeKit;
-using System.Net;
+
 namespace JISpeed.Application.Services.Email
 {
     public class EmailService : IEmailService
@@ -21,7 +21,7 @@ namespace JISpeed.Application.Services.Email
         public EmailService(
             ILogger<EmailService> logger,
             UserManager<ApplicationUser> userManager,
-            IConfiguration configuration)
+            IConfiguration configuration )
         {
             _logger = logger;
             _userManager = userManager;
@@ -117,7 +117,7 @@ namespace JISpeed.Application.Services.Email
         }
     
 
-    public async Task<bool> IsValidEmail(string email)
+    public async Task<bool> IsValidEmailAsync(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
                 return false;
@@ -140,12 +140,7 @@ namespace JISpeed.Application.Services.Email
                     return match.Groups[1].Value + domainName;
                 }
             }
-            catch (RegexMatchTimeoutException e)
-            {
-                return false;
-            }
-            catch (ArgumentException e)
-            {
+            catch{
                 return false;
             }
 
@@ -155,7 +150,7 @@ namespace JISpeed.Application.Services.Email
                     @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
                     RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
             }
-            catch (RegexMatchTimeoutException)
+            catch
             {
                 return false;
             }
