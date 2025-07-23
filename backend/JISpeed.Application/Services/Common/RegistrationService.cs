@@ -80,6 +80,7 @@ namespace JISpeed.Application.Services.Common
                     key: $"pre_reg:{newUser.Id}",
                     value: JsonConvert.SerializeObject(preRegData),
                     expiry: TimeSpan.FromHours(1));
+                _logger.LogInformation("Id:{Id},token: {Token}",newUser.Id, token);
                 return PreRegistrationResult.Success(newUser.Id);
             }
             catch (Exception ex)
@@ -121,11 +122,10 @@ namespace JISpeed.Application.Services.Common
 
 
                 // 4. 解码令牌并验证（使用数据库用户对象）
-                //token = WebUtility.UrlDecode(token);
                 if (token != preRegData.token)
                 {
                     // 输出具体错误原因（关键调试信息）
-                    _logger.LogWarning("令牌验证失败，用户ID: {UserId}，token：{Token}", userId, token);
+                    _logger.LogWarning("令牌验证失败，用户ID: {UserId}，token：{Token}，preToken:{pretoken}", userId, token,preRegData.token);
                     return RegistrationResult.Failure("令牌验证失败");
                 }
                 // 5. 完善用户信息并保存到数据库
