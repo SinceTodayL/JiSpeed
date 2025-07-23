@@ -66,3 +66,9 @@ secrets.json
 *.swo
 
 *.DS_Store
+
+#http测试文件
+**/*.http
+
+#md文件
+**/*.md
