@@ -45,7 +45,7 @@ namespace JISpeed.Core.Entities.Rider
             ApplicationUserId = applicationUserId;
         }
         
-        //用于 EF Core 的私有构造函数
-        private Rider() { }
+        //用于 EF Core 的无参构造函数
+        public Rider() { }
     }
 }

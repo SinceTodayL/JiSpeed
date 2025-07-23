@@ -42,6 +42,6 @@ namespace JISpeed.Core.Entities.Admin
         }
         
         // 用于 EF Core 的私有构造函数
-        private Admin() { }
+        public Admin() { }
     }
 }

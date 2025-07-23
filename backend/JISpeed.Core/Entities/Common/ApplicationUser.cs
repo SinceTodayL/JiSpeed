@@ -45,6 +45,6 @@ namespace JISpeed.Core.Entities.Common
         }
         
         // 用于 EF Core 的私有构造函数
-        private ApplicationUser() : base() { }
+        public ApplicationUser() : base() { }
     }
 }

@@ -48,6 +48,6 @@ namespace JISpeed.Core.Entities.Merchant
         }
         
         // 用于 EF Core 的私有构造函数
-        private Merchant() { }
+        public Merchant() { }
     }
 }

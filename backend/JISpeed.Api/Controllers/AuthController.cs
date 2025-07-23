@@ -12,12 +12,12 @@ namespace JISpeed.Api.Controllers
     {
         private readonly ILogger<AuthController> _logger;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IRegisterService _registerService;
+        private readonly IRegistrationService _registerService;
         private readonly IEmailService _emailService;
 
         public AuthController(ILogger<AuthController> logger,
             UserManager<ApplicationUser> userManager,
-            IRegisterService registerService,
+            IRegistrationService registerService,
             IEmailService emailService)
         {
             _logger = logger;
@@ -30,27 +30,27 @@ namespace JISpeed.Api.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginRequest request)
         {
-            var user = await _userManager.FindByNameAsync(request.UserName);
+            var user = await _userManager.FindByEmailAsync(request.Emil);
             if (user == null)
             {
-                _logger.LogWarning($"登录接口：失败，用户ID={request.UserName}");
-                return Unauthorized("登录失败，ID不存在");
+                _logger.LogWarning($"登录接口：失败，用户邮箱={request.Emil}");
+                return Unauthorized("登录失败，用户不存在");
             }
 
             var result = await _userManager.CheckPasswordAsync(user, request.PassWord);
             if (!result)
             {
-                _logger.LogWarning($"登录接口：失败，用户ID={request.UserName}");
+                _logger.LogWarning($"登录接口：失败，用户邮箱={request.Emil}");
                 return Unauthorized("登录失败，密码错误");
             }
 
-            _logger.LogInformation($"登录接口：成功，用户ID={request.UserName}");
+            _logger.LogInformation($"登录接口：成功，用户邮箱={request.Emil}");
             return Ok("登录成功");
         }
 
         // 用户前端填入预注册表单，后端发送验证邮件
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] UserRegisterRequest request)
+        public async Task<IActionResult> Register(int userType,[FromBody] UserRegisterRequest request)
         {
             // 1. 验证请求模型有效性
             if (!ModelState.IsValid)
@@ -73,7 +73,7 @@ namespace JISpeed.Api.Controllers
                 var newUser = new ApplicationUser(
                     id: Guid.NewGuid().ToString("N"),
                     userName: request.UserName,
-                    userType: request.UserType,
+                    userType: userType,
                     email: request.Email,
                     createdAt: DateTime.UtcNow,
                     phoneNumber: request.PhoneNumber);
@@ -84,13 +84,14 @@ namespace JISpeed.Api.Controllers
                 var result = await _registerService.PreRegisterUserAsync(newUser, passwordHash);
 
 
-                if (!result)
+                if (!result.IsSuccess)
                 {
                     _logger.LogWarning("预注册失败，用户名: {UserName}", request.UserName);
                     return BadRequest(new { message = "注册失败，请检查邮箱是否已被使用" });
                 }
 
                 _logger.LogInformation("预注册成功，已发送验证邮件，用户名: {UserName}", request.UserName);
+                //newUser.Id = "";
                 return Ok(new
                 {
                     message = "验证邮件已发送，请在1小时内点击链接完成注册",
@@ -111,7 +112,7 @@ namespace JISpeed.Api.Controllers
         {
             _logger.LogInformation($"收到验证: {userId}");
             var result = await _registerService.RegisterUserAsync(userId, token);
-            if (!result)
+            if (!result.IsSuccess)
             {
                 _logger.LogInformation($"创建失败，用户userId: {userId}");
                 return BadRequest("创建失败");

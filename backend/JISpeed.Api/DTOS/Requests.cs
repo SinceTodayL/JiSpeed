@@ -7,8 +7,8 @@ namespace JISpeed.Api.DTOS
     public class UserLoginRequest
     {
         [Required(ErrorMessage = "用户名不能为空")]
-        [Display(Name = "用户名")]
-        public required string UserName { get; set; }
+        [Display(Name = "邮箱")]
+        public required string Emil { get; set; }
         
         [Required(ErrorMessage = "密码不能为空")]
         [MinLength(6, ErrorMessage = "密码长度不能少于6位")]
@@ -28,7 +28,6 @@ namespace JISpeed.Api.DTOS
         [DataType(DataType.Password)]
         [Display(Name = "密码")]
         public required string PassWord { get; set; } 
-        public required int UserType { get; set; } 
         
         [Required(ErrorMessage = "邮箱不能为空")]
         [Display(Name = "邮箱")]
