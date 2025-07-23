@@ -9,7 +9,7 @@ namespace JISpeed.Core.Exceptions
 		// 创建未授权访问异常
 		// userId: 用户ID
 		// 返回: 业务异常
-		public static BusinessException Unauthorized(string userId = null)
+		public static BusinessException Unauthorized(string? userId = null)
 		{
 			return new BusinessException(ErrorCodes.Unauthorized,
 				userId == null ? "未授权访问，请先登录" : $"用户 (ID: {userId}) 未授权访问，请先登录");
