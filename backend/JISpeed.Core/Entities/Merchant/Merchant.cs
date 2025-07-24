@@ -1,0 +1,53 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace JISpeed.Core.Entities.Merchant
+{
+    using JISpeed.Core.Entities.Common;
+    using JISpeed.Core.Entities.Dish;
+    
+    //商家实体 - 对应数据库表: Merchant
+    [Table("MERCHANT")]
+    public class Merchant
+    {
+        [Key]
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
+        public required string MerchantId { get; set; }
+        
+        [StringLength(50)]
+        public required string MerchantName { get; set; }
+        
+        public int Status { get; set; } = 1;
+        
+        [StringLength(50)]
+        public string? ContactInfo { get; set; }
+        
+        [StringLength(200)]
+        public string? Location { get; set; }
+        
+        // 身份验证用户关联
+        public string? ApplicationUserId { get; set; }
+        
+        // 导航属性
+        [ForeignKey("ApplicationUserId")]
+        public virtual ApplicationUser? ApplicationUser { get; set; }
+        public virtual ICollection<SalesStat> SalesStats { get; set; } = new List<SalesStat>();
+        public virtual ICollection<Settlement> Settlements { get; set; } = new List<Settlement>();
+        public virtual ICollection<Application> Applications { get; set; } = new List<Application>();
+        public virtual ICollection<Dish> Dishes { get; set; } = new List<Dish>();
+        
+        // 主构造函数
+        public Merchant(string merchantId, string merchantName, string? applicationUserId = null)
+        {
+            MerchantId = merchantId;
+            MerchantName = merchantName;
+            ApplicationUserId = applicationUserId;
+        }
+        
+        // 用于 EF Core 的私有构造函数
+        public Merchant() { }
+    }
+}
