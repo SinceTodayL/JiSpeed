@@ -14,5 +14,7 @@ namespace JISpeed.Core.Interfaces.IServices
         /// <returns>创建的Merchant实体</returns>
         Task<Merchant> CreateUserEntityAsync(ApplicationUser applicationUser, string? nickname = null);
 
+        Task<Merchant?> GetMerchantDetailAsync(string merchantId);
+        Task<List<SalesStat>> GetSalesStateAsync(string merchantId);
     }
 }

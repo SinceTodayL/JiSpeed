@@ -1,6 +1,7 @@
 using JISpeed.Core.Entities.Merchant;
 using JISpeed.Core.Interfaces.IRepositories;
 using JISpeed.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace JISpeed.Infrastructure.Repositories
 {
@@ -27,6 +28,12 @@ namespace JISpeed.Infrastructure.Repositories
         public async Task<int> SaveChangesAsync()
         {
             return await _context.SaveChangesAsync();
+        }
+
+        public async Task<Merchant?> GetUserWithDetailsAsync(string merchantId)
+        {
+            return await _context.Merchants
+                .FirstOrDefaultAsync(u => u.MerchantId == merchantId);
         }
     }
 }

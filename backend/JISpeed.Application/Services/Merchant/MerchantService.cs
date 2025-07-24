@@ -11,11 +11,16 @@ namespace JISpeed.Application.Services.Merchant
     public class MerchantService : IMerchantService
     {
         private readonly IMerchantRepository _merchantRepository;
+        private readonly ISalesStatRepository _salesStatRepository;
         private readonly ILogger<MerchantService> _logger;
 
-        public MerchantService(IMerchantRepository merchantRepository, ILogger<MerchantService> logger)
+        public MerchantService(
+            IMerchantRepository merchantRepository,
+            ISalesStatRepository salesStatRepository,
+            ILogger<MerchantService> logger)
         {
             _merchantRepository = merchantRepository;
+            _salesStatRepository = salesStatRepository;
             _logger = logger;
         }
         /// 创建用户实体（当ApplicationUser的UserType=2时调用）
@@ -56,7 +61,8 @@ namespace JISpeed.Application.Services.Merchant
                 var user = new Core.Entities.Merchant.Merchant
                 {
                     MerchantId = userId,
-                    MerchantName = userNickname,    
+                    MerchantName = userNickname, 
+                    ContactInfo = applicationUser.Email,
                     ApplicationUserId = applicationUser.Id
                 };
                 
@@ -72,6 +78,69 @@ namespace JISpeed.Application.Services.Merchant
                 _logger.LogError(ex, "创建用户实体时发生异常, ApplicationUserId: {ApplicationUserId}",
                     applicationUser?.Id);
                 throw new BusinessException("创建用户实体失败");
+            }
+        }
+
+        public async Task<Core.Entities.Merchant.Merchant?> GetMerchantDetailAsync(string merchantId)
+        {
+            try
+            {
+                _logger.LogInformation("开始获取商家详细信息, MerchantId: {MerchantId}", merchantId);
+
+                if (string.IsNullOrWhiteSpace(merchantId))
+                {
+                    _logger.LogWarning("商家ID为空");
+                    throw new ValidationException("商家ID不能为空");
+                }
+
+                var user = await _merchantRepository.GetUserWithDetailsAsync(merchantId);
+
+                if (user == null)
+                {
+                    _logger.LogWarning("商家不存在, MerchantId: {MerchantId}", merchantId);
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"商家不存在，ID: {merchantId}");
+                }
+
+                _logger.LogInformation("成功获取商家详细信息, MerchantId: {MerchantId}, MerchantName: {MerchantName}",
+                    merchantId, user.MerchantName);
+
+                return user;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取商家详细信息时发生异常, MerchantId: {MerchantId}", merchantId);
+                throw new BusinessException("获取商家信息失败");
+            }
+        }
+
+        public async Task<List<SalesStat>> GetSalesStateAsync(string merchantId)
+        {
+            try
+            {
+                _logger.LogInformation("开始获取商家数据统计信息, MerchantId: {MerchantId}", merchantId);
+
+                if (string.IsNullOrWhiteSpace(merchantId))
+                {
+                    _logger.LogWarning("商家ID为空");
+                    throw new ValidationException("商家ID不能为空");
+                }
+
+                var data = await _salesStatRepository.GetDetailsAsync(merchantId);
+
+                if (data == null ||!data.Any())
+                {
+                    _logger.LogWarning("无相关数据, MerchantId: {MerchantId}", merchantId);
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据，ID: {merchantId}");
+                }
+
+                _logger.LogInformation("成功获取商家数据统计信息, MerchantId: {MerchantId}", merchantId);
+
+                return data;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取商家数据统计信息时发生异常, MerchantId: {MerchantId}", merchantId);
+                throw new BusinessException("获取商家数据统计信息失败");
             }
         }
 
