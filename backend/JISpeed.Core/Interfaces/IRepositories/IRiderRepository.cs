@@ -1,18 +1,90 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using JISpeed.Core.Entities.Rider;
 
 namespace JISpeed.Core.Interfaces.IRepositories
 {
-    // éª‘æ‰‹ä»“å‚¨æ¥å£
+    // ÆïÊÖ²Ö´¢½Ó¿Ú - ´¦ÀíÆïÊÖÄ£¿éµÄÊı¾İ·ÃÎÊ²Ù×÷
     public interface IRiderRepository
     {
-        /// åˆ›å»ºæ–°ç”¨æˆ·
-        
-        /// <param name="rider">ç”¨æˆ·å®ä½“</param>
-        /// <returns>åˆ›å»ºçš„ç”¨æˆ·å®ä½“</returns>
+        // ´´½¨ĞÂÓÃ»§
+        // <param name="rider">ÓÃ»§ÊµÌå</param>
+        // <returns>´´½¨µÄÓÃ»§ÊµÌå</returns>
         Task<Rider> CreateAsync(Rider rider);
-        
-        /// <returns>ä¿å­˜çš„è®°å½•æ•°</returns>
+
+        // ±£´æ¸ü¸Ä
+        // <returns>±£´æµÄ¼ÇÂ¼Êı</returns>
         Task<int> SaveChangesAsync();
+
+        // ¸ù¾İID»ñÈ¡ÆïÊÖĞÅÏ¢
+        // <param name="riderId">ÆïÊÖID</param>
+        // <returns>ÆïÊÖÊµÌå</returns>
+        Task<Rider> GetByIdAsync(string riderId);
+
+        // ¸ù¾İÊÖ»úºÅ¼ì²éÆïÊÖÊÇ·ñ´æÔÚ
+        // <param name="phoneNumber">ÊÖ»úºÅ</param>
+        // <returns>ÊÇ·ñ´æÔÚ</returns>
+        Task<bool> ExistsByPhoneAsync(string phoneNumber);
+
+        // Ìí¼ÓÆïÊÖ
+        // <param name="rider">ÆïÊÖÊµÌå</param>
+        Task AddAsync(Rider rider);
+
+        // ¸üĞÂÆïÊÖĞÅÏ¢
+        // <param name="rider">ÆïÊÖÊµÌå</param>
+        Task UpdateAsync(Rider rider);
+
+        // »ñÈ¡ÆïÊÖµÄ¶©µ¥·ÖÅäÁĞ±í
+        // <param name="riderId">ÆïÊÖID</param>
+        // <returns>¶©µ¥·ÖÅäÁĞ±í</returns>
+        Task<IEnumerable<Assignment>> GetAssignmentsAsync(string riderId);
+
+        // ¸ù¾İID»ñÈ¡¶©µ¥·ÖÅä
+        // <param name="assignId">·ÖÅäID</param>
+        // <returns>¶©µ¥·ÖÅä</returns>
+        Task<Assignment> GetAssignmentByIdAsync(string assignId);
+
+        // ¸üĞÂ¶©µ¥·ÖÅä
+        // <param name="assignment">¶©µ¥·ÖÅäÊµÌå</param>
+        Task UpdateAssignmentAsync(Assignment assignment);
+
+        // »ñÈ¡ÆïÊÖµÄ¿¼ÇÚ¼ÇÂ¼
+        // <param name="riderId">ÆïÊÖID</param>
+        // <param name="startDate">¿ªÊ¼ÈÕÆÚ</param>
+        // <param name="endDate">½áÊøÈÕÆÚ</param>
+        // <returns>¿¼ÇÚ¼ÇÂ¼ÁĞ±í</returns>
+        Task<IEnumerable<Attendance>> GetAttendancesAsync(string riderId, DateTime? startDate = null, DateTime? endDate = null);
+
+        // Ìí¼Ó¿¼ÇÚ¼ÇÂ¼
+        // <param name="attendance">¿¼ÇÚ¼ÇÂ¼</param>
+        Task AddAttendanceAsync(Attendance attendance);
+
+        // ¸üĞÂ¿¼ÇÚ¼ÇÂ¼
+        // <param name="attendance">¿¼ÇÚ¼ÇÂ¼</param>
+        Task UpdateAttendanceAsync(Attendance attendance);
+
+        // »ñÈ¡ÆïÊÖµÄ¼¨Ğ§¼ÇÂ¼
+        // <param name="riderId">ÆïÊÖID</param>
+        // <param name="year">Äê·İ</param>
+        // <param name="month">ÔÂ·İ</param>
+        // <returns>¼¨Ğ§¼ÇÂ¼</returns>
+        Task<Performance> GetPerformanceAsync(string riderId, int? year = null, int? month = null);
+
+        // »ñÈ¡ÆïÊÖµÄÅÅ°àÁĞ±í
+        // <param name="riderId">ÆïÊÖID</param>
+        // <param name="startDate">¿ªÊ¼ÈÕÆÚ</param>
+        // <param name="endDate">½áÊøÈÕÆÚ</param>
+        // <returns>ÅÅ°àÁĞ±í</returns>
+        Task<IEnumerable<Schedule>> GetSchedulesAsync(string riderId, DateTime? startDate = null, DateTime? endDate = null);
+
+        // ÎªÆïÊÖ·ÖÅäÅÅ°à
+        // <param name="riderSchedule">ÆïÊÖÅÅ°àÊµÌå</param>
+        Task AssignScheduleAsync(RiderSchedule riderSchedule);
+
+        // È¡ÏûÆïÊÖÅÅ°à
+        // <param name="riderId">ÆïÊÖID</param>
+        // <param name="scheduleId">ÅÅ°àID</param>
+        Task RemoveScheduleAsync(string riderId, string scheduleId);
     }
-    
 }

@@ -1,9 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using JISpeed.Core.Entities.Rider;
 using JISpeed.Core.Interfaces.IRepositories;
 using JISpeed.Infrastructure.Data;
 
 namespace JISpeed.Infrastructure.Repositories
 {
+    // ÆïÊÖ²Ö´¢ÊµÏÖ
     public class RiderRepository : IRiderRepository
     {
         private readonly OracleDbContext _context;
@@ -12,21 +18,199 @@ namespace JISpeed.Infrastructure.Repositories
         {
             _context = context;
         }
-        /// åˆ›å»ºæ–°ç”¨æˆ·
-        /// </summary>
-        /// <param name="rider">ç”¨æˆ·å®ä½“</param>
-        /// <returns>åˆ›å»ºçš„ç”¨æˆ·å®ä½“</returns>
+
+        // ´´½¨ĞÂÓÃ»§
+        // <param name="rider">ÓÃ»§ÊµÌå</param>
+        // <returns>´´½¨µÄÓÃ»§ÊµÌå</returns>
         public async Task<Rider> CreateAsync(Rider rider)
         {
             var entity = await _context.Riders.AddAsync(rider);
             return entity.Entity;
         }
-        /// ä¿å­˜æ›´æ”¹
-        /// </summary>
-        /// <returns>ä¿å­˜çš„è®°å½•æ•°</returns>
+
+        // ±£´æ¸ü¸Ä
+        // <returns>±£´æµÄ¼ÇÂ¼Êı</returns>
         public async Task<int> SaveChangesAsync()
         {
             return await _context.SaveChangesAsync();
+        }
+
+        // ¸ù¾İID»ñÈ¡ÆïÊÖĞÅÏ¢
+        // <param name="riderId">ÆïÊÖID</param>
+        // <returns>ÆïÊÖÊµÌå</returns>
+        public async Task<Rider> GetByIdAsync(string riderId)
+        {
+            return await _context.Riders
+                .Include(r => r.ApplicationUser)
+                .FirstOrDefaultAsync(r => r.RiderId == riderId);
+        }
+
+        // ¸ù¾İÊÖ»úºÅ¼ì²éÆïÊÖÊÇ·ñ´æÔÚ
+        // <param name="phoneNumber">ÊÖ»úºÅ</param>
+        // <returns>ÊÇ·ñ´æÔÚ</returns>
+        public async Task<bool> ExistsByPhoneAsync(string phoneNumber)
+        {
+            return await _context.Riders
+                .AnyAsync(r => r.PhoneNumber == phoneNumber);
+        }
+
+        // Ìí¼ÓÆïÊÖ
+        // <param name="rider">ÆïÊÖÊµÌå</param>
+        public async Task AddAsync(Rider rider)
+        {
+            await _context.Riders.AddAsync(rider);
+            await _context.SaveChangesAsync();
+        }
+
+        // ¸üĞÂÆïÊÖĞÅÏ¢
+        // <param name="rider">ÆïÊÖÊµÌå</param>
+        public async Task UpdateAsync(Rider rider)
+        {
+            _context.Riders.Update(rider);
+            await _context.SaveChangesAsync();
+        }
+
+        // »ñÈ¡ÆïÊÖµÄ¶©µ¥·ÖÅäÁĞ±í
+        // <param name="riderId">ÆïÊÖID</param>
+        // <returns>¶©µ¥·ÖÅäÁĞ±í</returns>
+        public async Task<IEnumerable<Assignment>> GetAssignmentsAsync(string riderId)
+        {
+            return await _context.Assignments
+                .Include(a => a.Order)
+                .ThenInclude(o => o.Address)
+                .Where(a => a.RiderId == riderId)
+                .OrderByDescending(a => a.AssignedAt)
+                .ToListAsync();
+        }
+
+        // ¸ù¾İID»ñÈ¡¶©µ¥·ÖÅä
+        // <param name="assignId">·ÖÅäID</param>
+        // <returns>¶©µ¥·ÖÅä</returns>
+        public async Task<Assignment> GetAssignmentByIdAsync(string assignId)
+        {
+            return await _context.Assignments
+                .Include(a => a.Order)
+                .FirstOrDefaultAsync(a => a.AssignId == assignId);
+        }
+
+        // ¸üĞÂ¶©µ¥·ÖÅä
+        // <param name="assignment">¶©µ¥·ÖÅäÊµÌå</param>
+        public async Task UpdateAssignmentAsync(Assignment assignment)
+        {
+            _context.Assignments.Update(assignment);
+            await _context.SaveChangesAsync();
+        }
+
+        // »ñÈ¡ÆïÊÖµÄ¿¼ÇÚ¼ÇÂ¼
+        // <param name="riderId">ÆïÊÖID</param>
+        // <param name="startDate">¿ªÊ¼ÈÕÆÚ</param>
+        // <param name="endDate">½áÊøÈÕÆÚ</param>
+        // <returns>¿¼ÇÚ¼ÇÂ¼ÁĞ±í</returns>
+        public async Task<IEnumerable<Attendance>> GetAttendancesAsync(string riderId, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var query = _context.Attendances
+                .Where(a => a.RiderId == riderId);
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(a => a.CheckDate >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(a => a.CheckDate <= endDate.Value);
+            }
+
+            return await query
+                .OrderByDescending(a => a.CheckDate)
+                .ToListAsync();
+        }
+
+        // Ìí¼Ó¿¼ÇÚ¼ÇÂ¼
+        // <param name="attendance">¿¼ÇÚ¼ÇÂ¼</param>
+        public async Task AddAttendanceAsync(Attendance attendance)
+        {
+            await _context.Attendances.AddAsync(attendance);
+            await _context.SaveChangesAsync();
+        }
+
+        // ¸üĞÂ¿¼ÇÚ¼ÇÂ¼
+        // <param name="attendance">¿¼ÇÚ¼ÇÂ¼</param>
+        public async Task UpdateAttendanceAsync(Attendance attendance)
+        {
+            _context.Attendances.Update(attendance);
+            await _context.SaveChangesAsync();
+        }
+
+        // »ñÈ¡ÆïÊÖµÄ¼¨Ğ§¼ÇÂ¼
+        // <param name="riderId">ÆïÊÖID</param>
+        // <param name="year">Äê·İ</param>
+        // <param name="month">ÔÂ·İ</param>
+        // <returns>¼¨Ğ§¼ÇÂ¼</returns>
+        public async Task<Performance> GetPerformanceAsync(string riderId, int? year = null, int? month = null)
+        {
+            var query = _context.Performances
+                .Where(p => p.RiderId == riderId);
+
+            if (year.HasValue && month.HasValue)
+            {
+                // ²éÕÒÖ¸¶¨ÔÂ·İµÄ¼ÇÂ¼
+                var targetDate = new DateTime(year.Value, month.Value, 1);
+                query = query.Where(p => p.StatsMonth.Year == targetDate.Year && p.StatsMonth.Month == targetDate.Month);
+            }
+
+            return await query
+                .OrderByDescending(p => p.StatsMonth)
+                .FirstOrDefaultAsync();
+        }
+
+        // »ñÈ¡ÆïÊÖµÄÅÅ°àÁĞ±í
+        // <param name="riderId">ÆïÊÖID</param>
+        // <param name="startDate">¿ªÊ¼ÈÕÆÚ</param>
+        // <param name="endDate">½áÊøÈÕÆÚ</param>
+        // <returns>ÅÅ°àÁĞ±í</returns>
+        public async Task<IEnumerable<Schedule>> GetSchedulesAsync(string riderId, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var query = _context.RiderSchedules
+                .Where(rs => rs.RiderId == riderId)
+                .Select(rs => rs.Schedule);
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(s => s.WorkDate >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(s => s.WorkDate <= endDate.Value);
+            }
+
+            return await query
+                .OrderBy(s => s.WorkDate)
+                .ToListAsync();
+        }
+
+        // ÎªÆïÊÖ·ÖÅäÅÅ°à
+        // <param name="riderSchedule">ÆïÊÖÅÅ°àÁª½á</param>
+        public async Task AssignScheduleAsync(RiderSchedule riderSchedule)
+        {
+            await _context.RiderSchedules.AddAsync(riderSchedule);
+            await _context.SaveChangesAsync();
+        }
+
+        // È¡ÏûÆïÊÖÅÅ°à
+        // <param name="riderId">ÆïÊÖID</param>
+        // <param name="scheduleId">ÅÅ°àID</param>
+        public async Task RemoveScheduleAsync(string riderId, string scheduleId)
+        {
+            var riderSchedule = await _context.RiderSchedules
+                .FirstOrDefaultAsync(rs => rs.RiderId == riderId && rs.ScheduleId == scheduleId);
+
+            if (riderSchedule != null)
+            {
+                _context.RiderSchedules.Remove(riderSchedule);
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }
