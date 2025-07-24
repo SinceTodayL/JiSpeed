@@ -1,5 +1,6 @@
 <script setup>
 import { NConfigProvider, NMessageProvider, NDialogProvider } from 'naive-ui'
+import BottomNavigation from '@/components/common/BottomNavigation.vue'
 
 // 定义全局主题覆盖
 /*
@@ -30,8 +31,11 @@ const themeOverrides = {
               <router-link to="/" class="nav-link" active-class="active">
                 首页
               </router-link>
-              <router-link to="/api-test" class="nav-link" active-class="active">
-                API测试
+              <router-link to="/browse" class="nav-link" active-class="active">
+                商家浏览
+              </router-link>
+              <router-link to="/orders" class="nav-link" active-class="active">
+                我的订单
               </router-link>
             </div>
           </nav>
@@ -40,6 +44,9 @@ const themeOverrides = {
           <main class="main-content">
             <router-view />
           </main>
+
+          <!-- 底部导航 -->
+          <BottomNavigation />
         </div>
       </n-dialog-provider>
     </n-message-provider>
@@ -111,6 +118,7 @@ body {
 
 .main-content {
   flex: 1;
+  padding-bottom: 60px; /* 为底部导航留出空间 */
 }
 
 @media (max-width: 768px) {

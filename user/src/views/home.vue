@@ -22,24 +22,40 @@
         </div>
         
         <div class="nav-card">
-          <h3>🧪 API 测试</h3>
-          <p>测试所有用户相关的API接口</p>
-          <router-link to="/api-test" class="btn-primary">
-            开始测试
+          <h3>🍽️ 外卖浏览</h3>
+          <p>浏览商家和美食菜品</p>
+          <router-link to="/browse" class="btn-primary">
+            开始浏览
+          </router-link>
+        </div>
+        
+        <div class="nav-card">
+          <h3>📋 我的订单</h3>
+          <p>查看和管理您的订单</p>
+          <router-link to="/orders" class="btn-primary">
+            查看订单
+          </router-link>
+        </div>
+        
+        <div class="nav-card">
+          <h3>🎫 我的优惠券</h3>
+          <p>查看和使用优惠券</p>
+          <router-link to="/coupons" class="btn-primary">
+            查看优惠券
+          </router-link>
+        </div>
+        
+        <div class="nav-card">
+          <h3>📍 地址管理</h3>
+          <p>管理收货地址</p>
+          <router-link to="/addresses" class="btn-primary">
+            管理地址
           </router-link>
         </div>
         
         <div class="nav-card">
           <h3>👤 用户管理</h3>
           <p>用户信息管理和设置</p>
-          <button class="btn-secondary" disabled>
-            开发中...
-          </button>
-        </div>
-        
-        <div class="nav-card">
-          <h3>📍 地址管理</h3>
-          <p>收货地址的增删改查</p>
           <button class="btn-secondary" disabled>
             开发中...
           </button>
@@ -78,8 +94,8 @@
         
         <div class="feature-item">
           <div class="feature-icon">🔧</div>
-          <h4>API测试</h4>
-          <p>内置完整的API测试工具，方便开发调试</p>
+          <h4>完整功能</h4>
+          <p>订单管理、优惠券系统、地址管理等完整功能</p>
         </div>
       </div>
     </div>
@@ -98,140 +114,140 @@ export default {
 <style scoped>
 .home {
   min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
 }
 
 .hero-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 80px 20px;
   text-align: center;
+  padding: 60px 20px;
+  color: white;
 }
 
 .hero-section h1 {
   font-size: 3rem;
-  margin-bottom: 1rem;
-  font-weight: 700;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
 .hero-section p {
   font-size: 1.2rem;
-  margin-bottom: 3rem;
+  margin-bottom: 40px;
   opacity: 0.9;
 }
 
 .navigation-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
-  max-width: 1000px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
 .nav-card {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 2rem;
-  text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 15px;
+  padding: 30px;
+  text-align: center;
+  transition: all 0.3s ease;
+  color: white;
 }
 
 .nav-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
 
 .nav-card h3 {
   font-size: 1.5rem;
-  margin-bottom: 1rem;
-  color: white;
+  margin-bottom: 15px;
 }
 
 .nav-card p {
-  margin-bottom: 1.5rem;
+  margin-bottom: 20px;
   opacity: 0.9;
-  font-size: 0.95rem;
-}
-
-.btn-primary,
-.btn-secondary {
-  padding: 12px 24px;
-  border-radius: 6px;
-  font-weight: 600;
-  text-decoration: none;
-  display: inline-block;
-  transition: all 0.3s ease;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
 }
 
 .btn-primary {
-  background: #3498db;
+  display: inline-block;
+  background: linear-gradient(45deg, #ff6b6b, #ee5a24);
   color: white;
+  padding: 12px 30px;
+  border-radius: 25px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
 }
 
 .btn-primary:hover {
-  background: #2980b9;
   transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
 }
 
 .btn-secondary {
+  display: inline-block;
   background: rgba(255, 255, 255, 0.2);
   color: white;
+  padding: 12px 30px;
+  border-radius: 25px;
+  text-decoration: none;
+  font-weight: bold;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
 .features-section {
-  padding: 80px 20px;
-  background: #f8f9fa;
+  max-width: 1200px;
+  margin: 80px auto 0;
+  padding: 60px 20px;
+  text-align: center;
+  color: white;
 }
 
 .features-section h2 {
-  text-align: center;
   font-size: 2.5rem;
-  margin-bottom: 3rem;
-  color: #2c3e50;
+  margin-bottom: 50px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
-  max-width: 1000px;
-  margin: 0 auto;
+  gap: 30px;
 }
 
 .feature-item {
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  text-align: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  padding: 30px;
+  transition: all 0.3s ease;
 }
 
 .feature-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .feature-icon {
   font-size: 3rem;
-  margin-bottom: 1rem;
+  margin-bottom: 20px;
 }
 
 .feature-item h4 {
   font-size: 1.3rem;
-  margin-bottom: 1rem;
-  color: #2c3e50;
+  margin-bottom: 15px;
 }
 
 .feature-item p {
-  color: #7f8c8d;
+  opacity: 0.9;
   line-height: 1.6;
 }
 
@@ -240,22 +256,17 @@ export default {
     font-size: 2rem;
   }
   
-  .hero-section p {
-    font-size: 1rem;
-  }
-  
   .navigation-cards {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 15px;
+  }
+  
+  .nav-card {
+    padding: 20px;
   }
   
   .features-grid {
     grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .features-section h2 {
-    font-size: 2rem;
   }
 }
 </style>
