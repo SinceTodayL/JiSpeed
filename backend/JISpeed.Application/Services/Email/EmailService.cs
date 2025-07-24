@@ -16,7 +16,7 @@ namespace JISpeed.Application.Services.Email
     {
         private readonly ILogger<EmailService> _logger;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SmtpSettings _smtpSettings;
+        private readonly SmtpSettings? _smtpSettings;
 
         public EmailService(
             ILogger<EmailService> logger,

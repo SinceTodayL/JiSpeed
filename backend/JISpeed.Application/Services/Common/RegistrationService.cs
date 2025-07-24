@@ -1,10 +1,13 @@
 using JISpeed.Core.Configurations;
 using JISpeed.Core.Entities.Common;
 using JISpeed.Core.Interfaces.IServices;
+using JISpeed.Core.Interfaces.IRepositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using JISpeed.Infrastructure.Redis;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Newtonsoft.Json;
+
 
 
 namespace JISpeed.Application.Services.Common
@@ -19,6 +22,7 @@ namespace JISpeed.Application.Services.Common
         private readonly IRiderService _riderService;
         private readonly IMerchantService _merchantService;
         private readonly IAdminService _adminService;
+        private readonly IAppUserService _appUserService;
 
         public RegistrationService(
             IEmailService emailService,
@@ -28,7 +32,8 @@ namespace JISpeed.Application.Services.Common
             RedisService redisService,
             IRiderService riderService,
             IMerchantService merchantService,
-            IAdminService adminService
+            IAdminService adminService,
+            IAppUserService appUserService
             )
         {
             _emailService = emailService;
@@ -39,6 +44,7 @@ namespace JISpeed.Application.Services.Common
             _riderService = riderService;
             _merchantService = merchantService;
             _adminService = adminService;
+            _appUserService = appUserService;
         }
 
         // 预注册
@@ -52,8 +58,9 @@ namespace JISpeed.Application.Services.Common
                     _logger.LogWarning("邮箱为空");
                     return PreRegistrationResult.Failure("邮箱为空");
                 }
-                var existingUser = await _userManager.FindByEmailAsync(newUser.Email);
-                if (existingUser != null)
+
+                var existingUser = await _appUserService.FindUserAsync(newUser.Email, newUser.UserType);
+                if (existingUser!=null)
                 {
                     _logger.LogWarning("用户已存在: {Email}", newUser.Email);
                     return PreRegistrationResult.Failure("用户存在");
