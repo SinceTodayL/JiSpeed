@@ -1,16 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using JISpeed.Core.Entities.Rider;
+using JISpeed.Core.Entities.Common;
 using JISpeed.Core.Interfaces.IRepositories;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Core.Exceptions;
 using JISpeed.Core.Constants;
 using Microsoft.Extensions.Logging;
 
-namespace JISpeed.Application.Services
+namespace JISpeed.Application.Services.Rider
 {
-    // ÆïÊÖ·şÎñÊµÏÖ
     public class RiderService : IRiderService
     {
         private readonly IRiderRepository _riderRepository;
@@ -22,250 +23,309 @@ namespace JISpeed.Application.Services
             _logger = logger;
         }
 
-        // ¸ù¾İID»ñÈ¡ÆïÊÖĞÅÏ¢
-        // <param name="riderId">ÆïÊÖID</param>
-        // <returns>ÆïÊÖÊµÌå</returns>
-        public async Task<Rider> GetRiderByIdAsync(string riderId)
+        // åˆ›å»ºç”¨æˆ·å®ä½“ï¼ˆå½“ApplicationUserçš„UserType=3æ—¶è°ƒç”¨ï¼‰
+        // <param name="applicationUser">å·²åˆ›å»ºçš„ApplicationUser</param>
+        // <param name="nickname">ç”¨æˆ·æ˜µç§°ï¼Œé»˜è®¤ä½¿ç”¨ç”¨æˆ·å</param>
+        // <returns>åˆ›å»ºçš„Riderå®ä½“</returns>
+        public async Task<JISpeed.Core.Entities.Rider.Rider> CreateUserEntityAsync(ApplicationUser applicationUser, string? nickname = null)
         {
             try
             {
-                _logger.LogInformation("¿ªÊ¼»ñÈ¡ÆïÊÖĞÅÏ¢, RiderId: {RiderId}", riderId);
+                _logger.LogInformation("å¼€å§‹åˆ›å»ºç”¨æˆ·å®ä½“, ApplicationUserId: {ApplicationUserId}", applicationUser.Id);
+
+                // å‚æ•°éªŒè¯
+                if (applicationUser == null)
+                {
+                    throw new ValidationException("ApplicationUserä¸èƒ½ä¸ºç©º");
+                }
+
+                if (applicationUser.UserType != 3)
+                {
+                    throw new ValidationException($"UserTypeå¿…é¡»ä¸º3ï¼Œå½“å‰å€¼: {applicationUser.UserType}");
+                }
+
+                // æ£€æŸ¥æ˜¯å¦å·²å­˜åœ¨å…³è”çš„Riderå®ä½“
+                //var existingUser = await _riderRepository.GetUserByApplicationUserIdAsync(applicationUser.Id);
+                // if (existingUser != null)
+                // {
+                //     _logger.LogWarning("ç”¨æˆ·å®ä½“å·²å­˜åœ¨, ApplicationUserId: {ApplicationUserId}", applicationUser.Id);
+                //     throw new BusinessException("ç”¨æˆ·å®ä½“å·²å­˜åœ¨");
+                // }
+
+                // ç”Ÿæˆç”¨æˆ·IDå’Œæ˜µç§°
+                var userId = Guid.NewGuid().ToString("N");
+                var userNickname = nickname ?? applicationUser.UserName ?? "ç”¨æˆ·" + userId.Substring(0, 8);
+
+                // åˆ›å»ºUserå®ä½“
+                var user = new JISpeed.Core.Entities.Rider.Rider
+                {
+                    RiderId = userId,
+                    Name = userNickname,
+                    PhoneNumber = "1234567890",
+                    ApplicationUserId = applicationUser.Id
+                };
+
+                // ä¿å­˜åˆ°æ•°æ®åº“
+                await _riderRepository.CreateAsync(user);
+                await _riderRepository.SaveChangesAsync();
+
+                _logger.LogInformation("ç”¨æˆ·å®ä½“åˆ›å»ºæˆåŠŸ, UserId: {UserId}, ApplicationUserId: {ApplicationUserId}",
+                    user.RiderId, applicationUser.Id);
+
+                return user;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException))
+            {
+                _logger.LogError(ex, "åˆ›å»ºç”¨æˆ·å®ä½“æ—¶å‘ç”Ÿå¼‚å¸¸, ApplicationUserId: {ApplicationUserId}",
+                    applicationUser?.Id);
+                throw new BusinessException("åˆ›å»ºç”¨æˆ·å®ä½“å¤±è´¥");
+            }
+        }
+
+        // æ ¹æ®IDè·å–éª‘æ‰‹ä¿¡æ¯
+        // <param name="riderId">éª‘æ‰‹ID</param>
+        // <returns>éª‘æ‰‹å®ä½“</returns>
+        public async Task<JISpeed.Core.Entities.Rider.Rider> GetRiderByIdAsync(string riderId)
+        {
+            try
+            {
+                _logger.LogInformation("å¼€å§‹è·å–éª‘æ‰‹ä¿¡æ¯, RiderId: {RiderId}", riderId);
 
                 if (string.IsNullOrWhiteSpace(riderId))
                 {
-                    _logger.LogWarning("ÆïÊÖID²ÎÊıÎª¿Õ");
-                    throw CommonExceptions.ValidationFailed("riderId", "²»ÄÜÎª¿Õ");
+                    _logger.LogWarning("éª‘æ‰‹IDä¸èƒ½ä¸ºç©º");
+                    throw CommonExceptions.ValidationFailed("riderId", "ä¸èƒ½ä¸ºç©º");
                 }
 
                 var rider = await _riderRepository.GetByIdAsync(riderId);
 
                 if (rider == null)
                 {
-                    _logger.LogWarning("ÆïÊÖ²»´æÔÚ, RiderId: {RiderId}", riderId);
+                    _logger.LogWarning("éª‘æ‰‹ä¸å­˜åœ¨, RiderId: {RiderId}", riderId);
                     throw RiderExceptions.RiderNotFound(riderId);
                 }
 
-                _logger.LogInformation("³É¹¦»ñÈ¡ÆïÊÖĞÅÏ¢, RiderId: {RiderId}, Name: {Name}",
+                _logger.LogInformation("æˆåŠŸè·å–éª‘æ‰‹ä¿¡æ¯, RiderId: {RiderId}, Name: {Name}",
                     riderId, rider.Name);
 
                 return rider;
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
             {
-                _logger.LogError(ex, "»ñÈ¡ÆïÊÖĞÅÏ¢Ê±·¢ÉúÒì³£, RiderId: {RiderId}", riderId);
-                throw CommonExceptions.GeneralError($"»ñÈ¡ÆïÊÖĞÅÏ¢Ê§°Ü: {ex.Message}");
+                _logger.LogError(ex, "è·å–éª‘æ‰‹ä¿¡æ¯æ—¶å‘ç”Ÿå¼‚å¸¸, RiderId: {RiderId}", riderId);
+                throw CommonExceptions.GeneralError($"è·å–éª‘æ‰‹ä¿¡æ¯å¤±è´¥: {ex.Message}");
             }
         }
 
-        // ´´½¨ĞÂÆïÊÖ
-        // <param name="rider">ÆïÊÖÊµÌå</param>
-        // <returns>´´½¨µÄÆïÊÖÊµÌå</returns>
-        public async Task<Rider> CreateRiderAsync(Rider rider)
+        // åˆ›å»ºéª‘æ‰‹
+        // <param name="rider">éª‘æ‰‹å®ä½“</param>
+        // <returns>åˆ›å»ºçš„éª‘æ‰‹å®ä½“</returns>
+        public async Task<JISpeed.Core.Entities.Rider.Rider> CreateRiderAsync(JISpeed.Core.Entities.Rider.Rider rider)
         {
             try
             {
-                _logger.LogInformation("¿ªÊ¼´´½¨ÆïÊÖ, Name: {Name}, Phone: {Phone}",
+                _logger.LogInformation("å¼€å§‹åˆ›å»ºéª‘æ‰‹, Name: {Name}, Phone: {Phone}",
                     rider.Name, rider.PhoneNumber);
 
-                // ²ÎÊıÑéÖ¤
+                // å‚æ•°éªŒè¯
                 if (rider == null)
                 {
-                    throw CommonExceptions.ValidationFailed("rider", "ÆïÊÖĞÅÏ¢²»ÄÜÎª¿Õ");
+                    throw CommonExceptions.ValidationFailed("rider", "éª‘æ‰‹ä¿¡æ¯ä¸èƒ½ä¸ºç©º");
                 }
 
                 if (string.IsNullOrWhiteSpace(rider.Name))
                 {
-                    throw CommonExceptions.ValidationFailed("name", "ÆïÊÖÃû³Æ²»ÄÜÎª¿Õ");
+                    throw CommonExceptions.ValidationFailed("name", "éª‘æ‰‹åç§°ä¸èƒ½ä¸ºç©º");
                 }
 
                 if (string.IsNullOrWhiteSpace(rider.PhoneNumber))
                 {
-                    throw CommonExceptions.ValidationFailed("phoneNumber", "ÆïÊÖÊÖ»úºÅ²»ÄÜÎª¿Õ");
+                    throw CommonExceptions.ValidationFailed("phoneNumber", "éª‘æ‰‹æ‰‹æœºå·ä¸èƒ½ä¸ºç©º");
                 }
 
-                // ¼ì²éÊÖ»úºÅÊÇ·ñÒÑ´æÔÚ
+                // æ£€æŸ¥æ‰‹æœºå·æ˜¯å¦å·²å­˜åœ¨
                 var exists = await _riderRepository.ExistsByPhoneAsync(rider.PhoneNumber);
                 if (exists)
                 {
-                    _logger.LogWarning("ÆïÊÖÊÖ»úºÅÒÑ´æÔÚ, Phone: {Phone}", rider.PhoneNumber);
+                    _logger.LogWarning("éª‘æ‰‹æ‰‹æœºå·å·²å­˜åœ¨, Phone: {Phone}", rider.PhoneNumber);
                     throw RiderExceptions.RiderAlreadyExists(rider.PhoneNumber);
                 }
 
-                // Éú³ÉÆïÊÖID
+                // ç”Ÿæˆéª‘æ‰‹ID
                 if (string.IsNullOrEmpty(rider.RiderId))
                 {
                     rider.RiderId = Guid.NewGuid().ToString("N");
                 }
 
-                // ±£´æÆïÊÖĞÅÏ¢
+                // ä¿å­˜éª‘æ‰‹ä¿¡æ¯
                 await _riderRepository.AddAsync(rider);
 
-                _logger.LogInformation("ÆïÊÖ´´½¨³É¹¦, RiderId: {RiderId}, Name: {Name}",
+                _logger.LogInformation("éª‘æ‰‹åˆ›å»ºæˆåŠŸ, RiderId: {RiderId}, Name: {Name}",
                     rider.RiderId, rider.Name);
 
                 return rider;
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException))
             {
-                _logger.LogError(ex, "´´½¨ÆïÊÖÊ±·¢ÉúÒì³£, Name: {Name}, Phone: {Phone}",
+                _logger.LogError(ex, "åˆ›å»ºéª‘æ‰‹æ—¶å‘ç”Ÿå¼‚å¸¸, Name: {Name}, Phone: {Phone}",
                     rider.Name, rider.PhoneNumber);
-                throw CommonExceptions.GeneralError($"´´½¨ÆïÊÖÊ§°Ü: {ex.Message}");
+                throw CommonExceptions.GeneralError($"åˆ›å»ºéª‘æ‰‹å¤±è´¥: {ex.Message}");
             }
         }
 
-        // ¸üĞÂÆïÊÖĞÅÏ¢
-        // <param name="rider">¸üĞÂµÄÆïÊÖÊµÌå</param>
-        // <returns>¸üĞÂºóµÄÆïÊÖÊµÌå</returns>
-        public async Task<Rider> UpdateRiderAsync(Rider rider)
+        // æ›´æ–°éª‘æ‰‹ä¿¡æ¯
+        // <param name="rider">æ›´æ–°çš„éª‘æ‰‹å®ä½“</param>
+        // <returns>æ›´æ–°åçš„éª‘æ‰‹å®ä½“</returns>
+        public async Task<JISpeed.Core.Entities.Rider.Rider> UpdateRiderAsync(JISpeed.Core.Entities.Rider.Rider rider)
         {
             try
             {
-                _logger.LogInformation("¿ªÊ¼¸üĞÂÆïÊÖĞÅÏ¢, RiderId: {RiderId}", rider.RiderId);
+                _logger.LogInformation("å¼€å§‹æ›´æ–°éª‘æ‰‹ä¿¡æ¯, RiderId: {RiderId}", rider.RiderId);
 
-                // ²ÎÊıÑéÖ¤
+                // å‚æ•°éªŒè¯
                 if (rider == null || string.IsNullOrWhiteSpace(rider.RiderId))
                 {
-                    throw CommonExceptions.ValidationFailed("riderId", "ÆïÊÖID²»ÄÜÎª¿Õ");
+                    throw CommonExceptions.ValidationFailed("riderId", "éª‘æ‰‹IDä¸èƒ½ä¸ºç©º");
                 }
 
-                // ¼ì²éÆïÊÖÊÇ·ñ´æÔÚ
+                // æ£€æŸ¥éª‘æ‰‹æ˜¯å¦å­˜åœ¨
                 var existingRider = await _riderRepository.GetByIdAsync(rider.RiderId);
                 if (existingRider == null)
                 {
-                    _logger.LogWarning("ÆïÊÖ²»´æÔÚ, RiderId: {RiderId}", rider.RiderId);
+                    _logger.LogWarning("éª‘æ‰‹ä¸å­˜åœ¨, RiderId: {RiderId}", rider.RiderId);
                     throw RiderExceptions.RiderNotFound(rider.RiderId);
                 }
 
-                // ¸üĞÂÆïÊÖĞÅÏ¢
+                // æ›´æ–°éª‘æ‰‹ä¿¡æ¯
                 await _riderRepository.UpdateAsync(rider);
 
-                _logger.LogInformation("ÆïÊÖĞÅÏ¢¸üĞÂ³É¹¦, RiderId: {RiderId}", rider.RiderId);
+                _logger.LogInformation("éª‘æ‰‹ä¿¡æ¯æ›´æ–°æˆåŠŸ, RiderId: {RiderId}", rider.RiderId);
 
                 return rider;
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
             {
-                _logger.LogError(ex, "¸üĞÂÆïÊÖĞÅÏ¢Ê±·¢ÉúÒì³£, RiderId: {RiderId}", rider.RiderId);
-                throw CommonExceptions.GeneralError($"¸üĞÂÆïÊÖĞÅÏ¢Ê§°Ü: {ex.Message}");
+                _logger.LogError(ex, "æ›´æ–°éª‘æ‰‹ä¿¡æ¯æ—¶å‘ç”Ÿå¼‚å¸¸, RiderId: {RiderId}", rider.RiderId);
+                throw CommonExceptions.GeneralError($"æ›´æ–°éª‘æ‰‹ä¿¡æ¯å¤±è´¥: {ex.Message}");
             }
         }
 
-        // »ñÈ¡ÆïÊÖµÄ¶©µ¥·ÖÅäÁĞ±í
-        // <param name="riderId">ÆïÊÖID</param>
-        // <param name="status">¶©µ¥×´Ì¬É¸Ñ¡£¨¿ÉÑ¡£©</param>
-        // <returns>¶©µ¥·ÖÅäÁĞ±í</returns>
+        // è·å–éª‘æ‰‹çš„è®¢å•åˆ†é…åˆ—è¡¨
+        // <param name="riderId">éª‘æ‰‹ID</param>
+        // <param name="status">è®¢å•çŠ¶æ€ç­›é€‰ï¼ˆå¯é€‰ï¼‰</param>
+        // <returns>è®¢å•åˆ†é…åˆ—è¡¨</returns>
         public async Task<IEnumerable<Assignment>> GetRiderAssignmentsAsync(string riderId, int? status = null)
         {
             try
             {
-                _logger.LogInformation("¿ªÊ¼»ñÈ¡ÆïÊÖ¶©µ¥·ÖÅäÁĞ±í, RiderId: {RiderId}, Status: {Status}",
-                    riderId, status.HasValue ? status.Value.ToString() : "È«²¿");
+                _logger.LogInformation("å¼€å§‹è·å–éª‘æ‰‹è®¢å•åˆ†é…åˆ—è¡¨, RiderId: {RiderId}, Status: {Status}",
+                    riderId, status.HasValue ? status.Value.ToString() : "å…¨éƒ¨");
 
                 if (string.IsNullOrWhiteSpace(riderId))
                 {
-                    throw CommonExceptions.ValidationFailed("riderId", "ÆïÊÖID²»ÄÜÎª¿Õ");
+                    throw CommonExceptions.ValidationFailed("riderId", "éª‘æ‰‹IDä¸èƒ½ä¸ºç©º");
                 }
 
-                // ¼ì²éÆïÊÖÊÇ·ñ´æÔÚ
+                // æ£€æŸ¥éª‘æ‰‹æ˜¯å¦å­˜åœ¨
                 var riderExists = await _riderRepository.GetByIdAsync(riderId) != null;
                 if (!riderExists)
                 {
-                    _logger.LogWarning("ÆïÊÖ²»´æÔÚ, RiderId: {RiderId}", riderId);
+                    _logger.LogWarning("éª‘æ‰‹ä¸å­˜åœ¨, RiderId: {RiderId}", riderId);
                     throw RiderExceptions.RiderNotFound(riderId);
                 }
 
-                // »ñÈ¡¶©µ¥·ÖÅäÁĞ±í
+                // è·å–è®¢å•åˆ†é…åˆ—è¡¨
                 var assignments = await _riderRepository.GetAssignmentsAsync(riderId);
 
-                // ¸ù¾İ×´Ì¬É¸Ñ¡
+                // æŒ‰ç…§çŠ¶æ€ç­›é€‰
                 if (status.HasValue)
                 {
                     assignments = assignments.Where(a => a.AcceptedStatus == status.Value);
                 }
 
-                _logger.LogInformation("³É¹¦»ñÈ¡ÆïÊÖ¶©µ¥·ÖÅäÁĞ±í, RiderId: {RiderId}, Count: {Count}",
+                _logger.LogInformation("æˆåŠŸè·å–éª‘æ‰‹è®¢å•åˆ†é…åˆ—è¡¨, RiderId: {RiderId}, Count: {Count}",
                     riderId, assignments.Count());
 
                 return assignments;
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
             {
-                _logger.LogError(ex, "»ñÈ¡ÆïÊÖ¶©µ¥·ÖÅäÁĞ±íÊ±·¢ÉúÒì³£, RiderId: {RiderId}", riderId);
-                throw CommonExceptions.GeneralError($"»ñÈ¡ÆïÊÖ¶©µ¥·ÖÅäÁĞ±íÊ§°Ü: {ex.Message}");
+                _logger.LogError(ex, "è·å–éª‘æ‰‹è®¢å•åˆ†é…åˆ—è¡¨æ—¶å‘ç”Ÿå¼‚å¸¸, RiderId: {RiderId}", riderId);
+                throw CommonExceptions.GeneralError($"è·å–éª‘æ‰‹è®¢å•åˆ†é…åˆ—è¡¨å¤±è´¥: {ex.Message}");
             }
         }
 
-        // ¸üĞÂ¶©µ¥·ÖÅä×´Ì¬£¨½Óµ¥/¾Üµ¥£©
-        // <param name="riderId">ÆïÊÖID</param>
-        // <param name="assignId">·ÖÅäID</param>
-        // <param name="acceptedStatus">½Óµ¥×´Ì¬</param>
-        // <returns>¸üĞÂºóµÄ¶©µ¥·ÖÅä</returns>
+        // æ›´æ–°è®¢å•åˆ†é…çŠ¶æ€ï¼ˆæ¥å•/æ‹’å•ï¼‰
+        // <param name="riderId">éª‘æ‰‹ID</param>
+        // <param name="assignId">åˆ†é…ID</param>
+        // <param name="acceptedStatus">æ¥å•çŠ¶æ€</param>
+        // <returns>æ›´æ–°åçš„è®¢å•åˆ†é…</returns>
         public async Task<Assignment> UpdateAssignmentStatusAsync(string riderId, string assignId, int acceptedStatus)
         {
             try
             {
-                _logger.LogInformation("¿ªÊ¼¸üĞÂ¶©µ¥·ÖÅä×´Ì¬, RiderId: {RiderId}, AssignId: {AssignId}, Status: {Status}",
+                _logger.LogInformation("å¼€å§‹æ›´æ–°è®¢å•åˆ†é…çŠ¶æ€, RiderId: {RiderId}, AssignId: {AssignId}, Status: {Status}",
                     riderId, assignId, acceptedStatus);
 
-                // ²ÎÊıÑéÖ¤
+                // å‚æ•°éªŒè¯
                 if (string.IsNullOrWhiteSpace(riderId))
                 {
-                    throw CommonExceptions.ValidationFailed("riderId", "ÆïÊÖID²»ÄÜÎª¿Õ");
+                    throw CommonExceptions.ValidationFailed("riderId", "éª‘æ‰‹IDä¸èƒ½ä¸ºç©º");
                 }
 
                 if (string.IsNullOrWhiteSpace(assignId))
                 {
-                    throw CommonExceptions.ValidationFailed("assignId", "¶©µ¥·ÖÅäID²»ÄÜÎª¿Õ");
+                    throw CommonExceptions.ValidationFailed("assignId", "è®¢å•åˆ†é…IDä¸èƒ½ä¸ºç©º");
                 }
 
-                // ¼ì²éÆïÊÖÊÇ·ñ´æÔÚ
+                // æ£€æŸ¥éª‘æ‰‹æ˜¯å¦å­˜åœ¨
                 var riderExists = await _riderRepository.GetByIdAsync(riderId) != null;
                 if (!riderExists)
                 {
-                    _logger.LogWarning("ÆïÊÖ²»´æÔÚ, RiderId: {RiderId}", riderId);
+                    _logger.LogWarning("éª‘æ‰‹ä¸å­˜åœ¨, RiderId: {RiderId}", riderId);
                     throw RiderExceptions.RiderNotFound(riderId);
                 }
 
-                // »ñÈ¡¶©µ¥·ÖÅä
+                // è·å–è®¢å•åˆ†é…
                 var assignment = await _riderRepository.GetAssignmentByIdAsync(assignId);
                 if (assignment == null)
                 {
-                    _logger.LogWarning("¶©µ¥·ÖÅä²»´æÔÚ, AssignId: {AssignId}", assignId);
-                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"¶©µ¥·ÖÅä²»´æÔÚ£¬ID: {assignId}");
+                    _logger.LogWarning("è®¢å•åˆ†é…ä¸å­˜åœ¨, AssignId: {AssignId}", assignId);
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"è®¢å•åˆ†é…ä¸å­˜åœ¨ï¼ŒID: {assignId}");
                 }
 
-                // ÑéÖ¤¶©µ¥·ÖÅäÊÇ·ñÊôÓÚ¸ÃÆïÊÖ
+                // éªŒè¯è®¢å•åˆ†é…æ˜¯å¦å±äºè¯¥éª‘æ‰‹
                 if (assignment.RiderId != riderId)
                 {
-                    _logger.LogWarning("¶©µ¥·ÖÅä²»ÊôÓÚ¸ÃÆïÊÖ, RiderId: {RiderId}, AssignId: {AssignId}",
+                    _logger.LogWarning("è®¢å•åˆ†é…ä¸å±äºè¯¥éª‘æ‰‹, RiderId: {RiderId}, AssignId: {AssignId}",
                         riderId, assignId);
-                    throw AuthExceptions.Forbidden(riderId, $"¶©µ¥·ÖÅä (ID: {assignId})");
+                    throw AuthExceptions.Forbidden(riderId, $"è®¢å•åˆ†é… (ID: {assignId})");
                 }
 
-                // ÑéÖ¤¶©µ¥×´Ì¬ÊÇ·ñÔÊĞí¸üĞÂ
-                if (assignment.AcceptedStatus != 0) // ¼ÙÉè0±íÊ¾Î´´¦Àí
+                // éªŒè¯è®¢å•çŠ¶æ€æ˜¯å¦å…è®¸æ“ä½œ
+                if (assignment.AcceptedStatus != 0) // å‡è®¾0è¡¨ç¤ºæœªå¤„ç†
                 {
-                    _logger.LogWarning("¶©µ¥·ÖÅä×´Ì¬²»ÔÊĞí¸üĞÂ, AssignId: {AssignId}, CurrentStatus: {CurrentStatus}",
+                    _logger.LogWarning("è®¢å•åˆ†é…çŠ¶æ€ä¸å…è®¸æ“ä½œ, AssignId: {AssignId}, CurrentStatus: {CurrentStatus}",
                         assignId, assignment.AcceptedStatus);
                     throw OrderExceptions.OrderStatusError(assignId, assignment.AcceptedStatus, 0);
                 }
 
-                // ¸üĞÂ¶©µ¥·ÖÅä×´Ì¬
+                // æ›´æ–°è®¢å•åˆ†é…çŠ¶æ€
                 assignment.AcceptedStatus = acceptedStatus;
                 assignment.AcceptedAt = DateTime.Now;
 
                 await _riderRepository.UpdateAssignmentAsync(assignment);
 
-                _logger.LogInformation("¶©µ¥·ÖÅä×´Ì¬¸üĞÂ³É¹¦, AssignId: {AssignId}, Status: {Status}",
+                _logger.LogInformation("è®¢å•åˆ†é…çŠ¶æ€æ›´æ–°æˆåŠŸ, AssignId: {AssignId}, Status: {Status}",
                     assignId, acceptedStatus);
 
                 return assignment;
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException || ex is BusinessException))
             {
-                _logger.LogError(ex, "¸üĞÂ¶©µ¥·ÖÅä×´Ì¬Ê±·¢ÉúÒì³£, RiderId: {RiderId}, AssignId: {AssignId}",
+                _logger.LogError(ex, "æ›´æ–°è®¢å•åˆ†é…çŠ¶æ€æ—¶å‘ç”Ÿå¼‚å¸¸, RiderId: {RiderId}, AssignId: {AssignId}",
                     riderId, assignId);
-                throw CommonExceptions.GeneralError($"¸üĞÂ¶©µ¥·ÖÅä×´Ì¬Ê§°Ü: {ex.Message}");
+                throw CommonExceptions.GeneralError($"æ›´æ–°è®¢å•åˆ†é…çŠ¶æ€å¤±è´¥: {ex.Message}");
             }
         }
     }

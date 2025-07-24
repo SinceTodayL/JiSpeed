@@ -2,11 +2,17 @@ using JISpeed.Core.Entities.Common; // 引入 ApplicationUser 和 ApplicationRol
 using JISpeed.Infrastructure.Data; // 引入 OracleDbContext
 using Microsoft.EntityFrameworkCore; // 用于配置 DbContext
 using Microsoft.AspNetCore.Identity;
-using JISpeed.Api.Extensions; // 引入全局异常处理扩展
-using JISpeed.Core.Interfaces.IRepositories; // 引入仓储接口
-using JISpeed.Core.Interfaces.IServices; // 引入服务接口
-using JISpeed.Infrastructure.Repositories; // 引入仓储实现
-using JISpeed.Application.Services; // 引入服务实现
+using JISpeed.Api.Extensions;
+using JISpeed.Application.Services.Admin;
+using JISpeed.Application.Services.Common;
+using JISpeed.Application.Services.Customer;
+using JISpeed.Application.Services.Email;
+using JISpeed.Application.Services.Merchant;
+using JISpeed.Application.Services.Rider;
+using JISpeed.Core.Interfaces.IRepositories;
+using JISpeed.Core.Interfaces.IServices;
+using JISpeed.Infrastructure.Redis;
+using JISpeed.Infrastructure.Repositories; // 引入全局异常处理扩展
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,20 +31,24 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
     .AddEntityFrameworkStores<OracleDbContext>()
     .AddDefaultTokenProviders();
 
-// 注册仓储层服务
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-
-// 注册业务逻辑层服务
-builder.Services.AddScoped<IUserService, UserService>();
-
-// 注册骑手模块的仓储层服务
-builder.Services.AddScoped<IRiderRepository, RiderRepository>();
-// 注册骑手模块的业务逻辑层服务
-builder.Services.AddScoped<IRiderService, RiderService>();
-
 // 4. 控制器和日志等默认配置
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSingleton<RedisService>();
+
+// 注册仓储层服务
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IRiderRepository, RiderRepository>();
+builder.Services.AddScoped<IMerchantRepository, MerchantRepository>();
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+
+// 注册业务逻辑层服务
+builder.Services.AddScoped<IRegistrationService, RegistrationService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRiderService, RiderService>();
+builder.Services.AddScoped<IMerchantService, MerchantService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 // 5. 添加 Swagger
 builder.Services.AddSwaggerGen();

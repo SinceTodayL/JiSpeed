@@ -5,9 +5,18 @@ using JISpeed.Core.Entities.Rider;
 
 namespace JISpeed.Core.Interfaces.IRepositories
 {
-    // 骑手仓储接口 - 定义骑手模块的数据访问操作
+    // 骑手仓储接口 - 处理骑手模块的数据访问操作
     public interface IRiderRepository
     {
+        // 创建新用户
+        // <param name="rider">用户实体</param>
+        // <returns>创建的用户实体</returns>
+        Task<Rider> CreateAsync(Rider rider);
+
+        // 保存更改
+        // <returns>保存的记录数</returns>
+        Task<int> SaveChangesAsync();
+
         // 根据ID获取骑手信息
         // <param name="riderId">骑手ID</param>
         // <returns>骑手实体</returns>
@@ -70,7 +79,7 @@ namespace JISpeed.Core.Interfaces.IRepositories
         Task<IEnumerable<Schedule>> GetSchedulesAsync(string riderId, DateTime? startDate = null, DateTime? endDate = null);
 
         // 为骑手分配排班
-        // <param name="riderSchedule">骑手排班关联</param>
+        // <param name="riderSchedule">骑手排班实体</param>
         Task AssignScheduleAsync(RiderSchedule riderSchedule);
 
         // 取消骑手排班
