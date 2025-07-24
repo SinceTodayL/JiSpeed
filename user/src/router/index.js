@@ -2,6 +2,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import home from '@/views/home.vue'
 import ApiTest from '@/views/ApiTest.vue'
+import Login from '@/views/Login.vue'
+import Register from '@/views/Register.vue'
 
 const routes = [
   {
@@ -9,6 +11,20 @@ const routes = [
     component: home,
     meta: {
       title: '首页'
+    }
+  },
+  {
+    path: '/login',
+    component: Login,
+    meta: {
+      title: '用户登录 - 急速'
+    }
+  },
+  {
+    path: '/register',
+    component: Register,
+    meta: {
+      title: '用户注册 - 急速'
     }
   },
   {

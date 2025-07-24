@@ -6,6 +6,22 @@
       
       <div class="navigation-cards">
         <div class="nav-card">
+          <h3>🔐 用户登录</h3>
+          <p>登录到您的账户</p>
+          <router-link to="/login" class="btn-primary">
+            立即登录
+          </router-link>
+        </div>
+
+        <div class="nav-card">
+          <h3>📝 用户注册</h3>
+          <p>创建新的用户账户</p>
+          <router-link to="/register" class="btn-primary">
+            立即注册
+          </router-link>
+        </div>
+        
+        <div class="nav-card">
           <h3>🧪 API 测试</h3>
           <p>测试所有用户相关的API接口</p>
           <router-link to="/api-test" class="btn-primary">
@@ -15,7 +31,7 @@
         
         <div class="nav-card">
           <h3>👤 用户管理</h3>
-          <p>用户注册、登录、信息管理</p>
+          <p>用户信息管理和设置</p>
           <button class="btn-secondary" disabled>
             开发中...
           </button>

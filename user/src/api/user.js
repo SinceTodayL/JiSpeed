@@ -143,6 +143,13 @@ export const favoriteAPI = {
     return api.get(`/users/${userId}/favorites`)
   },
 
+  // 用户添加收藏夹
+  addToFavorites: (userId, dishId) => {
+    return api.post(`/users/${userId}/favorites`, {
+      dishId
+    })
+  },
+
   // 根据id删除收藏内容
   removeFavorite: (userId, favoriteId) => {
     return api.delete(`/users/${userId}/favorites/${favoriteId}`)
