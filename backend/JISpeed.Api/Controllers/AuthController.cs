@@ -14,28 +14,31 @@ namespace JISpeed.Api.Controllers
         private readonly ILogger<AuthController> _logger;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IRegistrationService _registerService;
+        private readonly IAppUserService _appUserService;
         private readonly IEmailService _emailService;
 
         public AuthController(ILogger<AuthController> logger,
             UserManager<ApplicationUser> userManager,
             IRegistrationService registerService,
+            IAppUserService appUserService,
             IEmailService emailService)
         {
             _logger = logger;
             _userManager = userManager;
             _registerService = registerService;
             _emailService = emailService;
+            _appUserService = appUserService;
         }
 
 
         [HttpPost("login")]
-        public async Task<ApiResponse> Login([FromBody] UserLoginRequest request)
+        public async Task<ApiResponse> Login(int userType,[FromBody] UserLoginRequest request)
         {
             ApplicationUser? user; 
             string? key;
             if (request.Email != null)
             {
-                user = await _userManager.FindByEmailAsync(request.Email);
+                user = await _appUserService.FindUserAsync(request.Email, userType);
                 key =request.Email;
             }
             else if (request.UserName != null)

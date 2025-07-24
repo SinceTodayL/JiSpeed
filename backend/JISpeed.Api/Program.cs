@@ -35,21 +35,20 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSingleton<RedisService>();
-
 // 注册仓储层服务
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRiderRepository, RiderRepository>();
 builder.Services.AddScoped<IMerchantRepository, MerchantRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
-
-// 注册业务逻辑层服务
+builder.Services.AddScoped<IAppUserRepository, AppUserRepository>();
+// 注册：接口 -> 实现类
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRiderService, RiderService>();
 builder.Services.AddScoped<IMerchantService, MerchantService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
-
+builder.Services.AddScoped<IAppUserService, AppUserService>();
 // 5. 添加 Swagger
 builder.Services.AddSwaggerGen();
 
