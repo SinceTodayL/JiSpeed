@@ -55,7 +55,7 @@ namespace JISpeed.Api.DTOS
         public string VehicleNumber { get; set; }
 
         // 关联的用户ID
-        public string ApplicationUserId { get; set; }
+        public string? ApplicationUserId { get; set; }
     }
 
     // 更新骑手请求DTO
