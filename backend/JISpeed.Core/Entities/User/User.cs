@@ -34,7 +34,8 @@ namespace JISpeed.Core.Entities.User
         public string? DefaultAddrId { get; set; }
         
         //身份验证用户关联
-        public string? ApplicationUserId { get; set; }
+        [StringLength(450)]
+        public required string ApplicationUserId { get; set; }
         
         //导航属性
         [ForeignKey("DefaultAddrId")]
@@ -54,14 +55,14 @@ namespace JISpeed.Core.Entities.User
         public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
 
         //主构造函数
-        public User(string userId, string nickname, string? applicationUserId = null)
+        public User(string userId, string nickname, string applicationUserId)
         {
             UserId = userId;
             Nickname = nickname;
             ApplicationUserId = applicationUserId;
         }
         
-        //用于 EF Core 的私有构造函数
-        private User() { }
+        //用于 EF Core 的无参构造函数
+        public User() { }
     }
 }

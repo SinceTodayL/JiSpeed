@@ -13,7 +13,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.3.1" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.10.0" />
     <PackageReference Include="Oracle.EntityFrameworkCore" Version="8.21.121" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.3.1" />
   </ItemGroup>
@@ -22,6 +22,7 @@
     <ProjectReference Include="..\JISpeed.Application\JISpeed.Application.csproj" />
     <ProjectReference Include="..\JISpeed.Core\JISpeed.Core.csproj" />
     <ProjectReference Include="..\JISpeed.Infrastructure\JISpeed.Infrastructure.csproj" />
+    <ProjectReference Include="..\JISpeed.Application\JISpeed.Application.csproj" />
   </ItemGroup>
 
 </Project>

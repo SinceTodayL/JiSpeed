@@ -32,17 +32,19 @@ namespace JISpeed.Core.Entities.Common
         public virtual Admin.Admin? AdminEntity { get; set; }
         
         // 主构造函数
-        public ApplicationUser(string userName, int userType, string ?email = null) : base(userName)
+        public ApplicationUser(string id,string userName, int userType, string email, DateTime createdAt,string?phoneNumber=null) : base(userName)
         {
-            Id = Guid.NewGuid().ToString();
+            Id = id;
             Email = email;
+            PhoneNumber=phoneNumber;
             UserType = userType;
             Status = 1;
-            CreatedAt = DateTime.UtcNow;
+            CreatedAt = createdAt;
             EmailConfirmed = false;
+            PhoneNumberConfirmed = false;
         }
         
         // 用于 EF Core 的私有构造函数
-        private ApplicationUser() : base() { }
+        public ApplicationUser() : base() { }
     }
 }
