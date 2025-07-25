@@ -3,6 +3,7 @@ using JISpeed.Core.Entities.Common;
 using JISpeed.Core.Interfaces.IRepositories;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Core.Constants;
+using JISpeed.Core.Entities.Dish;
 using JISpeed.Core.Exceptions;
 using Microsoft.Extensions.Logging;
 
@@ -12,15 +13,19 @@ namespace JISpeed.Application.Services.Merchant
     {
         private readonly IMerchantRepository _merchantRepository;
         private readonly ISalesStatRepository _salesStatRepository;
+        private readonly IDishRepository _dishRepository;
         private readonly ILogger<MerchantService> _logger;
 
         public MerchantService(
             IMerchantRepository merchantRepository,
             ISalesStatRepository salesStatRepository,
-            ILogger<MerchantService> logger)
+            IDishRepository dishRepository,
+            ILogger<MerchantService> logger
+            )
         {
             _merchantRepository = merchantRepository;
             _salesStatRepository = salesStatRepository;
+            _dishRepository = dishRepository;
             _logger = logger;
         }
         /// 创建用户实体（当ApplicationUser的UserType=2时调用）
@@ -141,6 +146,37 @@ namespace JISpeed.Application.Services.Merchant
             {
                 _logger.LogError(ex, "获取商家数据统计信息时发生异常, MerchantId: {MerchantId}", merchantId);
                 throw new BusinessException("获取商家数据统计信息失败");
+            }
+        }
+
+        public async Task<List<Dish>> GetDishesAsync(string merchantId)
+        {
+            try
+            {
+                _logger.LogInformation("开始获取商家菜品统计信息, MerchantId: {MerchantId}", merchantId);
+
+                if (string.IsNullOrWhiteSpace(merchantId))
+                {
+                    _logger.LogWarning("商家ID为空");
+                    throw new ValidationException("商家ID不能为空");
+                }
+
+                var data = await _dishRepository.GetDetailsAsync(merchantId);
+
+                if (data == null ||!data.Any())
+                {
+                    _logger.LogWarning("无相关数据, MerchantId: {MerchantId}", merchantId);
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据，ID: {merchantId}");
+                }
+
+                _logger.LogInformation("成功获取商家菜品统计信息, MerchantId: {MerchantId}", merchantId);
+
+                return data;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取商家菜品统计信息时发生异常, MerchantId: {MerchantId}", merchantId);
+                throw new BusinessException("获取商家菜品统计信息失败");
             }
         }
 

@@ -3,6 +3,7 @@ using JISpeed.Infrastructure.Data; // 引入 OracleDbContext
 using Microsoft.EntityFrameworkCore; // 用于配置 DbContext
 using Microsoft.AspNetCore.Identity;
 using JISpeed.Api.Extensions;
+using JISpeed.Api.Mappers;
 using JISpeed.Application.Services.Admin;
 using JISpeed.Application.Services.Common;
 using JISpeed.Application.Services.Customer;
@@ -30,7 +31,7 @@ builder.Services.AddDbContext<OracleDbContext>(options => options.UseOracle(conn
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
     .AddEntityFrameworkStores<OracleDbContext>()
     .AddDefaultTokenProviders();
-
+builder.Services.AddAutoMapper((cfg) => { }, typeof(MerchantProfile).Assembly); 
 // 4. 控制器和日志等默认配置
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -42,7 +43,7 @@ builder.Services.AddScoped<IMerchantRepository, MerchantRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IAppUserRepository, AppUserRepository>();
 builder.Services.AddScoped<ISalesStatRepository, SalesStatRepository>();
-
+builder.Services.AddScoped<IDishRepository, DishRepository>();
 // 注册：接口 -> 实现类
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();

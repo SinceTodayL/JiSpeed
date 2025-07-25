@@ -1,42 +1,29 @@
+using AutoMapper;
 using JISpeed.Api.DTOs;
+using JISpeed.Core.Entities.Dish;
 using JISpeed.Core.Entities.Merchant;
 using JISpeed.Core.Interfaces.IRepositories;
 
 namespace JISpeed.Api.Mappers
 {
-
     // 用户信息映射器 - 负责将实体对象转换为DTO对象
-
-    public static class MerchantMapper
+    public class MerchantProfile : Profile
     {
-
-        // 将Merchant实体转换为MerchantDetailDto
-
-        // <param name="user">用户实体</param>
-        // <param name="stats">用户统计信息</param>
-        // <returns>用户详情DTO</returns>
-        public static MerchantDetailDto ToMerchantDetailDto(Merchant user)
+        public MerchantProfile()
         {
-            return new MerchantDetailDto
-            {
-                MerchantId = user.MerchantId,
-                MerchantName = user.MerchantName,
-                Status = user.Status,
-                ContactInfo = user.ContactInfo??"",
-                Location = user.Location??"",
-            };
-        }
+            // 配置 Merchant → MerchantDetailDto 的映射
+            CreateMap<Merchant, MerchantDetailDto>()
+                // 处理空值：如果 ContactInfo 为 null 则映射为 ""
+                .ForMember(dest => dest.ContactInfo, 
+                    opt => opt.MapFrom(src => src.ContactInfo ?? ""))
+                // 处理空值：如果 Location 为 null 则映射为 ""
+                .ForMember(dest => dest.Location, 
+                    opt => opt.MapFrom(src => src.Location ?? ""));
 
-        public static List<SalesStatDto> ToSalesStatDto(List<SalesStat> dataList)
-        {
-            return dataList?.Select(data => new SalesStatDto
-            {
-                MerchantId = data.MerchantId,
-                SalesAmount = data.SalesAmount,
-                StatDate = data.StatDate,
-                SalesQty = data.SalesQty
-            }).ToList() ?? new List<SalesStatDto>();;
+            // 配置 SalesStat → SalesStatDto 的映射
+            CreateMap<SalesStat, SalesStatDto>();
+            // 配置 Dish → DishesDto 的映射
+            CreateMap<Dish, DishesDto>();
         }
-
     }
 }
