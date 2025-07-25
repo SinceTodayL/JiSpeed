@@ -2,9 +2,35 @@ using JISpeed.Core.Entities.Merchant;
 
 namespace JISpeed.Core.Interfaces.IRepositories.Merchant
 {
-    // 销售统计仓储接口
-    public interface ISalesStatRepository : IBaseRepository<SalesStat, string>
+    // 销售统计仓储接口 - 复合主键 (StatDate, MerchantId)
+    public interface ISalesStatRepository
     {
+        // === 基础 CRUD 操作 (复合主键) ===
+
+        // 根据复合主键获取销售统计
+        Task<SalesStat?> GetByIdAsync(DateTime statDate, string merchantId);
+
+        // 根据复合主键获取详细信息
+        Task<SalesStat?> GetWithDetailsAsync(DateTime statDate, string merchantId);
+
+        // 获取所有销售统计
+        Task<List<SalesStat>> GetAllAsync();
+
+        // 检查是否存在
+        Task<bool> ExistsAsync(DateTime statDate, string merchantId);
+
+        // 创建销售统计
+        Task<SalesStat> CreateAsync(SalesStat salesStat);
+
+        // 更新销售统计
+        Task<SalesStat> UpdateAsync(SalesStat salesStat);
+
+        // 删除销售统计
+        Task<bool> DeleteAsync(DateTime statDate, string merchantId);
+
+        // 保存更改
+        Task<int> SaveChangesAsync();
+
         // === 业务专用查询方法 ===
 
         // 根据商家ID获取销售统计
