@@ -6,21 +6,21 @@ using Microsoft.EntityFrameworkCore;
 using JISpeed.Core.Entities.Order;
 using JISpeed.Core.Interfaces.IRepositories.Order;
 using JISpeed.Infrastructure.Data;
+using JISpeed.Infrastructure.Repositories;
 
 namespace JISpeed.Infrastructure.Repositories.Order
 {
     // 评价仓储实现 - 处理订单评价的数据访问操作
-    public class ReviewRepository : IReviewRepository
+    public class ReviewRepository : BaseRepository<Review, string>
     {
-        private readonly OracleDbContext _context;
-
-        public ReviewRepository(OracleDbContext context)
+        public ReviewRepository(OracleDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        // 根据主键查询评价
-        public async Task<Review?> GetByIdAsync(string id)
+        // 重写GetByIdAsync以包含关联数据
+        // <param name="id">评价ID</param>
+        // <returns>包含关联数据的评价实体，如果不存在则返回null</returns>
+        public override async Task<Review?> GetByIdAsync(string id)
         {
             return await _context.Reviews
                 .Include(r => r.Order)
@@ -31,8 +31,10 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .FirstOrDefaultAsync(r => r.ReviewId == id);
         }
 
-        // 查询评价包含详细信息
-        public async Task<Review?> GetWithDetailsAsync(string id)
+        // 重写GetWithDetailsAsync以包含详细关联数据
+        // <param name="id">评价ID</param>
+        // <returns>包含详细关联数据的评价实体，如果不存在则返回null</returns>
+        public override async Task<Review?> GetWithDetailsAsync(string id)
         {
             return await _context.Reviews
                 .Include(r => r.Order)
@@ -46,72 +48,15 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .FirstOrDefaultAsync(r => r.ReviewId == id);
         }
 
-        // 获取所有评价
-        public async Task<List<Review>> GetAllAsync()
+        // 重写GetAllAsync以包含关联数据和排序
+        // <returns>评价列表</returns>
+        public override async Task<List<Review>> GetAllAsync()
         {
             return await _context.Reviews
                 .Include(r => r.Order)
                 .ThenInclude(o => o.User)
                 .Include(r => r.User)
                 .OrderByDescending(r => r.ReviewAt)
-                .ToListAsync();
-        }
-
-        // 检查评价是否存在
-        public async Task<bool> ExistsAsync(string id)
-        {
-            return await _context.Reviews.AnyAsync(r => r.ReviewId == id);
-        }
-
-        // 创建新评价
-        public async Task<Review> CreateAsync(Review entity)
-        {
-            await _context.Reviews.AddAsync(entity);
-            await _context.SaveChangesAsync();
-            return entity;
-        }
-
-        // 更新评价信息
-        public async Task<Review> UpdateAsync(Review entity)
-        {
-            _context.Reviews.Update(entity);
-            await _context.SaveChangesAsync();
-            return entity;
-        }
-
-        // 删除评价
-        public async Task<bool> DeleteAsync(string id)
-        {
-            var entity = await GetByIdAsync(id);
-            if (entity != null)
-            {
-                _context.Reviews.Remove(entity);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            return false;
-        }
-
-        // 保存更改
-        public async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
-        }
-
-        public async Task<int> CountAsync()
-        {
-            return await _context.Reviews.CountAsync();
-        }
-
-        public async Task<List<Review>> GetPagedAsync(int pageNumber, int pageSize)
-        {
-            return await _context.Reviews
-                .Include(r => r.Order)
-                .ThenInclude(o => o.User)
-                .Include(r => r.User)
-                .OrderByDescending(r => r.ReviewAt)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
                 .ToListAsync();
         }
 

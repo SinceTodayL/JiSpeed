@@ -6,29 +6,31 @@ using Microsoft.EntityFrameworkCore;
 using JISpeed.Core.Entities.Reconciliation;
 using JISpeed.Core.Interfaces.IRepositories.Reconciliation;
 using JISpeed.Infrastructure.Data;
+using JISpeed.Infrastructure.Repositories;
 
 namespace JISpeed.Infrastructure.Repositories.Reconciliation
 {
     // 对账仓储实现 - 处理对账异常的数据访问操作
-    public class ReconciliationRepository : IReconciliationRepository
+    public class ReconciliationRepository : BaseRepository<JISpeed.Core.Entities.Reconciliation.Reconciliation, string>
     {
-        private readonly OracleDbContext _context;
-
-        public ReconciliationRepository(OracleDbContext context)
+        public ReconciliationRepository(OracleDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        // ===== 实现IBaseRepository接口 =====
-
-        public async Task<JISpeed.Core.Entities.Reconciliation.Reconciliation?> GetByIdAsync(string id)
+        // 重写GetByIdAsync以包含关联数据
+        // <param name="id">对账异常ID</param>
+        // <returns>包含关联数据的对账异常实体，如果不存在则返回null</returns>
+        public override async Task<JISpeed.Core.Entities.Reconciliation.Reconciliation?> GetByIdAsync(string id)
         {
             return await _context.Reconciliations
                 .Include(r => r.Orders)
                 .FirstOrDefaultAsync(r => r.ReconId == id);
         }
 
-        public async Task<JISpeed.Core.Entities.Reconciliation.Reconciliation?> GetWithDetailsAsync(string id)
+        // 重写GetWithDetailsAsync以包含详细关联数据
+        // <param name="id">对账异常ID</param>
+        // <returns>包含详细关联数据的对账异常实体，如果不存在则返回null</returns>
+        public override async Task<JISpeed.Core.Entities.Reconciliation.Reconciliation?> GetWithDetailsAsync(string id)
         {
             return await _context.Reconciliations
                 .Include(r => r.Orders)
@@ -36,71 +38,14 @@ namespace JISpeed.Infrastructure.Repositories.Reconciliation
                 .FirstOrDefaultAsync(r => r.ReconId == id);
         }
 
-        public async Task<List<JISpeed.Core.Entities.Reconciliation.Reconciliation>> GetAllAsync()
+        // 重写GetAllAsync以包含关联数据和排序
+        // <returns>对账异常列表</returns>
+        public override async Task<List<JISpeed.Core.Entities.Reconciliation.Reconciliation>> GetAllAsync()
         {
             return await _context.Reconciliations
                 .Include(r => r.Orders)
                 .OrderByDescending(r => r.FoundAt)
                 .ToListAsync();
-        }
-
-        public async Task<JISpeed.Core.Entities.Reconciliation.Reconciliation> CreateAsync(JISpeed.Core.Entities.Reconciliation.Reconciliation entity)
-        {
-            await _context.Reconciliations.AddAsync(entity);
-            await _context.SaveChangesAsync();
-            return entity;
-        }
-
-        public async Task<JISpeed.Core.Entities.Reconciliation.Reconciliation> AddAsync(JISpeed.Core.Entities.Reconciliation.Reconciliation entity)
-        {
-            await _context.Reconciliations.AddAsync(entity);
-            await _context.SaveChangesAsync();
-            return entity;
-        }
-
-        public async Task<JISpeed.Core.Entities.Reconciliation.Reconciliation> UpdateAsync(JISpeed.Core.Entities.Reconciliation.Reconciliation entity)
-        {
-            _context.Entry(entity).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-            await Task.CompletedTask;
-            return entity;
-        }
-
-        public async Task<bool> DeleteAsync(string id)
-        {
-            var reconciliation = await _context.Reconciliations.FindAsync(id);
-            if (reconciliation != null)
-            {
-                _context.Reconciliations.Remove(reconciliation);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            return false;
-        }
-
-        public async Task<int> CountAsync()
-        {
-            return await _context.Reconciliations.CountAsync();
-        }
-
-        public async Task<List<JISpeed.Core.Entities.Reconciliation.Reconciliation>> GetPagedAsync(int pageNumber, int pageSize)
-        {
-            return await _context.Reconciliations
-                .Include(r => r.Orders)
-                .OrderByDescending(r => r.FoundAt)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-        }
-
-        public async Task<bool> ExistsAsync(string id)
-        {
-            return await _context.Reconciliations.AnyAsync(r => r.ReconId == id);
-        }
-
-        public async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
         }
 
         // ===== 业务专用方法 =====

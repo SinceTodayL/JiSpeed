@@ -5,23 +5,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JISpeed.Infrastructure.Repositories.Common
 {
-    public class ApplicationRoleRepository : IApplicationRoleRepository
+    public class ApplicationRoleRepository : BaseRepository<ApplicationRole, string>, IApplicationRoleRepository
     {
-        private readonly OracleDbContext _context;
-
-        public ApplicationRoleRepository(OracleDbContext context)
+        public ApplicationRoleRepository(OracleDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        // 根据角色ID获取应用角色信息
-        // <param name="id">角色ID</param>
-        // <returns>应用角色实体，如果不存在则返回null</returns>
-        public async Task<ApplicationRole?> GetByIdAsync(string id)
+        // 重写：获取所有应用角色列表
+        public override async Task<List<ApplicationRole>> GetAllAsync()
         {
             return await _context.ApplicationRoles
-                .FirstOrDefaultAsync(r => r.Id == id);
+                .OrderBy(r => r.RoleType)
+                .ThenBy(r => r.Name)
+                .ToListAsync();
         }
+
+        // === 业务专用查询方法 ===
 
         // 根据角色名获取应用角色信息
         // <param name="roleName">角色名</param>
@@ -43,25 +42,6 @@ namespace JISpeed.Infrastructure.Repositories.Common
                 .ToListAsync();
         }
 
-        // 获取所有应用角色列表
-        // <returns>应用角色列表</returns>
-        public async Task<List<ApplicationRole>> GetAllAsync()
-        {
-            return await _context.ApplicationRoles
-                .OrderBy(r => r.RoleType)
-                .ThenBy(r => r.Name)
-                .ToListAsync();
-        }
-
-        // 检查应用角色是否存在
-        // <param name="id">角色ID</param>
-        // <returns>应用角色是否存在</returns>
-        public async Task<bool> ExistsAsync(string id)
-        {
-            return await _context.ApplicationRoles
-                .AnyAsync(r => r.Id == id);
-        }
-
         // 根据角色名检查应用角色是否存在
         // <param name="roleName">角色名</param>
         // <returns>应用角色是否存在</returns>
@@ -69,45 +49,6 @@ namespace JISpeed.Infrastructure.Repositories.Common
         {
             return await _context.ApplicationRoles
                 .AnyAsync(r => r.Name == roleName);
-        }
-
-        // 创建新应用角色
-        // <param name="role">应用角色实体</param>
-        // <returns>创建的应用角色实体</returns>
-        public async Task<ApplicationRole> CreateAsync(ApplicationRole role)
-        {
-            var entity = await _context.ApplicationRoles.AddAsync(role);
-            return entity.Entity;
-        }
-
-        // 更新应用角色信息
-        // <param name="role">应用角色实体</param>
-        // <returns>更新的应用角色实体</returns>
-        public async Task<ApplicationRole> UpdateAsync(ApplicationRole role)
-        {
-            var entity = _context.ApplicationRoles.Update(role);
-            await Task.CompletedTask; // 修复CS1998警告
-            return entity.Entity;
-        }
-
-        // 删除应用角色
-        // <param name="id">角色ID</param>
-        // <returns>是否删除成功</returns>
-        public async Task<bool> DeleteAsync(string id)
-        {
-            var role = await GetByIdAsync(id);
-            if (role == null)
-                return false;
-
-            _context.ApplicationRoles.Remove(role);
-            return true;
-        }
-
-        // 保存更改
-        // <returns>保存的记录数</returns>
-        public async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
         }
     }
 }

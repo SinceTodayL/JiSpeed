@@ -6,21 +6,19 @@ using Microsoft.EntityFrameworkCore;
 using JISpeed.Core.Entities.Order;
 using JISpeed.Core.Interfaces.IRepositories.Order;
 using JISpeed.Infrastructure.Data;
+using JISpeed.Infrastructure.Repositories.Common;
 
 namespace JISpeed.Infrastructure.Repositories.Order
 {
     // 订单日志仓储实现 - 处理订单日志记录的数据访问操作
-    public class OrderLogRepository : IOrderLogRepository
+    public class OrderLogRepository : BaseRepository<OrderLog, string>, IOrderLogRepository
     {
-        private readonly OracleDbContext _context;
-
-        public OrderLogRepository(OracleDbContext context)
+        public OrderLogRepository(OracleDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        // 根据主键查询订单日志
-        public async Task<OrderLog?> GetByIdAsync(string id)
+        // 重写：根据主键查询订单日志
+        public override async Task<OrderLog?> GetByIdAsync(string id)
         {
             return await _context.OrderLogs
                 .Include(ol => ol.Order)
@@ -28,8 +26,8 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .FirstOrDefaultAsync(ol => ol.LogId == id);
         }
 
-        // 查询订单日志包含详细信息
-        public async Task<OrderLog?> GetWithDetailsAsync(string id)
+        // 重写：查询订单日志包含详细信息
+        public override async Task<OrderLog?> GetWithDetailsAsync(string id)
         {
             return await _context.OrderLogs
                 .Include(ol => ol.Order)
@@ -40,53 +38,14 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .FirstOrDefaultAsync(ol => ol.LogId == id);
         }
 
-        // 获取所有订单日志
-        public async Task<List<OrderLog>> GetAllAsync()
+        // 重写：获取所有订单日志
+        public override async Task<List<OrderLog>> GetAllAsync()
         {
             return await _context.OrderLogs
                 .Include(ol => ol.Order)
                 .ThenInclude(o => o.User)
                 .OrderByDescending(ol => ol.LoggedAt)
                 .ToListAsync();
-        }
-
-        // 检查订单日志是否存在
-        public async Task<bool> ExistsAsync(string id)
-        {
-            return await _context.OrderLogs.AnyAsync(ol => ol.LogId == id);
-        }
-
-        // 创建新订单日志
-        public async Task<OrderLog> CreateAsync(OrderLog entity)
-        {
-            var result = await _context.OrderLogs.AddAsync(entity);
-            return result.Entity;
-        }
-
-        // 更新订单日志信息
-        public async Task<OrderLog> UpdateAsync(OrderLog entity)
-        {
-            var result = _context.OrderLogs.Update(entity);
-            await Task.CompletedTask;
-            return result.Entity;
-        }
-
-        // 删除订单日志
-        public async Task<bool> DeleteAsync(string id)
-        {
-            var entity = await GetByIdAsync(id);
-            if (entity != null)
-            {
-                _context.OrderLogs.Remove(entity);
-                return true;
-            }
-            return false;
-        }
-
-        // 保存更改
-        public async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
         }
 
         // === 业务专用查询方法 ===

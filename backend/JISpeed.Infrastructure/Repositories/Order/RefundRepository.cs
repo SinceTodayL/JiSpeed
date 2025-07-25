@@ -6,21 +6,21 @@ using Microsoft.EntityFrameworkCore;
 using JISpeed.Core.Entities.Order;
 using JISpeed.Core.Interfaces.IRepositories.Order;
 using JISpeed.Infrastructure.Data;
+using JISpeed.Infrastructure.Repositories;
 
 namespace JISpeed.Infrastructure.Repositories.Order
 {
     // 退款仓储实现 - 处理退款管理的数据访问操作
-    public class RefundRepository : IRefundRepository
+    public class RefundRepository : BaseRepository<Refund, string>
     {
-        private readonly OracleDbContext _context;
-
-        public RefundRepository(OracleDbContext context)
+        public RefundRepository(OracleDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        // 根据主键查询退款
-        public async Task<Refund?> GetByIdAsync(string id)
+        // 重写GetByIdAsync以包含关联数据
+        // <param name="id">退款ID</param>
+        // <returns>包含关联数据的退款实体，如果不存在则返回null</returns>
+        public override async Task<Refund?> GetByIdAsync(string id)
         {
             return await _context.Refunds
                 .Include(r => r.Order)
@@ -29,8 +29,10 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .FirstOrDefaultAsync(r => r.RefundId == id);
         }
 
-        // 查询退款包含详细信息
-        public async Task<Refund?> GetWithDetailsAsync(string id)
+        // 重写GetWithDetailsAsync以包含详细关联数据
+        // <param name="id">退款ID</param>
+        // <returns>包含详细关联数据的退款实体，如果不存在则返回null</returns>
+        public override async Task<Refund?> GetWithDetailsAsync(string id)
         {
             return await _context.Refunds
                 .Include(r => r.Order)
@@ -42,8 +44,9 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .FirstOrDefaultAsync(r => r.RefundId == id);
         }
 
-        // 获取所有退款
-        public async Task<List<Refund>> GetAllAsync()
+        // 重写GetAllAsync以包含关联数据和排序
+        // <returns>退款列表</returns>
+        public override async Task<List<Refund>> GetAllAsync()
         {
             return await _context.Refunds
                 .Include(r => r.Order)
@@ -51,45 +54,6 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .Include(r => r.Applicant)
                 .OrderByDescending(r => r.ApplyAt)
                 .ToListAsync();
-        }
-
-        // 检查退款是否存在
-        public async Task<bool> ExistsAsync(string id)
-        {
-            return await _context.Refunds.AnyAsync(r => r.RefundId == id);
-        }
-
-        // 创建新退款
-        public async Task<Refund> CreateAsync(Refund entity)
-        {
-            var result = await _context.Refunds.AddAsync(entity);
-            return result.Entity;
-        }
-
-        // 更新退款信息
-        public async Task<Refund> UpdateAsync(Refund entity)
-        {
-            var result = _context.Refunds.Update(entity);
-            await Task.CompletedTask;
-            return result.Entity;
-        }
-
-        // 删除退款
-        public async Task<bool> DeleteAsync(string id)
-        {
-            var entity = await GetByIdAsync(id);
-            if (entity != null)
-            {
-                _context.Refunds.Remove(entity);
-                return true;
-            }
-            return false;
-        }
-
-        // 保存更改
-        public async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
         }
 
         // === 业务专用查询方法 ===

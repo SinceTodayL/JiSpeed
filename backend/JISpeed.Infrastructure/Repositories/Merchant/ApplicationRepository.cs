@@ -1,32 +1,21 @@
 using JISpeed.Core.Entities.Merchant;
 using JISpeed.Core.Interfaces.IRepositories.Merchant;
 using JISpeed.Infrastructure.Data;
+using JISpeed.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace JISpeed.Infrastructure.Repositories.Merchant
 {
-    public class ApplicationRepository : IApplicationRepository
+    public class ApplicationRepository : BaseRepository<Application, string>
     {
-        private readonly OracleDbContext _context;
-
-        public ApplicationRepository(OracleDbContext context)
+        public ApplicationRepository(OracleDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        // 根据申请ID获取申请信息
-        // <param name="applyId">申请ID</param>
-        // <returns>申请实体，如果不存在则返回null</returns>
-        public async Task<Application?> GetByIdAsync(string applyId)
-        {
-            return await _context.Applications
-                .FirstOrDefaultAsync(a => a.ApplyId == applyId);
-        }
-
-        // 根据申请ID获取申请详细信息（包含关联数据）
+        // 重写GetWithDetailsAsync以包含关联数据
         // <param name="applyId">申请ID</param>
         // <returns>包含关联数据的申请实体，如果不存在则返回null</returns>
-        public async Task<Application?> GetWithDetailsAsync(string applyId)
+        public override async Task<Application?> GetWithDetailsAsync(string applyId)
         {
             return await _context.Applications
                 .Include(a => a.Admin)
@@ -35,6 +24,19 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
                     .ThenInclude(m => m!.ApplicationUser)
                 .FirstOrDefaultAsync(a => a.ApplyId == applyId);
         }
+
+        // 重写GetAllAsync以包含关联数据和排序
+        // <returns>申请列表</returns>
+        public override async Task<List<Application>> GetAllAsync()
+        {
+            return await _context.Applications
+                .Include(a => a.Merchant)
+                .Include(a => a.Admin)
+                .OrderByDescending(a => a.SubmittedAt)
+                .ToListAsync();
+        }
+
+        // === 业务专用查询方法 ===
 
         // 根据商家ID获取申请列表
         // <param name="merchantId">商家ID</param>
@@ -96,65 +98,6 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
                 .Include(a => a.Merchant)
                 .OrderByDescending(a => a.SubmittedAt)
                 .ToListAsync();
-        }
-
-        // 获取所有申请列表
-        // <returns>申请列表</returns>
-        public async Task<List<Application>> GetAllAsync()
-        {
-            return await _context.Applications
-                .Include(a => a.Merchant)
-                .Include(a => a.Admin)
-                .OrderByDescending(a => a.SubmittedAt)
-                .ToListAsync();
-        }
-
-        // 检查申请是否存在
-        // <param name="applyId">申请ID</param>
-        // <returns>申请是否存在</returns>
-        public async Task<bool> ExistsAsync(string applyId)
-        {
-            return await _context.Applications
-                .AnyAsync(a => a.ApplyId == applyId);
-        }
-
-        // 创建新申请
-        // <param name="application">申请实体</param>
-        // <returns>创建的申请实体</returns>
-        public async Task<Application> CreateAsync(Application application)
-        {
-            var entity = await _context.Applications.AddAsync(application);
-            return entity.Entity;
-        }
-
-        // 更新申请信息
-        // <param name="application">申请实体</param>
-        // <returns>更新的申请实体</returns>
-        public async Task<Application> UpdateAsync(Application application)
-        {
-            var entity = _context.Applications.Update(application);
-            await Task.CompletedTask; // 解决异步警告
-            return entity.Entity;
-        }
-
-        // 删除申请
-        // <param name="applyId">申请ID</param>
-        // <returns>是否删除成功</returns>
-        public async Task<bool> DeleteAsync(string applyId)
-        {
-            var application = await GetByIdAsync(applyId);
-            if (application == null)
-                return false;
-
-            _context.Applications.Remove(application);
-            return true;
-        }
-
-        // 保存更改
-        // <returns>保存的记录数</returns>
-        public async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
         }
     }
 }

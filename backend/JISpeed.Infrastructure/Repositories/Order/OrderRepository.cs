@@ -1,32 +1,21 @@
 using JISpeed.Core.Entities.Order;
 using JISpeed.Core.Interfaces.IRepositories.Order;
 using JISpeed.Infrastructure.Data;
+using JISpeed.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace JISpeed.Infrastructure.Repositories.Order
 {
-    public class OrderRepository : IOrderRepository
+    public class OrderRepository : BaseRepository<JISpeed.Core.Entities.Order.Order, string>, IOrderRepository
     {
-        private readonly OracleDbContext _context;
-
-        public OrderRepository(OracleDbContext context)
+        public OrderRepository(OracleDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        // 根据订单ID获取订单信息
-        // <param name="orderId">订单ID</param>
-        // <returns>订单实体，如果不存在则返回null</returns>
-        public async Task<JISpeed.Core.Entities.Order.Order?> GetByIdAsync(string orderId)
-        {
-            return await _context.Orders
-                .FirstOrDefaultAsync(o => o.OrderId == orderId);
-        }
-
-        // 根据订单ID获取订单详细信息（包含关联数据）
+        // 重写GetWithDetailsAsync以包含关联数据
         // <param name="orderId">订单ID</param>
         // <returns>包含关联数据的订单实体，如果不存在则返回null</returns>
-        public async Task<JISpeed.Core.Entities.Order.Order?> GetWithDetailsAsync(string orderId)
+        public override async Task<JISpeed.Core.Entities.Order.Order?> GetWithDetailsAsync(string orderId)
         {
             return await _context.Orders
                 .Include(o => o.User)
@@ -39,6 +28,20 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .Include(o => o.AddressId)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
         }
+
+        // 重写GetAllAsync以包含关联数据和排序
+        // <returns>订单列表</returns>
+        public override async Task<List<JISpeed.Core.Entities.Order.Order>> GetAllAsync()
+        {
+            return await _context.Orders
+                .Include(o => o.User)
+                .Include(o => o.OrderDishes)
+                    .ThenInclude(od => od.Dish)
+                .OrderByDescending(o => o.CreateAt)
+                .ToListAsync();
+        }
+
+        // === 业务专用查询方法 ===
 
         // 根据用户ID获取订单列表
         // <param name="userId">用户ID</param>
@@ -94,66 +97,6 @@ namespace JISpeed.Infrastructure.Repositories.Order
                     .ThenInclude(od => od.Dish)
                 .OrderByDescending(o => o.CreateAt)
                 .ToListAsync();
-        }
-
-        // 获取所有订单列表
-        // <returns>订单列表</returns>
-        public async Task<List<JISpeed.Core.Entities.Order.Order>> GetAllAsync()
-        {
-            return await _context.Orders
-                .Include(o => o.User)
-                .Include(o => o.OrderDishes)
-                    .ThenInclude(od => od.Dish)
-                .OrderByDescending(o => o.CreateAt)
-                .ToListAsync();
-        }
-
-        // 检查订单是否存在
-        // <param name="orderId">订单ID</param>
-        // <returns>订单是否存在</returns>
-        public async Task<bool> ExistsAsync(string orderId)
-        {
-            return await _context.Orders
-                .AnyAsync(o => o.OrderId == orderId);
-        }
-
-        // 创建新订单
-        // <param name="order">订单实体</param>
-        // <returns>创建的订单实体</returns>
-        public async Task<JISpeed.Core.Entities.Order.Order> CreateAsync(JISpeed.Core.Entities.Order.Order order)
-        {
-            var entity = await _context.Orders.AddAsync(order);
-            return entity.Entity;
-        }
-
-        // 更新订单信息
-        // <param name="order">订单实体</param>
-        // <returns>更新的订单实体</returns>
-        public async Task<JISpeed.Core.Entities.Order.Order> UpdateAsync(JISpeed.Core.Entities.Order.Order order)
-        {
-            var entity = _context.Orders.Update(order);
-            await Task.CompletedTask; // 解决异步警告
-            return entity.Entity;
-        }
-
-        // 删除订单
-        // <param name="orderId">订单ID</param>
-        // <returns>是否删除成功</returns>
-        public async Task<bool> DeleteAsync(string orderId)
-        {
-            var order = await GetByIdAsync(orderId);
-            if (order == null)
-                return false;
-
-            _context.Orders.Remove(order);
-            return true;
-        }
-
-        // 保存更改
-        // <returns>保存的记录数</returns>
-        public async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
         }
     }
 }

@@ -1,32 +1,21 @@
 using JISpeed.Core.Entities.User;
 using JISpeed.Core.Interfaces.IRepositories.User;
 using JISpeed.Infrastructure.Data;
+using JISpeed.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace JISpeed.Infrastructure.Repositories.User
 {
-    public class UserRepository : IUserRepository
+    public class UserRepository : BaseRepository<JISpeed.Core.Entities.User.User, string>, IUserRepository
     {
-        private readonly OracleDbContext _context;
-
-        public UserRepository(OracleDbContext context)
+        public UserRepository(OracleDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        // 根据用户ID获取用户信息
-        // <param name="userId">用户ID</param>
-        // <returns>用户实体，如果不存在则返回null</returns>
-        public async Task<JISpeed.Core.Entities.User.User?> GetByIdAsync(string userId)
-        {
-            return await _context.CustomUsers
-                .FirstOrDefaultAsync(u => u.UserId == userId);
-        }
-
-        // 根据用户ID获取用户详细信息（包含关联数据）
+        // 重写GetWithDetailsAsync方法以包含关联数据
         // <param name="userId">用户ID</param>
         // <returns>包含关联数据的用户实体，如果不存在则返回null</returns>
-        public async Task<JISpeed.Core.Entities.User.User?> GetWithDetailsAsync(string userId)
+        public override async Task<JISpeed.Core.Entities.User.User?> GetWithDetailsAsync(string userId)
         {
             return await _context.CustomUsers
                 .Include(u => u.ApplicationUser)
@@ -37,6 +26,8 @@ namespace JISpeed.Infrastructure.Repositories.User
                 .Include(u => u.Coupons)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
         }
+
+        // === 业务专用查询方法 ===
 
         // 根据ApplicationUserId获取用户信息
         // <param name="applicationUserId">应用用户ID</param>
@@ -69,62 +60,14 @@ namespace JISpeed.Infrastructure.Repositories.User
                 .ToListAsync();
         }
 
-        // 获取所有用户列表
+        // 重写GetAllAsync方法以包含关联数据和排序
         // <returns>用户列表</returns>
-        public async Task<List<JISpeed.Core.Entities.User.User>> GetAllAsync()
+        public override async Task<List<JISpeed.Core.Entities.User.User>> GetAllAsync()
         {
             return await _context.CustomUsers
                 .Include(u => u.ApplicationUser)
                 .OrderByDescending(u => u.UserId)
                 .ToListAsync();
-        }
-
-        // 检查用户是否存在
-        // <param name="userId">用户ID</param>
-        // <returns>用户是否存在</returns>
-        public async Task<bool> ExistsAsync(string userId)
-        {
-            return await _context.CustomUsers
-                .AnyAsync(u => u.UserId == userId);
-        }
-
-        // 创建新用户
-        // <param name="user">用户实体</param>
-        // <returns>创建的用户实体</returns>
-        public async Task<JISpeed.Core.Entities.User.User> CreateAsync(JISpeed.Core.Entities.User.User user)
-        {
-            var entity = await _context.CustomUsers.AddAsync(user);
-            return entity.Entity;
-        }
-
-        // 更新用户信息
-        // <param name="user">用户实体</param>
-        // <returns>更新的用户实体</returns>
-        public async Task<JISpeed.Core.Entities.User.User> UpdateAsync(JISpeed.Core.Entities.User.User user)
-        {
-            var entity = _context.CustomUsers.Update(user);
-            await Task.CompletedTask; // 解决异步警告
-            return entity.Entity;
-        }
-
-        // 删除用户
-        // <param name="userId">用户ID</param>
-        // <returns>是否删除成功</returns>
-        public async Task<bool> DeleteAsync(string userId)
-        {
-            var user = await GetByIdAsync(userId);
-            if (user == null)
-                return false;
-
-            _context.CustomUsers.Remove(user);
-            return true;
-        }
-
-        // 保存更改
-        // <returns>保存的记录数</returns>
-        public async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
         }
     }
 }

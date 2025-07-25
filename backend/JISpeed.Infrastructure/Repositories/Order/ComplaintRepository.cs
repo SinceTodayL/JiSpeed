@@ -6,21 +6,19 @@ using Microsoft.EntityFrameworkCore;
 using JISpeed.Core.Entities.Order;
 using JISpeed.Core.Interfaces.IRepositories.Order;
 using JISpeed.Infrastructure.Data;
+using JISpeed.Infrastructure.Repositories.Common;
 
 namespace JISpeed.Infrastructure.Repositories.Order
 {
     // 投诉仓储实现 - 处理投诉管理的数据访问操作
-    public class ComplaintRepository : IComplaintRepository
+    public class ComplaintRepository : BaseRepository<Complaint, string>, IComplaintRepository
     {
-        private readonly OracleDbContext _context;
-
-        public ComplaintRepository(OracleDbContext context)
+        public ComplaintRepository(OracleDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        // 根据主键查询投诉
-        public async Task<Complaint?> GetByIdAsync(string id)
+        // 重写：根据主键查询投诉
+        public override async Task<Complaint?> GetByIdAsync(string id)
         {
             return await _context.Complaints
                 .Include(c => c.Order)
@@ -29,8 +27,8 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .FirstOrDefaultAsync(c => c.ComplaintId == id);
         }
 
-        // 查询投诉包含详细信息
-        public async Task<Complaint?> GetWithDetailsAsync(string id)
+        // 重写：查询投诉包含详细信息
+        public override async Task<Complaint?> GetWithDetailsAsync(string id)
         {
             return await _context.Complaints
                 .Include(c => c.Order)
@@ -42,73 +40,14 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .FirstOrDefaultAsync(c => c.ComplaintId == id);
         }
 
-        // 获取所有投诉
-        public async Task<List<Complaint>> GetAllAsync()
+        // 重写：获取所有投诉
+        public override async Task<List<Complaint>> GetAllAsync()
         {
             return await _context.Complaints
                 .Include(c => c.Order)
                 .ThenInclude(o => o.User)
                 .Include(c => c.Complainant)
                 .OrderByDescending(c => c.CreatedAt)
-                .ToListAsync();
-        }
-
-        // 检查投诉是否存在
-        public async Task<bool> ExistsAsync(string id)
-        {
-            return await _context.Complaints.AnyAsync(c => c.ComplaintId == id);
-        }
-
-        // 创建新投诉
-        public async Task<Complaint> CreateAsync(Complaint entity)
-        {
-            await _context.Complaints.AddAsync(entity);
-            await _context.SaveChangesAsync();
-            return entity;
-        }
-
-        // 更新投诉信息
-        public async Task<Complaint> UpdateAsync(Complaint entity)
-        {
-            _context.Complaints.Update(entity);
-            await _context.SaveChangesAsync();
-            await Task.CompletedTask;
-            return entity;
-        }
-
-        // 删除投诉
-        public async Task<bool> DeleteAsync(string id)
-        {
-            var entity = await GetByIdAsync(id);
-            if (entity != null)
-            {
-                _context.Complaints.Remove(entity);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            return false;
-        }
-
-        // 保存更改
-        public async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
-        }
-
-        public async Task<int> CountAsync()
-        {
-            return await _context.Complaints.CountAsync();
-        }
-
-        public async Task<List<Complaint>> GetPagedAsync(int pageNumber, int pageSize)
-        {
-            return await _context.Complaints
-                .Include(c => c.Order)
-                .ThenInclude(o => o.User)
-                .Include(c => c.Complainant)
-                .OrderByDescending(c => c.CreatedAt)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
                 .ToListAsync();
         }
 

@@ -136,5 +136,105 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
         {
             return await _context.SaveChangesAsync();
         }
+
+        // === 业务专用查询方法 ===
+
+        // 根据统计类型获取记录 - 按销售额范围分类
+        // <param name="statType">统计类型 (1=低销售额, 2=中销售额, 3=高销售额)</param>
+        // <returns>销售统计列表</returns>
+        public async Task<List<SalesStat>> GetByStatTypeAsync(int statType)
+        {
+            return statType switch
+            {
+                1 => await _context.SalesStats // 低销售额 (0-1000)
+                    .Where(s => s.SalesAmount <= 1000)
+                    .Include(s => s.Merchant)
+                    .OrderByDescending(s => s.StatDate)
+                    .ToListAsync(),
+                2 => await _context.SalesStats // 中销售额 (1000-5000)
+                    .Where(s => s.SalesAmount > 1000 && s.SalesAmount <= 5000)
+                    .Include(s => s.Merchant)
+                    .OrderByDescending(s => s.StatDate)
+                    .ToListAsync(),
+                3 => await _context.SalesStats // 高销售额 (5000+)
+                    .Where(s => s.SalesAmount > 5000)
+                    .Include(s => s.Merchant)
+                    .OrderByDescending(s => s.StatDate)
+                    .ToListAsync(),
+                _ => await _context.SalesStats
+                    .Include(s => s.Merchant)
+                    .OrderByDescending(s => s.StatDate)
+                    .ToListAsync()
+            };
+        }
+
+        // 根据时间范围获取销售统计 (重命名以避免重复)
+        // <param name="startTime">开始时间</param>
+        // <param name="endTime">结束时间</param>
+        // <returns>销售统计列表</returns>
+        public async Task<List<SalesStat>> GetByTimeRangeAsync(DateTime startTime, DateTime endTime)
+        {
+            return await _context.SalesStats
+                .Where(s => s.StatDate.Date >= startTime.Date && s.StatDate.Date <= endTime.Date)
+                .Include(s => s.Merchant)
+                .OrderByDescending(s => s.StatDate)
+                .ThenBy(s => s.MerchantId)
+                .ToListAsync();
+        }
+
+        // 根据商家ID和统计类型获取记录
+        // <param name="merchantId">商家ID</param>
+        // <param name="statType">统计类型</param>
+        // <returns>销售统计列表</returns>
+        public async Task<List<SalesStat>> GetByMerchantIdAndStatTypeAsync(string merchantId, int statType)
+        {
+            var baseQuery = _context.SalesStats.Where(s => s.MerchantId == merchantId);
+
+            return statType switch
+            {
+                1 => await baseQuery.Where(s => s.SalesAmount <= 1000)
+                    .OrderByDescending(s => s.StatDate).ToListAsync(),
+                2 => await baseQuery.Where(s => s.SalesAmount > 1000 && s.SalesAmount <= 5000)
+                    .OrderByDescending(s => s.StatDate).ToListAsync(),
+                3 => await baseQuery.Where(s => s.SalesAmount > 5000)
+                    .OrderByDescending(s => s.StatDate).ToListAsync(),
+                _ => await baseQuery.OrderByDescending(s => s.StatDate).ToListAsync()
+            };
+        }
+
+        // 根据商家ID和时间范围获取统计 (接口方法)
+        // <param name="merchantId">商家ID</param>
+        // <param name="startTime">开始时间</param>
+        // <param name="endTime">结束时间</param>
+        // <returns>销售统计列表</returns>
+        public async Task<List<SalesStat>> GetByMerchantIdAndTimeRangeAsync(string merchantId, DateTime startTime, DateTime endTime)
+        {
+            return await _context.SalesStats
+                .Where(s => s.MerchantId == merchantId &&
+                           s.StatDate.Date >= startTime.Date &&
+                           s.StatDate.Date <= endTime.Date)
+                .OrderByDescending(s => s.StatDate)
+                .ToListAsync();
+        }
+
+        // 获取最新的销售统计
+        // <param name="merchantId">商家ID</param>
+        // <param name="statType">统计类型</param>
+        // <returns>最新的销售统计</returns>
+        public async Task<SalesStat?> GetLatestByMerchantIdAndStatTypeAsync(string merchantId, int statType)
+        {
+            var baseQuery = _context.SalesStats.Where(s => s.MerchantId == merchantId);
+
+            return statType switch
+            {
+                1 => await baseQuery.Where(s => s.SalesAmount <= 1000)
+                    .OrderByDescending(s => s.StatDate).FirstOrDefaultAsync(),
+                2 => await baseQuery.Where(s => s.SalesAmount > 1000 && s.SalesAmount <= 5000)
+                    .OrderByDescending(s => s.StatDate).FirstOrDefaultAsync(),
+                3 => await baseQuery.Where(s => s.SalesAmount > 5000)
+                    .OrderByDescending(s => s.StatDate).FirstOrDefaultAsync(),
+                _ => await baseQuery.OrderByDescending(s => s.StatDate).FirstOrDefaultAsync()
+            };
+        }
     }
 }

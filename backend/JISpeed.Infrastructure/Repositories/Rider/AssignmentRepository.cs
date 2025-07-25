@@ -6,22 +6,19 @@ using Microsoft.EntityFrameworkCore;
 using JISpeed.Core.Entities.Rider;
 using JISpeed.Core.Interfaces.IRepositories.Rider;
 using JISpeed.Infrastructure.Data;
+using JISpeed.Infrastructure.Repositories;
 
 namespace JISpeed.Infrastructure.Repositories.Rider
 {
     // 配送分配仓储实现 - 处理配送分配的数据访问操作
-    public class AssignmentRepository : IAssignmentRepository
+    public class AssignmentRepository : BaseRepository<Assignment, string>, IAssignmentRepository
     {
-        private readonly OracleDbContext _context;
-
-        public AssignmentRepository(OracleDbContext context)
+        public AssignmentRepository(OracleDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        // ===== 实现IBaseRepository接口 =====
-
-        public async Task<Assignment?> GetByIdAsync(string id)
+        // 重写GetByIdAsync以包含关联数据
+        public override async Task<Assignment?> GetByIdAsync(string id)
         {
             return await _context.Assignments
                 .Include(a => a.Rider)
@@ -29,7 +26,8 @@ namespace JISpeed.Infrastructure.Repositories.Rider
                 .FirstOrDefaultAsync(a => a.AssignId == id);
         }
 
-        public async Task<Assignment?> GetWithDetailsAsync(string id)
+        // 重写GetWithDetailsAsync以包含关联数据
+        public override async Task<Assignment?> GetWithDetailsAsync(string id)
         {
             return await _context.Assignments
                 .Include(a => a.Rider)
@@ -37,7 +35,8 @@ namespace JISpeed.Infrastructure.Repositories.Rider
                 .FirstOrDefaultAsync(a => a.AssignId == id);
         }
 
-        public async Task<List<Assignment>> GetAllAsync()
+        // 重写GetAllAsync以包含关联数据
+        public override async Task<List<Assignment>> GetAllAsync()
         {
             return await _context.Assignments
                 .Include(a => a.Rider)
@@ -45,66 +44,7 @@ namespace JISpeed.Infrastructure.Repositories.Rider
                 .ToListAsync();
         }
 
-        public async Task<Assignment> CreateAsync(Assignment entity)
-        {
-            await _context.Assignments.AddAsync(entity);
-            await _context.SaveChangesAsync();
-            return entity;
-        }
-
-        public async Task<Assignment> AddAsync(Assignment entity)
-        {
-            await _context.Assignments.AddAsync(entity);
-            await _context.SaveChangesAsync();
-            return entity;
-        }
-
-        public async Task<Assignment> UpdateAsync(Assignment entity)
-        {
-            _context.Entry(entity).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-            await Task.CompletedTask;
-            return entity;
-        }
-
-        public async Task<bool> DeleteAsync(string id)
-        {
-            var assignment = await _context.Assignments.FindAsync(id);
-            if (assignment != null)
-            {
-                _context.Assignments.Remove(assignment);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            return false;
-        }
-
-        public async Task<int> CountAsync()
-        {
-            return await _context.Assignments.CountAsync();
-        }
-
-        public async Task<List<Assignment>> GetPagedAsync(int pageNumber, int pageSize)
-        {
-            return await _context.Assignments
-                .Include(a => a.Rider)
-                .Include(a => a.Order)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-        }
-
-        public async Task<bool> ExistsAsync(string id)
-        {
-            return await _context.Assignments.AnyAsync(a => a.AssignId == id);
-        }
-
-        public async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
-        }
-
-        // ===== 业务专用方法 =====
+        // === 业务专用查询方法 ===
 
         // 根据骑手ID查询分配列表
         public async Task<IEnumerable<Assignment>> GetByRiderIdAsync(string riderId)
