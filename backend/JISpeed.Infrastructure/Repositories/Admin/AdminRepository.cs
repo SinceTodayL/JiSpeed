@@ -99,5 +99,40 @@ namespace JISpeed.Infrastructure.Repositories.Admin
         {
             return await _context.SaveChangesAsync();
         }
+
+        // 根据权限级别获取管理员列表
+        // <param name="permissionLevel">权限级别</param>
+        // <returns>管理员列表</returns>
+        public async Task<List<AdminEntity>> GetByPermissionLevelAsync(int permissionLevel)
+        {
+            return await _context.Admins
+                .Include(a => a.ApplicationUser)
+                .Where(a => a.PermissionLevel == permissionLevel.ToString())
+                .ToListAsync();
+        }
+
+        // 根据状态获取管理员列表
+        // <param name="status">状态</param>
+        // <returns>管理员列表</returns>
+        public async Task<List<AdminEntity>> GetByStatusAsync(int status)
+        {
+            return await _context.Admins
+                .Include(a => a.ApplicationUser)
+                .Where(a => a.ApplicationUser != null && a.ApplicationUser.Status == status)
+                .ToListAsync();
+        }
+
+        // 根据姓名搜索管理员
+        // <param name="name">姓名</param>
+        // <returns>管理员列表</returns>
+        public async Task<List<AdminEntity>> SearchByNameAsync(string name)
+        {
+            return await _context.Admins
+                .Include(a => a.ApplicationUser)
+                .Where(a => a.ApplicationUser != null &&
+                           !string.IsNullOrEmpty(a.ApplicationUser.UserName) &&
+                           a.ApplicationUser.UserName.Contains(name))
+                .ToListAsync();
+        }
     }
 }

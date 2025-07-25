@@ -120,6 +120,30 @@ namespace JISpeed.Infrastructure.Repositories.Admin
             return true;
         }
 
+
+        // 根据时间范围获取公告列表
+        // <param name="startTime">开始时间</param>
+        // <param name="endTime">结束时间</param>
+        // <returns>公告列表</returns>
+        public async Task<List<Announcement>> GetByTimeRangeAsync(DateTime startTime, DateTime endTime)
+        {
+            return await _context.Announcements
+                .Where(a => a.StartAt >= startTime && a.EndAt <= endTime)
+                .OrderByDescending(a => a.StartAt)
+                .ToListAsync();
+        }
+
+        // 根据标题搜索公告
+        // <param name="title">标题关键词</param>
+        // <returns>公告列表</returns>
+        public async Task<List<Announcement>> SearchByTitleAsync(string title)
+        {
+            return await _context.Announcements
+                .Where(a => a.Title.Contains(title))
+                .OrderByDescending(a => a.StartAt)
+                .ToListAsync();
+        }
+
         // 保存更改
         // <returns>保存的记录数</returns>
         public async Task<int> SaveChangesAsync()

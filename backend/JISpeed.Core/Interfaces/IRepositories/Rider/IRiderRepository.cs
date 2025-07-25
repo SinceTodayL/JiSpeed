@@ -6,7 +6,7 @@ using JISpeed.Core.Entities.Rider;
 namespace JISpeed.Core.Interfaces.IRepositories.Rider
 {
     // 骑手仓储接口 - 处理骑手基础信息的数据访问操作
-    public interface IRiderRepositoryNew : IBaseRepository<JISpeed.Core.Entities.Rider.Rider, string>
+    public interface IRiderRepository : IBaseRepository<JISpeed.Core.Entities.Rider.Rider, string>
     {
         // === 业务专用查询方法 ===
 

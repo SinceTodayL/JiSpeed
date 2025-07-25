@@ -9,11 +9,11 @@ using JISpeed.Infrastructure.Data;
 namespace JISpeed.Infrastructure.Repositories.Rider
 {
     // 骑手仓储实现 - 处理骑手基础信息的数据访问操作
-    public class RiderRepositoryNew : IRiderRepositoryNew
+    public class RiderRepository : IRiderRepository
     {
         private readonly OracleDbContext _context;
 
-        public RiderRepositoryNew(OracleDbContext context)
+        public RiderRepository(OracleDbContext context)
         {
             _context = context;
         }
