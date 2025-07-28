@@ -35,7 +35,7 @@ builder.Services.AddRepositories();
 // 注册：接口 -> 实现类
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-//builder.Services.AddScoped<IUserService, UserService>();
+// builder.Services.AddScoped<IUserService, UserService>();
 // builder.Services.AddScoped<IRiderService, RiderService>();
 // builder.Services.AddScoped<IMerchantService, MerchantService>();
 // builder.Services.AddScoped<IAdminService, AdminService>();
