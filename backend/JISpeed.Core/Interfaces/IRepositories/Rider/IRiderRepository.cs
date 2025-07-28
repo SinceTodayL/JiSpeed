@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using JISpeed.Core.Entities.Common;
 using JISpeed.Core.Entities.Rider;
 
 namespace JISpeed.Core.Interfaces.IRepositories.Rider
@@ -33,5 +34,9 @@ namespace JISpeed.Core.Interfaces.IRepositories.Rider
 
         // 获取没有车牌号的骑手
         Task<IEnumerable<JISpeed.Core.Entities.Rider.Rider>> GetRidersWithoutVehicleAsync();
+        
+        // 使用ApplicationUser进行用户的创建
+        // <returns>用户实体，如果不存在则返回null</returns>
+        Task<Core.Entities.Rider.Rider?> CreateFromApplicationUserAsync(ApplicationUser applicationUser);
     }
 }

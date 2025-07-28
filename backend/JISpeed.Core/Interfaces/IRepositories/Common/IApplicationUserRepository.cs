@@ -15,7 +15,12 @@ namespace JISpeed.Core.Interfaces.IRepositories.Common
         // 根据邮箱获取应用用户信息
         // <param name="email">邮箱</param>
         // <returns>应用用户实体，如果不存在则返回null</returns>
-        Task<ApplicationUser?> GetByEmailAsync(string email);
+        Task<List<ApplicationUser>> GetByEmailAsync(string email);
+        
+        // 根据邮箱获取应用用户信息
+        // <param name="email">邮箱</param>
+        // <returns>应用用户实体，如果不存在则返回null</returns>
+        Task<ApplicationUser?> GetByEmailAndUserTypeAsync(string email,int userType);
 
         // 根据用户类型获取应用用户列表
         // <param name="userType">用户类型</param>
@@ -26,5 +31,6 @@ namespace JISpeed.Core.Interfaces.IRepositories.Common
         // <param name="status">状态</param>
         // <returns>应用用户列表</returns>
         Task<List<ApplicationUser>> GetByStatusAsync(int status);
+        
     }
 }

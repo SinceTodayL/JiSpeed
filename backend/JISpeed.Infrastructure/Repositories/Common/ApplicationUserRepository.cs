@@ -32,13 +32,21 @@ namespace JISpeed.Infrastructure.Repositories.Common
 
         // 根据邮箱获取应用用户信息
         // <param name="email">邮箱</param>
-        // <returns>应用用户实体，如果不存在则返回null</returns>
-        public async Task<ApplicationUser?> GetByEmailAsync(string email)
+        // <returns>应用用户实体集合，如果不存在则返回空集合</returns>
+        public async Task<List<ApplicationUser>> GetByEmailAsync(string email)
         {
             return await _context.ApplicationUsers
-                .FirstOrDefaultAsync(u => u.Email == email);
+                .Where(u => u.Email == email).ToListAsync();;
         }
-
+        
+        // 根据邮箱和用户属性获取应用用户信息
+        // <param name="email">邮箱</param>
+        // <returns>应用用户实体，如果不存在则返回null</returns>
+        public async Task<ApplicationUser?> GetByEmailAndUserTypeAsync(string email, int userType)
+        {
+            return await _context.ApplicationUsers
+                .FirstOrDefaultAsync(u => u.Email == email && u.UserType == userType);
+        }
         // 根据用户类型获取应用用户列表
         // <param name="userType">用户类型</param>
         // <returns>应用用户列表</returns>

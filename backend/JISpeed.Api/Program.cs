@@ -4,16 +4,10 @@ using Microsoft.EntityFrameworkCore; // 用于配置 DbContext
 using Microsoft.AspNetCore.Identity;
 using JISpeed.Api.Extensions;
 using JISpeed.Api.Mappers;
-using JISpeed.Application.Services.Admin;
 using JISpeed.Application.Services.Common;
-using JISpeed.Application.Services.Customer;
 using JISpeed.Application.Services.Email;
-using JISpeed.Application.Services.Merchant;
-using JISpeed.Application.Services.Rider;
-using JISpeed.Core.Interfaces.IRepositories;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Infrastructure.Redis;
-using JISpeed.Infrastructure.Repositories; // 引入全局异常处理扩展
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,22 +30,15 @@ builder.Services.AddAutoMapper((cfg) => { }, typeof(MerchantProfile).Assembly);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSingleton<RedisService>();
-// 注册仓储层服务
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IRiderRepository, RiderRepository>();
-builder.Services.AddScoped<IMerchantRepository, MerchantRepository>();
-builder.Services.AddScoped<IAdminRepository, AdminRepository>();
-builder.Services.AddScoped<IAppUserRepository, AppUserRepository>();
-builder.Services.AddScoped<ISalesStatRepository, SalesStatRepository>();
-builder.Services.AddScoped<IDishRepository, DishRepository>();
+// 注册仓储层服务（统一封装）
+builder.Services.AddRepositories();
 // 注册：接口 -> 实现类
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IRiderService, RiderService>();
-builder.Services.AddScoped<IMerchantService, MerchantService>();
-builder.Services.AddScoped<IAdminService, AdminService>();
-builder.Services.AddScoped<IAppUserService, AppUserService>();
+//builder.Services.AddScoped<IUserService, UserService>();
+// builder.Services.AddScoped<IRiderService, RiderService>();
+// builder.Services.AddScoped<IMerchantService, MerchantService>();
+// builder.Services.AddScoped<IAdminService, AdminService>();
 // 5. 添加 Swagger
 builder.Services.AddSwaggerGen();
 

@@ -1,4 +1,4 @@
-using JISpeed.Core.Entities.Admin;
+using JISpeed.Core.Entities.Common;
 
 namespace JISpeed.Core.Interfaces.IRepositories.Admin
 {
@@ -26,5 +26,9 @@ namespace JISpeed.Core.Interfaces.IRepositories.Admin
         // <param name="name">姓名</param>
         // <returns>管理员列表</returns>
         Task<List<JISpeed.Core.Entities.Admin.Admin>> SearchByNameAsync(string name);
+        
+        // 使用ApplicationUser进行用户的创建
+        // <returns>用户实体，如果不存在则返回null</returns>
+        Task<Core.Entities.Admin.Admin?> CreateFromApplicationUserAsync(ApplicationUser applicationUser);
     }
 }

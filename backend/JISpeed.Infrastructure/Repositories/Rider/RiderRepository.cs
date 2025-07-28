@@ -1,25 +1,28 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using JISpeed.Core.Entities.Common;
+using JISpeed.Core.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using JISpeed.Core.Interfaces.IRepositories.Rider;
 using JISpeed.Infrastructure.Data;
-using JISpeed.Infrastructure.Repositories;
+using Microsoft.Extensions.Logging;
+using RiderEntity = JISpeed.Core.Entities.Rider.Rider;
 
 namespace JISpeed.Infrastructure.Repositories.Rider
 {
     // 骑手仓储实现 - 处理骑手基础信息的数据访问操作
-    public class RiderRepository : BaseRepository<JISpeed.Core.Entities.Rider.Rider, string>, IRiderRepository
+    public class RiderRepository : BaseRepository<RiderEntity, string>, IRiderRepository
     {
-        public RiderRepository(OracleDbContext context) : base(context)
+        
+        private readonly ILogger<RiderRepository> _logger;
+        public RiderRepository(OracleDbContext context,
+            ILogger<RiderRepository> logger) : base(context)
         {
+            _logger = logger;
         }
 
         // 重写GetByIdAsync以包含关联数据
         // <param name="id">骑手ID</param>
         // <returns>包含关联数据的骑手实体，如果不存在则返回null</returns>
-        public override async Task<JISpeed.Core.Entities.Rider.Rider?> GetByIdAsync(string id)
+        public override async Task<RiderEntity?> GetByIdAsync(string id)
         {
             return await _context.Riders
                 .Include(r => r.ApplicationUser)
@@ -29,7 +32,7 @@ namespace JISpeed.Infrastructure.Repositories.Rider
         // 重写GetWithDetailsAsync以包含详细关联数据
         // <param name="id">骑手ID</param>
         // <returns>包含详细关联数据的骑手实体，如果不存在则返回null</returns>
-        public override async Task<JISpeed.Core.Entities.Rider.Rider?> GetWithDetailsAsync(string id)
+        public override async Task<RiderEntity?> GetWithDetailsAsync(string id)
         {
             return await _context.Riders
                 .Include(r => r.ApplicationUser)
@@ -42,7 +45,7 @@ namespace JISpeed.Infrastructure.Repositories.Rider
 
         // 重写GetAllAsync以包含关联数据和排序
         // <returns>骑手列表</returns>
-        public override async Task<List<JISpeed.Core.Entities.Rider.Rider>> GetAllAsync()
+        public override async Task<List<RiderEntity>> GetAllAsync()
         {
             return await _context.Riders
                 .Include(r => r.ApplicationUser)
@@ -55,7 +58,7 @@ namespace JISpeed.Infrastructure.Repositories.Rider
         // 根据ApplicationUserId查询骑手
         // <param name="applicationUserId">应用用户ID</param>
         // <returns>骑手实体，如果不存在则返回null</returns>
-        public async Task<JISpeed.Core.Entities.Rider.Rider?> GetByApplicationUserIdAsync(string applicationUserId)
+        public async Task<RiderEntity?> GetByApplicationUserIdAsync(string applicationUserId)
         {
             return await _context.Riders
                 .Include(r => r.ApplicationUser)
@@ -65,7 +68,7 @@ namespace JISpeed.Infrastructure.Repositories.Rider
         // 根据手机号查询骑手
         // <param name="phoneNumber">手机号</param>
         // <returns>骑手实体，如果不存在则返回null</returns>
-        public async Task<JISpeed.Core.Entities.Rider.Rider?> GetByPhoneNumberAsync(string phoneNumber)
+        public async Task<RiderEntity?> GetByPhoneNumberAsync(string phoneNumber)
         {
             return await _context.Riders
                 .Include(r => r.ApplicationUser)
@@ -83,7 +86,7 @@ namespace JISpeed.Infrastructure.Repositories.Rider
         // 根据姓名搜索骑手
         // <param name="name">姓名</param>
         // <returns>骑手列表</returns>
-        public async Task<IEnumerable<JISpeed.Core.Entities.Rider.Rider>> SearchByNameAsync(string name)
+        public async Task<IEnumerable<RiderEntity>> SearchByNameAsync(string name)
         {
             return await _context.Riders
                 .Include(r => r.ApplicationUser)
@@ -95,7 +98,7 @@ namespace JISpeed.Infrastructure.Repositories.Rider
         // 根据车牌号查询骑手
         // <param name="vehicleNumber">车牌号</param>
         // <returns>骑手实体，如果不存在则返回null</returns>
-        public async Task<JISpeed.Core.Entities.Rider.Rider?> GetByVehicleNumberAsync(string vehicleNumber)
+        public async Task<RiderEntity?> GetByVehicleNumberAsync(string vehicleNumber)
         {
             return await _context.Riders
                 .Include(r => r.ApplicationUser)
@@ -112,7 +115,7 @@ namespace JISpeed.Infrastructure.Repositories.Rider
 
         // 获取有车牌号的骑手
         // <returns>有车牌号的骑手列表</returns>
-        public async Task<IEnumerable<JISpeed.Core.Entities.Rider.Rider>> GetRidersWithVehicleAsync()
+        public async Task<IEnumerable<RiderEntity>> GetRidersWithVehicleAsync()
         {
             return await _context.Riders
                 .Include(r => r.ApplicationUser)
@@ -123,13 +126,69 @@ namespace JISpeed.Infrastructure.Repositories.Rider
 
         // 获取没有车牌号的骑手
         // <returns>没有车牌号的骑手列表</returns>
-        public async Task<IEnumerable<JISpeed.Core.Entities.Rider.Rider>> GetRidersWithoutVehicleAsync()
+        public async Task<IEnumerable<RiderEntity>> GetRidersWithoutVehicleAsync()
         {
             return await _context.Riders
                 .Include(r => r.ApplicationUser)
                 .Where(r => string.IsNullOrEmpty(r.VehicleNumber))
                 .OrderBy(r => r.Name)
                 .ToListAsync();
+        }
+        
+        // 使用ApplicationUser进行用户的创建
+        // <returns>用户实体，如果不存在则返回null</returns>
+        public async Task<RiderEntity?> CreateFromApplicationUserAsync(ApplicationUser applicationUser)
+        {
+            try
+            {
+                _logger.LogInformation("开始创建用户实体, ApplicationUserId: {ApplicationUserId}", applicationUser.Id);
+            
+                // 参数验证
+                if (applicationUser == null)
+                {
+                    throw new ValidationException("ApplicationUser不能为空");
+                }
+            
+                if (applicationUser.UserType != 3)
+                {
+                    throw new ValidationException($"UserType必须为3，当前值: {applicationUser.UserType}");
+                }
+            
+                // 检查是否已存在关联的User实体
+                var existingUser = await GetByApplicationUserIdAsync(applicationUser.Id);
+                if (existingUser != null)
+                {
+                    _logger.LogWarning("用户实体已存在, ApplicationUserId: {ApplicationUserId}", applicationUser.Id);
+                    throw new BusinessException("用户实体已存在");
+                }
+            
+                // 生成用户ID和昵称
+                var userId = Guid.NewGuid().ToString("N");
+                var userNickname = applicationUser.UserName ?? "用户" + userId.Substring(0, 8);
+            
+                // 创建User实体
+                var user = new RiderEntity
+                {
+                    RiderId = userId,
+                    Name = userNickname, 
+                    PhoneNumber = applicationUser.PhoneNumber,
+                    ApplicationUserId = applicationUser.Id
+                };
+                
+                // 保存到数据库
+                await _dbSet.AddAsync(user);
+                await SaveChangesAsync();
+                _logger.LogInformation("用户实体创建成功, UserId: {UserId}, ApplicationUserId: {ApplicationUserId}",
+                    user.RiderId, applicationUser.Id);
+            
+                return user;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException))
+            {
+                _logger.LogError(ex, "创建用户实体时发生异常, ApplicationUserId: {ApplicationUserId}",
+                    applicationUser?.Id);
+                throw new BusinessException("创建用户实体失败");
+            }
         }
     }
 }

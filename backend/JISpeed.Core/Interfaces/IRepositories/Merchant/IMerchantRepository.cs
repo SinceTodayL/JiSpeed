@@ -1,4 +1,4 @@
-using JISpeed.Core.Entities.Merchant;
+using JISpeed.Core.Entities.Common;
 
 namespace JISpeed.Core.Interfaces.IRepositories.Merchant
 {
@@ -26,5 +26,10 @@ namespace JISpeed.Core.Interfaces.IRepositories.Merchant
         // <param name="location">位置</param>
         // <returns>商家列表</returns>
         Task<List<JISpeed.Core.Entities.Merchant.Merchant>> SearchByLocationAsync(string location);
+        
+        // 使用ApplicationUser进行用户的创建
+        // <returns>用户实体，如果不存在则返回null</returns>
+        Task<Core.Entities.Merchant.Merchant?> CreateFromApplicationUserAsync(ApplicationUser applicationUser);
+
     }
 }

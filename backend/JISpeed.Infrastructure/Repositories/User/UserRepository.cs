@@ -1,21 +1,25 @@
-using JISpeed.Core.Entities.User;
+using JISpeed.Core.Entities.Common;
+using JISpeed.Core.Exceptions;
 using JISpeed.Core.Interfaces.IRepositories.User;
 using JISpeed.Infrastructure.Data;
-using JISpeed.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using UserEntity = JISpeed.Core.Entities.User.User;
 
 namespace JISpeed.Infrastructure.Repositories.User
 {
-    public class UserRepository : BaseRepository<JISpeed.Core.Entities.User.User, string>, IUserRepository
+    public class UserRepository : BaseRepository<UserEntity, string>, IUserRepository
     {
-        public UserRepository(OracleDbContext context) : base(context)
+        private readonly ILogger<UserRepository> _logger;
+        public UserRepository(OracleDbContext context, ILogger<UserRepository> logger) : base(context)
         {
+            _logger = logger;
         }
 
         // 重写GetWithDetailsAsync方法以包含关联数据
         // <param name="userId">用户ID</param>
         // <returns>包含关联数据的用户实体，如果不存在则返回null</returns>
-        public override async Task<JISpeed.Core.Entities.User.User?> GetWithDetailsAsync(string userId)
+        public override async Task<UserEntity?> GetWithDetailsAsync(string userId)
         {
             return await _context.CustomUsers
                 .Include(u => u.ApplicationUser)
@@ -32,7 +36,7 @@ namespace JISpeed.Infrastructure.Repositories.User
         // 根据ApplicationUserId获取用户信息
         // <param name="applicationUserId">应用用户ID</param>
         // <returns>用户实体，如果不存在则返回null</returns>
-        public async Task<JISpeed.Core.Entities.User.User?> GetByApplicationUserIdAsync(string applicationUserId)
+        public async Task<UserEntity?> GetByApplicationUserIdAsync(string applicationUserId)
         {
             return await _context.CustomUsers
                 .FirstOrDefaultAsync(u => u.ApplicationUserId == applicationUserId);
@@ -41,7 +45,7 @@ namespace JISpeed.Infrastructure.Repositories.User
         // 根据昵称搜索用户
         // <param name="nickname">昵称</param>
         // <returns>用户列表</returns>
-        public async Task<List<JISpeed.Core.Entities.User.User>> SearchByNicknameAsync(string nickname)
+        public async Task<List<UserEntity>> SearchByNicknameAsync(string nickname)
         {
             return await _context.CustomUsers
                 .Where(u => u.Nickname.Contains(nickname))
@@ -52,7 +56,7 @@ namespace JISpeed.Infrastructure.Repositories.User
         // 根据等级获取用户列表
         // <param name="level">等级</param>
         // <returns>用户列表</returns>
-        public async Task<List<JISpeed.Core.Entities.User.User>> GetByLevelAsync(int level)
+        public async Task<List<UserEntity>> GetByLevelAsync(int level)
         {
             return await _context.CustomUsers
                 .Where(u => u.Level == level)
@@ -62,12 +66,67 @@ namespace JISpeed.Infrastructure.Repositories.User
 
         // 重写GetAllAsync方法以包含关联数据和排序
         // <returns>用户列表</returns>
-        public override async Task<List<JISpeed.Core.Entities.User.User>> GetAllAsync()
+        public override async Task<List<UserEntity>> GetAllAsync()
         {
             return await _context.CustomUsers
                 .Include(u => u.ApplicationUser)
                 .OrderByDescending(u => u.UserId)
                 .ToListAsync();
+        }
+        
+        // 使用ApplicationUser进行用户的创建
+        // <returns>用户实体，如果不存在则返回null</returns>
+        public async Task<UserEntity?> CreateFromApplicationUserAsync(ApplicationUser applicationUser)
+        {
+            try
+            {
+                _logger.LogInformation("开始创建用户实体, ApplicationUserId: {ApplicationUserId}", applicationUser.Id);
+            
+                // 参数验证
+                if (applicationUser == null)
+                {
+                    throw new ValidationException("ApplicationUser不能为空");
+                }
+            
+                if (applicationUser.UserType != 1)
+                {
+                    throw new ValidationException($"UserType必须为1，当前值: {applicationUser.UserType}");
+                }
+            
+                // 检查是否已存在关联的User实体
+                var existingUser = await GetByApplicationUserIdAsync(applicationUser.Id);
+                if (existingUser != null)
+                {
+                    _logger.LogWarning("用户实体已存在, ApplicationUserId: {ApplicationUserId}", applicationUser.Id);
+                    throw new BusinessException("用户实体已存在");
+                }
+            
+                // 生成用户ID和昵称
+                var userId = Guid.NewGuid().ToString("N");
+                var userNickname = applicationUser.UserName ?? "用户" + userId.Substring(0, 8);
+            
+                // 创建User实体
+                var user = new UserEntity
+                {
+                    UserId = userId,
+                    Nickname = userNickname, 
+                    ApplicationUserId = applicationUser.Id
+                };
+                
+                // 保存到数据库
+                await _dbSet.AddAsync(user);
+                await SaveChangesAsync();
+                _logger.LogInformation("用户实体创建成功, UserId: {UserId}, ApplicationUserId: {ApplicationUserId}",
+                    user.UserId, applicationUser.Id);
+            
+                return user;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException))
+            {
+                _logger.LogError(ex, "创建用户实体时发生异常, ApplicationUserId: {ApplicationUserId}",
+                    applicationUser?.Id);
+                throw new BusinessException("创建用户实体失败");
+            }
         }
     }
 }
