@@ -44,13 +44,13 @@ namespace JISpeed.Application.Services.Rider
                     throw new ValidationException($"UserType必须为3，当前值: {applicationUser.UserType}");
                 }
 
-                //  //检查是否已存在关联的Rider实体
-                // var existingUser = await _riderRepository.GetUserByApplicationUserIdAsync(applicationUser.Id);
-                //  if (existingUser != null)
-                //  {
-                //      _logger.LogWarning("用户实体已存在, ApplicationUserId: {ApplicationUserId}", applicationUser.Id);
-                //      throw new BusinessException("用户实体已存在");
-                //  }
+                // 检查是否已存在关联的Rider实体
+                //var existingUser = await _riderRepository.GetUserByApplicationUserIdAsync(applicationUser.Id);
+                // if (existingUser != null)
+                // {
+                //     _logger.LogWarning("用户实体已存在, ApplicationUserId: {ApplicationUserId}", applicationUser.Id);
+                //     throw new BusinessException("用户实体已存在");
+                // }
 
                 // 生成用户ID和昵称
                 var userId = Guid.NewGuid().ToString("N");
@@ -61,7 +61,7 @@ namespace JISpeed.Application.Services.Rider
                 {
                     RiderId = userId,
                     Name = userNickname,
-                    PhoneNumber = applicationUser.PhoneNumber,
+                    PhoneNumber = "1234567890",
                     ApplicationUserId = applicationUser.Id
                 };
 
