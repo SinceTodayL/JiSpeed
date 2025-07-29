@@ -2,10 +2,8 @@ using System;
 
 namespace JISpeed.Api.DTOs
 {
-
-   
     // 商家信息
-    public class MerchantDetailDto
+    public class MerchantDto
     {
 
         // 商家ID
@@ -38,7 +36,7 @@ namespace JISpeed.Api.DTOs
     public class DishesDto
     {
         // 菜品ID
-        public required string DishId{ get; set; } 
+        public string? DishId{ get; set; } 
         // 分类ID
         public required string CategoryId{ get; set; } 
         // 菜品名
@@ -48,16 +46,18 @@ namespace JISpeed.Api.DTOs
         // 原价
         public required decimal OriginPrice{ get; set; } 
         // 封面
-        public required string CoverUrl{ get; set; } 
+        public string? CoverUrl { get; set; } 
         // 月销售
-        public required int MonthlySales{ get; set; } 
+        public int? MonthlySales{ get; set; } 
         // 好评率
-        public required decimal Rating{ get; set; } 
+        public decimal? Rating{ get; set; } 
         // 上架标志
-        public required int OnSale{ get; set; } 
+        public int? OnSale{ get; set; } 
         // 商家ID
-        public required string MerchantId{ get; set; }
+        public string? MerchantId{ get; set; }
         // 评论数目
-        public required int ReviewQuantity{ get; set; } 
+        public int? ReviewQuantity{ get; set; } 
     }
+
+
 }

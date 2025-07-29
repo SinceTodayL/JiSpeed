@@ -2,7 +2,6 @@ using AutoMapper;
 using JISpeed.Api.DTOs;
 using JISpeed.Core.Entities.Dish;
 using JISpeed.Core.Entities.Merchant;
-using JISpeed.Core.Interfaces.IRepositories;
 
 namespace JISpeed.Api.Mappers
 {
@@ -12,7 +11,7 @@ namespace JISpeed.Api.Mappers
         public MerchantProfile()
         {
             // 配置 Merchant → MerchantDetailDto 的映射
-            CreateMap<Merchant, MerchantDetailDto>()
+            CreateMap<Merchant, MerchantDto>()
                 // 处理空值：如果 ContactInfo 为 null 则映射为 ""
                 .ForMember(dest => dest.ContactInfo, 
                     opt => opt.MapFrom(src => src.ContactInfo ?? ""))
@@ -24,6 +23,20 @@ namespace JISpeed.Api.Mappers
             CreateMap<SalesStat, SalesStatDto>();
             // 配置 Dish → DishesDto 的映射
             CreateMap<Dish, DishesDto>();
+            CreateMap<DishesDto, Dish>(); 
+            
+            CreateMap<AuditRequest, Core.Entities.Merchant.Application>()
+                .ForMember(dest => dest.AuditStatus, opt => opt.MapFrom(src => src.AuditStatus))
+                .ForMember(dest => dest.RejectReason, opt => opt.MapFrom(src => src.RejectReason))
+                .ForAllMembers(opt => opt.Ignore());
+            
+            CreateMap<ApplicationRequest, Core.Entities.Merchant.Application>()
+                .ForMember(dest => dest.CompanyName, opt => opt.Ignore())
+                .ForAllMembers(opt => opt.Ignore());
+
+           
+            CreateMap<Core.Entities.Merchant.Application, ApplicationResponse>();
+
         }
     }
 }

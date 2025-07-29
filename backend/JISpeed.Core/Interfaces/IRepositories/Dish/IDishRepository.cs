@@ -16,5 +16,7 @@ namespace JISpeed.Core.Interfaces.IRepositories.Dish
         // <param name="categoryId">分类ID</param>
         // <returns>菜品列表</returns>
         Task<List<Entities.Dish.Dish>> GetByCategoryIdAsync(string categoryId);
+        
+        Task<Entities.Dish.Dish?> GetByMerchantIdAndDishIdAsync(string merchantId, string dishId);
     }
 }

@@ -6,6 +6,7 @@ using JISpeed.Api.Extensions;
 using JISpeed.Api.Mappers;
 using JISpeed.Application.Services.Common;
 using JISpeed.Application.Services.Email;
+using JISpeed.Application.Services.Merchant;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Infrastructure.Redis;
 
@@ -33,12 +34,7 @@ builder.Services.AddSingleton<RedisService>();
 // 注册仓储层服务（统一封装）
 builder.Services.AddRepositories();
 // 注册：接口 -> 实现类
-builder.Services.AddScoped<IRegistrationService, RegistrationService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
-//builder.Services.AddScoped<IUserService, UserService>();
-// builder.Services.AddScoped<IRiderService, RiderService>();
-// builder.Services.AddScoped<IMerchantService, MerchantService>();
-// builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddServices();
 // 5. 添加 Swagger
 builder.Services.AddSwaggerGen();
 

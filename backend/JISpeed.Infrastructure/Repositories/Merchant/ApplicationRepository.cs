@@ -1,4 +1,5 @@
 using JISpeed.Core.Entities.Merchant;
+using JISpeed.Core.Interfaces.IRepositories.Common;
 using JISpeed.Core.Interfaces.IRepositories.Merchant;
 using JISpeed.Infrastructure.Data;
 using JISpeed.Infrastructure.Repositories;
@@ -6,24 +7,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JISpeed.Infrastructure.Repositories.Merchant
 {
-    public class ApplicationRepository : BaseRepository<Application, string>
+    public class ApplicationRepository : BaseRepository<Application, string>, IApplicationRepository
     {
         public ApplicationRepository(OracleDbContext context) : base(context)
         {
         }
-
-        // 重写GetWithDetailsAsync以包含关联数据
-        // <param name="applyId">申请ID</param>
-        // <returns>包含关联数据的申请实体，如果不存在则返回null</returns>
-        public override async Task<Application?> GetWithDetailsAsync(string applyId)
-        {
-            return await _context.Applications
-                .Include(a => a.Admin)
-                    .ThenInclude(admin => admin!.ApplicationUser)
-                .Include(a => a.Merchant)
-                    .ThenInclude(m => m!.ApplicationUser)
-                .FirstOrDefaultAsync(a => a.ApplyId == applyId);
-        }
+        
 
         // 重写GetAllAsync以包含关联数据和排序
         // <returns>申请列表</returns>
@@ -99,5 +88,6 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
                 .OrderByDescending(a => a.SubmittedAt)
                 .ToListAsync();
         }
+        
     }
 }

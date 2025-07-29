@@ -64,5 +64,12 @@ namespace JISpeed.Infrastructure.Repositories.Dish
                 .OrderBy(d => d.DishName)
                 .ToListAsync();
         }
+        // 根据商家ID和菜品ID获取菜品
+        // <param name="merchantId","dishId">商家ID，菜品ID</param>
+        // <returns>菜品，不存在则返回null</returns>
+        public async Task<JISpeed.Core.Entities.Dish.Dish?> GetByMerchantIdAndDishIdAsync(string merchantId,string dishId)
+        {
+            return await _context.Dishes.FirstOrDefaultAsync(d => d.MerchantId == merchantId && d.DishId == dishId);
+        }
     }
 }

@@ -10,7 +10,6 @@ using JISpeed.Core.Interfaces.IRepositories.User;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using JISpeed.Infrastructure.Redis;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Newtonsoft.Json;
 
 
