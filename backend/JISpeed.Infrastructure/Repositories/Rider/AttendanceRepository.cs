@@ -11,7 +11,7 @@ using JISpeed.Infrastructure.Repositories;
 namespace JISpeed.Infrastructure.Repositories.Rider
 {
     // 考勤仓储实现 - 处理考勤的数据访问操作
-    public class AttendanceRepository : BaseRepository<Attendance, string>
+    public class AttendanceRepository : BaseRepository<Attendance, string>, IAttendanceRepository
     {
         public AttendanceRepository(OracleDbContext context) : base(context)
         {
@@ -199,6 +199,116 @@ namespace JISpeed.Infrastructure.Repositories.Rider
                 .Where(a => a.CheckoutAt.HasValue && a.CheckoutAt >= startTime && a.CheckoutAt <= endTime)
                 .OrderBy(a => a.CheckoutAt)
                 .ToListAsync();
+        }
+
+        // 根据考勤日期查询考勤记录
+        public async Task<IEnumerable<Attendance>> GetByCheckDateAsync(DateTime checkDate)
+        {
+            return await _context.Attendances
+                .Include(a => a.Rider)
+                .Include(a => a.ScheduleAttendances)
+                .Where(a => a.CheckDate.Date == checkDate.Date)
+                .ToListAsync();
+        }
+
+        // 获取所有迟到的考勤记录
+        public async Task<IEnumerable<Attendance>> GetLateAttendancesAsync()
+        {
+            return await _context.Attendances
+                .Include(a => a.Rider)
+                .Include(a => a.ScheduleAttendances)
+                .Where(a => a.IsLate == 1)
+                .ToListAsync();
+        }
+
+        // 获取所有缺勤的考勤记录
+        public async Task<IEnumerable<Attendance>> GetAbsentAttendancesAsync()
+        {
+            return await _context.Attendances
+                .Include(a => a.Rider)
+                .Include(a => a.ScheduleAttendances)
+                .Where(a => a.IsAbsent == 1)
+                .ToListAsync();
+        }
+
+        // 根据迟到状态查询考勤记录
+        public async Task<IEnumerable<Attendance>> GetByLateStatusAsync(int isLate)
+        {
+            return await _context.Attendances
+                .Include(a => a.Rider)
+                .Include(a => a.ScheduleAttendances)
+                .Where(a => a.IsLate == isLate)
+                .ToListAsync();
+        }
+
+        // 根据缺勤状态查询考勤记录
+        public async Task<IEnumerable<Attendance>> GetByAbsentStatusAsync(int isAbsent)
+        {
+            return await _context.Attendances
+                .Include(a => a.Rider)
+                .Include(a => a.ScheduleAttendances)
+                .Where(a => a.IsAbsent == isAbsent)
+                .ToListAsync();
+        }
+
+        // 获取指定骑手在特定日期的考勤记录
+        public async Task<Attendance?> GetRiderAttendanceByDateAsync(string riderId, DateTime checkDate)
+        {
+            return await _context.Attendances
+                .Include(a => a.Rider)
+                .Include(a => a.ScheduleAttendances)
+                .FirstOrDefaultAsync(a => a.RiderId == riderId && a.CheckDate.Date == checkDate.Date);
+        }
+
+        // 获取今日所有考勤记录
+        public async Task<IEnumerable<Attendance>> GetTodayAttendancesAsync()
+        {
+            DateTime today = DateTime.Today;
+            return await _context.Attendances
+                .Include(a => a.Rider)
+                .Include(a => a.ScheduleAttendances)
+                .Where(a => a.CheckDate.Date == today)
+                .ToListAsync();
+        }
+
+        // 获取指定骑手在日期范围内的迟到次数
+        public async Task<Dictionary<string, int>> GetLateCountByRiderAsync(DateTime startDate, DateTime endDate)
+        {
+            var lateCount = await _context.Attendances
+                .CountAsync(a => a.CheckDate.Date >= startDate.Date &&
+                                 a.CheckDate.Date <= endDate.Date &&
+                                 a.IsLate == 1);
+
+            return new Dictionary<string, int> { { "LateCount", lateCount } };
+        }
+
+        // 获取指定骑手在日期范围内的缺勤次数
+        public async Task<Dictionary<string, int>> GetAbsentCountByRiderAsync(DateTime startDate, DateTime endDate)
+        {
+            var absentCount = await _context.Attendances
+                .CountAsync(a => a.CheckDate.Date >= startDate.Date &&
+                                 a.CheckDate.Date <= endDate.Date &&
+                                 a.IsAbsent == 1);
+
+            return new Dictionary<string, int> { { "AbsentCount", absentCount } };
+        }
+
+        // 获取指定骑手在日期范围内的考勤统计数据
+        public async Task<Dictionary<string, object>> GetRiderAttendanceStatsAsync(string riderId, DateTime startDate, DateTime endDate)
+        {
+            var attendances = await _context.Attendances
+                .Where(a => a.RiderId == riderId &&
+                           a.CheckDate.Date >= startDate.Date &&
+                           a.CheckDate.Date <= endDate.Date)
+                .ToListAsync();
+
+            return new Dictionary<string, object>
+            {
+                { "Total", attendances.Count },
+                { "Late", attendances.Count(a => a.IsLate == 1) },
+                { "Absent", attendances.Count(a => a.IsAbsent == 1) },
+                { "OnTime", attendances.Count(a => a.IsLate == 0 && a.IsAbsent == 0) }
+            };
         }
     }
 }
