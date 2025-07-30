@@ -24,6 +24,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISalesStatRepository, SalesStatRepository>();
         services.AddScoped<IDishRepository, DishRepository>();
 
+        // 添加骑手相关仓储
+        services.AddScoped<IAssignmentRepository, AssignmentRepository>();
+        services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+        services.AddScoped<IPerformanceRepository, PerformanceRepository>();
         return services;
     }
 }

@@ -8,6 +8,7 @@ using JISpeed.Application.Services.Common;
 using JISpeed.Application.Services.Email;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Infrastructure.Redis;
+using JISpeed.Application.Services.Rider;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,7 +37,7 @@ builder.Services.AddRepositories();
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 // builder.Services.AddScoped<IUserService, UserService>();
-// builder.Services.AddScoped<IRiderService, RiderService>();
+ builder.Services.AddScoped<IRiderService, RiderService>();
 // builder.Services.AddScoped<IMerchantService, MerchantService>();
 // builder.Services.AddScoped<IAdminService, AdminService>();
 // 5. 添加 Swagger
