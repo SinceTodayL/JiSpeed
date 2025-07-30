@@ -11,7 +11,7 @@ using JISpeed.Infrastructure.Repositories;
 namespace JISpeed.Infrastructure.Repositories.Order
 {
     // 评价仓储实现 - 处理订单评价的数据访问操作
-    public class ReviewRepository : BaseRepository<Review, string>
+    public class ReviewRepository : BaseRepository<Review, string>, IReviewRepository
     {
         public ReviewRepository(OracleDbContext context) : base(context)
         {

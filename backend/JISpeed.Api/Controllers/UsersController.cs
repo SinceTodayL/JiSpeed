@@ -1,143 +1,550 @@
 using Microsoft.AspNetCore.Mvc;
-using JISpeed.Api.Common;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using JISpeed.Api.DTOs;
+using JISpeed.Api.DTOS;
+using JISpeed.Api.Common;
 using JISpeed.Api.Mappers;
+using JISpeed.Core.Entities.Common;
+using JISpeed.Core.Entities.User;
+using JISpeed.Core.Entities.Order;
+using JISpeed.Core.Interfaces.IRepositories.User;
+using JISpeed.Core.Interfaces.IRepositories.Order;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Core.Exceptions;
 using JISpeed.Core.Constants;
+using System.ComponentModel.DataAnnotations;
+using ValidationException = JISpeed.Core.Exceptions.ValidationException;
 
 namespace JISpeed.Api.Controllers
 {
-    
-    // 用户相关API控制器
-    
     [ApiController]
     [Route("api/[controller]")]
     public class UsersController : ControllerBase
     {
-        private readonly IUserService _userService;
         private readonly ILogger<UsersController> _logger;
+        private readonly IUserService _userService;
+        private readonly IUserRepository _userRepository;
+        private readonly IAddressRepository _addressRepository;
+        private readonly IReviewRepository _reviewRepository;
+        private readonly IComplaintRepository _complaintRepository;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public UsersController(IUserService userService, ILogger<UsersController> logger)
+        public UsersController(
+            ILogger<UsersController> logger,
+            IUserService userService,
+            IUserRepository userRepository,
+            IAddressRepository addressRepository,
+            IReviewRepository reviewRepository,
+            IComplaintRepository complaintRepository,
+            UserManager<ApplicationUser> userManager)
         {
-            _userService = userService;
             _logger = logger;
+            _userService = userService;
+            _userRepository = userRepository;
+            _addressRepository = addressRepository;
+            _reviewRepository = reviewRepository;
+            _complaintRepository = complaintRepository;
+            _userManager = userManager;
         }
 
-        
-        // 根据用户ID获取用户详细信息
-        
-        // <param name="userId">用户ID</param>
-        // <returns>用户详细信息</returns>
-        // <response code="200">成功获取用户信息</response>
-        // <response code="404">用户不存在</response>
-        // <response code="400">请求参数错误</response>
-        // <response code="500">服务器内部错误</response>
+
+        /// 根据ID获取用户信息
+
+        /// <param name="userId">用户ID</param>
+        /// <returns>用户详细信息</returns>
         [HttpGet("{userId}")]
-        [ProducesResponseType(typeof(ApiResponse<UserDetailDto>), 200)]
-        [ProducesResponseType(typeof(ApiResponse<object>), 404)]
-        [ProducesResponseType(typeof(ApiResponse<object>), 400)]
-        [ProducesResponseType(typeof(ApiResponse<object>), 500)]
-        public async Task<ActionResult<ApiResponse<UserDetailDto>>> GetUserDetail(string userId)
+        public async Task<ApiResponse<UserDetailDto>> GetUserById(string userId)
         {
             try
             {
-                _logger.LogInformation("收到获取用户详细信息请求, UserId: {UserId}", userId);
-
-                // 参数验证
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                    _logger.LogWarning("用户ID参数为空");
-                    return BadRequest(ApiResponse<object>.Fail(
-                        ErrorCodes.MissingParameter,
-                        "用户ID不能为空"));
-                }
-
-                // 获取用户详细信息
-                var user = await _userService.GetUserDetailAsync(userId);
+                var user = await _userRepository.GetWithDetailsAsync(userId);
                 if (user == null)
                 {
-                    return NotFound(ApiResponse<object>.Fail(
-                        ErrorCodes.ResourceNotFound,
-                        "用户不存在"));
+                    throw UserExceptions.UserNotFound(userId);
                 }
 
-                // 获取用户统计信息
-                var stats = await _userService.GetUserStatsAsync(userId);
+                var stats = await GetUserStatsAsync(userId);
+                var userDto = UserMapper.ToUserDetailDto(user, stats);
 
-                // 转换为DTO
-                var userDetailDto = UserMapper.ToUserDetailDto(user, stats);
-
-                _logger.LogInformation("成功获取用户详细信息, UserId: {UserId}, Nickname: {Nickname}",
-                    userId, user.Nickname);
-
-                return Ok(ApiResponse<UserDetailDto>.Success(userDetailDto, "用户信息获取成功"));
+                return ApiResponse<UserDetailDto>.Success(userDto);
             }
-            catch (ValidationException ex)
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
             {
-                _logger.LogWarning(ex, "参数验证失败, UserId: {UserId}", userId);
-                return BadRequest(ApiResponse<object>.Fail(
-                    ErrorCodes.ValidationFailed,
-                    ex.Message));
-            }
-            catch (NotFoundException ex)
-            {
-                _logger.LogWarning(ex, "用户不存在, UserId: {UserId}", userId);
-                return NotFound(ApiResponse<object>.Fail(
-                    ErrorCodes.ResourceNotFound,
-                    ex.Message));
-            }
-            catch (BusinessException ex)
-            {
-                _logger.LogError(ex, "业务处理异常, UserId: {UserId}", userId);
-                return StatusCode(500, ApiResponse<object>.Fail(
-                    ErrorCodes.GeneralError,
-                    ex.Message));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "获取用户详细信息时发生未知异常, UserId: {UserId}", userId);
-                return StatusCode(500, ApiResponse<object>.Fail(
-                    ErrorCodes.SystemError,
-                    "系统繁忙，请稍后再试"));
+                _logger.LogError(ex, "获取用户信息时发生异常，UserId: {UserId}", userId);
+                throw new BusinessException("获取用户信息失败");
             }
         }
 
-        
-        // 检查用户是否存在
-        
-        // <param name="userId">用户ID</param>
-        // <returns>用户是否存在</returns>
-        // <response code="200">检查成功</response>
-        // <response code="400">请求参数错误</response>
-        [HttpGet("{userId}/exists")]
-        [ProducesResponseType(typeof(ApiResponse<bool>), 200)]
-        [ProducesResponseType(typeof(ApiResponse<object>), 400)]
-        public async Task<ActionResult<ApiResponse<bool>>> CheckUserExists(string userId)
+
+        /// 根据ID获取用户收藏的商品列表
+
+        /// <param name="userId">用户ID</param>
+        /// <returns>收藏商品列表</returns>
+        [HttpGet("{userId}/favorites")]
+        public async Task<ApiResponse<List<UserFavoriteDto>>> GetUserFavorites(string userId)
         {
             try
             {
-                _logger.LogInformation("收到检查用户存在性请求, UserId: {UserId}", userId);
-
-                if (string.IsNullOrWhiteSpace(userId))
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
                 {
-                    return BadRequest(ApiResponse<object>.Fail(
-                        ErrorCodes.MissingParameter,
-                        "用户ID不能为空"));
+                    throw UserExceptions.UserNotFound(userId);
                 }
 
-                var exists = await _userService.ValidateUserExistsAsync(userId);
+                var userWithDetails = await _userRepository.GetWithDetailsAsync(userId);
+                var favorites = userWithDetails?.Favorites ?? new List<Favorite>();
+                var favoriteDtos = UserMapper.ToUserFavoriteDtoList(favorites);
 
-                _logger.LogInformation("用户存在性检查完成, UserId: {UserId}, Exists: {Exists}", userId, exists);
+                return ApiResponse<List<UserFavoriteDto>>.Success(favoriteDtos);
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取用户收藏列表时发生异常，UserId: {UserId}", userId);
+                throw new BusinessException("获取用户收藏列表失败");
+            }
+        }
 
-                return Ok(ApiResponse<bool>.Success(exists, "检查完成"));
+
+        /// 根据ID获取用户的所有地址列表
+
+        /// <param name="userId">用户ID</param>
+        /// <returns>地址列表</returns>
+        [HttpGet("{userId}/addresses")]
+        public async Task<ApiResponse<List<UserAddressDto>>> GetUserAddresses(string userId)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                var addresses = await _addressRepository.GetByUserIdAsync(userId);
+                var addressDtos = UserMapper.ToUserAddressDtoList(addresses);
+
+                return ApiResponse<List<UserAddressDto>>.Success(addressDtos);
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取用户地址列表时发生异常，UserId: {UserId}", userId);
+                throw new BusinessException("获取用户地址列表失败");
+            }
+        }
+
+
+        /// 根据ID获取用户的购物车内容
+
+        /// <param name="userId">用户ID</param>
+        /// <returns>购物车内容</returns>
+        [HttpGet("{userId}/cart")]
+        public async Task<ApiResponse<List<UserCartItemDto>>> GetUserCart(string userId)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                var userWithDetails = await _userRepository.GetWithDetailsAsync(userId);
+                var cartItems = userWithDetails?.CartItems ?? new List<CartItem>();
+                var cartItemDtos = UserMapper.ToUserCartItemDtoList(cartItems);
+
+                return ApiResponse<List<UserCartItemDto>>.Success(cartItemDtos);
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取用户购物车时发生异常，UserId: {UserId}", userId);
+                throw new BusinessException("获取用户购物车失败");
+            }
+        }
+
+
+        /// 根据ID获取用户发布的所有评论
+
+        /// <param name="userId">用户ID</param>
+        /// <returns>评论列表</returns>
+        [HttpGet("{userId}/review")]
+        public async Task<ApiResponse<List<UserReviewDto>>> GetUserReviews(string userId)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                var reviews = await _reviewRepository.GetByUserIdAsync(userId);
+                var reviewDtos = UserMapper.ToUserReviewDtoList(reviews);
+
+                return ApiResponse<List<UserReviewDto>>.Success(reviewDtos);
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取用户评论时发生异常，UserId: {UserId}", userId);
+                throw new BusinessException("获取用户评论失败");
+            }
+        }
+
+
+        /// 根据ID获取用户提交的所有投诉
+
+        /// <param name="userId">用户ID</param>
+        /// <returns>投诉列表</returns>
+        [HttpGet("{userId}/complaints")]
+        public async Task<ApiResponse<List<UserComplaintDto>>> GetUserComplaints(string userId)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                var complaints = await _complaintRepository.GetByUserIdAsync(userId);
+                var complaintDtos = UserMapper.ToUserComplaintDtoList(complaints);
+
+                return ApiResponse<List<UserComplaintDto>>.Success(complaintDtos);
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取用户投诉时发生异常，UserId: {UserId}", userId);
+                throw new BusinessException("获取用户投诉失败");
+            }
+        }
+
+
+        /// 用户添加收藏夹
+
+        /// <param name="userId">用户ID</param>
+        /// <param name="request">收藏请求</param>
+        /// <returns>操作结果</returns>
+        [HttpPost("{userId}/favorites")]
+        public async Task<ApiResponse<object>> AddFavorite(string userId, [FromBody] AddFavoriteRequest request)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                if (string.IsNullOrEmpty(request.DishId))
+                {
+                    throw new ValidationException("菜品ID不能为空");
+                }
+
+                // 检查是否已收藏
+                var isAlreadyFavorite = await _userService.IsFavoriteAsync(userId, request.DishId);
+                if (isAlreadyFavorite)
+                {
+                    throw new BusinessException("该菜品已在收藏列表中");
+                }
+
+                // 添加收藏
+                var success = await _userService.AddFavoriteAsync(userId, request.DishId);
+                if (!success)
+                {
+                    throw new BusinessException("添加收藏失败");
+                }
+
+                return ApiResponse<object>.Success(new { }, "添加收藏成功");
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "添加收藏时发生异常，UserId: {UserId}, DishId: {DishId}", userId, request.DishId);
+                throw new BusinessException("添加收藏失败");
+            }
+        }
+
+
+        /// 删除收藏
+
+        /// <param name="userId">用户ID</param>
+        /// <param name="dishId">菜品ID</param>
+        /// <returns>操作结果</returns>
+        [HttpDelete("{userId}/favorites/{dishId}")]
+        public async Task<ApiResponse<object>> RemoveFavorite(string userId, string dishId)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                // 删除收藏
+                var success = await _userService.RemoveFavoriteAsync(userId, dishId);
+                if (!success)
+                {
+                    throw new BusinessException("取消收藏失败，该菜品可能未被收藏");
+                }
+
+                return ApiResponse<object>.Success(new { }, "取消收藏成功");
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "取消收藏时发生异常，UserId: {UserId}, DishId: {DishId}", userId, dishId);
+                throw new BusinessException("取消收藏失败");
+            }
+        }
+
+
+        /// 添加地址
+
+        /// <param name="userId">用户ID</param>
+        /// <param name="request">地址请求</param>
+        /// <returns>操作结果</returns>
+        [HttpPost("{userId}/addresses")]
+        public async Task<ApiResponse<object>> AddAddress(string userId, [FromBody] AddAddressRequest request)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                if (string.IsNullOrEmpty(request.ReceiverName))
+                    throw new ValidationException("收货人姓名不能为空");
+                if (string.IsNullOrEmpty(request.ReceiverPhone))
+                    throw new ValidationException("收货人手机号不能为空");
+                if (string.IsNullOrEmpty(request.DetailedAddress))
+                    throw new ValidationException("详细地址不能为空");
+
+                // 创建地址
+                var addressId = await _userService.CreateAddressAsync(
+                    userId,
+                    request.ReceiverName,
+                    request.ReceiverPhone,
+                    request.DetailedAddress,
+                    request.IsDefault);
+
+                if (addressId == null)
+                {
+                    throw new BusinessException("添加地址失败");
+                }
+
+                return ApiResponse<object>.Success(new { AddressId = addressId }, "添加地址成功");
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "添加地址时发生异常，UserId: {UserId}", userId);
+                throw new BusinessException("添加地址失败");
+            }
+        }
+
+
+        /// 修改地址
+
+        /// <param name="userId">用户ID</param>
+        /// <param name="addressId">地址ID</param>
+        /// <param name="request">地址请求</param>
+        /// <returns>操作结果</returns>
+        [HttpPut("{userId}/addresses/{addressId}")]
+        public async Task<ApiResponse<object>> UpdateAddress(string userId, string addressId, [FromBody] AddAddressRequest request)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                var address = await _addressRepository.GetByIdAsync(addressId);
+                if (address == null || address.UserId != userId)
+                {
+                    throw UserExceptions.UserAddressNotFound(addressId, userId);
+                }
+
+                if (string.IsNullOrEmpty(request.ReceiverName))
+                    throw new ValidationException("收货人姓名不能为空");
+                if (string.IsNullOrEmpty(request.ReceiverPhone))
+                    throw new ValidationException("收货人手机号不能为空");
+                if (string.IsNullOrEmpty(request.DetailedAddress))
+                    throw new ValidationException("详细地址不能为空");
+
+                // 更新地址
+                var success = await _userService.UpdateAddressAsync(
+                    userId,
+                    addressId,
+                    request.ReceiverName,
+                    request.ReceiverPhone,
+                    request.DetailedAddress,
+                    request.IsDefault);
+
+                if (!success)
+                {
+                    throw new BusinessException("修改地址失败");
+                }
+
+                return ApiResponse<object>.Success(new { }, "修改地址成功");
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "修改地址时发生异常，UserId: {UserId}, AddressId: {AddressId}", userId, addressId);
+                throw new BusinessException("修改地址失败");
+            }
+        }
+
+
+        /// 删除地址
+
+        /// <param name="userId">用户ID</param>
+        /// <param name="addressId">地址ID</param>
+        /// <returns>操作结果</returns>
+        [HttpDelete("{userId}/addresses/{addressId}")]
+        public async Task<ApiResponse<object>> DeleteAddress(string userId, string addressId)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                var address = await _addressRepository.GetByIdAsync(addressId);
+                if (address == null || address.UserId != userId)
+                {
+                    throw UserExceptions.UserAddressNotFound(addressId, userId);
+                }
+
+                // 删除地址
+                var success = await _userService.DeleteAddressAsync(userId, addressId);
+                if (!success)
+                {
+                    throw new BusinessException("删除地址失败");
+                }
+
+                return ApiResponse<object>.Success(new { }, "删除地址成功");
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "删除地址时发生异常，UserId: {UserId}, AddressId: {AddressId}", userId, addressId);
+                throw new BusinessException("删除地址失败");
+            }
+        }
+
+
+        /// 添加到购物车
+
+        /// <param name="userId">用户ID</param>
+        /// <param name="request">购物车请求</param>
+        /// <returns>操作结果</returns>
+        [HttpPost("{userId}/cart")]
+        public async Task<ApiResponse<object>> AddToCart(string userId, [FromBody] AddToCartRequest request)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                if (string.IsNullOrEmpty(request.DishId))
+                {
+                    throw new ValidationException("菜品ID不能为空");
+                }
+
+                // 检查购物车中是否已有该商品
+                var isInCart = await _userService.IsInCartAsync(userId, request.DishId);
+                if (isInCart)
+                {
+                    throw new BusinessException("该菜品已在购物车中");
+                }
+
+                // 添加到购物车
+                var cartItemId = await _userService.AddToCartAsync(userId, request.DishId);
+                if (cartItemId == null)
+                {
+                    throw new BusinessException("添加到购物车失败");
+                }
+
+                return ApiResponse<object>.Success(new { CartItemId = cartItemId }, "添加到购物车成功");
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "添加到购物车时发生异常，UserId: {UserId}, DishId: {DishId}", userId, request.DishId);
+                throw new BusinessException("添加到购物车失败");
+            }
+        }
+
+
+        /// 从购物车删除商品
+
+        /// <param name="userId">用户ID</param>
+        /// <param name="cartItemId">购物车项ID</param>
+        /// <returns>操作结果</returns>
+        [HttpDelete("{userId}/cart/{cartItemId}")]
+        public async Task<ApiResponse<object>> RemoveFromCart(string userId, string cartItemId)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                // 从购物车删除商品
+                var success = await _userService.RemoveFromCartAsync(userId, cartItemId);
+                if (!success)
+                {
+                    throw new BusinessException("从购物车删除失败，该商品可能已被删除");
+                }
+
+                return ApiResponse<object>.Success(new { }, "从购物车删除成功");
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "从购物车删除时发生异常，UserId: {UserId}, CartItemId: {CartItemId}", userId, cartItemId);
+                throw new BusinessException("从购物车删除失败");
+            }
+        }
+
+        private async Task<UserStatsDto> GetUserStatsAsync(string userId)
+        {
+            try
+            {
+                // 获取用户详细信息，包含所有关联数据
+                var userWithDetails = await _userRepository.GetWithDetailsAsync(userId);
+                if (userWithDetails == null)
+                {
+                    return new UserStatsDto();
+                }
+
+                // 使用服务层方法获取统计数据
+                var favoriteCount = await _userService.GetFavoriteCountAsync(userId);
+                var cartItemCount = await _userService.GetCartItemCountAsync(userId);
+                var addressCount = await _userService.GetAddressCountAsync(userId);
+
+                // 获取评论和投诉数量
+                var reviews = await _reviewRepository.GetByUserIdAsync(userId);
+                var complaints = await _complaintRepository.GetByUserIdAsync(userId);
+
+                return UserMapper.ToUserStatsDto(
+                    totalOrders: userWithDetails.Orders?.Count ?? 0,
+                    favoriteCount: favoriteCount,
+                    cartItemCount: cartItemCount,
+                    availableCouponCount: userWithDetails.Coupons?.Count ?? 0,
+                    addressCount: addressCount
+                );
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "检查用户存在性时发生异常, UserId: {UserId}", userId);
-                return StatusCode(500, ApiResponse<object>.Fail(
-                    ErrorCodes.SystemError,
-                    "系统繁忙，请稍后再试"));
+                _logger.LogWarning(ex, "获取用户统计信息失败，UserId: {UserId}", userId);
+                return new UserStatsDto();
             }
         }
     }

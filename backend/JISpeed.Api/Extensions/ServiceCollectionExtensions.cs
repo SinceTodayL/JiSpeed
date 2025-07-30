@@ -1,13 +1,16 @@
+using JISpeed.Application.Services.Customer;
 using JISpeed.Core.Interfaces.IRepositories.Admin;
 using JISpeed.Core.Interfaces.IRepositories.Common;
 using JISpeed.Core.Interfaces.IRepositories.Dish;
 using JISpeed.Core.Interfaces.IRepositories.Merchant;
+using JISpeed.Core.Interfaces.IRepositories.Order;
 using JISpeed.Core.Interfaces.IRepositories.Rider;
 using JISpeed.Core.Interfaces.IRepositories.User;
 using JISpeed.Infrastructure.Repositories.Admin;
 using JISpeed.Infrastructure.Repositories.Common;
 using JISpeed.Infrastructure.Repositories.Dish;
 using JISpeed.Infrastructure.Repositories.Merchant;
+using JISpeed.Infrastructure.Repositories.Order;
 using JISpeed.Infrastructure.Repositories.Rider;
 using JISpeed.Infrastructure.Repositories.User;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +26,24 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IApplicationUserRepository, ApplicationUserRepository>();
         services.AddScoped<ISalesStatRepository, SalesStatRepository>();
         services.AddScoped<IDishRepository, DishRepository>();
+        services.AddScoped<IAddressRepository, AddressRepository>();
+        services.AddScoped<IReviewRepository, ReviewRepository>();
+        services.AddScoped<IComplaintRepository, ComplaintRepository>();
+        
+        // 骑手相关仓储
+        services.AddScoped<IAssignmentRepository, AssignmentRepository>();
+        services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+        services.AddScoped<IPerformanceRepository, PerformanceRepository>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    {
+        // 注释掉旧的具体服务类，现在统一使用IUserService
+        // services.AddScoped<FavoriteService>();
+        // services.AddScoped<CartService>();
+        // services.AddScoped<AddressService>();
 
         return services;
     }

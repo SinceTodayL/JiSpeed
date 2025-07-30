@@ -6,6 +6,10 @@ using JISpeed.Api.Extensions;
 using JISpeed.Api.Mappers;
 using JISpeed.Application.Services.Common;
 using JISpeed.Application.Services.Email;
+using JISpeed.Application.Services.Customer;
+using JISpeed.Application.Services.Merchant;
+using JISpeed.Application.Services.Rider;
+using JISpeed.Application.Services.Admin;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Infrastructure.Redis;
 
@@ -25,7 +29,7 @@ builder.Services.AddDbContext<OracleDbContext>(options => options.UseOracle(conn
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
     .AddEntityFrameworkStores<OracleDbContext>()
     .AddDefaultTokenProviders();
-builder.Services.AddAutoMapper((cfg) => { }, typeof(MerchantProfile).Assembly); 
+builder.Services.AddAutoMapper((cfg) => { }, typeof(MerchantProfile).Assembly);
 // 4. 控制器和日志等默认配置
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -35,10 +39,10 @@ builder.Services.AddRepositories();
 // 注册：接口 -> 实现类
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-//builder.Services.AddScoped<IUserService, UserService>();
-// builder.Services.AddScoped<IRiderService, RiderService>();
-// builder.Services.AddScoped<IMerchantService, MerchantService>();
-// builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRiderService, RiderService>();
+builder.Services.AddScoped<IMerchantService, MerchantService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 // 5. 添加 Swagger
 builder.Services.AddSwaggerGen();
 
