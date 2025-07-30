@@ -4,6 +4,7 @@ using JISpeed.Core.Interfaces.IRepositories;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Core.Constants;
 using JISpeed.Core.Exceptions;
+using JISpeed.Core.Interfaces.IRepositories.Admin;
 using Microsoft.Extensions.Logging;
 
 namespace JISpeed.Application.Services.Admin

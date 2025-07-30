@@ -8,26 +8,26 @@ namespace JISpeed.Api.DTOS
     public class RiderDTO
     {
         // 骑手ID
-        public string RiderId { get; set; }
+        public string? RiderId { get; set; }
 
         // 骑手姓名
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         // 手机号
-        public string PhoneNumber { get; set; }
+        public string? PhoneNumber { get; set; }
 
         // 车牌号
-        public string VehicleNumber { get; set; }
+        public string? VehicleNumber { get; set; }
 
-        // 关联的用户ID
-        public string ApplicationUserId { get; set; }
+        // 身份认证用户ID
+        public string? ApplicationUserId { get; set; }
     }
 
     // 骑手详情DTO - 包含更多信息
     public class RiderDetailDTO : RiderDTO
     {
         // 绩效信息
-        public PerformanceDTO Performance { get; set; }
+        public PerformanceDTO? Performance { get; set; }
 
         // 当前任务数
         public int CurrentTaskCount { get; set; }
@@ -42,19 +42,19 @@ namespace JISpeed.Api.DTOS
         // 骑手姓名
         [Required(ErrorMessage = "骑手姓名不能为空")]
         [StringLength(50, ErrorMessage = "骑手姓名长度不能超过50个字符")]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         // 手机号
         [Required(ErrorMessage = "手机号不能为空")]
         [RegularExpression(@"^1[3-9]\d{9}$", ErrorMessage = "手机号格式不正确")]
         [StringLength(20, ErrorMessage = "手机号长度不能超过20个字符")]
-        public string PhoneNumber { get; set; }
+        public string PhoneNumber { get; set; } = string.Empty;
 
         // 车牌号
         [StringLength(20, ErrorMessage = "车牌号长度不能超过20个字符")]
-        public string VehicleNumber { get; set; }
+        public string? VehicleNumber { get; set; }
 
-        // 关联的用户ID
+        // 身份认证用户ID
         public string? ApplicationUserId { get; set; }
     }
 
@@ -63,23 +63,23 @@ namespace JISpeed.Api.DTOS
     {
         // 骑手姓名
         [StringLength(50, ErrorMessage = "骑手姓名长度不能超过50个字符")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         // 手机号
         [RegularExpression(@"^1[3-9]\d{9}$", ErrorMessage = "手机号格式不正确")]
         [StringLength(20, ErrorMessage = "手机号长度不能超过20个字符")]
-        public string PhoneNumber { get; set; }
+        public string? PhoneNumber { get; set; }
 
         // 车牌号
         [StringLength(20, ErrorMessage = "车牌号长度不能超过20个字符")]
-        public string VehicleNumber { get; set; }
+        public string? VehicleNumber { get; set; }
     }
 
     // 订单分配DTO
     public class AssignmentDTO
     {
         // 分配ID
-        public string AssignId { get; set; }
+        public string? AssignId { get; set; }
 
         // 分配时间
         public DateTime AssignedAt { get; set; }
@@ -94,14 +94,14 @@ namespace JISpeed.Api.DTOS
         public int? TimeOut { get; set; }
 
         // 订单信息
-        public OrderSummaryDTO Order { get; set; }
+        public OrderSummaryDTO? Order { get; set; }
     }
 
     // 订单摘要DTO
     public class OrderSummaryDTO
     {
         // 订单ID
-        public string OrderId { get; set; }
+        public string? OrderId { get; set; }
 
         // 订单金额
         public decimal OrderAmount { get; set; }
@@ -113,10 +113,10 @@ namespace JISpeed.Api.DTOS
         public int OrderStatus { get; set; }
 
         // 配送地址
-        public string DeliveryAddress { get; set; }
+        public string? DeliveryAddress { get; set; }
 
         // 商家名称
-        public string MerchantName { get; set; }
+        public string? MerchantName { get; set; }
     }
 
     // 更新订单分配状态请求DTO
@@ -154,7 +154,7 @@ namespace JISpeed.Api.DTOS
     public class AttendanceDTO
     {
         // 考勤ID
-        public string AttendanceId { get; set; }
+        public string? AttendanceId { get; set; }
 
         // 考勤日期
         public DateTime CheckDate { get; set; }
@@ -176,7 +176,7 @@ namespace JISpeed.Api.DTOS
     public class ScheduleDTO
     {
         // 排班ID
-        public string ScheduleId { get; set; }
+        public string? ScheduleId { get; set; }
 
         // 工作日期
         public DateTime WorkDate { get; set; }

@@ -13,7 +13,7 @@ namespace JISpeed.Api.Mappers
         // 将Rider实体转换为RiderDTO
         // <param name="rider">骑手实体</param>
         // <returns>骑手DTO</returns>
-        public static RiderDTO ToRiderDTO(Rider rider)
+        public static RiderDTO? ToRiderDTO(Rider? rider)
         {
             if (rider == null) return null;
 
@@ -33,9 +33,9 @@ namespace JISpeed.Api.Mappers
         // <param name="currentTaskCount">当前任务数</param>
         // <param name="todayCompletedOrders">今日完成订单数</param>
         // <returns>骑手详情DTO</returns>
-        public static RiderDetailDTO ToRiderDetailDTO(
-            Rider rider,
-            Performance performance = null,
+        public static RiderDetailDTO? ToRiderDetailDTO(
+            Rider? rider,
+            Performance? performance = null,
             int currentTaskCount = 0,
             int todayCompletedOrders = 0)
         {
@@ -57,20 +57,24 @@ namespace JISpeed.Api.Mappers
         // 将CreateRiderDTO转换为Rider实体
         // <param name="dto">创建骑手DTO</param>
         // <returns>骑手实体</returns>
-        public static Rider ToRiderEntity(CreateRiderDTO dto)
+        public static Rider? ToRiderEntity(CreateRiderDTO? dto)
         {
             if (dto == null) return null;
 
-            // 创建一个新的骑手ID
+            // 生成一个新的骑手ID
             string riderId = Guid.NewGuid().ToString("N");
 
-            // 使用属性初始化器确保设置所有required属性
-            return new Rider(riderId, dto.Name, dto.PhoneNumber, dto.ApplicationUserId)
+            // 使用属性初始化确保设置所有required属性
+            return new Rider(
+                riderId,
+                dto.Name ?? string.Empty,
+                dto.PhoneNumber ?? string.Empty,
+                dto.ApplicationUserId)
             {
-                // 这些属性已在构造函数中设置，但由于required特性，需要再次显式设置
+                // 这些属性在构造函数中设置（required属性），需再次显式设置
                 RiderId = riderId,
-                Name = dto.Name,
-                PhoneNumber = dto.PhoneNumber,
+                Name = dto.Name ?? string.Empty,
+                PhoneNumber = dto.PhoneNumber ?? string.Empty,
                 // 设置可选属性
                 VehicleNumber = dto.VehicleNumber
             };
@@ -102,7 +106,7 @@ namespace JISpeed.Api.Mappers
         // 将Assignment实体转换为AssignmentDTO
         // <param name="assignment">订单分配实体</param>
         // <returns>订单分配DTO</returns>
-        public static AssignmentDTO ToAssignmentDTO(Assignment assignment)
+        public static AssignmentDTO? ToAssignmentDTO(Assignment? assignment)
         {
             if (assignment == null) return null;
 
@@ -120,17 +124,20 @@ namespace JISpeed.Api.Mappers
         // 将Assignment实体集合转换为AssignmentDTO集合
         // <param name="assignments">订单分配实体集合</param>
         // <returns>订单分配DTO集合</returns>
-        public static IEnumerable<AssignmentDTO> ToAssignmentDTOs(IEnumerable<Assignment> assignments)
+        public static IEnumerable<AssignmentDTO> ToAssignmentDTOs(IEnumerable<Assignment>? assignments)
         {
             if (assignments == null) return Enumerable.Empty<AssignmentDTO>();
 
-            return assignments.Select(ToAssignmentDTO);
+            return assignments
+                .Select(a => ToAssignmentDTO(a))
+                .Where(dto => dto != null)
+                .Cast<AssignmentDTO>();
         }
 
         // 将Order实体转换为OrderSummaryDTO
         // <param name="order">订单实体</param>
         // <returns>订单摘要DTO</returns>
-        public static OrderSummaryDTO ToOrderSummaryDTO(Order order)
+        public static OrderSummaryDTO? ToOrderSummaryDTO(Order? order)
         {
             if (order == null) return null;
 
@@ -148,7 +155,7 @@ namespace JISpeed.Api.Mappers
         // 将Performance实体转换为PerformanceDTO
         // <param name="performance">绩效实体</param>
         // <returns>绩效DTO</returns>
-        public static PerformanceDTO ToPerformanceDTO(Performance performance)
+        public static PerformanceDTO? ToPerformanceDTO(Performance? performance)
         {
             if (performance == null) return null;
 
@@ -166,7 +173,7 @@ namespace JISpeed.Api.Mappers
         // 将Attendance实体转换为AttendanceDTO
         // <param name="attendance">考勤实体</param>
         // <returns>考勤DTO</returns>
-        public static AttendanceDTO ToAttendanceDTO(Attendance attendance)
+        public static AttendanceDTO? ToAttendanceDTO(Attendance? attendance)
         {
             if (attendance == null) return null;
 
@@ -184,7 +191,7 @@ namespace JISpeed.Api.Mappers
         // 将Schedule实体转换为ScheduleDTO
         // <param name="schedule">排班实体</param>
         // <returns>排班DTO</returns>
-        public static ScheduleDTO ToScheduleDTO(Schedule schedule)
+        public static ScheduleDTO? ToScheduleDTO(Schedule? schedule)
         {
             if (schedule == null) return null;
 

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using JISpeed.Api.DTOS;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Api.Common;
+using JISpeed.Core.Interfaces.IRepositories.Common;
 
 namespace JISpeed.Api.Controllers
 {
@@ -14,28 +15,31 @@ namespace JISpeed.Api.Controllers
         private readonly ILogger<AuthController> _logger;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IRegistrationService _registerService;
+        private readonly IApplicationUserRepository _applicationUserRepository;
         private readonly IEmailService _emailService;
 
         public AuthController(ILogger<AuthController> logger,
             UserManager<ApplicationUser> userManager,
             IRegistrationService registerService,
+            IApplicationUserRepository applicationUserRepository,
             IEmailService emailService)
         {
             _logger = logger;
             _userManager = userManager;
             _registerService = registerService;
             _emailService = emailService;
+            _applicationUserRepository = applicationUserRepository;
         }
 
 
         [HttpPost("login")]
-        public async Task<ApiResponse> Login([FromBody] UserLoginRequest request)
+        public async Task<ApiResponse> Login(int userType,[FromBody] UserLoginRequest request)
         {
             ApplicationUser? user; 
             string? key;
             if (request.Email != null)
             {
-                user = await _userManager.FindByEmailAsync(request.Email);
+                user = await _applicationUserRepository.GetByEmailAndUserTypeAsync(request.Email, userType);
                 key =request.Email;
             }
             else if (request.UserName != null)
@@ -54,14 +58,14 @@ namespace JISpeed.Api.Controllers
                 _logger.LogWarning("登录失败，用户不存在");
                 return ApiResponse.Fail(3002,"登录失败，用户不存在");
             }
-
+        
             var result = await _userManager.CheckPasswordAsync(user, request.PassWord);
             if (!result)
             {
                 _logger.LogWarning($"登录接口：失败，登录名{key}");
                 return ApiResponse.Fail(3007,"登录失败，密码错误");
             }
-
+        
             _logger.LogInformation($"登录接口：成功，登录名{key}");
             return ApiResponse.Success("登录成功！");
         }

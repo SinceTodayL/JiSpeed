@@ -47,7 +47,7 @@ namespace JISpeed.Api.Controllers
                 var rider = await _riderService.GetRiderByIdAsync(riderId);
                 var riderDto = RiderMapper.ToRiderDTO(rider);
 
-                return Ok(ApiResponse<RiderDTO>.Success(riderDto));
+                return Ok(ApiResponse<RiderDTO>.Success(riderDto ?? new RiderDTO()));
             }
             catch (ValidationException ex)
             {
@@ -92,14 +92,23 @@ namespace JISpeed.Api.Controllers
                     return BadRequest(ApiResponse<object>.Fail(
                         ErrorCodes.ValidationFailed,
                         "参数验证失败",
-                        ModelState.ToDictionary(
-                            kvp => kvp.Key,
-                            kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
-                        )));
+                        ModelState.Where(kvp => kvp.Value?.Errors != null)
+                            .ToDictionary(
+                                kvp => kvp.Key,
+                                kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
+                            )));
                 }
 
                 // 转换DTO为实体
                 var rider = RiderMapper.ToRiderEntity(createRiderDto);
+
+                // null检查
+                if (rider == null)
+                {
+                    return BadRequest(ApiResponse<object>.Fail(
+                        ErrorCodes.ValidationFailed,
+                        "创建骑手失败：无法转换请求数据"));
+                }
 
                 // 调用服务创建骑手
                 var createdRider = await _riderService.CreateRiderAsync(rider);
@@ -107,8 +116,8 @@ namespace JISpeed.Api.Controllers
                 // 转换结果为DTO
                 var riderDto = RiderMapper.ToRiderDTO(createdRider);
 
-                return CreatedAtAction(nameof(GetRider), new { riderId = riderDto.RiderId },
-                    ApiResponse<RiderDTO>.Success(riderDto, "骑手创建成功"));
+                return CreatedAtAction(nameof(GetRider), new { riderId = riderDto?.RiderId },
+                    ApiResponse<RiderDTO>.Success(riderDto ?? new RiderDTO(), "骑手创建成功"));
             }
             catch (ValidationException ex)
             {
@@ -159,10 +168,11 @@ namespace JISpeed.Api.Controllers
                     return BadRequest(ApiResponse<object>.Fail(
                         ErrorCodes.ValidationFailed,
                         "参数验证失败",
-                        ModelState.ToDictionary(
-                            kvp => kvp.Key,
-                            kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
-                        )));
+                        ModelState.Where(kvp => kvp.Value?.Errors != null)
+                            .ToDictionary(
+                                kvp => kvp.Key,
+                                kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
+                            )));
                 }
 
                 // 获取现有骑手
@@ -177,7 +187,7 @@ namespace JISpeed.Api.Controllers
                 // 转换结果为DTO
                 var riderDto = RiderMapper.ToRiderDTO(updatedRider);
 
-                return Ok(ApiResponse<RiderDTO>.Success(riderDto, "骑手信息更新成功"));
+                return Ok(ApiResponse<RiderDTO>.Success(riderDto ?? new RiderDTO(), "骑手信息更新成功"));
             }
             catch (ValidationException ex)
             {
@@ -280,10 +290,11 @@ namespace JISpeed.Api.Controllers
                     return BadRequest(ApiResponse<object>.Fail(
                         ErrorCodes.ValidationFailed,
                         "参数验证失败",
-                        ModelState.ToDictionary(
-                            kvp => kvp.Key,
-                            kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
-                        )));
+                        ModelState.Where(kvp => kvp.Value?.Errors != null)
+                            .ToDictionary(
+                                kvp => kvp.Key,
+                                kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
+                            )));
                 }
 
                 // 调用服务更新订单分配状态
@@ -302,7 +313,7 @@ namespace JISpeed.Api.Controllers
                     _ => "状态更新成功"
                 };
 
-                return Ok(ApiResponse<AssignmentDTO>.Success(assignmentDto, message));
+                return Ok(ApiResponse<AssignmentDTO>.Success(assignmentDto ?? new AssignmentDTO(), message));
             }
             catch (ValidationException ex)
             {

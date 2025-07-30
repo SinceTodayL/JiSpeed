@@ -1,4 +1,5 @@
 using JISpeed.Core.Entities.Common;
+using JISpeed.Core.Interfaces.IRepositories;
 
 namespace JISpeed.Core.Interfaces.IServices
 {
@@ -7,6 +8,8 @@ namespace JISpeed.Core.Interfaces.IServices
     {
         Task<PreRegistrationResult> PreRegisterUserAsync(ApplicationUser request,string passwordHash);
         Task<RegistrationResult> RegisterUserAsync(string Id, string token);
+
+        
 
         Task<bool> CreateBusinessEntityAsync(ApplicationUser applicationUser);
 
