@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+/*using Microsoft.AspNetCore.Mvc;
 using JISpeed.Api.Common;
 using JISpeed.Api.DTOs;
 using JISpeed.Api.Mappers;
@@ -141,4 +141,4 @@ namespace JISpeed.Api.Controllers
             }
         }
     }
-}
+}*/

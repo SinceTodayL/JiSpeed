@@ -1,4 +1,4 @@
-using JISpeed.Core.Entities.Merchant;
+/*using JISpeed.Core.Entities.Merchant;
 using JISpeed.Core.Entities.Common;
 using JISpeed.Core.Interfaces.IRepositories;
 using JISpeed.Core.Interfaces.IServices;
@@ -182,4 +182,4 @@ namespace JISpeed.Application.Services.Merchant
 
     }
 
-}
+}*/
