@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JISpeed.Core.Entities.Rider;
+using JISpeed.Core.Interfaces.IRepositories.Rider;
 using JISpeed.Core.Entities.Common;
 using JISpeed.Core.Interfaces.IRepositories;
 using JISpeed.Core.Interfaces.IServices;
@@ -15,11 +16,16 @@ namespace JISpeed.Application.Services.Rider
     public class RiderService : IRiderService
     {
         private readonly IRiderRepository _riderRepository;
+        private readonly IAssignmentRepository _assignmentRepository;
         private readonly ILogger<RiderService> _logger;
 
-        public RiderService(IRiderRepository riderRepository, ILogger<RiderService> logger)
+        public RiderService(
+            IRiderRepository riderRepository,
+            IAssignmentRepository assignmentRepository,
+            ILogger<RiderService> logger)
         {
             _riderRepository = riderRepository;
+            _assignmentRepository = assignmentRepository;
             _logger = logger;
         }
 
@@ -158,7 +164,7 @@ namespace JISpeed.Application.Services.Rider
                 }
 
                 // 保存骑手信息
-                await _riderRepository.AddAsync(rider);
+                await _riderRepository.CreateAsync(rider);
 
                 _logger.LogInformation("骑手创建成功, RiderId: {RiderId}, Name: {Name}",
                     rider.RiderId, rider.Name);
@@ -235,7 +241,7 @@ namespace JISpeed.Application.Services.Rider
                 }
 
                 // 获取订单分配列表
-                var assignments = await _riderRepository.GetAssignmentsAsync(riderId);
+                var assignments = await _assignmentRepository.GetByRiderIdAsync(riderId);
 
                 // 按照状态筛选
                 if (status.HasValue)
@@ -287,7 +293,7 @@ namespace JISpeed.Application.Services.Rider
                 }
 
                 // 获取订单分配
-                var assignment = await _riderRepository.GetAssignmentByIdAsync(assignId);
+                var assignment = await _assignmentRepository.GetByIdAsync(assignId);
                 if (assignment == null)
                 {
                     _logger.LogWarning("订单分配不存在, AssignId: {AssignId}", assignId);
@@ -313,8 +319,7 @@ namespace JISpeed.Application.Services.Rider
                 // 更新订单分配状态
                 assignment.AcceptedStatus = acceptedStatus;
                 assignment.AcceptedAt = DateTime.Now;
-
-                await _riderRepository.UpdateAssignmentAsync(assignment);
+                await _assignmentRepository.UpdateAsync(assignment);
 
                 _logger.LogInformation("订单分配状态更新成功, AssignId: {AssignId}, Status: {Status}",
                     assignId, acceptedStatus);
