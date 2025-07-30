@@ -165,16 +165,16 @@ namespace JISpeed.Infrastructure.Repositories.Rider
                 // 生成用户ID和昵称
                 var userId = Guid.NewGuid().ToString("N");
                 var userNickname = applicationUser.UserName ?? "用户" + userId.Substring(0, 8);
-            
+
                 // 创建User实体
                 var user = new RiderEntity
                 {
                     RiderId = userId,
-                    Name = userNickname, 
-                    PhoneNumber = applicationUser.PhoneNumber,
+                    Name = userNickname,
+                    PhoneNumber = applicationUser.PhoneNumber ?? "未设置",
                     ApplicationUserId = applicationUser.Id
                 };
-                
+
                 // 保存到数据库
                 await _dbSet.AddAsync(user);
                 await SaveChangesAsync();
