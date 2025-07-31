@@ -12,6 +12,7 @@ using JISpeed.Core.Exceptions;
 using JISpeed.Core.Constants;
 using Microsoft.EntityFrameworkCore;
 using JISpeed.Infrastructure.Data;
+using JISpeed.Application.Services.Rider;
 
 namespace JISpeed.Api.Controllers
 {
@@ -23,10 +24,16 @@ namespace JISpeed.Api.Controllers
         private readonly IRiderService _riderService;
         private readonly ILogger<RidersController> _logger;
         private readonly OracleDbContext _dbContext;
+        private readonly IPerformanceService _performanceService;
 
-        public RidersController(IRiderService riderService, ILogger<RidersController> logger, OracleDbContext dbContext)
+        public RidersController(
+            IRiderService riderService,
+            IPerformanceService performanceService,
+            ILogger<RidersController> logger,
+            OracleDbContext dbContext)
         {
             _riderService = riderService;
+            _performanceService = performanceService;
             _logger = logger;
             _dbContext = dbContext;
         }
@@ -346,6 +353,294 @@ namespace JISpeed.Api.Controllers
                 return StatusCode(500, ApiResponse<object>.Fail(
                     ErrorCodes.SystemError,
                     "更新订单分配状态失败"));
+            }
+        }
+
+        // 生成骑手月度绩效
+        // <param name="riderId">骑手ID</param>
+        // <param name="year">年份</param>
+        // <param name="month">月份</param>
+        // <returns>生成的骑手月度绩效</returns>
+        [HttpPost("{riderId}/performances/generate/{year}/{month}")]
+        [ProducesResponseType(typeof(ApiResponse<PerformanceDTO>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 500)]
+        public async Task<ActionResult<ApiResponse<PerformanceDTO>>> GenerateMonthlyPerformance(
+            string riderId, int year, int month)
+        {
+            try
+            {
+                _logger.LogInformation("收到生成骑手月度绩效请求, RiderId: {RiderId}, Year: {Year}, Month: {Month}",
+                    riderId, year, month);
+
+                // 构建日期
+                var date = new DateTime(year, month, 1);
+
+                // 生成月度绩效
+                var performance = await _performanceService.GenerateMonthlyPerformanceAsync(riderId, date);
+
+                // 转换为DTO
+                var performanceDto = RiderMapper.ToPerformanceDTO(performance);
+
+                return Ok(ApiResponse<PerformanceDTO>.Success(performanceDto ?? new PerformanceDTO(), "骑手月度绩效生成成功"));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败, RiderId: {RiderId}, Year: {Year}, Month: {Month}",
+                    riderId, year, month);
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex, "资源不存在, RiderId: {RiderId}, Year: {Year}, Month: {Month}",
+                    riderId, year, month);
+                return NotFound(ApiResponse<object>.Fail(
+                    ex.ErrorCode,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "生成骑手月度绩效时发生异常, RiderId: {RiderId}, Year: {Year}, Month: {Month}",
+                    riderId, year, month);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "生成骑手月度绩效失败"));
+            }
+        }
+
+        // 获取骑手月度绩效
+        // <param name="riderId">骑手ID</param>
+        // <param name="year">年份</param>
+        // <param name="month">月份</param>
+        // <returns>骑手月度绩效</returns>
+        [HttpGet("{riderId}/performances/{year}/{month}")]
+        [ProducesResponseType(typeof(ApiResponse<PerformanceDTO>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 500)]
+        public async Task<ActionResult<ApiResponse<PerformanceDTO>>> GetRiderMonthlyPerformance(
+            string riderId, int year, int month)
+        {
+            try
+            {
+                _logger.LogInformation("收到获取骑手月度绩效请求, RiderId: {RiderId}, Year: {Year}, Month: {Month}",
+                    riderId, year, month);
+
+                // 构建日期
+                var date = new DateTime(year, month, 1);
+
+                // 获取绩效数据
+                var performance = await _performanceService.GetRiderMonthlyPerformanceAsync(riderId, date);
+
+                // 转换为DTO
+                var performanceDto = RiderMapper.ToPerformanceDTO(performance);
+
+                return Ok(ApiResponse<PerformanceDTO>.Success(performanceDto ?? new PerformanceDTO()));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败, RiderId: {RiderId}, Year: {Year}, Month: {Month}",
+                    riderId, year, month);
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex, "资源不存在, RiderId: {RiderId}, Year: {Year}, Month: {Month}",
+                    riderId, year, month);
+                return NotFound(ApiResponse<object>.Fail(
+                    ex.ErrorCode,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取骑手月度绩效时发生异常, RiderId: {RiderId}, Year: {Year}, Month: {Month}",
+                    riderId, year, month);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "获取骑手月度绩效失败"));
+            }
+        }
+
+        // 获取骑手绩效趋势
+        // <param name="riderId">骑手ID</param>
+        // <param name="monthCount">月份数量</param>
+        // <returns>骑手绩效趋势</returns>
+        [HttpGet("{riderId}/performances/trend")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<PerformanceDTO>>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 500)]
+        public async Task<ActionResult<ApiResponse<IEnumerable<PerformanceDTO>>>> GetRiderPerformanceTrend(
+            string riderId, [FromQuery] int monthCount = 6)
+        {
+            try
+            {
+                _logger.LogInformation("收到获取骑手绩效趋势请求, RiderId: {RiderId}, MonthCount: {MonthCount}",
+                    riderId, monthCount);
+
+                // 获取绩效趋势数据
+                var performances = await _performanceService.GetRiderPerformanceTrendAsync(riderId, monthCount);
+
+                // 转换为DTO
+                var performanceDtos = performances.Select(p => RiderMapper.ToPerformanceDTO(p))
+                    .Where(dto => dto != null)
+                    .Cast<PerformanceDTO>();
+
+                return Ok(ApiResponse<IEnumerable<PerformanceDTO>>.Success(performanceDtos));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败, RiderId: {RiderId}, MonthCount: {MonthCount}",
+                    riderId, monthCount);
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex, "资源不存在, RiderId: {RiderId}", riderId);
+                return NotFound(ApiResponse<object>.Fail(
+                    ex.ErrorCode,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取骑手绩效趋势时发生异常, RiderId: {RiderId}, MonthCount: {MonthCount}",
+                    riderId, monthCount);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "获取骑手绩效趋势失败"));
+            }
+        }
+
+        // 获取骑手绩效排名
+        // <param name="riderId">骑手ID</param>
+        // <param name="year">年份</param>
+        // <param name="month">月份</param>
+        // <returns>骑手绩效排名</returns>
+        [HttpGet("{riderId}/performances/ranking/{year}/{month}")]
+        [ProducesResponseType(typeof(ApiResponse<Dictionary<string, int>>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 500)]
+        public async Task<ActionResult<ApiResponse<Dictionary<string, int>>>> GetRiderRanking(
+            string riderId, int year, int month)
+        {
+            try
+            {
+                _logger.LogInformation("收到获取骑手绩效排名请求, RiderId: {RiderId}, Year: {Year}, Month: {Month}",
+                    riderId, year, month);
+
+                // 构建日期
+                var date = new DateTime(year, month, 1);
+
+                // 获取排名数据
+                var rankings = await _performanceService.GetRiderRankingAsync(riderId, date);
+
+                return Ok(ApiResponse<Dictionary<string, int>>.Success(rankings));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败, RiderId: {RiderId}, Year: {Year}, Month: {Month}",
+                    riderId, year, month);
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex, "资源不存在, RiderId: {RiderId}, Year: {Year}, Month: {Month}",
+                    riderId, year, month);
+                return NotFound(ApiResponse<object>.Fail(
+                    ex.ErrorCode,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取骑手绩效排名时发生异常, RiderId: {RiderId}, Year: {Year}, Month: {Month}",
+                    riderId, year, month);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "获取骑手绩效排名失败"));
+            }
+        }
+
+        // 获取绩效优秀骑手列表
+        // <param name="year">年份</param>
+        // <param name="month">月份</param>
+        // <param name="topCount">返回数量</param>
+        // <returns>绩效优秀骑手列表</returns>
+        [HttpGet("performances/top-performers/{year}/{month}")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<PerformanceDTO>>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 500)]
+        public async Task<ActionResult<ApiResponse<IEnumerable<PerformanceDTO>>>> GetTopPerformers(
+            int year, int month, [FromQuery] int topCount = 10)
+        {
+            try
+            {
+                _logger.LogInformation("收到获取绩效优秀骑手列表请求, Year: {Year}, Month: {Month}, TopCount: {TopCount}",
+                    year, month, topCount);
+
+                // 构建日期
+                var date = new DateTime(year, month, 1);
+
+                // 获取绩效优秀骑手列表
+                var topPerformers = await _performanceService.GetTopPerformersAsync(date, topCount);
+
+                // 转换为DTO
+                var performanceDtos = topPerformers.Select(p => RiderMapper.ToPerformanceDTO(p))
+                    .Where(dto => dto != null)
+                    .Cast<PerformanceDTO>();
+
+                return Ok(ApiResponse<IEnumerable<PerformanceDTO>>.Success(performanceDtos));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败, Year: {Year}, Month: {Month}, TopCount: {TopCount}",
+                    year, month, topCount);
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取绩效优秀骑手列表时发生异常, Year: {Year}, Month: {Month}, TopCount: {TopCount}",
+                    year, month, topCount);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "获取绩效优秀骑手列表失败"));
+            }
+        }
+
+        // 获取月度绩效概览
+        // <param name="year">年份</param>
+        // <param name="month">月份</param>
+        // <returns>月度绩效概览</returns>
+        [HttpGet("performances/overview/{year}/{month}")]
+        [ProducesResponseType(typeof(ApiResponse<Dictionary<string, object>>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 500)]
+        public async Task<ActionResult<ApiResponse<Dictionary<string, object>>>> GetMonthlyPerformanceOverview(
+            int year, int month)
+        {
+            try
+            {
+                _logger.LogInformation("收到获取月度绩效概览请求, Year: {Year}, Month: {Month}", year, month);
+
+                // 构建日期
+                var date = new DateTime(year, month, 1);
+
+                // 获取月度绩效概览
+                var overview = await _performanceService.GetMonthlyPerformanceOverviewAsync(date);
+
+                return Ok(ApiResponse<Dictionary<string, object>>.Success(overview));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取月度绩效概览时发生异常, Year: {Year}, Month: {Month}", year, month);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "获取月度绩效概览失败"));
             }
         }
 

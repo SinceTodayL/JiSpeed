@@ -37,7 +37,8 @@ builder.Services.AddRepositories();
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 // builder.Services.AddScoped<IUserService, UserService>();
- builder.Services.AddScoped<IRiderService, RiderService>();
+builder.Services.AddScoped<IRiderService, RiderService>();
+builder.Services.AddScoped<IPerformanceService, PerformanceService>();
 // builder.Services.AddScoped<IMerchantService, MerchantService>();
 // builder.Services.AddScoped<IAdminService, AdminService>();
 // 5. 添加 Swagger
