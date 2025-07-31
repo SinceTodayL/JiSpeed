@@ -8,6 +8,10 @@ using JISpeed.Application.Services.Common;
 using JISpeed.Application.Services.Email;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Infrastructure.Redis;
+using JISpeed.Application.Services.Rider;
+using JISpeed.Core.Interfaces.IRepositories.Rider;
+using JISpeed.Infrastructure.Repositories.Rider;
+using MailKit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,20 +29,35 @@ builder.Services.AddDbContext<OracleDbContext>(options => options.UseOracle(conn
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
     .AddEntityFrameworkStores<OracleDbContext>()
     .AddDefaultTokenProviders();
-builder.Services.AddAutoMapper((cfg) => { }, typeof(MerchantProfile).Assembly); 
+builder.Services.AddAutoMapper((cfg) => { }, typeof(MerchantProfile).Assembly);
+
+// 注册HttpClient，用于高德地图API
+builder.Services.AddHttpClient();
+
 // 4. 控制器和日志等默认配置
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSingleton<RedisService>();
+
 // 注册仓储层服务（统一封装）
 builder.Services.AddRepositories();
+
+// 注册骑手定位相关仓储
+// builder.Services.AddScoped<IRiderLocationRepository, RiderLocationRepository>();
+
 // 注册：接口 -> 实现类
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-//builder.Services.AddScoped<IUserService, UserService>();
-// builder.Services.AddScoped<IRiderService, RiderService>();
+// builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRiderService, RiderService>();
+// builder.Services.AddScoped<IPerformanceService, PerformanceService>();
 // builder.Services.AddScoped<IMerchantService, MerchantService>();
 // builder.Services.AddScoped<IAdminService, AdminService>();
+
+// 注册骑手定位相关服务
+// builder.Services.AddScoped<IMapService, AMapService>();
+// builder.Services.AddScoped<IRiderLocationService, RiderLocationService>();
+
 // 5. 添加 Swagger
 builder.Services.AddSwaggerGen();
 
