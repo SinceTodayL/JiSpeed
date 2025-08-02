@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue';
-import { loginModuleRecord } from '@/constants/app';
+import { computed, reactive, ref, watch } from 'vue';
 import { useAuthStore } from '@/store/modules/auth';
 import { useRouterPush } from '@/hooks/common/router';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
+import { useAppStore } from '@/store/modules/app';
 import { $t } from '@/locales';
 
 defineOptions({
@@ -11,8 +11,15 @@ defineOptions({
 });
 
 const authStore = useAuthStore();
+const appStore = useAppStore();
 const { toggleLoginModule } = useRouterPush();
 const { formRef, validate } = useNaiveForm();
+
+// 登录角色选择
+const loginRole = ref<'user' | 'rider' | 'merchant' | 'admin'>('user');
+
+// 登录方式选择
+const loginMethod = ref<'username' | 'email' | 'phone'>('username');
 
 interface FormModel {
   userName: string;
@@ -25,7 +32,6 @@ const model: FormModel = reactive({
 });
 
 const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
-  // inside computed to make locale reactive, if not apply i18n, you can define it without computed
   const { formRules } = useFormRules();
 
   return {
@@ -35,84 +41,172 @@ const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
 });
 
 async function handleSubmit() {
+  if (loginMethod.value !== 'username') {
+    // 如果选择的不是用户名密码登录，跳转到code-login页面
+    toggleLoginModule('code-login');
+    return;
+  }
+  
   await validate();
   await authStore.login(model.userName, model.password);
 }
 
-type AccountKey = 'super' | 'admin' | 'user';
+// 登录角色选项
+const loginRoleOptions = computed(() => {
+  // 使用现有的翻译键和手动映射相结合
+  return [
+    { label: $t('page.login.pwdLogin.user'), value: 'user' as const },
+    { 
+      label: appStore.locale === 'zh-CN' ? '骑手' : 'Rider', 
+      value: 'rider' as const 
+    },
+    { 
+      label: appStore.locale === 'zh-CN' ? '商家' : 'Merchant', 
+      value: 'merchant' as const 
+    },
+    { label: $t('page.login.pwdLogin.admin'), value: 'admin' as const },
+  ];
+});
 
-interface Account {
-  key: AccountKey;
-  label: string;
-  userName: string;
-  password: string;
-}
+// 登录方式选项  
+const loginMethodOptions = computed(() => {
+  return [
+    { 
+      label: appStore.locale === 'zh-CN' ? '用户名登录' : 'Username Login', 
+      value: 'username' as const 
+    },
+    { 
+      label: appStore.locale === 'zh-CN' ? '邮箱登录' : 'Email Login', 
+      value: 'email' as const 
+    },
+    { 
+      label: appStore.locale === 'zh-CN' ? '手机号登录' : 'Phone Login', 
+      value: 'phone' as const 
+    }
+  ];
+});
 
-const accounts = computed<Account[]>(() => [
-  {
-    key: 'super',
-    label: $t('page.login.pwdLogin.superAdmin'),
-    userName: 'Super',
-    password: '123456'
-  },
-  {
-    key: 'admin',
-    label: $t('page.login.pwdLogin.admin'),
-    userName: 'Admin',
-    password: '123456'
-  },
-  {
-    key: 'user',
-    label: $t('page.login.pwdLogin.user'),
-    userName: 'User',
-    password: '123456'
+// 监听登录方式变化，自动跳转
+watch(loginMethod, (newMethod) => {
+  if (newMethod === 'email' || newMethod === 'phone') {
+    setTimeout(() => {
+      toggleLoginModule('code-login');
+    }, 300);
   }
-]);
-
-async function handleAccountLogin(account: Account) {
-  await authStore.login(account.userName, account.password);
-}
+});
 </script>
 
 <template>
   <NForm ref="formRef" :model="model" :rules="rules" size="large" :show-label="false" @keyup.enter="handleSubmit">
-    <NFormItem path="userName">
-      <NInput v-model:value="model.userName" :placeholder="$t('page.login.common.userNamePlaceholder')" />
+
+    <NFormItem>
+      <div class="w-full">
+        <label class="form-label">{{ $t('page.login.pwdLogin.loginRole') }}</label>
+        <NSelect
+          v-model:value="loginRole"
+          :options="loginRoleOptions"
+          :placeholder="$t('page.login.common.selectRolePlaceholder')"
+        />
+      </div>
     </NFormItem>
-    <NFormItem path="password">
-      <NInput
-        v-model:value="model.password"
-        type="password"
-        show-password-on="click"
-        :placeholder="$t('page.login.common.passwordPlaceholder')"
-      />
+
+    <NFormItem>
+      <div class="w-full">
+        <label class="form-label">{{ $t('page.login.pwdLogin.loginMethod') }}</label>
+        <NSelect
+          v-model:value="loginMethod"
+          :options="loginMethodOptions"
+          :placeholder="$t('page.login.common.selectMethodPlaceholder')"
+        />
+      </div>
     </NFormItem>
-    <NSpace vertical :size="24">
-      <div class="flex-y-center justify-between">
+
+    <template v-if="loginMethod === 'username'">
+      <NFormItem path="userName">
+        <div class="w-full">
+          <label class="form-label">
+            {{ appStore.locale === 'zh-CN' ? '用户名' : 'Username' }}
+          </label>
+          <NInput 
+            v-model:value="model.userName" 
+            :placeholder="$t('page.login.common.userNamePlaceholder')"
+          />
+        </div>
+      </NFormItem>
+      <NFormItem path="password">
+        <div class="w-full">
+          <label class="form-label">
+            {{ appStore.locale === 'zh-CN' ? '密码' : 'Password' }}
+          </label>
+          <NInput
+            v-model:value="model.password"
+            type="password"
+            show-password-on="click"
+            :placeholder="$t('page.login.common.passwordPlaceholder')"
+          />
+        </div>
+      </NFormItem>
+    </template>
+
+    <template v-else>
+      <NFormItem>
+        <div class="w-full">
+          <NAlert type="info">
+            {{ loginMethod === 'email' 
+              ? (appStore.locale === 'zh-CN' ? '将跳转到邮箱验证码登录页面' : 'Redirecting to email verification login page')
+              : (appStore.locale === 'zh-CN' ? '将跳转到手机验证码登录页面' : 'Redirecting to phone verification login page') 
+            }}
+          </NAlert>
+        </div>
+      </NFormItem>
+    </template>
+
+    <NSpace vertical :size="18">
+      <div v-if="loginMethod === 'username'" class="flex-y-center justify-between">
         <NCheckbox>{{ $t('page.login.pwdLogin.rememberMe') }}</NCheckbox>
         <NButton quaternary @click="toggleLoginModule('reset-pwd')">
           {{ $t('page.login.pwdLogin.forgetPassword') }}
         </NButton>
       </div>
-      <NButton type="primary" size="large" round block :loading="authStore.loginLoading" @click="handleSubmit">
-        {{ $t('common.confirm') }}
+      
+      <NButton 
+        type="primary" 
+        size="large" 
+        round 
+        block 
+        :loading="authStore.loginLoading" 
+        @click="handleSubmit"
+      >
+        {{ loginMethod === 'username' 
+          ? $t('common.confirm') 
+          : (appStore.locale === 'zh-CN' ? '继续' : 'Continue') 
+        }}
       </NButton>
-      <div class="flex-y-center justify-between gap-12px">
-        <NButton class="flex-1" block @click="toggleLoginModule('code-login')">
-          {{ $t(loginModuleRecord['code-login']) }}
-        </NButton>
-        <NButton class="flex-1" block @click="toggleLoginModule('register')">
-          {{ $t(loginModuleRecord.register) }}
-        </NButton>
-      </div>
-      <NDivider class="text-14px text-#666 !m-0">{{ $t('page.login.pwdLogin.otherAccountLogin') }}</NDivider>
-      <div class="flex-center gap-12px">
-        <NButton v-for="item in accounts" :key="item.key" type="primary" @click="handleAccountLogin(item)">
-          {{ item.label }}
-        </NButton>
-      </div>
     </NSpace>
   </NForm>
 </template>
 
-<style scoped></style>
+<style scoped>
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* 确保所有表单项有统一的间距 */
+:deep(.n-form-item) {
+  margin-bottom: 4px;
+}
+
+/* 最后一个表单项不需要底部边距 */
+:deep(.n-form-item:last-child) {
+  margin-bottom: 0;
+}
+
+/* 提示框样式优化 */
+:deep(.n-alert) {
+  border-radius: 6px;
+}
+</style>

@@ -62,13 +62,19 @@ const { domRef, updateOptions } = useEcharts(() => ({
 const loadDishesData = async () => {
   try {
     const dishes = await fetchGetAllDishes(merchantStore.merchantId);
-    dishesData.value = dishes || [];
-    updateDishChart();
+
+    // 直接判断返回的是否为数组
+    if (Array.isArray(dishes)) {
+      dishesData.value = dishes;
+    } else {
+      dishesData.value = [];
+    }
   } catch (error) {
     console.error('获取菜品数据失败:', error);
     dishesData.value = [];
-    updateDishChart();
   }
+
+  updateDishChart();
 };
 
 // 更新分类占比图表

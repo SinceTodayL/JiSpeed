@@ -26,7 +26,11 @@ export const request = createFlatRequest<App.Service.Response, RequestInstanceSt
     },
     isBackendSuccess(response) {
       // when the backend response code is "0", it means the request is success
-      return String(response.data.code) === import.meta.env.VITE_SERVICE_SUCCESS_CODE;
+      // use Number() to convert to avoid type mismatch and hidden characters
+      const backendCode = Number(String(response.data.code).trim());
+      const successCode = Number(String(import.meta.env.VITE_SERVICE_SUCCESS_CODE).trim());
+
+      return backendCode === successCode;
     },
     async onBackendFail(response, instance) {
       const authStore = useAuthStore();
@@ -43,13 +47,24 @@ export const request = createFlatRequest<App.Service.Response, RequestInstanceSt
         request.state.errMsgStack = request.state.errMsgStack.filter(msg => msg !== response.data.msg);
       }
 
-      // 对于商品管理系统，我们简化错误处理逻辑
-      // 保持原有的响应失败处理逻辑但不依赖复杂的环境变量配置
-      
+      // when the backend response code is "401", it means the token is expired
+      if (responseCode === '401') {
+        const silent = response.config.headers['X-Silent'];
+
+        if (!silent) {
+          handleExpiredRequest(request.state);
+        }
+
+        return null;
+      }
+
+      // other backend error
+      showErrorMsg(request.state, response.data.msg);
+
       return null;
     },
     transformBackendResponse(response) {
-      return response.data.data;
+      return response.data;
     },
     onError(error) {
       // when the request is fail, you can show error message

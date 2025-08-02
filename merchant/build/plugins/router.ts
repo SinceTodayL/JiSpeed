@@ -8,6 +8,9 @@ export function setupElegantRouter() {
       base: 'src/layouts/base-layout/index.vue',
       blank: 'src/layouts/blank-layout/index.vue'
     },
+    redirect: {
+      login: '/login/pwd-login'
+    },
     routePathTransformer(routeName, routePath) {
       const key = routeName as RouteKey;
 

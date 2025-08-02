@@ -85,17 +85,31 @@ const merchantStatusDesc = computed(() => {
 
 // 获取商家数据
 const loadMerchantData = async () => {
+  const { merchantId } = merchantStore;
+  if (!merchantId) {
+    return;
+  }
+
   try {
-    const [merchantInfo, salesStats] = await Promise.all([
-      fetchMerchantInfo(merchantStore.merchantId),
-      fetchMerchantSalesStats(merchantStore.merchantId)
-    ]);
-    
-    merchantStore.setMerchantInfo(merchantInfo);
-    merchantStore.setSalesStats(salesStats);
+    const result = await fetchMerchantInfo(merchantId);
+    // Unpack the real data from the wrapper object before setting it to the store.
+    if (result && result.data) {
+      merchantStore.setMerchantInfo(result.data);
+    }
   } catch (error) {
-    console.error('加载商家数据失败:', error);
-    window.$message?.error('获取商家数据失败');
+    console.error('加载商家基本信息失败:', error);
+    window.$message?.error('获取商家基本信息失败');
+  }
+
+  try {
+    const result = await fetchMerchantSalesStats(merchantId);
+    // Unpack the real data from the wrapper object.
+    if (result && Array.isArray(result.data)) {
+      merchantStore.setSalesStats(result.data);
+    }
+  } catch (error) {
+    console.error('加载商家销售数据失败:', error);
+    window.$message?.error('获取商家销售数据失败');
   }
 };
 

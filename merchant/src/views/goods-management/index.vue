@@ -48,13 +48,16 @@ const getData = async () => {
     const result = await fetchGetAllDishes(MERCHANT_ID);
     console.log('API响应:', result);
     
-    // API已经经过 transformBackendResponse 处理，直接是 data 数组
-    if (result && Array.isArray(result)) {
-      originalData.value = result; // 保存原始数据
-      data.value = result; // 显示数据
-      console.log('成功获取商品数据:', result);
+    if (result && result.data && Array.isArray(result.data.data)) {
+      
+      originalData.value = result.data.data; // 保存原始数据
+      data.value = result.data.data; // 显示数据
+      console.log('成功获取商品数据:', result.data.data);
     } else {
       console.warn('API响应格式不正确:', result);
+      if(!Array.isArray(result.data?.data)){
+        console.log('result.data.data is not array, actual structure:', result.data);
+      }
       originalData.value = [];
       data.value = [];
     }

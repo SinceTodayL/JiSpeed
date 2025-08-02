@@ -8,6 +8,7 @@ import { SetupStoreId } from '@/enum';
 import { $t } from '@/locales';
 import { useRouteStore } from '../route';
 import { useTabStore } from '../tab';
+import { useMerchantStore } from '../merchant';
 import { clearAuthStorage, getToken } from './shared';
 
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
@@ -15,6 +16,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const authStore = useAuthStore();
   const routeStore = useRouteStore();
   const tabStore = useTabStore();
+  const merchantStore = useMerchantStore();
   const { toLogin, redirectFromLogin } = useRouterPush(false);
   const { loading: loginLoading, startLoading, endLoading } = useLoading();
 
@@ -153,11 +155,17 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
       userId: 'mock-user-id',
       userName: '商家管理员',
       roles: ['admin'],
-      buttons: []
+      buttons: [],
+      merchantId: '1' // 手动添加一个有效的商家ID用于Mock测试
     };
 
     // update store
     Object.assign(userInfo, mockUserInfo);
+
+    // 同步更新 merchant store 中的 merchantId
+    if (mockUserInfo.merchantId) {
+      merchantStore.setMerchantId(mockUserInfo.merchantId);
+    }
 
     return true;
   }

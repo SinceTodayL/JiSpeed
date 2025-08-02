@@ -204,11 +204,13 @@ async function loadData() {
   try {
     loading.value = true;
     const result = await fetchGetAllCoupons(merchantStore.merchantId);
-    
-    if (result && Array.isArray(result)) {
+
+    // 直接判断返回的是否为数组
+    if (Array.isArray(result)) {
       data.value = result;
       originalData.value = [...result];
     } else {
+      // 请求失败或返回数据格式不正确时，清空数据
       data.value = [];
       originalData.value = [];
     }

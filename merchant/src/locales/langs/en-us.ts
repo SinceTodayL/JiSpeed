@@ -1,6 +1,7 @@
 const local: App.I18n.Schema = {
   system: {
     title: 'JiSpeed Merchant Admin',
+    loginTitle: 'JiSpeed login',
     updateTitle: 'System Version Update Notification',
     updateContent: 'A new version of the system has been detected. Do you want to refresh the page immediately?',
     updateConfirm: 'Refresh immediately',
@@ -185,7 +186,13 @@ const local: App.I18n.Schema = {
         back: 'Back',
         validateSuccess: 'Verification passed',
         loginSuccess: 'Login successfully',
-        welcomeBack: 'Welcome back, {userName} !'
+        welcomeBack: 'Welcome back, {userName} !',
+        emailPlaceholder: 'Please enter email',
+        selectRolePlaceholder: 'Please select login role',
+        selectMethodPlaceholder: 'Please select login method',
+        redirectToEmailLogin: 'Redirecting to email verification login page',
+        redirectToPhoneLogin: 'Redirecting to phone verification login page',
+        continue: 'Continue'
       },
       pwdLogin: {
         title: 'Password Login',
@@ -195,8 +202,15 @@ const local: App.I18n.Schema = {
         otherAccountLogin: 'Other Account Login',
         otherLoginMode: 'Other Login Mode',
         superAdmin: 'Super Admin',
-        admin: 'Admin',
-        user: 'User'
+        admin: 'Administrator',
+        user: 'User',
+        merchant: 'Merchant',
+        rider: 'Rider',
+        loginRole: 'Select Login Role',
+        loginMethod: 'Select Login Method',
+        usernameLogin: 'Username Login',
+        emailLogin: 'Email Login',
+        phoneLogin: 'Phone Login'
       },
       codeLogin: {
         title: 'Verification Code Login',

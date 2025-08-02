@@ -9,7 +9,7 @@ export default defineConfig(configEnv => {
 
   // 设置默认环境变量，如果viteEnv中没有对应值则使用默认值
   const defaultEnv = {
-    VITE_SERVICE_BASE_URL: 'https://m1.apifoxmock.com/m2/6776921-6489236-default/325430434',
+    VITE_SERVICE_BASE_URL: 'https://m1.apifoxmock.com/m1/6776921-6489236-default',
     VITE_OTHER_SERVICE_BASE_URL: '{}',
     VITE_SERVICE_SUCCESS_CODE: '0',
     VITE_HTTP_PROXY: 'N',
@@ -49,7 +49,7 @@ export default defineConfig(configEnv => {
     },
     server: {
       host: '0.0.0.0',
-      port: 9527,
+      port: 9520,
       open: true,
       proxy: createViteProxy(customEnv, enableProxy)
     },

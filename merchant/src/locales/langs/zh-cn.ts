@@ -1,6 +1,7 @@
 const local: App.I18n.Schema = {
   system: {
     title: 'JiSpeed 商家后台管理系统',
+    loginTitle: '济时达外卖',
     updateTitle: '系统版本更新通知',
     updateContent: '检测到系统有新版本发布，是否立即刷新页面？',
     updateConfirm: '立即刷新',
@@ -185,7 +186,13 @@ const local: App.I18n.Schema = {
         back: '返回',
         validateSuccess: '验证成功',
         loginSuccess: '登录成功',
-        welcomeBack: '欢迎回来，{userName} ！'
+        welcomeBack: '欢迎回来，{userName} ！',
+        emailPlaceholder: '请输入邮箱',
+        selectRolePlaceholder: '请选择登录角色',
+        selectMethodPlaceholder: '请选择登录方式',
+        redirectToEmailLogin: '将跳转到邮箱验证码登录页面',
+        redirectToPhoneLogin: '将跳转到手机验证码登录页面',
+        continue: '继续'
       },
       pwdLogin: {
         title: '密码登录',
@@ -196,7 +203,16 @@ const local: App.I18n.Schema = {
         otherLoginMode: '其他登录方式',
         superAdmin: '超级管理员',
         admin: '管理员',
-        user: '普通用户'
+        user: '用户',
+        // 角色翻译
+        merchant: '商家',
+        rider: '骑手',
+        // 登录方式翻译
+        loginRole: '选择登录角色',
+        loginMethod: '选择登录方式',
+        usernameLogin: '用户名登录',
+        emailLogin: '邮箱登录',
+        phoneLogin: '手机号登录'
       },
       codeLogin: {
         title: '验证码登录',
