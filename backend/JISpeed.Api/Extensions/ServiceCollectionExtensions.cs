@@ -41,6 +41,7 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IMerchantService, MerchantService>();
             services.AddScoped<IApplicationService, ApplicationService>();
             services.AddScoped<IDishService, DishService>();
+            services.AddScoped<ILoginService,LoginService>();
             
             return services;
         }
