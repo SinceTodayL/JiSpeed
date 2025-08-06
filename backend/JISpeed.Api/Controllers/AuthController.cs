@@ -6,6 +6,7 @@ using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Api.Common;
 using JISpeed.Core.Constants;
 using JISpeed.Core.Interfaces.IRepositories.Common;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace JISpeed.Api.Controllers
 {
@@ -19,13 +20,15 @@ namespace JISpeed.Api.Controllers
         private readonly ILoginService _loginService;
         private readonly IApplicationUserRepository _applicationUserRepository;
         private readonly IEmailService _emailService;
+        private readonly IJwtTokenService _jwtTokenService;
 
         public AuthController(ILogger<AuthController> logger,
             UserManager<ApplicationUser> userManager,
             IRegistrationService registerService,
             ILoginService loginService,
             IApplicationUserRepository applicationUserRepository,
-            IEmailService emailService
+            IEmailService emailService,
+            IJwtTokenService jwtTokenService
             )
         {
             _logger = logger;
@@ -34,11 +37,12 @@ namespace JISpeed.Api.Controllers
             _emailService = emailService;
             _loginService = loginService;
             _applicationUserRepository = applicationUserRepository;
+            _jwtTokenService = jwtTokenService;
         }
 
 
         [HttpPost("login")]
-        public async Task<ActionResult<ApiResponse<string>>> Login(int userType,[FromBody] UserLoginRequest request)
+        public async Task<ActionResult<ApiResponse<LoginResponse>>> Login(int userType,[FromBody] UserLoginRequest request)
         {
             try
             {
@@ -107,8 +111,16 @@ namespace JISpeed.Api.Controllers
                 }
                 var id = await _loginService.GetBusinessEntityId(user.Id, userType);
                 _logger.LogInformation($"登录接口：成功，登录名{key}");
+                
+                var token = _jwtTokenService.GenerateToken(user, userType);
 
-                return Ok(ApiResponse<string>.Success(id));
+                var response = new LoginResponse
+                {
+                    Id = id,
+                    Token = token
+                };
+                
+                return Ok(ApiResponse<LoginResponse>.Success(response));
             }
             catch (Exception ex)
             {

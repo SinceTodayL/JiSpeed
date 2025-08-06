@@ -1,3 +1,6 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using JISpeed.Core.Entities.Common;
 using JISpeed.Core.Exceptions;
 using JISpeed.Core.Interfaces.IRepositories.Admin;
@@ -6,6 +9,7 @@ using JISpeed.Core.Interfaces.IRepositories.Rider;
 using JISpeed.Core.Interfaces.IRepositories.User;
 using JISpeed.Core.Interfaces.IServices;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 
 namespace JISpeed.Application.Services.Common
 {

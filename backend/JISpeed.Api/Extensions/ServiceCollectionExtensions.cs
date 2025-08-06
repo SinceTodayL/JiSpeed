@@ -43,6 +43,8 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IApplicationService, ApplicationService>();
             services.AddScoped<IDishService, DishService>();
             services.AddScoped<ILoginService,LoginService>();
+            services.AddScoped<IJwtTokenService,JwtTokenService>();
+
             
             return services;
         }

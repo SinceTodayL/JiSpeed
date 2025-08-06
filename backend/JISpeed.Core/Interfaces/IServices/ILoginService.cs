@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using System.Text;
 using JISpeed.Core.Entities.Common;
 
 namespace JISpeed.Core.Interfaces.IServices

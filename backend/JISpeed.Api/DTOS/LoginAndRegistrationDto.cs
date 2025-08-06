@@ -37,4 +37,11 @@ namespace JISpeed.Api.DTOS
         
     }
     
+    // 登录响应模型（包含 Token 信息）
+    public class LoginResponse
+    {
+        public required string Id { get; set; }
+        public required string Token { get; set; }
+    }
+    
 }
