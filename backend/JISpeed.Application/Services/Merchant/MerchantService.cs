@@ -1,4 +1,8 @@
 using JISpeed.Core.Entities.Merchant;
+using JISpeed.Core.Entities.Common;
+using JISpeed.Core.Interfaces.IRepositories;
+using JISpeed.Core.Interfaces.IRepositories.Merchant;
+using JISpeed.Core.Interfaces.IRepositories.Dish;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Core.Constants;
 using JISpeed.Core.Exceptions;
@@ -41,16 +45,16 @@ namespace JISpeed.Application.Services.Merchant
 
                 var user = await _merchantRepository.GetByIdAsync(merchantId);
 
-                if (user == null)
+                if (merchant == null)
                 {
                     _logger.LogWarning("商家不存在, MerchantId: {MerchantId}", merchantId);
                     throw new NotFoundException(ErrorCodes.MerchantNotFound, $"商家不存在，ID: {merchantId}");
                 }
 
                 _logger.LogInformation("成功获取商家详细信息, MerchantId: {MerchantId}, MerchantName: {MerchantName}",
-                    merchantId, user.MerchantName);
+                    merchantId, merchant.MerchantName);
 
-                return user;
+                return merchant;
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
             {
@@ -181,7 +185,7 @@ namespace JISpeed.Application.Services.Merchant
                 else
                     data = await _salesStatRepository.GetByMerchantIdAsync(merchantId,size,page);
 
-                if (data == null ||!data.Any())
+                if (data == null || !data.Any())
                 {
                     _logger.LogWarning("无相关数据, MerchantId: {MerchantId}", merchantId);
                     throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据，ID: {merchantId}");
