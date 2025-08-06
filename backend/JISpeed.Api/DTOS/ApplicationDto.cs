@@ -19,8 +19,10 @@ namespace JISpeed.Api.DTOs
         public required string SubmittedAt { get; set; }
         public required string MerchantId { get; set; }
         public required string AuditStatus { get; set; }
-        public required string AuditAt { get; set; }
-        public required string RejectReason { get; set; }
-        public required string AdminId { get; set; }
+        public string? AuditAt { get; set; }
+        public string? RejectReason { get; set; }
+        public string? AdminId { get; set; }
+        public string? MerchantName { get; set; }
+        
     }
 }

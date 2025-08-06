@@ -1,4 +1,3 @@
-using JISpeed.Core.Constants;
 using JISpeed.Core.Entities.Common;
 using JISpeed.Core.Exceptions;
 using JISpeed.Core.Interfaces.IRepositories.Admin;
@@ -33,7 +32,7 @@ namespace JISpeed.Application.Services.Common
             _userRepository = userRepository;
         }
 
-        public async Task<string?> GetBusinessEntityId(string applicationUserId,int userType)
+        public async Task<string> GetBusinessEntityId(string applicationUserId,int userType)
         {
             try
             {
@@ -43,25 +42,30 @@ namespace JISpeed.Application.Services.Common
                 if (userType == 1)
                 {
                     var data = await _userRepository.GetByApplicationUserIdAsync(applicationUserId);
-                    id = data.UserId;
+                    if (data != null)
+                        id = data.UserId;
                 }
                 else if (userType == 2)
                 {
                     var data = await _merchantRepository.GetByApplicationUserIdAsync(applicationUserId);
-                    id = data.MerchantId;
+                    if (data != null) 
+                        id = data.MerchantId;
                 }
                 else if (userType == 3)
                 {
                     var data = await _riderRepository.GetByApplicationUserIdAsync(applicationUserId);
-                    id = data.RiderId;
+                    if (data != null)
+                        id = data.RiderId;
                 }
                 else if (userType == 4)
                 {
                     var data = await _adminRepository.GetByApplicationUserIdAsync(applicationUserId);
-                    id = data.AdminId;
+                    if (data != null)
+                        id = data.AdminId;
                 }
 
-                
+                if (id == null)
+                    throw new Exception();
                 _logger.LogInformation("成功获取实体ID, Id: {Id}", id);
 
                 return id;

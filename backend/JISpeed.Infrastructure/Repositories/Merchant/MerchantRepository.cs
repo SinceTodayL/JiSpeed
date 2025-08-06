@@ -36,13 +36,27 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
                 .FirstOrDefaultAsync(u => u.ApplicationUserId == applicationUserId);
         }
 
+        public async Task<List<MerchantEntity>> GetAllMerchantsAsync(int? size, int? page)
+        {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
+            return await _context.Merchants
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
         // 根据商家名称搜索商家
         // <param name="name">商家名称</param>
         // <returns>商家列表</returns>
-        public async Task<List<MerchantEntity>> SearchByNameAsync(string name)
+        public async Task<List<MerchantEntity>> SearchByNameAsync(string name,int? size,int? page)
         {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
             return await _context.Merchants
                 .Where(m => m.MerchantName.Contains(name))
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 
@@ -59,10 +73,14 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
         // 根据位置搜索商家
         // <param name="location">位置</param>
         // <returns>商家列表</returns>
-        public async Task<List<MerchantEntity>> SearchByLocationAsync(string location)
+        public async Task<List<MerchantEntity>> SearchByLocationAsync(string location,int? size,int? page)
         {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
             return await _context.Merchants
                 .Where(m => !string.IsNullOrEmpty(m.Location) && m.Location.Contains(location))
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
         // 使用ApplicationUser进行用户的创建

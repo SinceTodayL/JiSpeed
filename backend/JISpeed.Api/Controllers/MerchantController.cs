@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace JISpeed.Api.Controllers
 {
     [ApiController]
-    [Route("api/merchant/")]
+    [Route("api/")]
 
     public class MerchantController : ControllerBase
     {
@@ -30,7 +30,7 @@ namespace JISpeed.Api.Controllers
         }
 
         // 根据商家ID获取商家详细信息
-        [HttpGet("{merchantId}")]
+        [HttpGet("merchants/{merchantId}")]
         public async Task<ActionResult<ApiResponse<MerchantDto>>> GetMerchantDetail(string merchantId)
         {
             try
@@ -45,6 +45,7 @@ namespace JISpeed.Api.Controllers
                         ErrorCodes.MissingParameter,
                         "商家ID不能为空"));
                 }
+
                 // 获取商家详细信息
                 var user = await _merchantService.GetMerchantDetailAsync(merchantId);
                 // 转换为DTO
@@ -85,12 +86,67 @@ namespace JISpeed.Api.Controllers
             }
         }
 
-        [HttpGet("{merchantId}/SalesStat")]
-        public async Task<ActionResult<ApiResponse<MerchantDto>>> GetMerchantSalesStat(string merchantId)
+        [HttpGet("merchants")]
+        public async Task<ActionResult<ApiResponse<List<MerchantDto>>>> GetAllMerchant(
+            [FromQuery] string ?merchantName,
+            [FromQuery] string? location,
+            [FromQuery] int ?size, [FromQuery] int ?page
+            )
         {
             try
             {
-                _logger.LogInformation("收到获取商家数据统计请求, MerchantID: {MerchantID}", merchantId);
+                _logger.LogInformation("收到获取获取商家列表信息请求");
+                // 获取商家详细信息
+                var data = await _merchantService.GetMerchantByFiltersAsync(size,page,merchantName,location);
+                // 转换为DTO
+                var response = _mapper.Map<List<MerchantDto>>(data);
+
+                _logger.LogInformation("成功获取用户详细信息");
+
+                return Ok(ApiResponse<List<MerchantDto>>.Success(response, "商家信息获取成功"));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败");
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex, "商家不存在");
+                return NotFound(ApiResponse<object>.Fail(
+                    ErrorCodes.ResourceNotFound,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogError(ex, "业务处理异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取商家详细信息时发生未知异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+        }
+
+        
+        
+        // 根据商家ID修改商家详细信息
+        [HttpPatch("merchants/{merchantId}")]
+        public async Task<ActionResult<ApiResponse<bool>>> UpdateMerchantDetail(
+            string merchantId,
+            [FromBody] UpdateMerchantDto request)
+        {
+            try
+            {
+                _logger.LogInformation("收到获取商家详细信息请求, MerchantID: {MerchantID}", merchantId);
+
                 // 参数验证
                 if (string.IsNullOrWhiteSpace(merchantId))
                 {
@@ -99,15 +155,14 @@ namespace JISpeed.Api.Controllers
                         ErrorCodes.MissingParameter,
                         "商家ID不能为空"));
                 }
+                var entity = _mapper.Map<UpdateMerchantDto>(request);
 
-                await _merchantService.GetMerchantDetailAsync(merchantId);
+                // 获取商家详细信息
+                await _merchantService.UpdateMerchantDetailAsync(merchantId, entity.MerchantName, entity.Status, entity.ContactInfo, entity.Location);
+                
+                _logger.LogInformation("成功修改用户详细信息, MerchantId: {MerchantId}", merchantId);
 
-                var data = await _merchantService.GetSalesStateAsync(merchantId);
-
-                var dataList = _mapper.Map<List<SalesStatDto>>(data) ?? new List<SalesStatDto>();
-                _logger.LogInformation("成功获取用户详细信息, MerchantId: {MerchantId}", merchantId);
-
-                return Ok(ApiResponse<List<SalesStatDto>>.Success(dataList, "商家信息获取成功"));
+                return Ok(ApiResponse<bool>.Success(true, "商家信息修改成功"));
             }
             catch (ValidationException ex)
             {
@@ -118,7 +173,7 @@ namespace JISpeed.Api.Controllers
             }
             catch (NotFoundException ex)
             {
-                _logger.LogWarning(ex, "无相关数据, MerchantId: {MerchantId}", merchantId);
+                _logger.LogWarning(ex, "商家不存在, MerchantId: {MerchantId}", merchantId);
                 return NotFound(ApiResponse<object>.Fail(
                     ErrorCodes.ResourceNotFound,
                     ex.Message));
@@ -132,13 +187,16 @@ namespace JISpeed.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "获取商家数据统计信息时发生未知异常, MerchantId: {MerchantId}", merchantId);
+                _logger.LogError(ex, "获取商家详细信息时发生未知异常, MerchantId: {MerchantId}", merchantId);
                 return StatusCode(500, ApiResponse<object>.Fail(
                     ErrorCodes.SystemError,
                     "系统繁忙，请稍后再试"));
             }
         }
-    }
 
+        
     }
+    
+
+}
 

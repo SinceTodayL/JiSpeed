@@ -4,6 +4,7 @@ using JISpeed.Core.Interfaces.IRepositories.Admin;
 using JISpeed.Core.Interfaces.IRepositories.Merchant;
 using JISpeed.Core.Interfaces.IServices;
 using Microsoft.Extensions.Logging;
+using StackExchange.Redis.Profiling;
 using ApplicationEntity = JISpeed.Core.Entities.Merchant.Application;
 namespace JISpeed.Application.Services.Merchant
 {
@@ -11,7 +12,6 @@ namespace JISpeed.Application.Services.Merchant
     {
         private readonly IApplicationRepository _applicationRepository;
         private readonly IMerchantRepository _merchantRepository;
-
         private readonly ILogger<ApplicationService> _logger;
         private readonly IAdminRepository  _adminRepository;
         public ApplicationService(
@@ -51,16 +51,30 @@ namespace JISpeed.Application.Services.Merchant
             }
         }
 
-        public async Task<List<ApplicationEntity>> GetApplicationsByTimeRangeAsync(DateTime startTime, DateTime endTime)
+        public async Task<List<ApplicationEntity>> GetApplicationsByMerchantAsync(
+            string merchantId,
+            int? auditStatus,
+            int? size, int? page)
         {
             try
             {
                 _logger.LogInformation("开始通过时间段获取申请队列详细信息");
-
-                var data = await _applicationRepository.GetByTimeRangeAsync(startTime, endTime);
-
+              
+                List<ApplicationEntity>? data;
+                if (auditStatus.HasValue)
+                {
+                    if (auditStatus < 0 || auditStatus > 2)
+                    {
+                        throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无该状态，AuditStatus: {auditStatus}");
+                    }
+                    data = await _applicationRepository.GetByAuditStatusAndMerchantIdAsync(merchantId,auditStatus.Value,size,page);
+                }
+                else 
+                {
+                    data  = await _applicationRepository.GetByMerchantIdAsync(merchantId,size,page);
+                }
                 if (!data.Any())
-                    _logger.LogInformation("该时间段不存在申请");
+                    _logger.LogInformation("该筛选条件内不存在申请");
                 else
                     _logger.LogInformation("成功通过时间段获取队列信息");
 
@@ -68,60 +82,12 @@ namespace JISpeed.Application.Services.Merchant
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
             {
-                _logger.LogError(ex, "通过时间段获取队列信息时发生异常");
-                throw new BusinessException("通过时间段获取队列信息失败");
-            }
-        }
-        public async Task<List<ApplicationEntity>> GetApplicationsByMerchantAsync(string merchantId)
-        {
-            try
-            {
-                _logger.LogInformation("开始获取商家申请队列详细信息, MerchantId: {MerchantId}", merchantId);
-
-                var data = await _applicationRepository.GetByMerchantIdAsync(merchantId);
-
-                if (!data.Any())
-                {
-                    _logger.LogWarning("申请不存在,  MerchantId: {MerchantId}", merchantId);
-                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"申请不存在，ID: {merchantId}");
-                }
-
-                _logger.LogInformation("成功获取商家申请队列信息,MerchantId: {MerchantId}", merchantId);
-
-                return data;
-            }
-            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
-            {
-                _logger.LogError(ex, "获取商家申请队列信息时发生异常, MerchantId: {MerchantId}", merchantId);
-                throw new BusinessException("获取商家申请队列信息失败");
+                _logger.LogError(ex, "获取队列信息时发生异常");
+                throw new BusinessException("获取队列信息失败");
             }
         }
 
-        public async Task<List<ApplicationEntity>> GetApplicationsByAuditStatusAsync(int auditStatus)
-        {
-            try
-            {
-                _logger.LogInformation("开始获取目标处理状态的队列详细信息");
-                if (auditStatus < 0 || auditStatus > 2)
-                {
-                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无该状态，AuditStatus: {auditStatus}");
-                }
-                var data = await _applicationRepository.GetByAuditStatusAsync(auditStatus);
-
-                if (!data.Any())
-                    _logger.LogWarning("无目标处理状态的申请");
-                else
-                    _logger.LogInformation("成功获取待目标处理状态的队列信息");
-
-                return data;
-            }
-            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
-            {
-                _logger.LogError(ex, "获取目标处理状态的申请队列信息时发生异常");
-                throw new BusinessException("获取目标处理状态的申请申请队列信息失败");
-            }
-        }
-
+        
         public async Task<bool> ApproveApplicationAsync(string applyId, string adminId)
         {
             try
@@ -224,6 +190,63 @@ namespace JISpeed.Application.Services.Merchant
             }
         }
 
+        public async Task<List<ApplicationEntity>> GetByFiltersAsync(
+            int? auditStatus,
+            int? size, int? page,
+            DateTime? startDate, DateTime? endDate,
+            string? merchantId, 
+            bool? checkProfile,
+            string adminId)
+        {
+            try
+            {
+                _logger.LogInformation("开始通过时间段获取申请队列详细信息");
+                var res = await _adminRepository.ExistsAsync(adminId);
+                if (!res)
+                    throw new NotFoundException(ErrorCodes.InvalidCredentials,"该管理员不存在");
+                
+                List<ApplicationEntity>? data;
+                if (auditStatus.HasValue)
+                {
+                    if (auditStatus < 0 || auditStatus > 2)
+                    {
+                        throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无该状态，AuditStatus: {auditStatus}");
+                    }
+                    data = await _applicationRepository.GetByAuditStatusAsync(auditStatus.Value,size,page);
+
+                }
+                else if (startDate.HasValue || endDate.HasValue)
+                {
+                    var start = startDate.HasValue ? startDate.Value : DateTime.MinValue;
+                    var end = endDate.HasValue ? endDate.Value : DateTime.Now;
+                    data = await _applicationRepository.GetByTimeRangeAsync(start, end,size,page);
+                }
+                else if (merchantId != null)
+                {
+                    data  = await _applicationRepository.GetByMerchantIdAsync(merchantId,size,page);
+                }
+                else if (checkProfile.HasValue && checkProfile.Value)
+                {
+                    data = await _applicationRepository.GetByAdminIdAsync(adminId, size, page);
+                }
+                else
+                {
+                    data = await _applicationRepository.GetAllAsync(size, page);
+                }
+
+                if (!data.Any())
+                    _logger.LogInformation("该筛选条件内不存在申请");
+                else
+                    _logger.LogInformation("成功通过时间段获取队列信息");
+
+                return data;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取队列信息时发生异常");
+                throw new BusinessException("获取队列信息失败");
+            }
+        }
 
     }
 }

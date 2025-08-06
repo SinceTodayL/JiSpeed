@@ -1,4 +1,3 @@
-using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using JISpeed.Core.Entities.Common;
 using Microsoft.AspNetCore.Identity;
@@ -6,7 +5,6 @@ using JISpeed.Api.DTOS;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Api.Common;
 using JISpeed.Core.Constants;
-using JISpeed.Core.Exceptions;
 using JISpeed.Core.Interfaces.IRepositories.Common;
 
 namespace JISpeed.Api.Controllers
@@ -21,15 +19,14 @@ namespace JISpeed.Api.Controllers
         private readonly ILoginService _loginService;
         private readonly IApplicationUserRepository _applicationUserRepository;
         private readonly IEmailService _emailService;
-        private readonly IMapper _mapper;
 
         public AuthController(ILogger<AuthController> logger,
             UserManager<ApplicationUser> userManager,
             IRegistrationService registerService,
             ILoginService loginService,
             IApplicationUserRepository applicationUserRepository,
-            IEmailService emailService,
-            IMapper mapper)
+            IEmailService emailService
+            )
         {
             _logger = logger;
             _userManager = userManager;
@@ -37,7 +34,6 @@ namespace JISpeed.Api.Controllers
             _emailService = emailService;
             _loginService = loginService;
             _applicationUserRepository = applicationUserRepository;
-            _mapper = mapper;
         }
 
 
@@ -47,13 +43,6 @@ namespace JISpeed.Api.Controllers
             try
             {
                 _logger.LogInformation("收到登录请求");
-                if (request == null)
-                {
-                    _logger.LogWarning("请求体不能为空");
-                    return BadRequest(ApiResponse<object>.Fail(
-                        ErrorCodes.MissingParameter, 
-                        "请求体不能为空，请提供登录信息"));
-                }
 
                 if (userType < 1 || userType > 4)
                 {
@@ -125,7 +114,7 @@ namespace JISpeed.Api.Controllers
             {
                 return StatusCode(500, ApiResponse<object>.Fail(
                     ErrorCodes.SystemError,
-                    "系统繁忙，请稍后再试"));
+                    $"系统繁忙，请稍后再试。{ex.Message}"));
             }
         }
 
@@ -205,7 +194,7 @@ namespace JISpeed.Api.Controllers
             {
                 return StatusCode(500, ApiResponse<object>.Fail(
                     ErrorCodes.SystemError,
-                    "系统繁忙，请稍后再试"));
+                    $"系统繁忙，请稍后再试。{ex.Message}"));
             }
         }
     }

@@ -43,15 +43,59 @@ namespace JISpeed.Infrastructure.Repositories.Dish
         // 根据商家ID获取菜品列表
         // <param name="merchantId">商家ID</param>
         // <returns>菜品列表</returns>
-        public async Task<List<JISpeed.Core.Entities.Dish.Dish>> GetByMerchantIdAsync(string merchantId)
+        public async Task<List<JISpeed.Core.Entities.Dish.Dish>> GetByMerchantIdAndOrderByCategoryAsync(string merchantId,int? size,int? page)
         {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
             return await _context.Dishes
                 .Where(d => d.MerchantId == merchantId)
                 .Include(d => d.Category)
                 .OrderBy(d => d.CategoryId)
                 .ThenBy(d => d.DishName)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
+        public async Task<List<JISpeed.Core.Entities.Dish.Dish>> GetByMerchantIdAndOrderByRatingAsync(string merchantId,int? size,int? page)
+        {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
+            return await _context.Dishes
+                .Where(d => d.MerchantId == merchantId)
+                .Include(d => d.Category)
+                .OrderBy(d => d.Rating)
+                .ThenBy(d => d.DishName)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+        public async Task<List<JISpeed.Core.Entities.Dish.Dish>> GetByMerchantIdAndOrderByLowPriceAsync(string merchantId,int? size,int? page)
+        {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
+            return await _context.Dishes
+                .Where(d => d.MerchantId == merchantId)
+                .Include(d => d.Category)
+                .OrderBy(d => d.Price)
+                .ThenBy(d => d.DishName)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+        public async Task<List<JISpeed.Core.Entities.Dish.Dish>> GetByMerchantIdAndOrderByHighPriceAsync(string merchantId,int? size,int? page)
+        {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
+            return await _context.Dishes
+                .Where(d => d.MerchantId == merchantId)
+                .Include(d => d.Category)
+                .OrderByDescending(d => d.Price)
+                .ThenBy(d => d.DishName)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
 
         // 根据分类ID获取菜品列表
         // <param name="categoryId">分类ID</param>
@@ -69,7 +113,35 @@ namespace JISpeed.Infrastructure.Repositories.Dish
         // <returns>菜品，不存在则返回null</returns>
         public async Task<JISpeed.Core.Entities.Dish.Dish?> GetByMerchantIdAndDishIdAsync(string merchantId,string dishId)
         {
-            return await _context.Dishes.FirstOrDefaultAsync(d => d.MerchantId == merchantId && d.DishId == dishId);
+            return await _context.Dishes
+                .Include(d => d.Merchant)
+                .Include(d => d.Category)
+                .FirstOrDefaultAsync(d => d.MerchantId == merchantId && d.DishId == dishId);
         }
+
+        public async Task<List<JISpeed.Core.Entities.Dish.Dish>> GetByMerchantIdAndCategoryIdAsync(
+            string merchantId, string categoryId, int? size, int? page)
+        {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
+            return await _context.Dishes
+                .Where(d => d.CategoryId == categoryId&& d.MerchantId == merchantId)
+                .Include(d => d.Merchant)
+                .Include(d => d.Category)
+                .OrderBy(d => d.DishName)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<List<JISpeed.Core.Entities.Dish.Dish>> GetByMerchantIdForCategoryAsync(string merchantId)
+        {
+            return await _context.Dishes
+                .Where(d => d.MerchantId == merchantId)
+                .Include(d => d.Category) // 已正确加载分类
+                .ToListAsync();
+        }
+
+
     }
 }

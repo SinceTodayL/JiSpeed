@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace JISpeed.Api.Controllers
 {
     [ApiController]
-    [Route("api/merchant/")]
+    [Route("api/merchants/")]
 
     public class DishController : ControllerBase
     {
@@ -28,9 +28,9 @@ namespace JISpeed.Api.Controllers
             _logger = logger;
             _mapper = mapper;
         }
-        
-        [HttpGet("{merchantId}/getAllDishes")]
-        public async Task<ActionResult<ApiResponse<DishesDto>>> GetMerchantAllDishes(string merchantId)
+
+        [HttpGet("{merchantId}/dishesByCategory")]
+        public async Task<ActionResult<ApiResponse<List<CategoryWithDishesDto>>>> GetMerchantAllDishes(string merchantId)
         {
             try
             {
@@ -43,7 +43,88 @@ namespace JISpeed.Api.Controllers
                         ErrorCodes.MissingParameter,
                         "商家ID不能为空"));
                 }
-                var data = await _dishService.GetDisheEntitiesAsync(merchantId);
+                var dishes = await _dishService.GetByFiltersAsync(merchantId,null,null,null,null,null,null);
+                var groupedResult = dishes
+                    .GroupBy(dish => new 
+                    { 
+                        dish.CategoryId, 
+                        CategoryName = dish.Category?.CategoryName ?? "未分类" // 处理分类为空的情况
+                    })
+                    .Select(group => new CategoryWithDishesDto
+                    {
+                        CategoryId = group.Key.CategoryId,
+                        CategoryName = group.Key.CategoryName,
+                        // 将分组内的菜品转换为内层DTO
+                        Dishes = group.Select(dish => new DishesDto
+                        {
+                            DishId = dish.DishId,
+                            CategoryId = dish.CategoryId,
+                            DishName = dish.DishName,
+                            Price = dish.Price,
+                            OriginPrice = dish.OriginPrice,
+                            CoverUrl = dish.CoverUrl,
+                            MonthlySales = dish.MonthlySales,
+                            Rating = dish.Rating,
+                            OnSale = dish.OnSale,
+                            MerchantId = dish.MerchantId,
+                            ReviewQuantity = dish.ReviewQuantity,
+                        }).ToList()
+                    })
+                    .OrderBy(c => c.CategoryName) // 按分类名称排序
+                    .ToList();              
+                _logger.LogInformation("成功获取用户详细信息, MerchantId: {MerchantId}", merchantId);
+                return Ok(ApiResponse<List<CategoryWithDishesDto>>.Success(groupedResult,"商家菜品信息获取成功"));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败, MerchantId: {MerchantId}", merchantId);
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex, "商家不存在, MerchantId: {MerchantId}", merchantId);
+                return NotFound(ApiResponse<object>.Fail(
+                    ErrorCodes.MerchantNotFound,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogError(ex, "业务处理异常, MerchantId: {MerchantId}", merchantId);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取商家数据统计信息时发生未知异常, MerchantId: {MerchantId}", merchantId);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+        }
+        [HttpGet("{merchantId}/dishes")]
+        public async Task<ActionResult<ApiResponse<List<DishesDto>>>> GetMerchantAllDishes(
+            string merchantId,
+            [FromQuery]string? categoryId,
+            [FromQuery]bool? orderByRating,
+            [FromQuery]bool? orderByHighPrice,
+            [FromQuery]bool? orderByLowPrice,
+            [FromQuery]int? size,[FromQuery]int? page)
+        {
+            try
+            {
+                _logger.LogInformation("收到获取商家菜品数据统计请求, MerchantID: {MerchantID}", merchantId);
+                // 参数验证
+                if (string.IsNullOrWhiteSpace(merchantId))
+                {
+                    _logger.LogWarning("商家ID参数为空");
+                    return BadRequest(ApiResponse<object>.Fail(
+                        ErrorCodes.MissingParameter,
+                        "商家ID不能为空"));
+                }
+                var data = await _dishService.GetByFiltersAsync(merchantId,categoryId,orderByRating,orderByHighPrice,orderByLowPrice, size, page);
                 var dataList = _mapper.Map<List<DishesDto>>(data) ?? new List<DishesDto>();
                 _logger.LogInformation("成功获取用户详细信息, MerchantId: {MerchantId}", merchantId);
                 return Ok(ApiResponse<List<DishesDto>>.Success(dataList, "商家菜品信息获取成功"));
@@ -59,7 +140,7 @@ namespace JISpeed.Api.Controllers
             {
                 _logger.LogWarning(ex, "商家不存在, MerchantId: {MerchantId}", merchantId);
                 return NotFound(ApiResponse<object>.Fail(
-                    ErrorCodes.ResourceNotFound,
+                    ErrorCodes.MerchantNotFound,
                     ex.Message));
             }
             catch (BusinessException ex)
@@ -78,8 +159,65 @@ namespace JISpeed.Api.Controllers
             }
         }
 
+        [HttpGet("{merchantId}/dish/{dishId}")]
+        public async Task<ActionResult<ApiResponse<DishesDto>>> GetDishes(
+            string merchantId,string dishId)
+        {
+            try
+            {
+                _logger.LogInformation("收到获取商家查看菜品请求, MerchantID: {MerchantID}", merchantId);
+                // 参数验证
+                if (string.IsNullOrWhiteSpace(merchantId)&&string.IsNullOrWhiteSpace(dishId))
+                {
+                    _logger.LogWarning("参数为空");
+                    return BadRequest(ApiResponse<object>.Fail(
+                        ErrorCodes.MissingParameter,
+                        "参数能为空"));
+                }
+                var data = await _dishService.GetDisheEntitiesAsync(merchantId,dishId);
+                if (data == null)
+                {
+                    return NotFound(ApiResponse<object>.Fail(
+                        ErrorCodes.ProductNotFound,
+                        "菜品未找到"));
+                }
+                var response = _mapper.Map<DishesDto>(data);
+                _logger.LogInformation("成功获取菜品详细信息, MerchantId: {MerchantId}", merchantId);
+                return Ok(ApiResponse<DishesDto>.Success(response, "商家菜品信息获取成功"));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败, MerchantId: {MerchantId}", merchantId);
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex, "商家不存在, MerchantId: {MerchantId}", merchantId);
+                return NotFound(ApiResponse<object>.Fail(
+                    ErrorCodes.MerchantNotFound,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogError(ex, "业务处理异常, MerchantId: {MerchantId}", merchantId);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取商家数据统计信息时发生未知异常, MerchantId: {MerchantId}", merchantId);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+        }
+        
+        
         [HttpPost("{merchantId}/addNewDish")]
-        public async Task<ActionResult<ApiResponse<bool>>> AddNewDish(string merchantId, [FromBody] DishesDto dto)
+        public async Task<ActionResult<ApiResponse<bool>>> AddNewDish(string merchantId, [FromBody] CreateDishesDto dto)
         {
             try
             {
@@ -93,11 +231,9 @@ namespace JISpeed.Api.Controllers
                         "商家ID不能为空"));
                 }
 
-                var dish = _mapper.Map<Dish>(dto);
-                dish.DishId = Guid.NewGuid().ToString("N");
-                dish.MerchantId = merchantId;
+                var entity = _mapper.Map<CreateDishesDto>(dto);
 
-                var res = await _dishService.CreateDishEntityAsync(merchantId, dish);
+                var res = await _dishService.CreateDishEntityAsync(merchantId, entity.CategoryId, entity.DishName,entity.Price,entity.OriginPrice,entity.CoverUrl);
                 _logger.LogInformation("成功新增菜品, MerchantId: {MerchantId}", merchantId);
                 return Ok(ApiResponse<bool>.Success(res));
             }
@@ -112,7 +248,7 @@ namespace JISpeed.Api.Controllers
             {
                 _logger.LogWarning(ex, "商家不存在, MerchantId: {MerchantId}", merchantId);
                 return NotFound(ApiResponse<object>.Fail(
-                    ErrorCodes.ResourceNotFound,
+                    ErrorCodes.MerchantNotFound,
                     ex.Message));
             }
             catch (BusinessException ex)
@@ -132,7 +268,7 @@ namespace JISpeed.Api.Controllers
         }
 
         [HttpDelete("{merchantId}/{dishId}")]
-        public async Task<ActionResult> DeleteDish(string merchantId, string dishId)
+        public async Task<ActionResult<ApiResponse<bool>>> DeleteDish(string merchantId, string dishId)
         {
             try
             {
@@ -170,7 +306,7 @@ namespace JISpeed.Api.Controllers
             {
                 _logger.LogWarning(ex, "商家或菜品不存在, MerchantId: {MerchantId}，DishId: {DishId}", merchantId,dishId);
                 return NotFound(ApiResponse<object>.Fail(
-                    ErrorCodes.ResourceNotFound,
+                    ErrorCodes.MerchantNotFound,
                     ex.Message));
             }
             catch (BusinessException ex)
@@ -188,8 +324,10 @@ namespace JISpeed.Api.Controllers
                     "系统繁忙，请稍后再试"));
             }
         }
-        [HttpPut("{merchantId}/{dishId}")]
-        public async Task<ActionResult> ModifyDish(string merchantId, string dishId,[FromBody] DishesDto dto)
+        [HttpPatch("{merchantId}/{dishId}")]
+        public async Task<ActionResult<ApiResponse<bool>>> ModifyDish(
+            string merchantId, string dishId,
+            [FromBody] UpdateDishesDto dto)
         {
             try
             {
@@ -211,8 +349,8 @@ namespace JISpeed.Api.Controllers
                         "菜品ID不能为空"));
                 }
                 
-                var dish = _mapper.Map<Dish>(dto);
-                var res = await _dishService.ModifyDishEntityAsync(merchantId, dishId, dish);
+                var entity = _mapper.Map<UpdateDishesDto>(dto);
+                var res = await _dishService.ModifyDishEntityAsync(merchantId, dishId,entity.CategoryId, entity.DishName,entity.Price,entity.OriginPrice,entity.OnSale,entity.CoverUrl);
                 _logger.LogInformation("成功修改菜品, DishId: {DishId}", dishId);
 
                 return Ok(ApiResponse<bool>.Success(res));
@@ -228,7 +366,7 @@ namespace JISpeed.Api.Controllers
             {
                 _logger.LogWarning(ex, "商家或菜品不存在, MerchantId: {MerchantId}，DishId: {DishId}", merchantId,dishId);
                 return NotFound(ApiResponse<object>.Fail(
-                    ErrorCodes.ResourceNotFound,
+                    ErrorCodes.MerchantNotFound,
                     ex.Message));
             }
             catch (BusinessException ex)
@@ -246,7 +384,63 @@ namespace JISpeed.Api.Controllers
                     "系统繁忙，请稍后再试"));
             }
         }
+        
+        [HttpGet("{merchantId}/dish-categories")]
+        public async Task<ActionResult<ApiResponse<List<CategoryDto>>>> GetMerchantAllCategories(string merchantId)
+        {
+            try
+            {
+                _logger.LogInformation("收到查看分类请求, MerchantID: {MerchantID}", merchantId);
+                // 参数验证
+                if (string.IsNullOrWhiteSpace(merchantId))
+                {
+                    _logger.LogWarning("参数为空");
+                    return BadRequest(ApiResponse<object>.Fail(
+                        ErrorCodes.MissingParameter,
+                        "参数能为空"));
+                }
+                var data = await _dishService.GetMerchantCategory(merchantId);
+                if (!data.Any())
+                {
+                    return NotFound(ApiResponse<object>.Fail(
+                        ErrorCodes.ProductNotFound,
+                        "无分类"));
+                }
+                var response = _mapper.Map<List<CategoryDto>>(data);
+                _logger.LogInformation("成功获取商家分类信息, MerchantId: {MerchantId}", merchantId);
+                return Ok(ApiResponse<List<CategoryDto>>.Success(response, "商家分类信息获取成功"));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败, MerchantId: {MerchantId}", merchantId);
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex, "商家不存在, MerchantId: {MerchantId}", merchantId);
+                return NotFound(ApiResponse<object>.Fail(
+                    ErrorCodes.MerchantNotFound,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogError(ex, "业务处理异常, MerchantId: {MerchantId}", merchantId);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取商家分类信息时发生未知异常, MerchantId: {MerchantId}", merchantId);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+        }
     }
+   
 
     }
 

@@ -11,11 +11,24 @@ namespace JISpeed.Api.DTOs
         // 商家昵称
         public required string MerchantName { get; set; }
         // 商家状态
-        public int Status { get; set; } 
+        public required int Status { get; set; } 
         // 联系方式
         public required string ContactInfo { get; set; }
         // 地址
-        public string Location { get; set; } =string.Empty;
+        public string? Location { get; set; }
+        
+    }
+    public class UpdateMerchantDto
+    {
+        
+        // 商家昵称
+        public string? MerchantName { get; set; }
+        // 商家状态
+        public int? Status { get; set; } 
+        // 联系方式
+        public string? ContactInfo { get; set; }
+        // 地址
+        public string? Location { get; set; }
         
     }
     
@@ -57,7 +70,61 @@ namespace JISpeed.Api.DTOs
         public string? MerchantId{ get; set; }
         // 评论数目
         public int? ReviewQuantity{ get; set; } 
+        public string? CategoryName { get; set; }
     }
+    
+    public class UpdateDishesDto
+    {
+        // 分类ID
+        public string? CategoryId{ get; set; } 
+        // 菜品名
+        public string? DishName{ get; set; } 
+        // 现价
+        public decimal? Price{ get; set; } 
+        // 原价
+        public decimal? OriginPrice{ get; set; } 
+        // 封面
+        public string? CoverUrl { get; set; } 
+        
+        // 上架标志
+        public int? OnSale{ get; set; } 
+    }
+    
+    public class CreateDishesDto
+    {
+        // 分类ID
+        public required string CategoryId{ get; set; } 
+        // 菜品名
+        public required string DishName{ get; set; } 
+        // 现价
+        public decimal? Price{ get; set; } 
+        // 原价
+        public required decimal OriginPrice{ get; set; } 
+        // 封面
+        public string? CoverUrl { get; set; } 
+        
+    }
+    
 
+    public class CategoryWithDishesDto
+    {
+        // 分类ID
+        public required string CategoryId { get; set; }
+        // 分类名称
+        public required string CategoryName { get; set; }
+        // 该分类下的菜品列表（内层DTO）
+        public List<DishesDto> Dishes { get; set; } = new(); 
+    }
+    public class CategoryDto
+    {
+        // 分类ID
+        public required string CategoryId { get; set; }
+        // 分类名称
+        public required string CategoryName { get; set; }
+        // 父级分类ID (可为空，表示顶级分类)
+        public string? ParentId { get; set; }
+        //排序顺序
+        public required int SortOrder { get; set; }
+    }
 
 }

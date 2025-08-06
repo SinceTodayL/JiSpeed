@@ -30,6 +30,7 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<ISalesStatRepository, SalesStatRepository>();
             services.AddScoped<IDishRepository, DishRepository>();
             services.AddScoped<IApplicationRepository, ApplicationRepository>();
+            services.AddScoped<ICategoryRepository, CategoryRepository>();
 
             return services;
         }

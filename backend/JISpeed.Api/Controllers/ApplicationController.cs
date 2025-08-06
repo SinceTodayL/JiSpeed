@@ -13,7 +13,7 @@ namespace JISpeed.Api.Controllers
     public class ApplicationController : ControllerBase
     {
         private readonly IApplicationService _applicationService;
-        private readonly IMerchantService _merchantService;
+        private readonly IMerchantService _merchantService; 
         private readonly ILogger<ApplicationController> _logger;
         private readonly IMapper _mapper;
 
@@ -31,7 +31,8 @@ namespace JISpeed.Api.Controllers
 
         // 管理员通过/拒绝申请
         [HttpPatch("admin/{adminId}/audit/{applyId}")]
-        public async Task<ActionResult<ApiResponse<bool>>> Audit(string adminId, string applyId,[FromBody] AuditRequest request)
+        public async Task<ActionResult<ApiResponse<bool>>> Audit(
+            string adminId, string applyId,[FromBody] AuditRequest request)
         {
             try
             { 
@@ -50,7 +51,7 @@ namespace JISpeed.Api.Controllers
                     _logger.LogInformation("收到管理员通过申请请求, AdminId: {AdminId}", adminId);
                     await _applicationService.ApproveApplicationAsync(applyId, adminId);
                 }
-                else if (entity.AuditStatus == 2)
+                else if (entity.AuditStatus == 2 && entity.RejectReason!=null)
                 {   
                     _logger.LogInformation("收到管理员拒绝申请请求, AdminId: {AdminId}", adminId);
                     await _applicationService.RejectApplicationAsync(applyId, adminId, entity.RejectReason);
@@ -93,7 +94,7 @@ namespace JISpeed.Api.Controllers
             }
         }
         
-        [HttpPost("merchant/{merchantId}/applications")]
+        [HttpPost("merchants/{merchantId}/applications")]
         public async Task<ActionResult<ApiResponse<bool>>> SubmitApplication(string merchantId, [FromBody] ApplicationRequest request)
         {
             try
@@ -151,64 +152,11 @@ namespace JISpeed.Api.Controllers
             }
         }
         
-        
-        [HttpGet("admin/{adminId}/applications")]
-        public async Task<ActionResult<ApiResponse<List<ApplicationResponse>>>> GetPendingApplications
-        (
-            string adminId,
-            [FromBody]AuditRequest request
-            )
-        {
-            try
-            { 
-                // 参数验证
-                if (string.IsNullOrWhiteSpace(adminId))
-                {
-                    _logger.LogWarning("ID参数为空");
-                    return BadRequest(ApiResponse<object>.Fail(
-                        ErrorCodes.MissingParameter,
-                        "ID不能为空"));
-                }
-                _logger.LogInformation("收到获取目标申请状态的申请列表请求, AdminId: {AdminId}", adminId);
-                var entity = _mapper.Map<AuditRequest>(request);
-                var data = await _applicationService.GetApplicationsByAuditStatusAsync(entity.AuditStatus);
-                var response = _mapper.Map<List<ApplicationResponse>>(data);
-                _logger.LogInformation("获取目标申请状态的申请列表请求成功,  AdminId: {AdminId}", adminId);
-                return Ok(ApiResponse<List<ApplicationResponse>>.Success(response));
-            }
-            catch (ValidationException ex)
-            {
-                _logger.LogWarning(ex, "参数验证失败, AdminId: {AdminId}", adminId);
-                return BadRequest(ApiResponse<object>.Fail(
-                    ErrorCodes.ValidationFailed,
-                    ex.Message));
-            }
-            catch (NotFoundException ex)
-            {
-                _logger.LogWarning(ex, "实体不存在, AdminId: {AdminId}", adminId);
-                return NotFound(ApiResponse<object>.Fail(
-                    ErrorCodes.ResourceNotFound,
-                    ex.Message));
-            }
-            catch (BusinessException ex)
-            {
-                _logger.LogError(ex, "业务处理异常,AdminId: {AdminId}", adminId);
-                return StatusCode(500, ApiResponse<object>.Fail(
-                    ErrorCodes.GeneralError,
-                    ex.Message));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "获取目标申请状态的申请列表时发生未知异常, AdminId: {AdminId}", adminId);
-                return StatusCode(500, ApiResponse<object>.Fail(
-                    ErrorCodes.SystemError,
-                    "系统繁忙，请稍后再试"));
-            }
-        }
-        
-        
-        [HttpGet("merchant/{merchantId}/applications")]
-        public async Task<ActionResult<ApiResponse<List<ApplicationResponse>>>> GetApplicationListByMerchantId(string merchantId)
+        [HttpGet("merchants/{merchantId}/applications")]
+        public async Task<ActionResult<ApiResponse<List<ApplicationResponse>>>> GetApplicationListByMerchantId(
+            string merchantId,
+            [FromQuery]int?auditStatus,
+            [FromQuery]int?size,[FromQuery]int?page)
         {
             try
             { 
@@ -222,7 +170,7 @@ namespace JISpeed.Api.Controllers
                 }
                 _logger.LogInformation("收到商家获取申请请求, MerchantId: {MerchantId}", merchantId);
                 
-                var data = await _applicationService.GetApplicationsByMerchantAsync(merchantId);
+                var data = await _applicationService.GetApplicationsByMerchantAsync(merchantId,auditStatus,size,page);
                 var response = _mapper.Map<List<ApplicationResponse>>(data);
                 _logger.LogInformation("商家获取申请请求成功, MerchantId: {MerchantId}", merchantId);
                 return Ok(ApiResponse<List<ApplicationResponse>>.Success(response));
@@ -256,7 +204,6 @@ namespace JISpeed.Api.Controllers
                     "系统繁忙，请稍后再试"));
             }
         }
-        
         
         [HttpGet("applications/{applicationId}")]
         public async Task<ActionResult<ApiResponse<ApplicationResponse>>> GetApplicationByApplicationId(string applicationId)
@@ -308,45 +255,57 @@ namespace JISpeed.Api.Controllers
             }
         }
         
-        [HttpGet("applications")]
-        public async Task<ActionResult<ApiResponse<List<ApplicationResponse>>>> GetApplicationByDateRange(DateTime? startDate, DateTime? endDate)
+        
+        [HttpGet("admin/{adminId}/applications")]
+        public async Task<ActionResult<ApiResponse<List<ApplicationResponse>>>> GetApplications
+        (
+            string adminId,
+            [FromQuery]int? auditStatus,
+            [FromQuery]DateTime? startDate, [FromQuery]DateTime? endDate,
+            [FromQuery]string? merchantId,
+            [FromQuery]bool? checkProfile,
+            [FromQuery]int? size,[FromQuery]int? page)
         {
             try
             { 
-                var start = startDate ?? DateTime.MinValue; 
-                var end = endDate ?? DateTime.Now;
-                _logger.LogInformation("收到获取时间段内的申请请求, StartDate: {StartDate}，EndDate：{EndDate}", start, end);
-
-                
-                var data = await _applicationService.GetApplicationsByTimeRangeAsync(start, end);
+                // 参数验证
+                if (string.IsNullOrWhiteSpace(adminId))
+                {
+                    _logger.LogWarning("ID参数为空");
+                    return BadRequest(ApiResponse<object>.Fail(
+                        ErrorCodes.MissingParameter,
+                        "ID不能为空"));
+                }
+                _logger.LogInformation("收到获取申请列表请求, AdminId: {AdminId}", adminId);
+                var data = await _applicationService.GetByFiltersAsync(auditStatus,size,page,startDate,endDate,merchantId,checkProfile,adminId);
                 var response = _mapper.Map<List<ApplicationResponse>>(data);
-                _logger.LogInformation("获取时间段内的申请请求成功, StartDate: {StartDate}，EndDate：{EndDate}", start, end);
+                _logger.LogInformation("获取申请列表请求成功,  AdminId: {AdminId}", adminId);
                 return Ok(ApiResponse<List<ApplicationResponse>>.Success(response));
             }
             catch (ValidationException ex)
             {
-                _logger.LogWarning(ex, "参数验证失败");
+                _logger.LogWarning(ex, "参数验证失败, AdminId: {AdminId}", adminId);
                 return BadRequest(ApiResponse<object>.Fail(
                     ErrorCodes.ValidationFailed,
                     ex.Message));
             }
             catch (NotFoundException ex)
             {
-                _logger.LogWarning(ex, "实体不存在");
+                _logger.LogWarning(ex, "实体不存在, AdminId: {AdminId}", adminId);
                 return NotFound(ApiResponse<object>.Fail(
-                    ErrorCodes.ResourceNotFound,
+                    ErrorCodes.InvalidCredentials,
                     ex.Message));
             }
             catch (BusinessException ex)
             {
-                _logger.LogError(ex, "业务处理异常");
+                _logger.LogError(ex, "业务处理异常,AdminId: {AdminId}", adminId);
                 return StatusCode(500, ApiResponse<object>.Fail(
                     ErrorCodes.GeneralError,
                     ex.Message));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "获取时间段内的申请请求时发生未知异常");
+                _logger.LogError(ex, "获取目标申请状态的申请列表时发生未知异常, AdminId: {AdminId}", adminId);
                 return StatusCode(500, ApiResponse<object>.Fail(
                     ErrorCodes.SystemError,
                     "系统繁忙，请稍后再试"));

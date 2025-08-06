@@ -7,16 +7,33 @@ namespace JISpeed.Core.Interfaces.IServices
 {
     public interface IDishService
     {
-
-
         // 创建菜品主体
-        Task<bool> CreateDishEntityAsync(string merchantId, Dish dishId);
+        Task<bool> CreateDishEntityAsync(
+            string merchantId,
+            string categoryId,string dishName,
+            decimal? price, decimal originPrice,
+            string? coverUrl);
         // 删除菜品节点
         Task<bool> DeleteDishEntityAsync(string merchantId, string dish);
         // 修改菜品主体
-        Task<bool>ModifyDishEntityAsync(string merchantId, string dishId, Dish dish);
+        Task<bool>ModifyDishEntityAsync(
+            string merchantId, string dishId, 
+            string? categoryId, string? dishName,
+            decimal? price, decimal? originPrice,
+            int? onSale, string? coverUrl);
         // 获取商家菜品列表
-        Task<List<Dish>> GetDisheEntitiesAsync(string merchantId);
+        Task<List<Dish>> GetByFiltersAsync(
+            string merchantId,
+            string? categoryId,
+            bool? orderByRating,
+            bool? orderByHighPrice,
+            bool? orderByLowPrice,
+            int? size, int? page);
+        Task<Dish?> GetDisheEntitiesAsync(
+            string merchantId,
+            string dishId);
+        
+        Task<List<Category>>GetMerchantCategory(string merchantId);
         
     }
 }
