@@ -39,11 +39,16 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
         // 根据商家ID获取销售统计列表
         // <param name="merchantId">商家ID</param>
         // <returns>销售统计列表</returns>
-        public async Task<List<SalesStat>> GetByMerchantIdAsync(string merchantId)
+        public async Task<List<SalesStat>> GetByMerchantIdAsync(string merchantId, int? size, int? page)
         {
+            int pageSize = size ?? 20;  // 默认每页20条
+            int currentPage = page ?? 1; // 默认第1页
+            
             return await _context.SalesStats
                 .Where(s => s.MerchantId == merchantId)
                 .OrderByDescending(s => s.StatDate)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 
@@ -167,6 +172,22 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
                     .ToListAsync()
             };
         }
+        
+        // 根据统计类型获取记录 - 按销售额范围分类
+        // <returns>销售统计列表</returns>
+        public async Task<List<SalesStat>> GetBySalesRangeAsync(decimal minAmount,decimal maxAmount,int?size, int? page)
+        {
+            int pageSize = size ?? 20;  // 默认每页20条
+            int currentPage = page ?? 1; // 默认第1页
+
+            return await _context.SalesStats // 低销售额 (0-1000)
+                .Where(s => s.SalesAmount <= maxAmount && s.SalesAmount >= minAmount)
+                .Include(s => s.Merchant)
+                .OrderByDescending(s => s.StatDate)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
 
         // 根据时间范围获取销售统计 (重命名以避免重复)
         // <param name="startTime">开始时间</param>
@@ -186,19 +207,33 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
         // <param name="merchantId">商家ID</param>
         // <param name="statType">统计类型</param>
         // <returns>销售统计列表</returns>
-        public async Task<List<SalesStat>> GetByMerchantIdAndStatTypeAsync(string merchantId, int statType)
+        public async Task<List<SalesStat>> GetByMerchantIdAndStatTypeAsync(string merchantId, int statType,int? size, int? page)
         {
             var baseQuery = _context.SalesStats.Where(s => s.MerchantId == merchantId);
-
+            int pageSize = size ?? 20;  // 默认每页20条
+            int currentPage = page ?? 1; // 默认第1页
+            
             return statType switch
             {
                 1 => await baseQuery.Where(s => s.SalesAmount <= 1000)
-                    .OrderByDescending(s => s.StatDate).ToListAsync(),
+                    .OrderByDescending(s => s.StatDate)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
                 2 => await baseQuery.Where(s => s.SalesAmount > 1000 && s.SalesAmount <= 5000)
-                    .OrderByDescending(s => s.StatDate).ToListAsync(),
+                    .OrderByDescending(s => s.StatDate)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
                 3 => await baseQuery.Where(s => s.SalesAmount > 5000)
-                    .OrderByDescending(s => s.StatDate).ToListAsync(),
-                _ => await baseQuery.OrderByDescending(s => s.StatDate).ToListAsync()
+                    .OrderByDescending(s => s.StatDate)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                _ => await baseQuery.OrderByDescending(s => s.StatDate)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync()
             };
         }
 
@@ -207,13 +242,17 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
         // <param name="startTime">开始时间</param>
         // <param name="endTime">结束时间</param>
         // <returns>销售统计列表</returns>
-        public async Task<List<SalesStat>> GetByMerchantIdAndTimeRangeAsync(string merchantId, DateTime startTime, DateTime endTime)
+        public async Task<List<SalesStat>> GetByMerchantIdAndTimeRangeAsync(string merchantId, DateTime startTime, DateTime endTime,int ?size, int? page)
         {
+            int pageSize = size ?? 20;  // 默认每页20条
+            int currentPage = page ?? 1; // 默认第1页
             return await _context.SalesStats
                 .Where(s => s.MerchantId == merchantId &&
                            s.StatDate.Date >= startTime.Date &&
                            s.StatDate.Date <= endTime.Date)
                 .OrderByDescending(s => s.StatDate)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 

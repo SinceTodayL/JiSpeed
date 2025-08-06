@@ -79,6 +79,6 @@ namespace JISpeed.Core.Entities.Dish
             ReviewQuantity = reviewQuantity;
         }
         
-        private Dish() { } // EF Core 需要一个无参构造函数
+        public Dish() { } // EF Core 需要一个无参构造函数
     }
 }

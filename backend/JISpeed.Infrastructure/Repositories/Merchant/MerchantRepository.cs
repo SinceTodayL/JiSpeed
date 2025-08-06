@@ -36,16 +36,43 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
                 .FirstOrDefaultAsync(u => u.ApplicationUserId == applicationUserId);
         }
 
-        // 根据商家名称搜索商家
-        // <param name="name">商家名称</param>
-        // <returns>商家列表</returns>
-        public async Task<List<MerchantEntity>> SearchByNameAsync(string name)
+        public async Task<List<MerchantEntity>> GetAllMerchantsAsync(int? size, int? page)
         {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
             return await _context.Merchants
-                .Where(m => m.MerchantName.Contains(name))
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 
+        // 根据商家名称搜索商家
+        // <param name="name">商家名称</param>
+        // <returns>商家列表</returns>
+        public async Task<List<MerchantEntity>> SearchByNameAsync(string name,int? size,int? page)
+        {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
+            return await _context.Merchants
+                .Where(m => m.MerchantName.Contains(name))
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<List<string>> GetMerchantNamesAsync(string prefix, int? limit)
+        {
+            int limitValue = limit ?? 10;
+            var query = _context.Merchants
+                .Where(m => (m.MerchantName.StartsWith(prefix)  // 前缀匹配（优先）
+                             || m.MerchantName.Contains(prefix))) // 包含匹配（兜底）
+                .OrderBy(m => m.MerchantName.StartsWith(prefix) ? 0 : 1) // 前缀匹配结果排在前面
+                .ThenBy(m => m.MerchantName) // 按名称正序排列
+                .Select(m => m.MerchantName) // 只返回名称
+                .Take(limitValue); // 限制返回数量（补全提示不需要太多结果）
+
+            return await query.ToListAsync();
+        }
         // 根据状态获取商家列表
         // <param name="status">状态</param>
         // <returns>商家列表</returns>
@@ -59,10 +86,14 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
         // 根据位置搜索商家
         // <param name="location">位置</param>
         // <returns>商家列表</returns>
-        public async Task<List<MerchantEntity>> SearchByLocationAsync(string location)
+        public async Task<List<MerchantEntity>> SearchByLocationAsync(string location,int? size,int? page)
         {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
             return await _context.Merchants
                 .Where(m => !string.IsNullOrEmpty(m.Location) && m.Location.Contains(location))
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
         // 使用ApplicationUser进行用户的创建

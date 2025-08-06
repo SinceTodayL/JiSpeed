@@ -52,6 +52,6 @@ namespace JISpeed.Core.Entities.Merchant
             AuditStatus = 0; //默认审核状态为0（待审核）
         }
 
-        private Application() { }
+        public Application() { }
     }
 }

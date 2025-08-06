@@ -45,17 +45,13 @@ namespace JISpeed.Core.Interfaces.IServices
     {
         
         /// 是否成功
-        
         public bool IsSuccess { get; set; }
-
         
         /// 错误信息
-        
         public List<string> Errors { get; set; } = new List<string>();
 
         
         /// ApplicationUser ID
-        
         public string? ApplicationUserId { get; set; }
 
         
