@@ -11,6 +11,7 @@ using JISpeed.Infrastructure.Redis;
 using JISpeed.Application.Services.Rider;
 using JISpeed.Core.Interfaces.IRepositories.Rider;
 using JISpeed.Infrastructure.Repositories.Rider;
+using JISpeed.Api.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,7 @@ builder.Services.AddHttpClient();
 // 4. 控制器和日志等默认配置
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSignalR();  // 注册SignalR服务
 builder.Services.AddSingleton<RedisService>();
 
 // 注册仓储层服务（统一封装）
@@ -55,6 +57,7 @@ builder.Services.AddScoped<IPerformanceService, PerformanceService>();
 
 // 注册骑手定位相关服务
 builder.Services.AddScoped<IMapService, AMapService>();
+builder.Services.AddScoped<ILocationPushService, LocationPushService>();
 builder.Services.AddScoped<IRiderLocationService, RiderLocationService>();
 
 // 5. 添加 Swagger
@@ -76,6 +79,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthorization();
+app.MapHub<LocationHub>("/locationHub");
 app.MapControllers();
 
 app.Run();

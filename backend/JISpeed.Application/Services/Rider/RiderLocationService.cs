@@ -15,17 +15,20 @@ namespace JISpeed.Application.Services.Rider
         private readonly IRiderLocationRepository _riderLocationRepository;
         private readonly IRiderRepository _riderRepository;
         private readonly IMapService _mapService;
+        private readonly ILocationPushService _locationPushService;
         private readonly ILogger<RiderLocationService> _logger;
 
         public RiderLocationService(
             IRiderLocationRepository riderLocationRepository,
             IRiderRepository riderRepository,
             IMapService mapService,
+            ILocationPushService locationPushService,
             ILogger<RiderLocationService> logger)
         {
             _riderLocationRepository = riderLocationRepository;
             _riderRepository = riderRepository;
             _mapService = mapService;
+            _locationPushService = locationPushService;
             _logger = logger;
         }
 
@@ -70,6 +73,18 @@ namespace JISpeed.Application.Services.Rider
                 // 保存位置记录
                 await _riderLocationRepository.CreateAsync(location);
                 await _riderLocationRepository.SaveChangesAsync();
+
+                // 实时推送位置更新
+                try
+                {
+                    await _locationPushService.PushLocationUpdateAsync(riderId, location);
+                }
+                catch (Exception pushEx)
+                {
+                    // 推送失败不影响位置保存，只记录日志
+                    _logger.LogWarning(pushEx, "位置推送失败, RiderId: {RiderId}, LocationId: {LocationId}", 
+                        riderId, location.LocationId);
+                }
 
                 _logger.LogInformation("骑手位置更新成功, RiderId: {RiderId}, LocationId: {LocationId}",
                     riderId, location.LocationId);

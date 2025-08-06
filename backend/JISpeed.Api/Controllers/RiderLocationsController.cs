@@ -330,7 +330,7 @@ namespace JISpeed.Api.Controllers
 
                 await _riderLocationService.UpdateRiderStatusAsync(riderId, dto.Status);
 
-                return Ok(ApiResponse<object>.Success(null, "骑手在线状态更新成功"));
+                return Ok(ApiResponse<object>.Success(new object(), "骑手在线状态更新成功"));
             }
             catch (ValidationException ex)
             {
