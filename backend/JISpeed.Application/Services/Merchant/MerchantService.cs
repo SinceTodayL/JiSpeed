@@ -25,6 +25,12 @@ namespace JISpeed.Application.Services.Merchant
             _logger = logger;
         }
 
+        public async Task<List<string>> GetMerchantNameForSearchAsync(string prefix, int? limit)
+        {
+            var data = await _merchantRepository.GetMerchantNamesAsync(prefix, limit);
+            return data;
+        }
+
         // 使用MerchantId获取商家详细信息
         // <returns>用户实体，如果不存在则返回null</returns>
         public async Task<MerchantEntity> GetMerchantDetailAsync(string merchantId)

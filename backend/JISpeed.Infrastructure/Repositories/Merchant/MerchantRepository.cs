@@ -60,6 +60,19 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
                 .ToListAsync();
         }
 
+        public async Task<List<string>> GetMerchantNamesAsync(string prefix, int? limit)
+        {
+            int limitValue = limit ?? 10;
+            var query = _context.Merchants
+                .Where(m => (m.MerchantName.StartsWith(prefix)  // 前缀匹配（优先）
+                             || m.MerchantName.Contains(prefix))) // 包含匹配（兜底）
+                .OrderBy(m => m.MerchantName.StartsWith(prefix) ? 0 : 1) // 前缀匹配结果排在前面
+                .ThenBy(m => m.MerchantName) // 按名称正序排列
+                .Select(m => m.MerchantName) // 只返回名称
+                .Take(limitValue); // 限制返回数量（补全提示不需要太多结果）
+
+            return await query.ToListAsync();
+        }
         // 根据状态获取商家列表
         // <param name="status">状态</param>
         // <returns>商家列表</returns>

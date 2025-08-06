@@ -134,7 +134,40 @@ namespace JISpeed.Api.Controllers
                     "系统繁忙，请稍后再试"));
             }
         }
+        [HttpGet("merchants/autocomplete")]
+        public async Task<ActionResult<ApiResponse<string>>> GetNameSuggestionsAsync(string prefix, int ?limit)
+        {
+            try
+            {
+                _logger.LogInformation("收到智能补全请求");
+                if (prefix.Length <= 1)
+                    throw new ValidationException("请加长前缀长度来启用智能匹配");
+                var response = await _merchantService.GetMerchantNameForSearchAsync(prefix, limit);
 
+                return Ok(ApiResponse<List<string>>.Success(response,"智能补全成功"));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败");
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogError(ex, "业务处理异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "智能补全时发生未知异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+        }
         
         
         // 根据商家ID修改商家详细信息

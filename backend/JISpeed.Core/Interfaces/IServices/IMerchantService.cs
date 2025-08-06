@@ -16,6 +16,7 @@ namespace JISpeed.Core.Interfaces.IServices
             string? location);
         
         Task<Merchant> GetMerchantDetailAsync(string merchantId);
+        Task<List<string>> GetMerchantNameForSearchAsync(string prefix,int ?limit);
 
         
         Task<List<Merchant>> GetMerchantByFiltersAsync(
