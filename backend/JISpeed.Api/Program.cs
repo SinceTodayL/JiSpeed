@@ -4,18 +4,7 @@ using Microsoft.EntityFrameworkCore; // 用于配置 DbContext
 using Microsoft.AspNetCore.Identity;
 using JISpeed.Api.Extensions;
 using JISpeed.Api.Mappers;
-using JISpeed.Application.Services.Common;
-using JISpeed.Application.Services.Email;
-using JISpeed.Application.Services.Customer;
-using JISpeed.Application.Services.Merchant;
-using JISpeed.Application.Services.Rider;
-using JISpeed.Application.Services.Admin;
-using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Infrastructure.Redis;
-using JISpeed.Application.Services.Rider;
-using JISpeed.Core.Interfaces.IRepositories.Rider;
-using JISpeed.Infrastructure.Repositories.Rider;
-using MailKit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,12 +36,8 @@ builder.Services.AddSingleton<RedisService>();
 builder.Services.AddRepositories();
 
 // 注册：接口 -> 实现类
-builder.Services.AddScoped<IRegistrationService, RegistrationService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IRiderService, RiderService>();
-builder.Services.AddScoped<IMerchantService, MerchantService>();
-builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddServices();
+
 // 5. 添加 Swagger
 builder.Services.AddSwaggerGen();
 

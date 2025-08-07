@@ -1,7 +1,9 @@
+using JISpeed.Application.Services.Admin;
 using JISpeed.Application.Services.Common;
 using JISpeed.Application.Services.Email;
 using JISpeed.Application.Services.Merchant;
 using JISpeed.Application.Services.Customer;
+using JISpeed.Application.Services.Rider;
 using JISpeed.Core.Interfaces.IRepositories.Admin;
 using JISpeed.Core.Interfaces.IRepositories.Common;
 using JISpeed.Core.Interfaces.IRepositories.Dish;
@@ -45,27 +47,23 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IMerchantService, MerchantService>();
             services.AddScoped<IApplicationService, ApplicationService>();
             services.AddScoped<IDishService, DishService>();
-            services.AddScoped<ILoginService,LoginService>();
-            services.AddScoped<IJwtTokenService,JwtTokenService>();
+            services.AddScoped<ILoginService, LoginService>();
+            services.AddScoped<IJwtTokenService, JwtTokenService>();
+            services.AddScoped<IAddressRepository, AddressRepository>();
+            services.AddScoped<IReviewRepository, ReviewRepository>();
+            services.AddScoped<IComplaintRepository, ComplaintRepository>();
 
-                    services.AddScoped<IAddressRepository, AddressRepository>();
-        services.AddScoped<IReviewRepository, ReviewRepository>();
-        services.AddScoped<IComplaintRepository, ComplaintRepository>();
-        
-        // 骑手相关仓储
-        services.AddScoped<IAssignmentRepository, AssignmentRepository>();
-        services.AddScoped<IAttendanceRepository, AttendanceRepository>();
-        services.AddScoped<IPerformanceRepository, PerformanceRepository>();
+            // 骑手相关仓储
+            services.AddScoped<IAssignmentRepository, AssignmentRepository>();
+            services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+            services.AddScoped<IPerformanceRepository, PerformanceRepository>();
 
-        return services;
-    }
-
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
-    {
-        // 注释掉旧的具体服务类，现在统一使用IUserService
-        // services.AddScoped<FavoriteService>();
-        // services.AddScoped<CartService>();
-        // services.AddScoped<AddressService>();
+            services.AddScoped<IRegistrationService, RegistrationService>();
+            services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IRiderService, RiderService>();
+            services.AddScoped<IMerchantService, MerchantService>();
+            services.AddScoped<IAdminService, AdminService>();
 
             return services;
         }

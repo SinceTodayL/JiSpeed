@@ -6,7 +6,11 @@ namespace JISpeed.Core.Interfaces.IServices
     
     public interface IRegistrationService
     {
-        Task<PreRegistrationResult> PreRegisterUserAsync(ApplicationUser request,string passwordHash);
+        Task<PreRegistrationResult> PreRegisterUserAsync( 
+            string passwordHash, string email,
+            string userName, string? phoneNumber,
+            string id, int userType,
+            DateTime createdAt);
         Task<RegistrationResult> RegisterUserAsync(string Id, string token);
 
         

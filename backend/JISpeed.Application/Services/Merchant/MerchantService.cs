@@ -1,12 +1,8 @@
 using JISpeed.Core.Entities.Merchant;
-using JISpeed.Core.Entities.Common;
-using JISpeed.Core.Interfaces.IRepositories;
 using JISpeed.Core.Interfaces.IRepositories.Merchant;
-using JISpeed.Core.Interfaces.IRepositories.Dish;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Core.Constants;
 using JISpeed.Core.Exceptions;
-using JISpeed.Core.Interfaces.IRepositories.Merchant;
 using Microsoft.Extensions.Logging;
 using MerchantEntity = JISpeed.Core.Entities.Merchant.Merchant;
 
@@ -43,7 +39,7 @@ namespace JISpeed.Application.Services.Merchant
             {
                 _logger.LogInformation("开始获取商家详细信息, MerchantId: {MerchantId}", merchantId);
 
-                var user = await _merchantRepository.GetByIdAsync(merchantId);
+                var merchant = await _merchantRepository.GetByIdAsync(merchantId);
 
                 if (merchant == null)
                 {

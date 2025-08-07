@@ -5,6 +5,7 @@ using JISpeed.Api.DTOS;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Api.Common;
 using JISpeed.Core.Constants;
+using JISpeed.Core.Exceptions;
 using JISpeed.Core.Interfaces.IRepositories.Common;
 using Microsoft.AspNetCore.Identity.UI.Services;
 
@@ -138,11 +139,11 @@ namespace JISpeed.Api.Controllers
             try
             {
                 // 2. 检查邮箱格式
-                var res = await _emailService.IsValidEmailAsync(request.Email);
+                var res = _emailService.IsValidEmailAsync(request.Email);
                 if (!res)
                 {
                     return BadRequest(ApiResponse<object>.Fail(
-                        ErrorCodes.ValidationFailed, 
+                        ErrorCodes.ValidationFailed,
                         "邮箱格式无效"));
                 }
 
@@ -158,17 +159,24 @@ namespace JISpeed.Api.Controllers
                 string passwordHash = _userManager.PasswordHasher.HashPassword(newUser, request.PassWord);
 
                 // 5. 调用预注册服务
-                var result = await _registerService.PreRegisterUserAsync(newUser, passwordHash);
+                var result = await _registerService.PreRegisterUserAsync(passwordHash, request.Email, request.UserName,
+                    request.PhoneNumber, newUser.Id, userType, newUser.CreatedAt);
 
 
                 if (!result.IsSuccess)
                 {
                     _logger.LogWarning("预注册失败，用户名: {UserName}", request.UserName);
-                    throw new Exception();
+                    throw new BusinessException("邮箱或用户名已存在");
                 }
 
                 _logger.LogInformation("预注册成功，已发送验证邮件，用户名: {UserName}", request.UserName);
-                return Ok(ApiResponse<bool>.Success(true,"验证邮件已发送，请在1小时内点击链接完成注册"));
+                return Ok(ApiResponse<bool>.Success(true, "验证邮件已发送，请在1小时内点击链接完成注册"));
+            }
+            catch (BusinessException ex)
+            {
+                return Conflict( ApiResponse<object>.Fail(
+                    ErrorCodes.UnsupportedOperation,
+                    "邮箱或用户名已存在"));
             }
             catch (Exception)
             {

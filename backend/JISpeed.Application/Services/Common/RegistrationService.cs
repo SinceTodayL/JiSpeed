@@ -52,25 +52,34 @@ namespace JISpeed.Application.Services.Common
         }
 
         // 预注册
-        public async Task<PreRegistrationResult> PreRegisterUserAsync(ApplicationUser newUser, string passwordHash)
+        public async Task<PreRegistrationResult> PreRegisterUserAsync(
+            string passwordHash, string email,
+            string userName, string? phoneNumber,
+            string id, int userType,
+            DateTime createdAt
+        )
         {
             try
             {
                 // 1. 参数验证
-                if (newUser.Email == null)
-                {
-                    _logger.LogWarning("邮箱为空");
-                    return PreRegistrationResult.Failure("邮箱为空");
-                }
 
-                var existingUser = await _applicationUserRepository.GetByEmailAndUserTypeAsync(newUser.Email, newUser.UserType);
-                if (existingUser!=null)
+                var existingEmail = await _applicationUserRepository.GetByEmailAndUserTypeAsync(email, userType);
+                var existingUser = await _userManager.FindByNameAsync(userName);
+
+                if (existingEmail!=null || existingUser != null)
                 {
-                    _logger.LogWarning("用户已存在: {Email}", newUser.Email);
+                    _logger.LogWarning("用户已存在: {Email}", email);
                     return PreRegistrationResult.Failure("用户存在");
                 }
-
+               
                 // 2. 发送验证邮箱
+                var newUser = new ApplicationUser(
+                    id: id,
+                    userName: userName,
+                    userType: userType,
+                    email: email,
+                    createdAt: createdAt,
+                    phoneNumber: phoneNumber);
                 var token = await _emailService.SendVerificationEmailAsync(newUser);
                 if (token == null)
                 {
@@ -83,7 +92,7 @@ namespace JISpeed.Application.Services.Common
                 {
                     User = newUser,
                     PasswordHash = passwordHash, // 存储哈希而非明文
-                    token = token
+                    Token = token
                 };
 
                 // 5. 存入Redis，准备验证
@@ -133,10 +142,10 @@ namespace JISpeed.Application.Services.Common
 
 
                 // 4. 解码令牌并验证（使用数据库用户对象）
-                if (token != preRegData.token)
+                if (token != preRegData.Token)
                 {
                     // 输出具体错误原因（关键调试信息）
-                    _logger.LogWarning("令牌验证失败，用户ID: {UserId}，token：{Token}，preToken:{pretoken}", userId, token,preRegData.token);
+                    _logger.LogWarning("令牌验证失败，用户ID: {UserId}，token：{Token}，preToken:{pretoken}", userId, token,preRegData.Token);
                     return RegistrationResult.Failure("令牌验证失败");
                 }
                 // 5. 完善用户信息并保存到数据库
