@@ -60,6 +60,9 @@ builder.Services.AddScoped<IMapService, AMapService>();
 builder.Services.AddScoped<ILocationPushService, LocationPushService>();
 builder.Services.AddScoped<IRiderLocationService, RiderLocationService>();
 
+// 注册考勤服务
+builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+
 // 5. 添加 Swagger
 builder.Services.AddSwaggerGen();
 
