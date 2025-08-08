@@ -6,6 +6,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace JISpeed.Core.Entities.Order
 {
     using JISpeed.Core.Entities.User; //引用 User 和 Address 实体所在的命名空间
+    using JISpeed.Core.Entities.Merchant; //引用 Merchant实体所在的命名空间
+
     using JISpeed.Core.Entities.Reconciliation; //引用 Reconciliation 实体所在的命名空间
     using JISpeed.Core.Entities.Common; //引用 Coupon 实体所在的命名空间
     using JISpeed.Core.Entities.Rider; //引用 Assignment 实体所在的命名空间
@@ -24,6 +26,10 @@ namespace JISpeed.Core.Entities.Order
         [StringLength(450)]
         [Column(TypeName = "VARCHAR(450)")]
         public required string UserId { get; set; } //用户ID fk->User(userId)
+        
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
+        public required string MerchantId { get; set; }
 
         [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
@@ -51,6 +57,9 @@ namespace JISpeed.Core.Entities.Order
         //导航属性
         [ForeignKey("UserId")]
         public virtual required User User { get; set; }
+        
+        [ForeignKey("MerchantId")]
+        public virtual required Merchant Merchant { get; set; }
 
         [ForeignKey("AddressId")]
         public virtual required Address Address { get; set; }

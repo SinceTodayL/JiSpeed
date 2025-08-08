@@ -29,11 +29,14 @@ namespace JISpeed.Core.Entities.Merchant
         public string? Location { get; set; }
         
         // 身份验证用户关联
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
         public string? ApplicationUserId { get; set; }
         
         // 导航属性
         [ForeignKey("ApplicationUserId")]
         public virtual ApplicationUser? ApplicationUser { get; set; }
+
         public virtual ICollection<SalesStat> SalesStats { get; set; } = new List<SalesStat>();
         public virtual ICollection<Settlement> Settlements { get; set; } = new List<Settlement>();
         public virtual ICollection<Application> Applications { get; set; } = new List<Application>();
