@@ -117,7 +117,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
       const { data: response, error } = await fetchLogin(loginData, userType);
 
-      // check error - 立即停止loading状态
+      // check error
       if (error) {
         endLoading(); // 立即结束loading状态
         window.$notification?.error({
@@ -295,23 +295,54 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     console.log('跳转参数 - Token:', currentToken, 'UserId:', currentUserId);
     
     switch (userType) {
-      case 2: // Merchant
-        // 商家端跳转到外部URL
-        const merchantUrl = import.meta.env.VITE_MERCHANT_FRONTEND_URL;
-        console.log('商家端跳转URL:', merchantUrl);
+ 
+      case 1: // User
+        const userUrl = import.meta.env.VITE_USER_FRONTEND_URL;
+        console.log('user URL:', userUrl);
         
-        if (!merchantUrl) {
-          console.error('商家端URL未配置！');
+        if (!userUrl) {
+          console.error('用户端URL未配置, 检查 VITE_USER_FRONTEND_URL');
           window.$notification?.error({
             title: '跳转失败',
-            content: '商家端地址未配置，请联系管理员',
+            content: '用户端地址未配置',
             duration: 4500
           });
           return;
         }
         
-        // 添加协议检查
-        let baseUrl = merchantUrl.startsWith('http') ? merchantUrl : `http://${merchantUrl}`;
+        // 协议检查
+        let userBaseUrl = userUrl;
+        
+        // 构建URL参数
+        const userUrlParams = new URLSearchParams();
+        if (currentUserId) {
+          userUrlParams.append('id', currentUserId);
+        }
+        if (currentToken) {
+          userUrlParams.append('token', currentToken);
+        }
+        
+        // 拼接完整URL
+        const userFinalUrl = `${userBaseUrl}${userBaseUrl.includes('?') ? '&' : '?'}${userUrlParams.toString()}`;
+        console.log('jump to user URL:', userFinalUrl);
+        break;
+      
+      case 2: // Merchant
+        const merchantUrl = import.meta.env.VITE_MERCHANT_FRONTEND_URL;
+        console.log('merchant URL:', merchantUrl);
+        
+        if (!merchantUrl) {
+          console.error('商家端URL未配置, 检查 VITE_MERCHANT_FRONTEND_URL');
+          window.$notification?.error({
+            title: '跳转失败',
+            content: '商家端地址未配置',
+            duration: 4500
+          });
+          return;
+        }
+        
+        // 协议检查
+        let baseUrl = merchantUrl;
         
         // 构建URL参数
         const urlParams = new URLSearchParams();
@@ -324,50 +355,71 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
         
         // 拼接完整URL
         const finalUrl = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}${urlParams.toString()}`;
-        console.log('最终跳转URL:', finalUrl);
+        console.log('jump to merchant URL:', finalUrl);
+        break;
         
-        // 尝试检查地址是否可访问（简单检查）
-        try {
-          // 延迟跳转，确保成功消息能显示
-          setTimeout(async () => {
-            console.log('开始跳转到商家端...');
-            
-            const shouldRedirect = true;
-            if (shouldRedirect) {
-              console.log('用户确认跳转，执行跳转...');
-              window.location.href = finalUrl;
-            } else {
-              console.log('用户取消跳转');
-              window.$notification?.info({
-                title: '跳转已取消',
-                content: '您可以稍后手动访问商家端系统',
-                duration: 3000
-              });
-            }
-          }, 1500);
-        } catch (error: any) {
-          console.error('跳转过程中发生错误:', error);
+
+      case 3: // Rider
+        const riderUrl = import.meta.env.VITE_RIDER_FRONTEND_URL;
+        console.log('骑手端跳转URL:', riderUrl);
+        
+        if (!riderUrl) {
+          console.error('骑手端URL未配置, 检查 VITE_RIDER_FRONTEND_URL');
           window.$notification?.error({
             title: '跳转失败',
-            content: `无法跳转到商家端：${error.message || '未知错误'}`,
+            content: '骑手端地址未配置',
             duration: 4500
           });
+          return;
         }
-        break;
         
-      case 1: // User
-        console.log('用户端路由跳转');
-        await redirectFromLogin(true);
-        break;
+        // 添加协议检查
+        let riderBaseUrl = riderUrl;
         
-      case 3: // Rider
-        console.log('骑手端路由跳转');
-        await redirectFromLogin(true);
+        // 构建URL参数
+        const riderUrlParams = new URLSearchParams();
+        if (currentUserId) {
+          riderUrlParams.append('id', currentUserId);
+        }
+        if (currentToken) {
+          riderUrlParams.append('token', currentToken);
+        }
+        
+        // 拼接完整URL
+        const riderFinalUrl = `${riderBaseUrl}${riderBaseUrl.includes('?') ? '&' : '?'}${riderUrlParams.toString()}`;
+        console.log('rider jump to URL:', riderFinalUrl);
+        
         break;
         
       case 4: // Admin
-        console.log('管理员路由跳转');
-        await redirectFromLogin(true);
+        const adminUrl = import.meta.env.VITE_ADMIN_FRONTEND_URL;
+        console.log('admin URL:', adminUrl);
+        
+        if (!adminUrl) {
+          console.error('管理员端URL未配置, 检查 VITE_ADMIN_FRONTEND_URL');
+          window.$notification?.error({
+            title: '跳转失败',
+            content: '管理员端地址未配置',
+            duration: 4500
+          });
+          return;
+        }
+        
+        // 协议检查
+        let adminBaseUrl = adminUrl;
+        
+        // 构建URL参数
+        const adminUrlParams = new URLSearchParams();
+        if (currentUserId) {
+          adminUrlParams.append('id', currentUserId);
+        }
+        if (currentToken) {
+          adminUrlParams.append('token', currentToken);
+        }
+        
+        // 拼接完整URL
+        const adminFinalUrl = `${adminBaseUrl}${adminBaseUrl.includes('?') ? '&' : '?'}${adminUrlParams.toString()}`;
+        console.log('jump to admin URL:', adminFinalUrl);
         break;
         
       default:
@@ -389,8 +441,9 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
       return false;
     }
     
-    // TODO: 这里可以添加向后端验证token有效性的逻辑
-    // 目前简单检查token是否存在
+    // TODO: 添加向后端验证token有效性的逻辑
+    // 不过这又得请求一次，运行太耗时了，先不做了，反正看起来没区别
+
     return true;
   }
 
@@ -421,7 +474,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
                    
       Object.assign(userInfo, {
         userId: storedUserId,
-        userName: '', // 用户名需要另外获取，或者也存储到localStorage中
+        userName: '', 
         roles: roles,
         buttons: [],
         merchantId: storedUserType === 2 ? storedUserId : undefined

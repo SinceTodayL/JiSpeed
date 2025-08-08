@@ -14,7 +14,10 @@ export default defineConfig(configEnv => {
     VITE_SERVICE_SUCCESS_CODE: '0000',
     VITE_HTTP_PROXY: 'N',  // 关闭代理
     VITE_PROXY_LOG: 'Y',   // 开启代理日志
+    VITE_USER_FRONTEND_URL: '',     // 用户端前端地址
     VITE_MERCHANT_FRONTEND_URL: 'http://localhost:9520',  // 商家端前端地址
+    VITE_RIDER_FRONTEND_URL: '',    // 骑手端前端地址
+    VITE_ADMIN_FRONTEND_URL: ''     // 管理员端前端地址
   };
   
   const customEnv = Object.assign({}, defaultEnv, viteEnv) as Env.ImportMeta;
@@ -47,7 +50,10 @@ export default defineConfig(configEnv => {
       'import.meta.env.VITE_SERVICE_SUCCESS_CODE': JSON.stringify(customEnv.VITE_SERVICE_SUCCESS_CODE),
       'import.meta.env.VITE_OTHER_SERVICE_BASE_URL': JSON.stringify(customEnv.VITE_OTHER_SERVICE_BASE_URL),
       'import.meta.env.VITE_HTTP_PROXY': JSON.stringify(customEnv.VITE_HTTP_PROXY),
-      'import.meta.env.VITE_MERCHANT_FRONTEND_URL': JSON.stringify(customEnv.VITE_MERCHANT_FRONTEND_URL)
+      'import.meta.env.VITE_USER_FRONTEND_URL': JSON.stringify(customEnv.VITE_USER_FRONTEND_URL),
+      'import.meta.env.VITE_MERCHANT_FRONTEND_URL': JSON.stringify(customEnv.VITE_MERCHANT_FRONTEND_URL),
+      'import.meta.env.VITE_RIDER_FRONTEND_URL': JSON.stringify(customEnv.VITE_RIDER_FRONTEND_URL),
+      'import.meta.env.VITE_ADMIN_FRONTEND_URL': JSON.stringify(customEnv.VITE_ADMIN_FRONTEND_URL)
     },
     server: {
       host: '0.0.0.0',
