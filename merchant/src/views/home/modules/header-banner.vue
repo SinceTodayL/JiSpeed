@@ -52,11 +52,6 @@ const statisticData = computed<StatisticData[]>(() => {
       label: '总销售额',
       value: `¥${totalAmount.toFixed(2)}`
     },
-    {
-      id: 2,
-      label: '日均销量',
-      value: `${avgSales}份`
-    }
   ];
 });
 
@@ -66,21 +61,21 @@ const merchantGreeting = computed(() => {
   return `你好，${merchantName} !`;
 });
 
-// 商家状态描述
+// 商家状态
 const merchantStatusDesc = computed(() => {
   const status = merchantStore.merchantInfo?.data.status;
-  const location = merchantStore.merchantInfo?.data.location || '';
+  const location = '🏢' + merchantStore.merchantInfo?.data.location || '';
+  const contactInfo = '📞' + merchantStore.merchantInfo?.data.contactInfo || '';
   
   let statusText = '🟢 营业中'; // 默认显示营业中
   
-  // 如果有明确的状态值，可以根据业务需要调整
   if (status === 0) {
     statusText = '🔴 暂停营业';
   } else if (status && status > 0) {
     statusText = '🟢 营业中';
   }
   
-  return `${statusText} | ${location}`;
+  return `${statusText} | ${location} | ${contactInfo}`;
 });
 
 // 获取商家数据

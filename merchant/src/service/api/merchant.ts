@@ -57,4 +57,22 @@ export function fetchMerchantDishes(merchantId: string) {
     url: `/api/merchants/${merchantId}/getAllDishes`,
     method: 'get'
   });
+}
+
+/**
+ * 更新商家信息
+ * @param merchantId 商家ID
+ * @param data 要更新的商家信息
+ */
+export function updateMerchantInfo(merchantId: string, data: {
+  merchantName?: string;
+  status?: number;
+  contactInfo?: string;
+  location?: string;
+}) {
+  return request<{ code: number; message: string; data: Api.Merchant.MerchantInfo }>({
+    url: `/api/merchants/${merchantId}`,
+    method: 'patch',
+    data
+  });
 } 

@@ -170,7 +170,8 @@ const local: App.I18n.Schema = {
     home: 'Home',
     'goods-management': 'Goods Management',
     'coupon-management': 'Coupon Management',
-    'order-management': 'Order Management'
+    'order-management': 'Order Management',
+    profile: 'Profile'
   },
   page: {
     login: {
@@ -257,7 +258,26 @@ const local: App.I18n.Schema = {
         desc4: 'Soybean is busy writing project documentation for soybean-admin!',
         desc5: 'Soybean just wrote some of the workbench pages casually, and it was enough to see!'
       },
-              creativity: 'Creativity'
+      creativity: 'Creativity'
+    },
+    profile: {
+      title: 'Personal Information',
+      merchantInfo: 'Merchant Information',
+      editProfile: 'Edit Profile',
+      merchantName: 'Merchant Name',
+      merchantNamePlaceholder: 'Please enter merchant name',
+      status: 'Merchant Status',
+      statusActive: 'Active',
+      statusInactive: 'Inactive',
+      contactInfo: 'Contact Information',
+      contactInfoPlaceholder: 'Please enter contact information',
+      location: 'Merchant Address',
+      locationPlaceholder: 'Please enter merchant address',
+      updateSuccess: 'Profile updated successfully',
+      updateFailed: 'Failed to update profile',
+      loadFailed: 'Failed to load profile information',
+      save: 'Save',
+      cancel: 'Cancel'
     }
   },
   form: {

@@ -107,5 +107,16 @@ export const generatedRoutes: GeneratedRoute[] = [
       icon: 'mdi:clipboard-list',
       order: 4
     }
+  },
+  {
+    name: 'profile',
+    path: '/profile',
+    component: 'layout.base$view.profile',
+    meta: {
+      title: 'profile',
+      i18nKey: 'route.profile',
+      icon: 'mdi:account-circle',
+      order: 5
+    }
   }
 ];

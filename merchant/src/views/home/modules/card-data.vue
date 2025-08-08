@@ -38,9 +38,10 @@ const cardData = computed<CardData[]>(() => {
   // 计算商家业务指标
   const totalSales = salesStats.reduce((sum, item) => sum + (Number(item.salesQty) || 0), 0);
   const totalAmount = salesStats.reduce((sum, item) => sum + (Number(item.salesAmount) || 0), 0);
-  const avgDailyAmount = totalAmount / salesStats.length;
+  const avgDailyAmount = totalAmount / 7;
   const maxDaySales = salesStats.reduce((max, item) => Math.max(max, Number(item.salesQty) || 0), 0);
-  
+  const goodRate = 100;
+
   return [
     {
       key: 'totalSales',
@@ -76,10 +77,10 @@ const cardData = computed<CardData[]>(() => {
       icon: 'mdi:trending-up'
     },
     {
-      key: 'maxDaySales',
-      title: '单日最高销量',
-      value: maxDaySales,
-      unit: '份',
+      key: 'goodRate',
+      title: '好评率',
+      value: goodRate,
+      unit: '%',
       color: {
         start: '#fcbc25',
         end: '#f68057'

@@ -170,7 +170,8 @@ const local: App.I18n.Schema = {
     home: '首页',
     'goods-management': '商品管理',
     'coupon-management': '优惠券管理',
-    'order-management': '订单管理'
+    'order-management': '订单管理',
+    profile: '我的'
   },
   page: {
     login: {
@@ -261,6 +262,25 @@ const local: App.I18n.Schema = {
         desc5: '终于写完了，我们的项目就要正式上线了！'
       },
       creativity: '创意'
+    },
+    profile: {
+      title: '个人信息',
+      merchantInfo: '商家信息',
+      editProfile: '编辑个人信息',
+      merchantName: '商家名称',
+      merchantNamePlaceholder: '请输入商家名称',
+      status: '商家状态',
+      statusActive: '正常营业',
+      statusInactive: '暂停营业',
+      contactInfo: '联系方式',
+      contactInfoPlaceholder: '请输入联系方式',
+      location: '商家地址',
+      locationPlaceholder: '请输入商家地址',
+      updateSuccess: '个人信息更新成功',
+      updateFailed: '个人信息更新失败',
+      loadFailed: '获取个人信息失败',
+      save: '保存',
+      cancel: '取消'
     }
   },
   form: {
