@@ -48,6 +48,7 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IAssignmentRepository, AssignmentRepository>();
             services.AddScoped<IAttendanceRepository, AttendanceRepository>();
             services.AddScoped<IPerformanceRepository, PerformanceRepository>();
+            services.AddScoped<IPaymentRepository,PaymentRepository>();
 
             return services;
         }

@@ -25,4 +25,12 @@ namespace JISpeed.Api.DTOs
          public required string? CouponId { get; set; } 
          public required string? AssignId { get; set; } 
      }
+
+     public class PaymentDto
+     {
+         public required string PayId { get; set; }
+         public required string OrderId { get; set; }
+         public required string Channel { get; set; }
+         public required decimal PayAmount { get; set; } 
+     }
 }

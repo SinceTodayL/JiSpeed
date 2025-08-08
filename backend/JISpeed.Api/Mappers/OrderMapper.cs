@@ -9,6 +9,8 @@ namespace JISpeed.Api.Mappers
         public OrderProfile()
         {
             CreateMap<OrderEntity,OrderDto>();
+            CreateMap<Payment,PaymentDto>();
+
         }
 
     }

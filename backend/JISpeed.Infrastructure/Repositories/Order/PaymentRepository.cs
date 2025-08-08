@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JISpeed.Infrastructure.Repositories.Order
 {
-    public class PaymentRepository : BaseRepository<Payment, string>
+    public class PaymentRepository : BaseRepository<Payment, string>,IPaymentRepository
     {
         public PaymentRepository(OracleDbContext context) : base(context)
         {
