@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useAuthStore } from '@/store/modules/auth';
 import { useRouterPush } from '@/hooks/common/router';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
@@ -22,10 +22,11 @@ const loginRole = ref<'user' | 'rider' | 'merchant' | 'admin'>('user');
 const loginMethod = ref<'username' | 'email' | 'phone'>('username');
 
 interface FormModel {
-  loginKey: string;  // 可以是用户名或邮箱
+  loginKey: string;  // 用户名或邮箱
   password: string;
 }
 
+// By default
 const model: FormModel = reactive({
   loginKey: 'TongJi',
   password: '6547265472'
@@ -104,6 +105,16 @@ watch(loginMethod, (newMethod) => {
     setTimeout(() => {
       toggleLoginModule('code-login');
     }, 0);
+  }
+});
+
+// 检查登录前状态
+onMounted(async () => {
+  // 检查是否已经登录，如果已登录则直接跳转
+  const isAuthenticated = await authStore.checkAuthBeforeLogin();
+  if (isAuthenticated) {
+    // checkAuthBeforeLogin方法已经处理了跳转逻辑
+    console.log('User already authenticated, redirecting...');
   }
 });
 </script>
@@ -209,17 +220,14 @@ watch(loginMethod, (newMethod) => {
   color: #333;
 }
 
-/* 确保所有表单项有统一的间距 */
 :deep(.n-form-item) {
   margin-bottom: 4px;
 }
 
-/* 最后一个表单项不需要底部边距 */
 :deep(.n-form-item:last-child) {
   margin-bottom: 0;
 }
 
-/* 提示框样式优化 */
 :deep(.n-alert) {
   border-radius: 6px;
 }

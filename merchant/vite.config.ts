@@ -9,7 +9,8 @@ export default defineConfig(configEnv => {
 
   // 设置默认环境变量，如果viteEnv中没有对应值则使用默认值
   const defaultEnv = {
-    VITE_SERVICE_BASE_URL: 'https://m1.apifoxmock.com/m1/6776921-6489236-default',
+    // VITE_SERVICE_BASE_URL: 'https://m1.apifoxmock.com/m1/6776921-6489236-default',
+    VITE_SERVICE_BASE_URL: 'https://localhost:5091',
     VITE_OTHER_SERVICE_BASE_URL: '{}',
     VITE_SERVICE_SUCCESS_CODE: '0',
     VITE_HTTP_PROXY: 'N',
@@ -20,7 +21,7 @@ export default defineConfig(configEnv => {
 
   const buildTime = getBuildTime();
 
-  const enableProxy = configEnv.command === 'serve' && customEnv.VITE_HTTP_PROXY === 'Y';
+  const enableProxy = true;
 
   return {
     base: customEnv.VITE_BASE_URL,
@@ -47,12 +48,14 @@ export default defineConfig(configEnv => {
       'import.meta.env.VITE_OTHER_SERVICE_BASE_URL': JSON.stringify(customEnv.VITE_OTHER_SERVICE_BASE_URL),
       'import.meta.env.VITE_HTTP_PROXY': JSON.stringify(customEnv.VITE_HTTP_PROXY)
     },
+
     server: {
       host: '0.0.0.0',
       port: 9520,
       open: true,
       proxy: createViteProxy(customEnv, enableProxy)
     },
+
     preview: {
       port: 9725
     },

@@ -7,11 +7,11 @@ import { $t } from '@/locales';
 import GoodsSearch from './modules/goods-search.vue';
 import GoodsOperateDrawer from './modules/goods-operate-drawer.vue';
 import DishReviewsModal from './modules/dish-reviews-modal.vue';
+import { useMerchantStore } from '@/store/modules/merchant';
 
+const merchantStore = useMerchantStore();
 const appStore = useAppStore();
 
-// 使用硬编码的商家ID进行测试
-const MERCHANT_ID = 'MER1234567890001';
 
 const loading = ref(false);
 const data = ref<Api.Goods.DishItem[]>([]);
@@ -45,7 +45,7 @@ const searchParams = reactive<{
 const getData = async () => {
   loading.value = true;
   try {
-    const result = await fetchGetAllDishes(MERCHANT_ID);
+    const result = await fetchGetAllDishes(merchantStore.merchantId);
     console.log('API响应:', result);
     
     if (result && result.data && Array.isArray(result.data.data)) {
@@ -332,10 +332,9 @@ getData();
         @submitted="handleSubmitted"
       />
       
-      <!-- 评论模态框 -->
       <DishReviewsModal
         v-model:visible="reviewsModalVisible"
-        :merchant-id="MERCHANT_ID"
+        :merchant-id="merchantStore.merchantId"
         :dish-id="selectedDishForReviews.dishId"
         :dish-name="selectedDishForReviews.dishName"
       />

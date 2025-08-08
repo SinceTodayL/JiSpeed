@@ -6,7 +6,7 @@ import { request } from '../request';
  */
 export function fetchGetAllDishes(merchantId: string) {
   return request<Api.Goods.DishResponse>({
-    url: `/api/merchant/${merchantId}/getAllDishes`,
+    url: `/api/merchants/${merchantId}/dishes`,
     method: 'get'
   });
 } 

@@ -16,7 +16,7 @@ export function createServiceConfig(env: Env.ImportMeta) {
     }
   } catch {
     // eslint-disable-next-line no-console
-    console.error('VITE_OTHER_SERVICE_BASE_URL is not a valid json5 string');
+    // console.error('VITE_OTHER_SERVICE_BASE_URL is not a valid json5 string');
   }
 
   const httpConfig: App.Service.SimpleServiceConfig = {

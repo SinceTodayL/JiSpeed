@@ -4,6 +4,7 @@ import { useAppStore } from '@/store/modules/app';
 import { useAuthStore } from '@/store/modules/auth';
 import { useMerchantStore } from '@/store/modules/merchant';
 import { fetchMerchantInfo, fetchMerchantSalesStats } from '@/service/api';
+import { localStg } from '@/utils/storage';
 import { $t } from '@/locales';
 
 defineOptions({
@@ -11,7 +12,6 @@ defineOptions({
 });
 
 const appStore = useAppStore();
-const authStore = useAuthStore();
 const merchantStore = useMerchantStore();
 
 const gap = computed(() => (appStore.isMobile ? 0 : 16));
@@ -39,11 +39,13 @@ const statisticData = computed<StatisticData[]>(() => {
   const totalAmount = salesStats.reduce((sum, item) => sum + (Number(item.salesAmount) || 0), 0);
   const avgSales = Math.round(totalSales / salesStats.length);
   
+  const statDays = 7;
+
   return [
     {
       id: 0,
       label: '统计天数',
-      value: `${salesStats.length}天`
+      value: `${statDays}天`
     },
     {
       id: 1,
@@ -60,17 +62,15 @@ const statisticData = computed<StatisticData[]>(() => {
 
 // 商家问候语
 const merchantGreeting = computed(() => {
-  const merchantName = merchantStore.merchantInfo?.merchantName || '商家';
-  return `你好，${merchantName}！`;
+  const merchantName = merchantStore.merchantInfo?.data.merchantName || '商家';
+  return `你好，${merchantName} !`;
 });
 
 // 商家状态描述
 const merchantStatusDesc = computed(() => {
-  const status = merchantStore.merchantInfo?.status;
-  const location = merchantStore.merchantInfo?.location || '';
+  const status = merchantStore.merchantInfo?.data.status;
+  const location = merchantStore.merchantInfo?.data.location || '';
   
-  // 根据 Mock API 的实际返回值处理状态显示
-  // 由于 Mock 数据可能返回任意数值，这里简化处理逻辑
   let statusText = '🟢 营业中'; // 默认显示营业中
   
   // 如果有明确的状态值，可以根据业务需要调整
@@ -86,15 +86,19 @@ const merchantStatusDesc = computed(() => {
 // 获取商家数据
 const loadMerchantData = async () => {
   const { merchantId } = merchantStore;
+  
   if (!merchantId) {
+    console.log("merchantId is empty");
     return;
   }
 
   try {
     const result = await fetchMerchantInfo(merchantId);
+    // console.log("result", result);
     // Unpack the real data from the wrapper object before setting it to the store.
     if (result && result.data) {
       merchantStore.setMerchantInfo(result.data);
+      console.log("merchantStore.merchantInfo", merchantStore.merchantInfo?.data);
     }
   } catch (error) {
     console.error('加载商家基本信息失败:', error);
@@ -104,8 +108,11 @@ const loadMerchantData = async () => {
   try {
     const result = await fetchMerchantSalesStats(merchantId);
     // Unpack the real data from the wrapper object.
-    if (result && Array.isArray(result.data)) {
-      merchantStore.setSalesStats(result.data);
+    if (result && Array.isArray(result.response.data.data)) {
+      merchantStore.setSalesStats(result.response.data.data);
+      console.log('成功加载销售统计数据:', result.response.data.data);
+    } else {
+      console.warn('销售统计数据格式异常:', result.response.data.data);
     }
   } catch (error) {
     console.error('加载商家销售数据失败:', error);
@@ -114,6 +121,7 @@ const loadMerchantData = async () => {
 };
 
 onMounted(() => {
+  merchantStore.triggerAuthUpdate();
   loadMerchantData();
 });
 </script>
@@ -124,7 +132,7 @@ onMounted(() => {
       <NGi span="24 s:24 m:18">
         <div class="flex-y-center">
           <div class="size-72px shrink-0 overflow-hidden rd-1/2">
-            <img src="@/assets/imgs/soybean.jpg" class="size-full" />
+            <img src="@/assets/svg-icon/avatar.svg" class="size-full" />
           </div>
           <div class="pl-12px">
             <h3 class="text-18px font-semibold">

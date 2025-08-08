@@ -178,7 +178,7 @@ declare namespace Api {
       /** 响应信息 */
       message: string;
       /** 销售统计数据 */
-      data: SalesStatItem[];
+      data: SalesStatItem;
     }
   }
 

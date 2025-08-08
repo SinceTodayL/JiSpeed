@@ -15,7 +15,8 @@ const { routerPushByKey, toLogin } = useRouterPush();
 const { SvgIconVNode } = useSvgIcon();
 
 function loginOrRegister() {
-  toLogin();
+  // 移除登录跳转，不执行任何操作
+  console.log('登录按钮被点击，但登录功能已禁用');
 }
 
 type DropdownKey = 'logout';

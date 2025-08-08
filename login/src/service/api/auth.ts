@@ -15,6 +15,19 @@ export function fetchLogin(loginData: { UserName?: string; Email?: string; PassW
 }
 
 /**
+ * Verify email with userId and token
+ *
+ * @param userId The user's ID
+ * @param token The verification token
+ */
+export function fetchVerifyEmail(userId: string, token: string) {
+  return request<Api.Auth.VerifyEmailResponse>({
+    url: `/api/Auth/verify-email?userId=${userId}&token=${token}`,
+    method: 'get'
+  });
+}
+
+/**
  * A convenience method for logging in with a username.
  *
  * @param userName The user's name.
