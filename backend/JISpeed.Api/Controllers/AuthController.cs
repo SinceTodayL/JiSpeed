@@ -172,7 +172,7 @@ namespace JISpeed.Api.Controllers
                 _logger.LogInformation("预注册成功，已发送验证邮件，用户名: {UserName}", request.UserName);
                 return Ok(ApiResponse<bool>.Success(true, "验证邮件已发送，请在1小时内点击链接完成注册"));
             }
-            catch (BusinessException ex)
+            catch (BusinessException)
             {
                 return Conflict( ApiResponse<object>.Fail(
                     ErrorCodes.UnsupportedOperation,

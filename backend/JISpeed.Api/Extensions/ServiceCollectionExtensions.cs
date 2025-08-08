@@ -3,10 +3,12 @@ using JISpeed.Application.Services.Common;
 using JISpeed.Application.Services.Email;
 using JISpeed.Application.Services.Merchant;
 using JISpeed.Application.Services.Customer;
+using JISpeed.Application.Services.Order;
 using JISpeed.Application.Services.Rider;
 using JISpeed.Core.Interfaces.IRepositories.Admin;
 using JISpeed.Core.Interfaces.IRepositories.Common;
 using JISpeed.Core.Interfaces.IRepositories.Dish;
+using JISpeed.Core.Interfaces.IRepositories.Junctions;
 using JISpeed.Core.Interfaces.IRepositories.Merchant;
 using JISpeed.Core.Interfaces.IRepositories.Order;
 using JISpeed.Core.Interfaces.IRepositories.Rider;
@@ -15,6 +17,7 @@ using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Infrastructure.Repositories.Admin;
 using JISpeed.Infrastructure.Repositories.Common;
 using JISpeed.Infrastructure.Repositories.Dish;
+using JISpeed.Infrastructure.Repositories.Junctions;
 using JISpeed.Infrastructure.Repositories.Merchant;
 using JISpeed.Infrastructure.Repositories.Order;
 using JISpeed.Infrastructure.Repositories.Rider;
@@ -36,6 +39,15 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IDishRepository, DishRepository>();
             services.AddScoped<IApplicationRepository, ApplicationRepository>();
             services.AddScoped<ICategoryRepository, CategoryRepository>();
+            services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<IOrderDishRepository, OrderDishRepository>();
+            services.AddScoped<IAddressRepository, AddressRepository>();
+            services.AddScoped<IReviewRepository, ReviewRepository>();
+            services.AddScoped<IComplaintRepository, ComplaintRepository>();
+            // 骑手相关仓储
+            services.AddScoped<IAssignmentRepository, AssignmentRepository>();
+            services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+            services.AddScoped<IPerformanceRepository, PerformanceRepository>();
 
             return services;
         }
@@ -49,14 +61,10 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IDishService, DishService>();
             services.AddScoped<ILoginService, LoginService>();
             services.AddScoped<IJwtTokenService, JwtTokenService>();
-            services.AddScoped<IAddressRepository, AddressRepository>();
-            services.AddScoped<IReviewRepository, ReviewRepository>();
-            services.AddScoped<IComplaintRepository, ComplaintRepository>();
+          
+            services.AddScoped<IOrderService, OrderService>();
 
-            // 骑手相关仓储
-            services.AddScoped<IAssignmentRepository, AssignmentRepository>();
-            services.AddScoped<IAttendanceRepository, AttendanceRepository>();
-            services.AddScoped<IPerformanceRepository, PerformanceRepository>();
+           
 
             services.AddScoped<IRegistrationService, RegistrationService>();
             services.AddScoped<IEmailService, EmailService>();

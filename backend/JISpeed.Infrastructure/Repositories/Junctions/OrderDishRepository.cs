@@ -95,7 +95,7 @@ namespace JISpeed.Infrastructure.Repositories.Junctions
         // === 业务专用查询方法 ===
 
         // 根据订单ID查询所有相关菜品
-        public async Task<IEnumerable<OrderDish>> GetByOrderIdAsync(string orderId)
+        public async Task<List<OrderDish>> GetByOrderIdAsync(string orderId)
         {
             return await _context.OrderDishes
                 .Include(od => od.Order)

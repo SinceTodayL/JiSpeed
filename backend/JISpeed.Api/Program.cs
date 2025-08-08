@@ -23,6 +23,8 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
     .AddEntityFrameworkStores<OracleDbContext>()
     .AddDefaultTokenProviders();
 builder.Services.AddAutoMapper((cfg) => { }, typeof(MerchantProfile).Assembly);
+//builder.Services.AddAutoMapper((cfg) => { }, typeof(OrderProfile).Assembly);
+
 
 // 注册HttpClient，用于高德地图API
 builder.Services.AddHttpClient();

@@ -10,8 +10,10 @@ namespace JISpeed.Core.Interfaces.IRepositories.Order
         // 根据用户ID获取订单列表
         // <param name="userId">用户ID</param>
         // <returns>订单列表</returns>
-        Task<List<JISpeed.Core.Entities.Order.Order>> GetByUserIdAsync(string userId);
-
+        Task<List<JISpeed.Core.Entities.Order.Order>> GetByUserIdAsync(
+            string userId,
+            int?size,int? page);
+        
         // 根据状态获取订单列表
         // <param name="status">状态</param>
         // <returns>订单列表</returns>
@@ -21,12 +23,16 @@ namespace JISpeed.Core.Interfaces.IRepositories.Order
         // <param name="userId">用户ID</param>
         // <param name="status">状态</param>
         // <returns>订单列表</returns>
-        Task<List<JISpeed.Core.Entities.Order.Order>> GetByUserIdAndStatusAsync(string userId, int status);
+        Task<List<JISpeed.Core.Entities.Order.Order>> GetByUserIdAndStatusAsync(
+            string userId, int status,
+            int?size,int? page);
 
         // 根据时间范围获取订单列表
         // <param name="startTime">开始时间</param>
         // <param name="endTime">结束时间</param>
         // <returns>订单列表</returns>
         Task<List<JISpeed.Core.Entities.Order.Order>> GetByTimeRangeAsync(DateTime startTime, DateTime endTime);
+        Task<JISpeed.Core.Entities.Order.Order?> GetOrderWithDishesAndMerchantsAsync(string orderId);
+
     }
 }

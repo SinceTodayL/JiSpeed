@@ -38,7 +38,7 @@ namespace JISpeed.Core.Interfaces.IRepositories.Junctions
         // === 业务专用查询方法 ===
 
         // 根据订单ID查询所有相关菜品
-        Task<IEnumerable<OrderDish>> GetByOrderIdAsync(string orderId);
+        Task<List<OrderDish>> GetByOrderIdAsync(string orderId);
 
         // 根据菜品ID查询所有相关订单
         Task<IEnumerable<OrderDish>> GetByDishIdAsync(string dishId);

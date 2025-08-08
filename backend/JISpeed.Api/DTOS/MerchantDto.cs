@@ -105,6 +105,16 @@ namespace JISpeed.Api.DTOs
         
     }
     
+    // 用于订单的内嵌DishDto
+    public class DishItemDto
+    {
+        public required string DishId { get; set; }
+        public required string DishName { get; set; }
+        public required int Quantity { get; set; } // 订单中的菜品数量（来自 OrderDish）
+        public required decimal UnitPrice { get; set; } // 下单时的单价（来自 OrderDish）
+        public required decimal Price{ get; set; } 
+        public required string CoverUrl { get; set; } 
+    }
 
     public class CategoryWithDishesDto
     {
@@ -114,6 +124,16 @@ namespace JISpeed.Api.DTOs
         public required string CategoryName { get; set; }
         // 该分类下的菜品列表（内层DTO）
         public List<DishesDto> Dishes { get; set; } = new(); 
+    }
+    
+    public class MerchantWithDishesDto
+    {
+        // 商家ID
+        public required string MerchantId { get; set; }
+        // 商家名称
+        public required string MerchantName { get; set; }
+        // 该分类下的菜品列表（内层DTO）
+        public List<DishItemDto> Dishes { get; set; } = new(); 
     }
     public class CategoryDto
     {
