@@ -80,15 +80,24 @@ namespace JISpeed.Infrastructure.Repositories.Rider
         {
             try
             {
-                // 获取每个骑手的最新位置
-                var latestLocations = await _context.Set<RiderLocation>()
-                    .Where(l => l.Status == 1) // 1表示在线
-                    .GroupBy(l => l.RiderId)
-                    .Select(g => g.OrderByDescending(l => l.LocationTime).FirstOrDefault())
-                    .Where(l => l != null)
+                _logger.LogInformation("开始获取在线骑手位置");
+                
+                // 先获取所有状态为1的位置记录
+                var onlineLocations = await _context.Set<RiderLocation>()
+                    .Where(l => l.Status == 1)
+                    .OrderByDescending(l => l.LocationTime)
                     .ToListAsync();
 
-                return latestLocations!;
+                _logger.LogInformation("找到 {Count} 条在线位置记录", onlineLocations.Count);
+
+                // 在内存中按RiderId分组，获取每个骑手的最新位置
+                var latestByRider = onlineLocations
+                    .GroupBy(l => l.RiderId)
+                    .Select(g => g.First()) // 由于已经按时间降序排列，First()就是最新的
+                    .ToList();
+
+                _logger.LogInformation("找到 {Count} 个在线骑手", latestByRider.Count);
+                return latestByRider;
             }
             catch (Exception ex)
             {

@@ -8,11 +8,11 @@ namespace JISpeed.Application.Services.Common
 {
     public class LocationPushService : ILocationPushService
     {
-        private readonly IHubContext<Hub> _hubContext;  // 改为Hub
+        private readonly IHubContext<Hub> _hubContext;
         private readonly ILogger<LocationPushService> _logger;
 
         public LocationPushService(
-            IHubContext<Hub> hubContext,  // 改为Hub
+            IHubContext<Hub> hubContext,
             ILogger<LocationPushService> logger)
         {
             _hubContext = hubContext;

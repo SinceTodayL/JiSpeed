@@ -82,21 +82,67 @@ namespace JISpeed.Application.Services.Common
             }
         }
 
+        // 格式化距离显示
+        // 大于等于1000米显示为公里（保留两位小数）
+        // 小于1000米显示为米
+        // <param name="distanceInMeters">距离（米）</param>
+        // <returns>格式化的距离字符串</returns>
+        public static string FormatDistance(double distanceInMeters)
+        {
+            if (distanceInMeters < 0)
+            {
+                return "大于100公里";
+            }
+
+            if (distanceInMeters >= 1000)
+            {
+                var kilometers = distanceInMeters / 1000.0;
+                return $"{kilometers:F2}公里";
+            }
+            else
+            {
+                return $"{distanceInMeters:F0}米";
+            }
+        }
+
         // 计算两点之间的距离（米）
         public async Task<double> CalculateDistanceAsync(
             decimal startLongitude, decimal startLatitude, decimal endLongitude, decimal endLatitude)
         {
             try
             {
+                // 使用步行路径规划API来计算距离
                 var response = await _httpClient.GetFromJsonAsync<JsonElement>(
-                    $"/v3/distance?key={_apiKey}&origins={startLongitude},{startLatitude}&destination={endLongitude},{endLatitude}&type=1");
+                    $"/v3/direction/walking?key={_apiKey}&origin={startLongitude},{startLatitude}&destination={endLongitude},{endLatitude}");
 
-                if (response.GetProperty("status").GetString() == "1" &&
-                    response.GetProperty("count").GetInt32() > 0)
+                // 先记录完整响应用于调试
+                _logger.LogInformation("高德API响应: {Response}", response.ToString());
+
+                if (response.GetProperty("status").GetString() == "1")
                 {
-                    return response.GetProperty("results")[0].GetProperty("distance").GetDouble();
+                    // 检查是否有路径数据
+                    if (response.TryGetProperty("route", out var route))
+                    {
+                        if (route.TryGetProperty("paths", out var paths) && paths.GetArrayLength() > 0)
+                        {
+                            // 获取第一条路径的距离（字符串类型）
+                            var distanceStr = paths[0].GetProperty("distance").GetString();
+                            if (double.TryParse(distanceStr, out var distance))
+                            {
+                                _logger.LogInformation("成功计算距离: {Distance}米", distance);
+                                return distance;
+                            }
+                            else
+                            {
+                                _logger.LogWarning("无法解析距离字符串: {DistanceStr}", distanceStr);
+                                return -1;
+                            }
+                        }
+                    }
                 }
 
+                _logger.LogWarning("高德API返回失败，状态: {Status}, 响应: {Response}",
+                    response.GetProperty("status").GetString(), response.ToString());
                 return -1; // 表示计算失败
             }
             catch (Exception ex)

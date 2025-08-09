@@ -67,6 +67,7 @@ namespace JISpeed.Infrastructure.Data
         public DbSet<RiderSchedule> RiderSchedules { get; set; }
         public DbSet<Schedule> Schedules { get; set; }
         public DbSet<ScheduleAttendance> ScheduleAttendances { get; set; }
+        public DbSet<RiderLocation> RiderLocations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -484,7 +485,8 @@ namespace JISpeed.Infrastructure.Data
             modelBuilder.Entity<RiderSchedule>().ToTable("RIDER_SCHEDULE");
             modelBuilder.Entity<Schedule>().ToTable("SCHEDULE");
             modelBuilder.Entity<ScheduleAttendance>().ToTable("SCHEDULE_ATTENDANCE");
-
+            modelBuilder.Entity<RiderLocation>().ToTable("RIDER_LOCATION");
+            
             // 配置 Oracle 特定的列类型
             modelBuilder.Entity<User>()
                 .Property(u => u.UserId)

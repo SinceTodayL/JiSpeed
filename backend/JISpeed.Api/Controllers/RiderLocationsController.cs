@@ -9,6 +9,7 @@ using JISpeed.Core.Exceptions;
 using JISpeed.Core.Constants;
 using Microsoft.Extensions.Logging;
 using JISpeed.Api.DTOs;
+using JISpeed.Core.Entities.Rider;
 
 namespace JISpeed.Api.Controllers
 {
@@ -17,13 +18,16 @@ namespace JISpeed.Api.Controllers
     public class RiderLocationsController : ControllerBase
     {
         private readonly IRiderLocationService _riderLocationService;
+        private readonly ILocationPushService _locationPushService;  // 添加这行
         private readonly ILogger<RiderLocationsController> _logger;
 
         public RiderLocationsController(
             IRiderLocationService riderLocationService,
+            ILocationPushService locationPushService,  // 添加这行
             ILogger<RiderLocationsController> logger)
         {
             _riderLocationService = riderLocationService;
+            _locationPushService = locationPushService;  // 添加这行
             _logger = logger;
         }
 
@@ -378,7 +382,8 @@ namespace JISpeed.Api.Controllers
                     RiderId = riderId,
                     TargetLongitude = longitude,
                     TargetLatitude = latitude,
-                    Distance = distance
+                    Distance = distance,
+                    FormattedDistance = JISpeed.Application.Services.Common.AMapService.FormatDistance(distance)
                 };
 
                 return Ok(ApiResponse<DistanceDTO>.Success(distanceDto));
@@ -463,5 +468,116 @@ namespace JISpeed.Api.Controllers
                     "获取骑手当前位置的地址信息失败"));
             }
         }
+        /// <summary>
+        /// 测试位置推送功能
+        /// </summary>
+        [HttpPost("test-push/{riderId}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), 200)]
+        public async Task<ActionResult<ApiResponse<object>>> TestLocationPush(string riderId)
+        {
+            try
+            {
+                // 创建测试位置数据
+                var testLocation = new RiderLocation(
+                    riderId,
+                    116.397428m,
+                    39.90923m,
+                    DateTime.UtcNow)
+                {
+                    LocationId = Guid.NewGuid().ToString("N"),
+                    RiderId = riderId,
+                    Longitude = 116.397428m,
+                    Latitude = 39.90923m,
+                    LocationTime = DateTime.UtcNow,
+                    Accuracy = 10.0m,
+                    Speed = 15.5m,
+                    Direction = 90m,
+                    LocationType = "GPS",
+                    Status = 1,
+                    Rider = new JISpeed.Core.Entities.Rider.Rider(
+                        riderId,
+                        "测试骑手",
+                        "13800000000")
+                    {
+                        RiderId = riderId,
+                        Name = "测试骑手",
+                        PhoneNumber = "13800000000"
+                    }
+                };
+
+                await _locationPushService.PushLocationUpdateAsync(riderId, testLocation);
+
+                return Ok(ApiResponse<object>.Success(new
+                {
+                    riderId,
+                    message = "位置推送测试消息已发送",
+                    location = new
+                    {
+                        longitude = testLocation.Longitude,
+                        latitude = testLocation.Latitude,
+                        accuracy = testLocation.Accuracy,
+                        speed = testLocation.Speed,
+                        direction = testLocation.Direction,
+                        locationTime = testLocation.LocationTime
+                    }
+                }, "测试推送发送成功"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "测试位置推送失败, RiderId: {RiderId}", riderId);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "测试推送失败",
+                    ex.Message));
+            }
+        }
+        // 调试：检查特定骑手的位置信息
+        [HttpGet("debug/{riderId}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), 200)]
+        public async Task<ActionResult<ApiResponse<object>>> DebugRiderLocation(string riderId)
+        {
+            try
+            {
+                _logger.LogInformation("调试骑手位置信息，RiderId: {RiderId}", riderId);
+
+                // 1. 检查骑手的最新位置
+                var latestLocation = await _riderLocationService.GetRiderLatestLocationAsync(riderId);
+
+                // 2. 获取该骑手的所有位置记录
+                var allLocations = await _riderLocationService.GetRiderLocationHistoryAsync(
+                    riderId,
+                    DateTime.Now.AddDays(-30),
+                    DateTime.Now);
+
+                // 3. 检查在线骑手（简化查询）
+                var onlineLocations = await _riderLocationService.GetOnlineRiderLocationsAsync();
+
+                var debugInfo = new
+                {
+                    RiderId = riderId,
+                    LatestLocation = latestLocation == null ? null : new
+                    {
+                        latestLocation.LocationId,
+                        latestLocation.Status,
+                        latestLocation.LocationTime,
+                        latestLocation.Longitude,
+                        latestLocation.Latitude
+                    },
+                    LocationCount = allLocations.Count(),
+                    OnlineRiderCount = onlineLocations.Count(),
+                    AllLocationsStatus = allLocations.Select(l => new { l.LocationId, l.Status, l.LocationTime }).ToList()
+                };
+
+                return Ok(ApiResponse<object>.Success(debugInfo));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "调试骑手位置信息时发生异常，RiderId: {RiderId}", riderId);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    $"调试失败: {ex.Message}"));
+            }
+        }
     }
 }
+

@@ -94,6 +94,9 @@ namespace JISpeed.Api.DTOS
 
         // 距离(米)
         public double Distance { get; set; }
+
+        // 格式化的距离字符串
+        public string? FormattedDistance { get; set; }
     }
 
     // 地址DTO
