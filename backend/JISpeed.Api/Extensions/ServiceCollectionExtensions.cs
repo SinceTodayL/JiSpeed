@@ -44,11 +44,13 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IAddressRepository, AddressRepository>();
             services.AddScoped<IReviewRepository, ReviewRepository>();
             services.AddScoped<IComplaintRepository, ComplaintRepository>();
+            services.AddScoped<ISettlementRepository,SettlementRepository>();
+            services.AddScoped<IPaymentRepository,PaymentRepository>();
+
             // 骑手相关仓储
             services.AddScoped<IAssignmentRepository, AssignmentRepository>();
             services.AddScoped<IAttendanceRepository, AttendanceRepository>();
             services.AddScoped<IPerformanceRepository, PerformanceRepository>();
-            services.AddScoped<IPaymentRepository,PaymentRepository>();
 
             return services;
         }
@@ -62,11 +64,8 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IDishService, DishService>();
             services.AddScoped<ILoginService, LoginService>();
             services.AddScoped<IJwtTokenService, JwtTokenService>();
-          
             services.AddScoped<IOrderService, OrderService>();
-
-           
-
+            services.AddScoped<ISettlementService,SettlementService>();
             services.AddScoped<IRegistrationService, RegistrationService>();
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IUserService, UserService>();

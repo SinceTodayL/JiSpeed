@@ -147,4 +147,30 @@ namespace JISpeed.Api.DTOs
         public required int SortOrder { get; set; }
     }
 
+    public class SettlementDetailDto
+    {
+        public required string SettleId { get; set; } //结算单ID pk
+
+        public required DateTime PeriodStart { get; set; } //周期起
+
+        public required DateTime PeriodEnd { get; set; } //周期止
+        
+        public required decimal GrossAmount { get; set; } //毛收入
+        
+        public required decimal CommissionFee { get; set; } //抽佣
+        
+        public required decimal NetAmount { get; set; } //应结金额
+
+        public DateTime? SettledAt { get; set; } //结算完成时间 (可为空)
+    }
+    public class SettlementDto
+    {
+        public required string SettleId { get; set; } //结算单ID pk
+
+        public required DateTime PeriodStart { get; set; } //周期起
+
+        public required DateTime PeriodEnd { get; set; } //周期止
+
+        public DateTime? SettledAt { get; set; } //结算完成时间 (可为空)
+    }
 }

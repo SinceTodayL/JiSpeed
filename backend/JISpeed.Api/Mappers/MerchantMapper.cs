@@ -40,6 +40,10 @@ namespace JISpeed.Api.Mappers
             CreateMap<Category, CategoryDto>();
 
             CreateMap<Core.Entities.Merchant.Application, ApplicationResponse>();
+            
+            CreateMap<Settlement, SettlementDetailDto>();
+            CreateMap<Settlement, SettlementDto>();
+
 
         }
     }
