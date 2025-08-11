@@ -27,11 +27,16 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
 
         // 重写GetAllAsync以包含关联数据和排序
         // <returns>结算列表</returns>
-        public override async Task<List<Settlement>> GetAllAsync()
+        public async Task<List<Settlement>> GetAllAsync(
+            int ?size,int ?page)
         {
+            int pageSize = size ?? 20;
+            int currentPage = page ?? 1;
             return await _context.Settlements
                 .Include(s => s.Merchant)
                 .OrderByDescending(s => s.PeriodEnd)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 

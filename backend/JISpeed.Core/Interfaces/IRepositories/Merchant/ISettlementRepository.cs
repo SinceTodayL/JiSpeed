@@ -15,7 +15,7 @@ namespace JISpeed.Core.Interfaces.IRepositories.Merchant
             string merchantId,
             int ?size,int ?page);
 
-        Task<List<Settlement>> GetAllAsync();
+        Task<List<Settlement>> GetAllAsync(int ?size,int ?page);
 
         // 根据结算状态获取记录
         // <param name="status">结算状态</param>

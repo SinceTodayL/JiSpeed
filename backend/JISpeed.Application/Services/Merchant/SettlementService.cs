@@ -102,7 +102,7 @@ namespace JISpeed.Application.Services.Merchant
                             await _settlementRepository.GetPendingSettlementsAsync(size, page);
                     else
                         settlements =
-                            await _settlementRepository.GetAllAsync();
+                            await _settlementRepository.GetAllAsync(size, page);
                 }
                 _logger.LogInformation("成功获取结算单列表");
                 return settlements;
