@@ -5,6 +5,7 @@ using JISpeed.Core.Constants;
 using JISpeed.Core.Entities.Dish;
 using JISpeed.Core.Exceptions;
 using JISpeed.Core.Interfaces.IServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace JISpeed.Api.Controllers
@@ -31,6 +32,7 @@ namespace JISpeed.Api.Controllers
 
         // 根据商家ID获取商家详细信息
         [HttpGet("merchants/{merchantId}")]
+        [Authorize]
         public async Task<ActionResult<ApiResponse<MerchantDto>>> GetMerchantDetail(string merchantId)
         {
             try
@@ -87,6 +89,7 @@ namespace JISpeed.Api.Controllers
         }
 
         [HttpGet("merchants")]
+        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<List<MerchantDto>>>> GetAllMerchant(
             [FromQuery] string ?merchantName,
             [FromQuery] string? location,
@@ -135,6 +138,7 @@ namespace JISpeed.Api.Controllers
             }
         }
         [HttpGet("merchants/autocomplete")]
+        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<string>>> GetNameSuggestionsAsync(string prefix, int ?limit)
         {
             try

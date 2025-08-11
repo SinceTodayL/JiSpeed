@@ -5,12 +5,13 @@ using JISpeed.Core.Constants;
 using JISpeed.Core.Entities.Dish;
 using JISpeed.Core.Exceptions;
 using JISpeed.Core.Interfaces.IServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace JISpeed.Api.Controllers
 {
     [ApiController]
-    [Route("api/merchants/")]
+    [Route("api/merchants")]
 
     public class DishController : ControllerBase
     {
@@ -30,6 +31,7 @@ namespace JISpeed.Api.Controllers
         }
 
         [HttpGet("{merchantId}/dishesByCategory")]
+        [Authorize]
         public async Task<ActionResult<ApiResponse<List<CategoryWithDishesDto>>>> GetMerchantAllDishes(string merchantId)
         {
             try
@@ -105,6 +107,7 @@ namespace JISpeed.Api.Controllers
             }
         }
         [HttpGet("{merchantId}/dishes")]
+        [Authorize]
         public async Task<ActionResult<ApiResponse<List<DishesDto>>>> GetMerchantAllDishes(
             string merchantId,
             [FromQuery]string? categoryId,
@@ -160,6 +163,7 @@ namespace JISpeed.Api.Controllers
         }
 
         [HttpGet("{merchantId}/dish/{dishId}")]
+        [Authorize]
         public async Task<ActionResult<ApiResponse<DishesDto>>> GetDishes(
             string merchantId,string dishId)
         {
@@ -217,6 +221,7 @@ namespace JISpeed.Api.Controllers
         
         
         [HttpPost("{merchantId}/addNewDish")]
+        [Authorize]
         public async Task<ActionResult<ApiResponse<bool>>> AddNewDish(string merchantId, [FromBody] CreateDishesDto dto)
         {
             try
@@ -268,6 +273,7 @@ namespace JISpeed.Api.Controllers
         }
 
         [HttpDelete("{merchantId}/{dishId}")]
+        [Authorize]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteDish(string merchantId, string dishId)
         {
             try
@@ -325,6 +331,7 @@ namespace JISpeed.Api.Controllers
             }
         }
         [HttpPatch("{merchantId}/{dishId}")]
+        [Authorize]
         public async Task<ActionResult<ApiResponse<bool>>> ModifyDish(
             string merchantId, string dishId,
             [FromBody] UpdateDishesDto dto)
@@ -386,6 +393,7 @@ namespace JISpeed.Api.Controllers
         }
         
         [HttpGet("{merchantId}/dish-categories")]
+        [Authorize]
         public async Task<ActionResult<ApiResponse<List<CategoryDto>>>> GetMerchantAllCategories(string merchantId)
         {
             try

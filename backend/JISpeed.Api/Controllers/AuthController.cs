@@ -7,6 +7,7 @@ using JISpeed.Api.Common;
 using JISpeed.Core.Constants;
 using JISpeed.Core.Exceptions;
 using JISpeed.Core.Interfaces.IRepositories.Common;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace JISpeed.Api.Controllers
@@ -43,6 +44,7 @@ namespace JISpeed.Api.Controllers
 
 
         [HttpPost("login")]
+        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<LoginResponse>>> Login(int userType,[FromBody] UserLoginRequest request)
         {
             try
@@ -113,7 +115,7 @@ namespace JISpeed.Api.Controllers
                 var id = await _loginService.GetBusinessEntityId(user.Id, userType);
                 _logger.LogInformation($"登录接口：成功，登录名{key}");
                 
-                var token = _jwtTokenService.GenerateToken(user, userType);
+                var token = _jwtTokenService.GenerateToken(user.UserName);
 
                 var response = new LoginResponse
                 {
@@ -133,6 +135,7 @@ namespace JISpeed.Api.Controllers
 
         // 用户前端填入预注册表单，后端发送验证邮件
         [HttpPost("register")]
+        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<bool>>> Register(int userType,[FromBody] UserRegisterRequest request)
         {
 
@@ -189,6 +192,7 @@ namespace JISpeed.Api.Controllers
 
 
         [HttpGet("verify-email")]
+        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<bool>>> VerifyEmail(string userId, string token)
         {
             try
