@@ -6,12 +6,21 @@ namespace JISpeed.Core.Interfaces.IServices
 {
     public interface IAdminService
     {
-        /// 创建用户实体（当ApplicationUser的UserType=4时调用）
         
-        /// <param name="applicationUser">已创建的ApplicationUser</param>
-        /// <param name="nickname">用户昵称，默认使用用户名</param>
-        /// <returns>创建的Admin实体</returns>
-        Task<Admin> CreateUserEntityAsync(ApplicationUser applicationUser, string? nickname = null);
+        Task<bool> CreateAnnouncementEntityAsync(string adminId, string title,string? content,string? targetRole,DateTime startAt,DateTime endAt);
+        Task<Announcement> GetAnnouncementDetailAsync(string announcementId);
+
+        Task<List<Announcement>> GetActiveAnnouncementByUserTypeAsync(
+            string targetRole,
+            int? size, int? page);
+        Task<List<Announcement>> GetAllAnnouncementByUserTypeAsync(
+            string targetRole,
+            int? size, int? page);
+        Task<bool> ModifyAnnouncementAsync(
+            string announcementId,
+            string? title, string? content, string? targetRole,
+            DateTime? startAt,DateTime? endAt);
+
 
     }
 }

@@ -236,9 +236,7 @@ namespace JISpeed.Api.Controllers
                         "商家ID不能为空"));
                 }
 
-                var entity = _mapper.Map<CreateDishesDto>(dto);
-
-                var res = await _dishService.CreateDishEntityAsync(merchantId, entity.CategoryId, entity.DishName,entity.Price,entity.OriginPrice,entity.CoverUrl);
+                var res = await _dishService.CreateDishEntityAsync(merchantId, dto.CategoryId, dto.DishName,dto.Price,dto.OriginPrice,dto.CoverUrl);
                 _logger.LogInformation("成功新增菜品, MerchantId: {MerchantId}", merchantId);
                 return Ok(ApiResponse<bool>.Success(res));
             }
@@ -356,8 +354,7 @@ namespace JISpeed.Api.Controllers
                         "菜品ID不能为空"));
                 }
                 
-                var entity = _mapper.Map<UpdateDishesDto>(dto);
-                var res = await _dishService.ModifyDishEntityAsync(merchantId, dishId,entity.CategoryId, entity.DishName,entity.Price,entity.OriginPrice,entity.OnSale,entity.CoverUrl);
+                var res = await _dishService.ModifyDishEntityAsync(merchantId, dishId,dto.CategoryId, dto.DishName,dto.Price,dto.OriginPrice,dto.OnSale,dto.CoverUrl);
                 _logger.LogInformation("成功修改菜品, DishId: {DishId}", dishId);
 
                 return Ok(ApiResponse<bool>.Success(res));

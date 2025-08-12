@@ -83,15 +83,56 @@ namespace JISpeed.Infrastructure.Repositories.Admin
                 _ => await _context.Announcements.ToListAsync()
             };
         }
+        public async Task<List<Announcement>> GetAllAnnouncementsAsync(
+            int? size, int? page)
+        {
+            int pageSize = size ?? 20;
+            int currentPage = page ?? 1;
+            return await _context.Announcements
+                .OrderByDescending(a => a.StartAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+        public async Task<List<Announcement>> GetAllAnnouncementsByUserTypeAsync(
+            string targetRole, int? size,
+            int? page)
+        {
+            int pageSize = size ?? 20;
+            int currentPage = page ?? 1;
+            return await _context.Announcements
+                .Where(a => a.TargetRole == targetRole ||a.TargetRole == null)
+                .OrderByDescending(a => a.StartAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
 
         // 获取有效公告（未过期且状态为活跃）
         // <returns>有效公告列表</returns>
-        public async Task<List<Announcement>> GetActiveAnnouncementsAsync()
+        public async Task<List<Announcement>> GetActiveAnnouncementsByUserTypeAsync(string  targetRole,int? size,int?page)
         {
+            int pageSize = size ?? 20;
+            int currentPage = page ?? 1;
+            var now = DateTime.UtcNow;
+            return await _context.Announcements
+                .Where(a => a.StartAt <= now && a.EndAt >= now && (a.TargetRole == targetRole ||a.TargetRole == null))
+                .OrderByDescending(a => a.StartAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<List<Announcement>> GetAllActiveAnnouncementsAsync(int? size,int?page)
+        {
+            int pageSize = size ?? 20;
+            int currentPage = page ?? 1;
             var now = DateTime.UtcNow;
             return await _context.Announcements
                 .Where(a => a.StartAt <= now && a.EndAt >= now)
                 .OrderByDescending(a => a.StartAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 
