@@ -15,7 +15,9 @@
 ## merchant: 
 
 `dish` 表中缺少 “库存数量” 这一属性
-
+`order` 表中缺少 “merchantId” 这一属性
+`dish` 表中可增加 “描述” 这一属性？
+`merchant` 表中可增加 “描述” 这一属性？
 
 
 ## admin:
