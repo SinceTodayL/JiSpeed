@@ -9,6 +9,9 @@ namespace JISpeed.Core.Interfaces.IRepositories.Reconciliation
     // 对账仓储接口 - 处理对账异常的数据访问操作
     public interface IReconciliationRepository : IBaseRepository<ReconciliationEntity, string>
     {
+
+        Task<List<ReconciliationEntity>> GetAllAsync(
+            int? size, int? page);
         // === 业务专用查询方法 ===
         // 根据账期范围查询对账记录
         Task<IEnumerable<ReconciliationEntity>> GetByPeriodRangeAsync(DateTime periodStart, DateTime periodEnd);
@@ -17,10 +20,14 @@ namespace JISpeed.Core.Interfaces.IRepositories.Reconciliation
         Task<IEnumerable<ReconciliationEntity>> GetByFoundTimeRangeAsync(DateTime startTime, DateTime endTime);
 
         // 根据异常类型查询对账记录
-        Task<IEnumerable<ReconciliationEntity>> GetByReconTypeAsync(int reconType);
+        Task<List<ReconciliationEntity>> GetByReconTypeAsync(
+            int reconType,
+            int?size,int ?page);
 
         // 根据解决状态查询对账记录
-        Task<IEnumerable<ReconciliationEntity>> GetByResolvedStatusAsync(bool isResolved);
+        Task<List<ReconciliationEntity>> GetByResolvedStatusAsync(
+            bool isResolved,
+            int? size,int? page);
 
         // 获取未解决的对账异常
         Task<IEnumerable<ReconciliationEntity>> GetUnresolvedReconciliationsAsync();

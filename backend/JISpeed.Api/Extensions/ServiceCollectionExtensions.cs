@@ -11,6 +11,7 @@ using JISpeed.Core.Interfaces.IRepositories.Dish;
 using JISpeed.Core.Interfaces.IRepositories.Junctions;
 using JISpeed.Core.Interfaces.IRepositories.Merchant;
 using JISpeed.Core.Interfaces.IRepositories.Order;
+using JISpeed.Core.Interfaces.IRepositories.Reconciliation;
 using JISpeed.Core.Interfaces.IRepositories.Rider;
 using JISpeed.Core.Interfaces.IRepositories.User;
 using JISpeed.Core.Interfaces.IServices;
@@ -20,6 +21,7 @@ using JISpeed.Infrastructure.Repositories.Dish;
 using JISpeed.Infrastructure.Repositories.Junctions;
 using JISpeed.Infrastructure.Repositories.Merchant;
 using JISpeed.Infrastructure.Repositories.Order;
+using JISpeed.Infrastructure.Repositories.Reconciliation;
 using JISpeed.Infrastructure.Repositories.Rider;
 using JISpeed.Infrastructure.Repositories.User;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,6 +49,7 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<ISettlementRepository,SettlementRepository>();
             services.AddScoped<IPaymentRepository,PaymentRepository>();
             services.AddScoped<IAnnouncementRepository,AnnouncementRepository>();
+            services.AddScoped<IReconciliationRepository, ReconciliationRepository>();
 
             // 骑手相关仓储
             services.AddScoped<IAssignmentRepository, AssignmentRepository>();

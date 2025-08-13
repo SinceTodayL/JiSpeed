@@ -1,5 +1,6 @@
 using JISpeed.Core.Entities.Admin;
 using JISpeed.Core.Entities.Common;
+using JISpeed.Core.Entities.Reconciliation;
 using JISpeed.Core.Interfaces.IRepositories;
 
 namespace JISpeed.Core.Interfaces.IServices
@@ -21,6 +22,15 @@ namespace JISpeed.Core.Interfaces.IServices
             string? title, string? content, string? targetRole,
             DateTime? startAt,DateTime? endAt);
 
+        Task<bool> CreateReconciliationEntityAsync(
+            DateTime periodStart, DateTime periodEnd,
+            int reconType, List<string> orderIds);
+        Task<Reconciliation> GetReconciliationDetailAsync(string reconId);
+        Task<List<Reconciliation>> GetReconciliationByFilterAsync(
+            bool? isResolved,
+            int? reconType,
+            int? size, int? page);
+        Task<bool> ResolveReconciliationAsync(string reconId);
 
     }
 }

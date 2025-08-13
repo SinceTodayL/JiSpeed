@@ -25,7 +25,6 @@ namespace JISpeed.Infrastructure.Repositories.Order
                     .ThenInclude(od => od.Dish)
                 .Include(o => o.Payments)
                 .Include(o => o.Reviews)
-                .Include(o => o.AddressId)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
         }
 

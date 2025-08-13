@@ -5,6 +5,9 @@ namespace JISpeed.Core.Interfaces.IRepositories.Order
     // 订单仓储接口
     public interface IOrderRepository : IBaseRepository<JISpeed.Core.Entities.Order.Order, string>
     {
+
+        new Task<JISpeed.Core.Entities.Order.Order?> GetWithDetailsAsync(string orderId);
+
         // === 业务专用查询方法 ===
 
         // 根据用户ID获取订单列表

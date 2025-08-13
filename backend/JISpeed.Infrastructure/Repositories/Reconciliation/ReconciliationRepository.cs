@@ -11,7 +11,7 @@ using JISpeed.Infrastructure.Repositories;
 namespace JISpeed.Infrastructure.Repositories.Reconciliation
 {
     // 对账仓储实现 - 处理对账异常的数据访问操作
-    public class ReconciliationRepository : BaseRepository<JISpeed.Core.Entities.Reconciliation.Reconciliation, string>
+    public class ReconciliationRepository : BaseRepository<JISpeed.Core.Entities.Reconciliation.Reconciliation, string>, IReconciliationRepository
     {
         public ReconciliationRepository(OracleDbContext context) : base(context)
         {
@@ -40,11 +40,16 @@ namespace JISpeed.Infrastructure.Repositories.Reconciliation
 
         // 重写GetAllAsync以包含关联数据和排序
         // <returns>对账异常列表</returns>
-        public override async Task<List<JISpeed.Core.Entities.Reconciliation.Reconciliation>> GetAllAsync()
+        public async Task<List<JISpeed.Core.Entities.Reconciliation.Reconciliation>> GetAllAsync(
+            int?size,int?page)
         {
+            int pageSize = size ?? 20;
+            int currentPage = page ?? 1;
             return await _context.Reconciliations
                 .Include(r => r.Orders)
                 .OrderByDescending(r => r.FoundAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 
@@ -71,22 +76,34 @@ namespace JISpeed.Infrastructure.Repositories.Reconciliation
         }
 
         // 根据异常类型查询对账记录
-        public async Task<IEnumerable<JISpeed.Core.Entities.Reconciliation.Reconciliation>> GetByReconTypeAsync(int reconType)
+        public async Task<List<JISpeed.Core.Entities.Reconciliation.Reconciliation>> GetByReconTypeAsync(
+            int reconType,
+            int?size,int ?page)
         {
+            int pageSize = size ?? 20;
+            int currentPage = page ?? 1;
             return await _context.Reconciliations
                 .Include(r => r.Orders)
                 .Where(r => r.ReconType == reconType)
                 .OrderByDescending(r => r.FoundAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 
         // 根据解决状态查询对账记录
-        public async Task<IEnumerable<JISpeed.Core.Entities.Reconciliation.Reconciliation>> GetByResolvedStatusAsync(bool isResolved)
+        public async Task<List<JISpeed.Core.Entities.Reconciliation.Reconciliation>> GetByResolvedStatusAsync(
+            bool isResolved,
+            int? size,int? page)
         {
+            int pageSize = size ?? 20;
+            int currentPage = page ?? 1;
             return await _context.Reconciliations
                 .Include(r => r.Orders)
                 .Where(r => r.IsResolved == isResolved)
                 .OrderByDescending(r => r.FoundAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 
