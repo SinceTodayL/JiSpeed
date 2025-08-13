@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
+import { createDish, updateDish } from '@/service/api';
+import { useMerchantStore } from '@/store/modules/merchant';
 
 defineOptions({
   name: 'GoodsOperateDrawer'
@@ -20,6 +22,8 @@ interface Emits {
 }
 
 const emit = defineEmits<Emits>();
+
+const merchantStore = useMerchantStore();
 
 const visible = defineModel<boolean>('visible', {
   default: false
@@ -90,14 +94,60 @@ function closeDrawer() {
 }
 
 async function handleSubmit() {
-  await validate();
-  
-  // TODO: 实现提交逻辑
-  console.log('提交数据:', model.value);
-  
-  window.$message?.success(props.operateType === 'add' ? '新增成功' : '更新成功');
-  closeDrawer();
-  emit('submitted');
+  try {
+    await validate();
+    
+    if (props.operateType === 'add') {
+      // Create new dish
+      const createData: Api.Goods.CreateDishRequest = {
+        categoryId: model.value.categoryId,
+        dishName: model.value.dishName,
+        price: model.value.price,
+        originPrice: model.value.originPrice,
+        coverUrl: model.value.coverUrl || undefined
+      };
+      
+      const result = await createDish(merchantStore.merchantId, createData);
+      
+      window.$message?.success('新增商品成功');
+    } else {
+      // Update existing dish
+      if (!props.rowData?.dishId) {
+        throw new Error('缺少菜品ID，无法更新');
+      }
+      
+      const updateData: Api.Goods.UpdateDishRequest = {
+        categoryId: model.value.categoryId,
+        dishName: model.value.dishName,
+        price: model.value.price,
+        originPrice: model.value.originPrice,
+        coverUrl: model.value.coverUrl || undefined,
+        onSale: model.value.onSale
+      };
+      
+      const result = await updateDish(merchantStore.merchantId, props.rowData.dishId, updateData);
+      
+      window.$message?.success('更新商品成功');
+    }
+    
+    closeDrawer();
+    emit('submitted');
+  } catch (error: any) {
+    console.error('Submit failed:', error);
+    
+    // Enhanced error handling for dish operations
+    let errorMessage = props.operateType === 'add' ? '新增商品失败' : '更新商品失败';
+    
+    if (error?.response?.status === 401) {
+      errorMessage = '认证失败，请重新登录';
+    } else if (error?.response?.status === 400) {
+      errorMessage = '请求数据格式错误，请检查输入内容';
+    } else if (error?.response?.status === 500) {
+      errorMessage = '后端处理错误，请联系管理员';
+    }
+    
+    window.$message?.error(errorMessage);
+  }
 }
 
 watch(visible, () => {

@@ -72,11 +72,11 @@ const hasChanges = computed(() => {
 const loadMerchantInfo = async () => {
   try {
     loading.value = true;
-    console.log('🔍 开始获取商家信息');
-    console.log('📋 merchantId:', merchantStore.merchantId);
+    console.log('开始获取商家信息');
+    console.log('merchantId:', merchantStore.merchantId);
     
     if (!merchantStore.merchantId) {
-      console.error('❌ merchantId 为空，无法调用API');
+      console.error('merchantId 为空，无法调用API');
       window.$message?.error('商家ID未找到，请重新登录');
       return;
     }
@@ -89,19 +89,19 @@ const loadMerchantInfo = async () => {
     if (result?.data?.data) {
       // 嵌套结构: { data: { data: {...} } }
       merchantData = result.data.data;
-      console.log('📊 使用嵌套数据结构 result.data.data:', merchantData);
+      console.log('使用嵌套数据结构 result.data.data:', merchantData);
     } else if (result?.data) {
       // 直接结构: { data: {...} }
       merchantData = result.data;
-      console.log('📊 使用直接数据结构 result.data:', merchantData);
+      console.log('使用直接数据结构 result.data:', merchantData);
     } else if (result && typeof result === 'object') {
       // API直接返回数据
       merchantData = result;
-      console.log('📊 使用原始返回数据:', merchantData);
+      console.log('使用原始返回数据:', merchantData);
     }
     
     if (merchantData && typeof merchantData === 'object') {
-      console.log('✅ 找到商家数据:', merchantData);
+      console.log('找到商家数据:', merchantData);
       
       // 更新表单数据
       const newFormData = {
@@ -141,15 +141,14 @@ const loadMerchantInfo = async () => {
       // 更新store
       merchantStore.setMerchantInfo(merchantData);
       
-      console.log('✅ 数据加载完成，表单应该已填充');
+      console.log('数据加载完成，表单已填充');
     } else {
-      console.error('❌ 未找到有效的商家数据');
-      console.log('🔍 完整API响应:', result);
+      console.error('未找到有效的商家数据');
+      console.log('完整API响应:', result);
       window.$message?.warning('获取到的商家信息格式不正确');
     }
   } catch (error) {
-    console.error('❌ 获取商家信息失败:', error);
-    console.error('错误详情:', error.message);
+    console.error('获取商家信息失败:', error);
     window.$message?.error($t('page.profile.loadFailed'));
   } finally {
     loading.value = false;

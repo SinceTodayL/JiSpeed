@@ -92,30 +92,64 @@ declare namespace Api {
    * backend api module: "goods"
    */
   namespace Goods {
-    /** 菜品信息 */
+    /** Dish item - matches backend DishesDto structure */
     interface DishItem {
-      /** 菜品ID */
+      /** 菜品ID - maps to DishId */
       dishId: string;
-      /** 分类ID */
+      /** 分类ID - maps to CategoryId */
       categoryId: string;
-      /** 菜品名称 */
+      /** 菜品名称 - maps to DishName */
       dishName: string;
-      /** 价格 */
+      /** 价格 - maps to Price */
       price: number;
-      /** 原价 */
+      /** 原价 - maps to OriginPrice */
       originPrice: number;
-      /** 封面图片URL */
+      /** 封面图片URL - maps to CoverUrl */
       coverUrl: string;
-      /** 月销量 */
-      monthlySales: number;
-      /** 评分 */
-      rating: number;
-      /** 是否在售 1:在售 0:停售 */
-      onSale: number;
-      /** 商家ID */
-      merchantId: string;
-      /** 库存数量 */
-      quantity: number;
+      /** 月销量 - maps to MonthlySales */
+      monthlySales: number | null;
+      /** 评分 - maps to Rating */
+      rating: number | null;
+      /** 是否在售 1:在售 0:停售 - maps to OnSale */
+      onSale: number | null;
+      /** 商家ID - maps to MerchantId */
+      merchantId: string | null;
+      /** 库存数量 - NOT in backend DTO, frontend only */
+      quantity?: number;
+      /** 评论数量 - maps to ReviewQuantity */
+      reviewQuantity?: number | null;
+      /** 分类名称 - maps to CategoryName */
+      categoryName?: string | null;
+    }
+
+    /** Create dish request - matches backend CreateDishesDto */
+    interface CreateDishRequest {
+      /** 分类ID - required */
+      categoryId: string;
+      /** 菜品名称 - required */
+      dishName: string;
+      /** 价格 - optional */
+      price?: number;
+      /** 原价 - required */
+      originPrice: number;
+      /** 封面图片URL - optional */
+      coverUrl?: string;
+    }
+
+    /** Update dish request - matches backend UpdateDishesDto */
+    interface UpdateDishRequest {
+      /** 分类ID - optional */
+      categoryId?: string;
+      /** 菜品名称 - optional */
+      dishName?: string;
+      /** 价格 - optional */
+      price?: number;
+      /** 原价 - optional */
+      originPrice?: number;
+      /** 封面图片URL - optional */
+      coverUrl?: string;
+      /** 是否在售 - optional */
+      onSale?: number;
     }
 
     /** 菜品列表响应 */
@@ -254,6 +288,37 @@ declare namespace Api {
     /** 订单状态映射 */
     interface OrderStatusMap {
       [key: number]: string;
+    }
+  }
+
+  /**
+   * backend api module: "announcement"
+   */
+  namespace Announcement {
+    /** Announcement data item - matches backend AnnouncementResponseDto */
+    interface AnnouncementItem {
+      /** Announcement ID - maps to AnnounceId */
+      announceId: string;
+      /** Title - maps to Title */
+      title: string;
+      /** Content - maps to Content (nullable) */
+      content: string | null;
+      /** Target role - maps to TargetRole (nullable) */
+      targetRole: string | null;
+      /** Start time - maps to StartAt (DateTime as ISO string) */
+      startAt: string;
+      /** End time - maps to EndAt (DateTime as ISO string) */
+      endAt: string;
+    }
+
+    /** Announcements response */
+    interface AnnouncementResponse {
+      /** Response code */
+      code: number;
+      /** Response message */
+      message: string;
+      /** Announcements data */
+      data: AnnouncementItem[];
     }
   }
 

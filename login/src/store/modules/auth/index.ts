@@ -285,7 +285,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     console.log('handleLoginRedirect called with:', { userType, needRedirect });
     
     if (!needRedirect) {
-      console.log('跳转被取消，needRedirect为false');
+      console.log('跳转被取消, needRedirect为false');
       return;
     }
 
@@ -325,6 +325,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
         // 拼接完整URL
         const userFinalUrl = `${userBaseUrl}${userBaseUrl.includes('?') ? '&' : '?'}${userUrlParams.toString()}`;
         console.log('jump to user URL:', userFinalUrl);
+        window.location.href = userFinalUrl;
         break;
       
       case 2: // Merchant
@@ -356,6 +357,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
         // 拼接完整URL
         const finalUrl = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}${urlParams.toString()}`;
         console.log('jump to merchant URL:', finalUrl);
+        window.location.href = finalUrl;
         break;
         
 
@@ -388,7 +390,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
         // 拼接完整URL
         const riderFinalUrl = `${riderBaseUrl}${riderBaseUrl.includes('?') ? '&' : '?'}${riderUrlParams.toString()}`;
         console.log('rider jump to URL:', riderFinalUrl);
-        
+        window.location.href = riderFinalUrl;
         break;
         
       case 4: // Admin
@@ -420,6 +422,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
         // 拼接完整URL
         const adminFinalUrl = `${adminBaseUrl}${adminBaseUrl.includes('?') ? '&' : '?'}${adminUrlParams.toString()}`;
         console.log('jump to admin URL:', adminFinalUrl);
+        window.location.href = adminFinalUrl;
         break;
         
       default:
