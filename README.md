@@ -25,3 +25,5 @@
 
 ## admin:
 
+`Application` 表中缺少 “申请材料” 这一属性
+
