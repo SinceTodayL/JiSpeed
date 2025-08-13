@@ -12,6 +12,12 @@ namespace JISpeed.Core.Interfaces.IRepositories.User
         // <returns>用户实体，如果不存在则返回null</returns>
         Task<JISpeed.Core.Entities.User.User?> GetByApplicationUserIdAsync(string applicationUserId);
 
+        /// 返回所有用户信息
+        /// <param name="size">每页大小</param>
+        /// <param name="page">页码</param>
+        /// <returns>用户列表</returns>
+        Task<List<JISpeed.Core.Entities.User.User>> GetAllUsersAsync(int size, int page);
+
         // 根据昵称搜索用户
         // <param name="nickname">昵称</param>
         // <returns>用户列表</returns>
