@@ -70,5 +70,3 @@ secrets.json
 #http测试文件
 **/*.http
 
-#md文件
-**/*.md
