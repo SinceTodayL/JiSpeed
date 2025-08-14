@@ -122,6 +122,7 @@ namespace JISpeed.Application.Services.Common
                         IssuedQty = 0,
                         StartTime = startTime,
                         EndTime = endTime,
+                        IsUsed = false,
                         User = user
                     };
                     await _couponRepository.CreateAsync(coupon);
@@ -144,6 +145,7 @@ namespace JISpeed.Application.Services.Common
                             IssuedQty = 0,
                             StartTime = startTime,
                             EndTime = endTime,
+                            IsUsed = false,
                             User = user
                         };
                         await _couponRepository.CreateAsync(coupon);

@@ -16,19 +16,16 @@ namespace JISpeed.Api.Controllers
     {
         private readonly ILogger<OrderController> _logger;
         private readonly IOrderService _orderService;
-        private readonly IUserService _userService;
         private readonly IMapper _mapper;
 
         public OrderController(
             ILogger<OrderController> logger,
             IOrderService orderService,
-            IUserService userService,
             IMapper mapper
         )
         {
             _logger = logger;
             _orderService = orderService;
-            _userService = userService;
             _mapper = mapper;
         }
 

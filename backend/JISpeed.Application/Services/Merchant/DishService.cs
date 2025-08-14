@@ -71,6 +71,7 @@ namespace JISpeed.Application.Services.Merchant
                     OnSale = 0,
                     MerchantId = merchantId,
                     ReviewQuantity = 0,
+                    StockQuantity = 0,
                     Merchant = merchantEntity,
                     Category = categoryEntity
                 };

@@ -318,6 +318,13 @@ namespace JISpeed.Infrastructure.Data
                 .HasForeignKey<Order>(o => o.AssignId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            // Order 和 Merchant 多对一关系
+            modelBuilder.Entity<Merchant>()
+                .HasMany(m => m.Orders)
+                .WithOne(o => o.Merchant)
+                .HasForeignKey(o => o.MerchantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             // User 和 Coupon 一对多关系
             modelBuilder.Entity<User>()
                 .HasMany(u => u.Coupons)
