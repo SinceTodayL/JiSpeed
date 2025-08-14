@@ -50,7 +50,7 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IPaymentRepository,PaymentRepository>();
             services.AddScoped<IAnnouncementRepository,AnnouncementRepository>();
             services.AddScoped<IReconciliationRepository, ReconciliationRepository>();
-
+            services.AddScoped<ICouponRepository, CouponRepository>();
             // 骑手相关仓储
             services.AddScoped<IAssignmentRepository, AssignmentRepository>();
             services.AddScoped<IAttendanceRepository, AttendanceRepository>();
@@ -76,6 +76,7 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IRiderService, RiderService>();
             services.AddScoped<IMerchantService, MerchantService>();
             services.AddScoped<IAdminService, AdminService>();
+            services.AddScoped<ICouponService, CouponService>();
 
             return services;
         }

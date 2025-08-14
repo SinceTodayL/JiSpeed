@@ -2,7 +2,6 @@ using AutoMapper;
 using JISpeed.Api.Common;
 using JISpeed.Api.DTOs;
 using JISpeed.Core.Constants;
-using JISpeed.Core.Entities.Dish;
 using JISpeed.Core.Exceptions;
 using JISpeed.Core.Interfaces.IServices;
 using Microsoft.AspNetCore.Authorization;

@@ -54,6 +54,6 @@ namespace JISpeed.Core.Entities.Common
             EndTime = endTime;
         }
 
-        private Coupon() { }
+        public Coupon() { }
     }
 }

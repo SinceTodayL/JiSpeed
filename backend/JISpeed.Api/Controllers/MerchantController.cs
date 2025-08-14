@@ -32,7 +32,6 @@ namespace JISpeed.Api.Controllers
 
         // 根据商家ID获取商家详细信息
         [HttpGet("merchants/{merchantId}")]
-        [Authorize]
         public async Task<ActionResult<ApiResponse<MerchantDto>>> GetMerchantDetail(string merchantId)
         {
             try

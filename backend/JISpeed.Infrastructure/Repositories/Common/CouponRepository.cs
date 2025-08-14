@@ -41,11 +41,17 @@ namespace JISpeed.Infrastructure.Repositories.Common
         // 根据用户ID获取优惠券列表
         // <param name="userId">用户ID</param>
         // <returns>优惠券列表</returns>
-        public async Task<List<Coupon>> GetByUserIdAsync(string userId)
+        public async Task<List<Coupon>> GetByUserIdAsync(
+            string userId,
+            int? size,int?page)
         {
+            int pageSize = size??20;
+            int currentPage = page ?? 1;
             return await _context.Coupons
                 .Where(c => c.UserId == userId)
                 .OrderByDescending(c => c.StartTime)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 
@@ -126,8 +132,12 @@ namespace JISpeed.Infrastructure.Repositories.Common
         // 根据用户ID获取有效优惠券列表
         // <param name="userId">用户ID</param>
         // <returns>有效优惠券列表</returns>
-        public async Task<List<Coupon>> GetValidByUserIdAsync(string userId)
+        public async Task<List<Coupon>> GetValidByUserIdAsync(
+            string userId,
+            int?size,int?page)
         {
+            int pageSize = size??20;
+            int currentPage = page ?? 1;
             var now = DateTime.UtcNow;
             return await _context.Coupons
                 .Where(c => c.UserId == userId &&
@@ -135,17 +145,25 @@ namespace JISpeed.Infrastructure.Repositories.Common
                            c.EndTime >= now &&
                            c.IssuedQty < c.TotalQty)
                 .OrderByDescending(c => c.StartTime)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 
         // 获取过期优惠券列表
         // <returns>过期优惠券列表</returns>
-        public async Task<List<Coupon>> GetExpiredCouponsAsync()
+        public async Task<List<Coupon>> GetExpiredByUserIdAsync(
+            string userId,
+            int?size,int?page)
         {
+            int pageSize = size??20;
+            int currentPage = page ?? 1;
             var now = DateTime.UtcNow;
             return await _context.Coupons
                 .Where(c => c.EndTime < now)
                 .OrderByDescending(c => c.EndTime)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 
@@ -160,6 +178,26 @@ namespace JISpeed.Infrastructure.Repositories.Common
                               c.StartTime <= now &&
                               c.EndTime >= now &&
                               c.IssuedQty < c.TotalQty);
+        }
+        
+        public async Task<List<Coupon>> GetValidByUserIdAndAmountAsync(
+            string userId, 
+            decimal amount,
+            int? size,int? page)
+        {
+            int pageSize = size??20;
+            int currentPage = page ?? 1;
+            var now = DateTime.UtcNow;
+            return await _context.Coupons
+                .Where(c => c.UserId == userId &&
+                            c.StartTime <= now &&
+                            c.EndTime >= now &&
+                            c.IssuedQty < c.TotalQty &&
+                            amount >= c.Threshold)
+                .OrderByDescending(c => c.FaceValue)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
         }
     }
 }

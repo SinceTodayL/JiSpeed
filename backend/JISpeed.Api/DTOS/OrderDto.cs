@@ -52,4 +52,23 @@ namespace JISpeed.Api.DTOs
          public required bool IsResolved { get; set; } //是否解决 (BOOLEAN)
          public required List<string> OrderIdList { get; set; } // 受影响的订单列表
      }
+
+     public class CouponResponseDto
+     {
+         public required string CouponId { get; set; } //优惠券ID pk
+         public required string UserId { get; set; } //用户ID pk, fk->User(userId)
+         public required decimal FaceValue { get; set; } //面额
+         public required decimal Threshold { get; set; } //满减门槛
+         public required DateTime StartTime { get; set; } //可用起始
+         public required DateTime EndTime { get; set; } //可用截止
+     }
+
+     public class CouponRequestDto
+     {        
+         public string? UserId { get; set; } //用户ID pk, fk->User(userId)
+         public decimal ?FaceValue { get; set; } //面额
+         public decimal ?Threshold { get; set; } //满减门槛
+         public required DateTime StartTime { get; set; } //可用起始
+         public required DateTime EndTime { get; set; } //可用截止
+     }
 }
