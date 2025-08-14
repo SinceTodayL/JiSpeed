@@ -10,6 +10,7 @@ namespace JISpeed.Core.Entities.Order
     using JISpeed.Core.Entities.Common; //引用 Coupon 实体所在的命名空间
     using JISpeed.Core.Entities.Rider; //引用 Assignment 实体所在的命名空间
     using JISpeed.Core.Entities.Junctions; //引用 OrderDish 联结表所在的命名空间
+    using JISpeed.Core.Entities.Merchant; //引用 Merchant 实体所在的命名空间
 
     //订单实体
     //对应数据库表: Orders
@@ -48,6 +49,10 @@ namespace JISpeed.Core.Entities.Order
         [Column(TypeName = "CHAR(32)")]
         public string? AssignId { get; set; } //分配编号 fk->Assignment(assignID) (可为空)
 
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
+        public required string MerchantId { get; set; } //商家ID fk->Merchant(merchantId)
+
         //导航属性
         [ForeignKey("UserId")]
         public virtual required User User { get; set; }
@@ -63,6 +68,9 @@ namespace JISpeed.Core.Entities.Order
 
         [ForeignKey("AssignId")]
         public virtual Assignment? Assignment { get; set; } //关联到 Rider 命名空间下的 Assignment，可为空
+
+        [ForeignKey("MerchantId")]
+        public virtual required Merchant Merchant { get; set; } //关联到 Merchant 实体
 
         // 一对多集合导航属性
         public virtual ICollection<Refund> Refunds { get; set; } = new List<Refund>();

@@ -29,11 +29,14 @@ namespace JISpeed.Core.Entities.Common
         public required decimal Threshold { get; set; } //满减门槛
 
         public required int TotalQty { get; set; } //总量
+
         public required int IssuedQty { get; set; } //已发量
 
         public required DateTime StartTime { get; set; } //可用起始
 
         public required DateTime EndTime { get; set; } //可用截止
+
+        public required bool IsUsed { get; set; } //是否已使用
 
         //导航属性
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>(); //一个优惠券可能被多个订单使用

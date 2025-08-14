@@ -21,6 +21,9 @@ namespace JISpeed.Core.Entities.Merchant
 
         public required DateTime SubmittedAt { get; set; } //提交时间
 
+        [StringLength(65535)]
+        public string? ApplicationMaterials { get; set; } //申请材料
+
         public required int AuditStatus { get; set; } //审核状态
 
         public DateTime? AuditAt { get; set; } //审核时间 (可为空)

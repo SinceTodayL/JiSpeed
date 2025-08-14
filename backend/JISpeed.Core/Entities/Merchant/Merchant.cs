@@ -7,6 +7,7 @@ namespace JISpeed.Core.Entities.Merchant
 {
     using JISpeed.Core.Entities.Common;
     using JISpeed.Core.Entities.Dish;
+    using JISpeed.Core.Entities.Order;
     
     //商家实体 - 对应数据库表: Merchant
     [Table("MERCHANT")]
@@ -24,6 +25,9 @@ namespace JISpeed.Core.Entities.Merchant
         
         [StringLength(50)]
         public string? ContactInfo { get; set; }
+
+        [StringLength(65535)]
+        public string? Description { get; set; } // 商家描述
         
         [StringLength(200)]
         public string? Location { get; set; }
@@ -38,6 +42,8 @@ namespace JISpeed.Core.Entities.Merchant
         public virtual ICollection<Settlement> Settlements { get; set; } = new List<Settlement>();
         public virtual ICollection<Application> Applications { get; set; } = new List<Application>();
         public virtual ICollection<Dish> Dishes { get; set; } = new List<Dish>();
+
+        public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         
         // 主构造函数
         public Merchant(string merchantId, string merchantName, string? applicationUserId = null)
