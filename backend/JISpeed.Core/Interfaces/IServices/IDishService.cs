@@ -12,7 +12,8 @@ namespace JISpeed.Core.Interfaces.IServices
             string merchantId,
             string categoryId,string dishName,
             decimal? price, decimal originPrice,
-            string? coverUrl);
+            string? coverUrl, string? description,
+            int? stockQuantity);
         // 删除菜品节点
         Task<bool> DeleteDishEntityAsync(string merchantId, string dish);
         // 修改菜品主体
@@ -20,7 +21,8 @@ namespace JISpeed.Core.Interfaces.IServices
             string merchantId, string dishId, 
             string? categoryId, string? dishName,
             decimal? price, decimal? originPrice,
-            int? onSale, string? coverUrl);
+            int? onSale, string? coverUrl,
+            string? description,int? stockQuantity);
         // 获取商家菜品列表
         Task<List<Dish>> GetByFiltersAsync(
             string merchantId,

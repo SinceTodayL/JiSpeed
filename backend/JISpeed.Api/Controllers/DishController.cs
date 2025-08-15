@@ -30,8 +30,8 @@ namespace JISpeed.Api.Controllers
         }
 
         [HttpGet("{merchantId}/dishesByCategory")]
-        [Authorize]
-        public async Task<ActionResult<ApiResponse<List<CategoryWithDishesDto>>>> GetMerchantAllDishes(string merchantId)
+        // [Authorize]
+        public async Task<ActionResult<ApiResponse<List<CategoryWithDishesDto>>>> GetAllDishesByCategory(string merchantId)
         {
             try
             {
@@ -106,7 +106,7 @@ namespace JISpeed.Api.Controllers
             }
         }
         [HttpGet("{merchantId}/dishes")]
-        [Authorize]
+        // [Authorize]
         public async Task<ActionResult<ApiResponse<List<DishesDto>>>> GetMerchantAllDishes(
             string merchantId,
             [FromQuery]string? categoryId,
@@ -161,8 +161,8 @@ namespace JISpeed.Api.Controllers
             }
         }
 
-        [HttpGet("{merchantId}/dish/{dishId}")]
-        [Authorize]
+        [HttpGet("{merchantId}/dishes/{dishId}")]
+        // [Authorize]
         public async Task<ActionResult<ApiResponse<DishesDto>>> GetDishes(
             string merchantId,string dishId)
         {
@@ -220,7 +220,7 @@ namespace JISpeed.Api.Controllers
         
         
         [HttpPost("{merchantId}/addNewDish")]
-        [Authorize]
+        // [Authorize]
         public async Task<ActionResult<ApiResponse<bool>>> AddNewDish(string merchantId, [FromBody] CreateDishesDto dto)
         {
             try
@@ -235,7 +235,7 @@ namespace JISpeed.Api.Controllers
                         "商家ID不能为空"));
                 }
 
-                var res = await _dishService.CreateDishEntityAsync(merchantId, dto.CategoryId, dto.DishName,dto.Price,dto.OriginPrice,dto.CoverUrl);
+                var res = await _dishService.CreateDishEntityAsync(merchantId, dto.CategoryId, dto.DishName,dto.Price,dto.OriginPrice,dto.CoverUrl,dto.Description,dto.StockQuantity);
                 _logger.LogInformation("成功新增菜品, MerchantId: {MerchantId}", merchantId);
                 return Ok(ApiResponse<bool>.Success(res));
             }
@@ -270,7 +270,7 @@ namespace JISpeed.Api.Controllers
         }
 
         [HttpDelete("{merchantId}/{dishId}")]
-        [Authorize]
+        // [Authorize]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteDish(string merchantId, string dishId)
         {
             try
@@ -328,7 +328,7 @@ namespace JISpeed.Api.Controllers
             }
         }
         [HttpPatch("{merchantId}/{dishId}")]
-        [Authorize]
+        // [Authorize]
         public async Task<ActionResult<ApiResponse<bool>>> ModifyDish(
             string merchantId, string dishId,
             [FromBody] UpdateDishesDto dto)
@@ -353,7 +353,7 @@ namespace JISpeed.Api.Controllers
                         "菜品ID不能为空"));
                 }
                 
-                var res = await _dishService.ModifyDishEntityAsync(merchantId, dishId,dto.CategoryId, dto.DishName,dto.Price,dto.OriginPrice,dto.OnSale,dto.CoverUrl);
+                var res = await _dishService.ModifyDishEntityAsync(merchantId, dishId,dto.CategoryId, dto.DishName,dto.Price,dto.OriginPrice,dto.OnSale,dto.CoverUrl,dto.Description,dto.StockQuantity);
                 _logger.LogInformation("成功修改菜品, DishId: {DishId}", dishId);
 
                 return Ok(ApiResponse<bool>.Success(res));
@@ -389,7 +389,7 @@ namespace JISpeed.Api.Controllers
         }
         
         [HttpGet("{merchantId}/dish-categories")]
-        [Authorize]
+        // [Authorize]
         public async Task<ActionResult<ApiResponse<List<CategoryDto>>>> GetMerchantAllCategories(string merchantId)
         {
             try

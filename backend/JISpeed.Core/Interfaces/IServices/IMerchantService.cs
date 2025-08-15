@@ -13,7 +13,7 @@ namespace JISpeed.Core.Interfaces.IServices
         Task<bool> UpdateMerchantDetailAsync(
             string merchantId,string? merchantName,
             int? status, string? contactInfo,
-            string? location);
+            string? location,string? description);
         
         Task<Merchant> GetMerchantDetailAsync(string merchantId);
         Task<List<string>> GetMerchantNameForSearchAsync(string prefix,int ?limit);

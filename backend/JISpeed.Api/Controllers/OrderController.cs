@@ -36,39 +36,7 @@ namespace JISpeed.Api.Controllers
             {
                 _logger.LogInformation("收到查看订单详情的请求, OrderId: {OrderId}", orderId);
                 var order = await _orderService.GetOrderDetailByOrderIdAsync(orderId);
-
-                var merchantGroups = order.OrderDishes
-                    .GroupBy(od => od.Dish.MerchantId) // 按商家ID分组
-                    .ToDictionary<IGrouping<string, OrderDish>, string, MerchantWithDishesDto>(
-                        group => group.Key, // 键：MerchantId
-                        group => new MerchantWithDishesDto // 值：商家信息+菜品列表
-                        {
-                            MerchantId = group.Key,
-                            MerchantName = group.First().Dish.Merchant.MerchantName, // 商家名称（同组内一致）
-                            Dishes = group.Select(od => new DishItemDto // 转换菜品信息
-                            {
-                                DishId = od.Dish.DishId,
-                                DishName = od.Dish.DishName,
-                                Quantity = od.Quantity, // 数量来自 OrderDish
-                                Price = od.Dish.Price,
-                                UnitPrice = od.Dish.Price, // 单价来自 OrderDish,后续实现cuponId折扣？？TODO
-                                CoverUrl = od.Dish.CoverUrl ?? ""
-                            }).ToList()
-                        }
-                    );
-                var response = new OrderDetailDto
-                {
-                    OrderId = order.OrderId,
-                    OrderAmount = order.OrderAmount,
-                    CreateAt = order.CreateAt,
-                    OrderStatus = order.OrderStatus,
-                    UserId = order.UserId,
-                    AddressId = order.AddressId,
-                    CouponId = order.CouponId,
-                    ReconId = order.ReconId,
-                    AssignId = order.AssignId,
-                    MerchantDishes = merchantGroups
-                };
+                var response = _mapper.Map<OrderDetailDto>(order);
                 _logger.LogInformation("成功获取用户详细信息, OrderId: {OrderId}", orderId);
                 return Ok(ApiResponse<OrderDetailDto>.Success(response, "商家菜品信息获取成功"));
             }
@@ -105,7 +73,7 @@ namespace JISpeed.Api.Controllers
 
         // 获取用户的历史order
         [HttpGet("users/{userId}/orders")]
-        public async Task<ActionResult<ApiResponse<List<OrderDto>>>> GetOrderListByUserId(
+        public async Task<ActionResult<ApiResponse<string>>> GetOrderIdListByUserId(
             string userId,
             [FromQuery] int? orderStatus,
             [FromQuery] int? size, [FromQuery] int? page)
@@ -113,10 +81,9 @@ namespace JISpeed.Api.Controllers
             try
             {
                 _logger.LogInformation("收到获取用户订单列表的请求, UserId: {UserId}", userId);
-                var data = await _orderService.GetOrderIdByUserIdAsync(userId, orderStatus, size, page);
+                var orderIds = await _orderService.GetOrderIdByUserIdAsync(userId, orderStatus, size, page);
                 _logger.LogInformation("成功获取用户订单列表, UserId: {UserId}", userId);
-                var response = _mapper.Map<List<OrderDto>>(data);
-                return Ok(ApiResponse<List<OrderDto>>.Success(response, "用户订单信息获取成功"));
+                return Ok(ApiResponse<List<string>>.Success(orderIds, "用户订单信息获取成功"));
             }
             catch (ValidationException ex)
             {
@@ -148,7 +115,47 @@ namespace JISpeed.Api.Controllers
             }
 
         }
+        // 用户创建订单，返回对应的订单日志
+        [HttpPost("users/{userId}/createOrder")]
+        public async Task<ActionResult<ApiResponse<string>>> CreateOrderAsync(
+            string userId,
+            [FromBody] OrderRequestDto dto)
+        {
+            try
+            {
+                _logger.LogInformation("收到用户创建订单的请求, UserId: {UserId}", userId);
+                var orderLogId = await _orderService.CreateOrderByUserIdAsync(userId,dto.OrderAmount,dto.CouponId,dto.AddressId,dto.MerchantId,dto.DishQuantities);
+                _logger.LogInformation("成功创建订单实体");
+                return Ok(ApiResponse<string>.Success(orderLogId, "用户创建订单的请求成功"));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败");
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(
+                    ErrorCodes.OrderNotFound,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "创建订单时发生未知异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
 
+        }
         // 用户发起支付请求
         [HttpPost("orders/{orderId}/createPayment")]
         public async Task<ActionResult<ApiResponse<PaymentDto>>> CreatePaymentAsync(
@@ -359,6 +366,48 @@ namespace JISpeed.Api.Controllers
                     "系统繁忙，请稍后再试"));
             }
         }
+        [HttpGet("merchants/{merchantId}/orders")]
+        public async Task<ActionResult<ApiResponse<List<string>>>> GetOrderListByMerchantId(
+            string merchantId,
+            [FromQuery] int? orderStatus,
+            [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate,
+            [FromQuery] int? size, [FromQuery] int? page)
+        {
+            try
+            {
+                _logger.LogInformation("收到获取商家订单列表的请求");
+                var orderIds = await _orderService.GetOrderIdByMerchantIdAsync(merchantId, orderStatus, startDate, endDate, size, page);
+                _logger.LogInformation("成功获取商家订单列表");
+                return Ok(ApiResponse<List<string>>.Success(orderIds, "商家订单信息获取成功"));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败");
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(
+                    ErrorCodes.MerchantNotFound,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogError(ex, "业务处理异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取商家订单信息时发生未知异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
 
+        }
     }
 }

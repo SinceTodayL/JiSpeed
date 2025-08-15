@@ -36,7 +36,7 @@ namespace JISpeed.Core.Entities.Junctions
             Quantity = quantity;
         }
 
-        private OrderDish() { }
+        public OrderDish() { }
 
     }
 }

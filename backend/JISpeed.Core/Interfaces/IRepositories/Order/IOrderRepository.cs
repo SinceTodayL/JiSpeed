@@ -29,6 +29,19 @@ namespace JISpeed.Core.Interfaces.IRepositories.Order
         Task<List<JISpeed.Core.Entities.Order.Order>> GetByUserIdAndStatusAsync(
             string userId, int status,
             int?size,int? page);
+        
+        
+        Task<List<JISpeed.Core.Entities.Order.Order>> GetByMerchantIdAndStatusAsync(
+            string merchantId, int status,
+            int?size,int? page);
+        Task<List<JISpeed.Core.Entities.Order.Order>> GetByMerchantIdAndTimeRangeAsync(
+            string merchantId, 
+            DateTime start,DateTime end,
+            int?size,int? page);
+        Task<List<JISpeed.Core.Entities.Order.Order>> GetByMerchantIdAsync(
+            string merchantId, 
+            int?size,int? page);
+        
 
         // 根据时间范围获取订单列表
         // <param name="startTime">开始时间</param>

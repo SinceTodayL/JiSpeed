@@ -36,7 +36,8 @@ namespace JISpeed.Application.Services.Merchant
             string merchantId,
             string categoryId,string dishName,
             decimal ?price, decimal originPrice,
-            string? coverUrl)
+            string? coverUrl, string? description,
+            int? stockQuantity)
         {
             try
             {
@@ -71,9 +72,10 @@ namespace JISpeed.Application.Services.Merchant
                     OnSale = 0,
                     MerchantId = merchantId,
                     ReviewQuantity = 0,
-                    StockQuantity = 0,
+                    StockQuantity = stockQuantity??1,
                     Merchant = merchantEntity,
-                    Category = categoryEntity
+                    Category = categoryEntity,
+                    Description = description??"这是道好吃的菜",
                 };
                 var res = await _dishRepository.CreateAsync(dish);
                 if (res==null)
@@ -173,7 +175,8 @@ namespace JISpeed.Application.Services.Merchant
         public async Task<bool> ModifyDishEntityAsync(string merchantId, string dishId, 
             string? categoryId, string? dishName,
             decimal? price, decimal? originPrice,
-            int? onSale, string? coverUrl)
+            int? onSale, string? coverUrl,
+            string? description,int? stockQuantity)
         {
             try
             {
@@ -193,6 +196,8 @@ namespace JISpeed.Application.Services.Merchant
                 data.Price = price??data.Price;
                 data.OriginPrice = originPrice??data.OriginPrice;
                 data.OnSale = onSale??data.OnSale;
+                data.StockQuantity = stockQuantity??data.StockQuantity;
+                data.Description = description??data.Description;
                 await _dishRepository.SaveChangesAsync();
                 
                 _logger.LogInformation("成功修改商家菜品信息, DishID: {DishID}", dishId);

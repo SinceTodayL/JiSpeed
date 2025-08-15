@@ -95,6 +95,48 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .ToListAsync();
         }
 
+        public async Task<List<JISpeed.Core.Entities.Order.Order>> GetByMerchantIdAndStatusAsync(
+            string merchantId, int status,
+            int? size, int? page)
+        {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
+            return await _context.Orders
+                .Where(o => o.MerchantId == merchantId && o.OrderStatus == status)
+                .OrderByDescending(o => o.CreateAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<List<JISpeed.Core.Entities.Order.Order>> GetByMerchantIdAndTimeRangeAsync(
+            string merchantId,
+            DateTime start, DateTime end,
+            int? size, int? page)
+        {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
+            return await _context.Orders
+                .Where(o => o.MerchantId == merchantId && o.CreateAt >= start && o.CreateAt <= end)
+                .OrderByDescending(o => o.CreateAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<List<JISpeed.Core.Entities.Order.Order>> GetByMerchantIdAsync(
+            string merchantId,
+            int? size, int? page)
+        {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
+            return await _context.Orders
+                .Where(o => o.MerchantId == merchantId)
+                .OrderByDescending(o => o.CreateAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
         // 根据时间范围获取订单列表
         // <param name="startTime">开始时间</param>
         // <param name="endTime">结束时间</param>

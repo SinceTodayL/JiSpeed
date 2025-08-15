@@ -51,6 +51,7 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IAnnouncementRepository,AnnouncementRepository>();
             services.AddScoped<IReconciliationRepository, ReconciliationRepository>();
             services.AddScoped<ICouponRepository, CouponRepository>();
+            services.AddScoped<IOrderLogRepository, OrderLogRepository>();
             // 骑手相关仓储
             services.AddScoped<IAssignmentRepository, AssignmentRepository>();
             services.AddScoped<IAttendanceRepository, AttendanceRepository>();

@@ -44,6 +44,6 @@ namespace JISpeed.Core.Entities.Order
             LoggedAt = DateTime.UtcNow; //使用 UTC 时间
         }
 
-        private OrderLog() { }
+        public OrderLog() { }
     }
 }

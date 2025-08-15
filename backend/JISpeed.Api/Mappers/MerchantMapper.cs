@@ -16,7 +16,10 @@ namespace JISpeed.Api.Mappers
                     opt => opt.MapFrom(src => src.ContactInfo ?? ""))
                 // 处理空值：如果 Location 为 null 则映射为 ""
                 .ForMember(dest => dest.Location, 
-                    opt => opt.MapFrom(src => src.Location ?? ""));
+                    opt => opt.MapFrom(src => src.Location ?? ""))
+                .ForMember(dest => dest.Description, 
+                opt => opt.MapFrom(src => src.Description ?? ""));
+
 
             CreateMap<UpdateMerchantDto, Merchant>();
             CreateMap<UpdateDishesDto, Dish>();

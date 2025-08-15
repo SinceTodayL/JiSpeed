@@ -62,25 +62,26 @@ namespace JISpeed.Application.Services.Merchant
         public async Task<bool> UpdateMerchantDetailAsync(
             string merchantId, string? merchantName,
             int? status, string? contactInfo,
-            string? location)
+            string? location,string? description)
         {
             try
             {
-                var user = await _merchantRepository.GetByIdAsync(merchantId);
-                if (user == null)
+                var merchant = await _merchantRepository.GetByIdAsync(merchantId);
+                if (merchant == null)
                 {
                     _logger.LogWarning("商家不存在, MerchantId: {MerchantId}", merchantId);
                     throw new NotFoundException(ErrorCodes.MerchantNotFound, $"商家不存在，ID: {merchantId}");
                 }
                 _logger.LogInformation("开始更新商家详细信息, MerchantId: {MerchantId}", merchantId);
 
-                user.MerchantName = merchantName?? user.MerchantName;
-                user.ContactInfo = contactInfo?? user.ContactInfo;
-                user.Location = location?? user.Location;
-                user.Status = status?? user.Status;
+                merchant.MerchantName = merchantName?? merchant.MerchantName;
+                merchant.ContactInfo = contactInfo?? merchant.ContactInfo;
+                merchant.Location = location?? merchant.Location;
+                merchant.Status = status?? merchant.Status;
+                merchant.Description = description?? merchant.Description;
                 await _merchantRepository.SaveChangesAsync();
                 _logger.LogInformation("成功修改商家详细信息, MerchantId: {MerchantId}, MerchantName: {MerchantName}",
-                    merchantId, user.MerchantName);
+                    merchantId, merchant.MerchantName);
 
                 return true;
             }

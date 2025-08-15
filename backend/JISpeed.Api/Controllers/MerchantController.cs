@@ -193,8 +193,8 @@ namespace JISpeed.Api.Controllers
                 }
                 var entity = _mapper.Map<UpdateMerchantDto>(request);
 
-                // 获取商家详细信息
-                await _merchantService.UpdateMerchantDetailAsync(merchantId, entity.MerchantName, entity.Status, entity.ContactInfo, entity.Location);
+                // 修改商家信息
+                await _merchantService.UpdateMerchantDetailAsync(merchantId, entity.MerchantName, entity.Status, entity.ContactInfo, entity.Location, entity.Description);
                 
                 _logger.LogInformation("成功修改用户详细信息, MerchantId: {MerchantId}", merchantId);
 

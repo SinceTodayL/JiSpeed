@@ -52,14 +52,11 @@ namespace JISpeed.Core.Entities.Order
         [StringLength(450)]
         [Column(TypeName = "VARCHAR(450)")]
         public required string MerchantId { get; set; } //商家ID fk->Merchant(merchantId)
-
         
         //导航属性
         [ForeignKey("UserId")]
         public virtual required User User { get; set; }
         
-        // [ForeignKey("MerchantId")]
-        // public virtual required Merchant Merchant { get; set; }
 
         [ForeignKey("AddressId")]
         public virtual required Address Address { get; set; }

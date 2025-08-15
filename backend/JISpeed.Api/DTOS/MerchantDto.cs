@@ -16,6 +16,7 @@ namespace JISpeed.Api.DTOs
         public required string ContactInfo { get; set; }
         // 地址
         public string? Location { get; set; }
+        public string? Description { get; set; }
         
     }
     public class UpdateMerchantDto
@@ -29,6 +30,8 @@ namespace JISpeed.Api.DTOs
         public string? ContactInfo { get; set; }
         // 地址
         public string? Location { get; set; }
+        
+        public string? Description { get; set; }
         
     }
     
@@ -71,6 +74,9 @@ namespace JISpeed.Api.DTOs
         // 评论数目
         public int? ReviewQuantity{ get; set; } 
         public string? CategoryName { get; set; }
+        public string? Description { get; set; } //菜品描述
+        public int? StockQuantity { get; set; }
+        
     }
     
     public class UpdateDishesDto
@@ -84,8 +90,9 @@ namespace JISpeed.Api.DTOs
         // 原价
         public decimal? OriginPrice{ get; set; } 
         // 封面
-        public string? CoverUrl { get; set; } 
-        
+        public string? CoverUrl { get; set; }
+        public string? Description { get; set; } //菜品描述
+        public int? StockQuantity { get; set; }
         // 上架标志
         public int? OnSale{ get; set; } 
     }
@@ -102,6 +109,9 @@ namespace JISpeed.Api.DTOs
         public required decimal OriginPrice{ get; set; } 
         // 封面
         public string? CoverUrl { get; set; } 
+        
+        public string? Description { get; set; } //菜品描述
+        public int? StockQuantity { get; set; }
         
     }
     
