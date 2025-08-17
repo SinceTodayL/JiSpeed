@@ -2,8 +2,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'  // 主页 - 商家浏览页面
 import Profile from '@/views/Profile.vue'  // 新增个人中心页面
-import Login from '@/views/Login.vue'
-import Register from '@/views/Register.vue'
 import MerchantsBrowse from '@/views/MerchantsBrowse.vue'
 import MerchantDetail from '@/views/MerchantDetail.vue'
 import Checkout from '@/views/Checkout.vue'
@@ -35,20 +33,6 @@ const routes = [
     meta: {
       title: '我的 - 急速外卖',
       requiresAuth: true
-    }
-  },
-  {
-    path: '/login',
-    component: Login,
-    meta: {
-      title: '用户登录 - 急速'
-    }
-  },
-  {
-    path: '/register',
-    component: Register,
-    meta: {
-      title: '用户注册 - 急速'
     }
   },
   {
@@ -162,7 +146,7 @@ const router = createRouter({
   routes
 })
 
-// 路由守卫 - 检查认证状态
+// 路由守卫 - 检查认证状态和用户类型
 router.beforeEach((to, from, next) => {
   // 设置页面标题
   if (to.meta.title) {
@@ -172,12 +156,31 @@ router.beforeEach((to, from, next) => {
   // 检查是否需要认证
   if (to.meta.requiresAuth) {
     const token = localStorage.getItem('token')
+    const userType = localStorage.getItem('userType')
+    
     if (!token) {
-      // 未登录，跳转到登录页
-      next({
-        path: '/login',
-        query: { redirect: to.fullPath }
-      })
+      // 未登录，跳转到统一登录页面
+      console.log('用户未登录，跳转到统一登录页面')
+      window.location.href = 'http://localhost:9527/login'
+      return
+    }
+    
+    // 检查用户类型，确保只有用户(userType=1)可以访问用户端
+    if (userType !== '1') {
+      console.log('用户类型不匹配，当前用户类型:', userType, '要求用户类型: 1')
+      alert('访问权限不足，您不是普通用户')
+      // 跳转到对应的前端页面
+      if (userType === '2') {
+        window.location.href = 'http://localhost:9520' // 商家端
+      } else if (userType === '3') {
+        // 骑手端URL（如果有的话）
+        alert('骑手端页面尚未配置')
+      } else if (userType === '4') {
+        // 管理员端URL（如果有的话）
+        alert('管理员端页面尚未配置')
+      } else {
+        window.location.href = 'http://localhost:9527/login'
+      }
       return
     }
   }

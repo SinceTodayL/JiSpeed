@@ -264,6 +264,7 @@
 <script>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { clearUserAuth } from '@/utils/urlParams.js'
 
 export default {
   name: 'SettingsPage',
@@ -347,13 +348,11 @@ export default {
       confirmTitle.value = '退出登录'
       confirmMessage.value = '确定要退出当前账户吗？'
       confirmCallback.value = () => {
-        // 清除用户数据
-        localStorage.removeItem('token')
-        localStorage.removeItem('userId')
-        localStorage.removeItem('userInfo')
+        // 清除所有用户认证信息
+        clearUserAuth()
         
-        // 跳转到登录页
-        router.push('/login')
+        // 跳转到统一登录页面
+        window.location.href = 'http://localhost:9527/login'
         closeModal()
       }
       showConfirmModal.value = true

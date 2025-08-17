@@ -14,7 +14,7 @@ export default defineConfig(configEnv => {
     VITE_SERVICE_SUCCESS_CODE: '0000',
     VITE_HTTP_PROXY: 'N',  // 关闭代理
     VITE_PROXY_LOG: 'Y',   // 开启代理日志
-    VITE_USER_FRONTEND_URL: '',     // 用户端前端地址
+    VITE_USER_FRONTEND_URL: 'http://localhost:3000',     // 用户端前端地址
     VITE_MERCHANT_FRONTEND_URL: 'http://localhost:9520',  // 商家端前端地址
     VITE_RIDER_FRONTEND_URL: '',    // 骑手端前端地址
     VITE_ADMIN_FRONTEND_URL: ''     // 管理员端前端地址

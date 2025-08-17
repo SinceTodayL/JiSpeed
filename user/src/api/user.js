@@ -13,14 +13,39 @@ const api = axios.create({
   }
 })
 
+// 获取当前用户ID的工具函数
+function getCurrentUserId() {
+  return localStorage.getItem('userId')
+}
+
 // 请求拦截器
 api.interceptors.request.use(
   (config) => {
-    // 在这里可以添加token等认证信息
+    // 添加token认证信息
     const token = localStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    
+    // 为需要用户ID的请求自动添加用户ID
+    const userId = getCurrentUserId()
+    if (userId) {
+      // 如果是GET请求，添加到查询参数
+      if (config.method === 'get') {
+        config.params = config.params || {}
+        if (!config.params.userId) {
+          config.params.userId = userId
+        }
+      } else {
+        // 如果是POST/PUT等请求，添加到请求体
+        if (config.data && typeof config.data === 'object') {
+          if (!config.data.userId) {
+            config.data.userId = userId
+          }
+        }
+      }
+    }
+    
     return config
   },
   (error) => {
@@ -40,8 +65,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('userId')
-      // 跳转到登录页
-      window.location.href = '/login'
+      localStorage.removeItem('userType')
+      localStorage.removeItem('userInfo')
+      // 跳转到统一登录页
+      window.location.href = 'http://localhost:9527/login'
     }
     
     return Promise.reject(error)

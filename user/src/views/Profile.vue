@@ -184,6 +184,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { userAPI } from '@/api/user.js'
+import { getCurrentUser, clearUserAuth } from '@/utils/urlParams.js'
 
 export default {
   name: 'Profile',
@@ -210,13 +211,50 @@ export default {
     const fetchUserInfo = async () => {
       loading.value = true
       try {
-        const userId = localStorage.getItem('userId') || 'test_user_001'
-        const response = await userAPI.getUserById(userId)
+        // 优先从统一登录获取的用户信息开始
+        const localUserInfo = getCurrentUser()
+        const userId = localStorage.getItem('userId')
         
-        if (response.code === 200 || response.code === 0) {
-          // 合并API数据和统计数据
+        console.log('Profile - 本地用户信息:', localUserInfo)
+        console.log('Profile - 用户ID:', userId)
+        
+        if (!userId) {
+          console.error('未找到用户ID，跳转到登录页')
+          router.push('/login')
+          return
+        }
+        
+        // 尝试从API获取完整的用户信息
+        try {
+          const response = await userAPI.getUserById(userId)
+          
+          if (response.code === 200 || response.code === 0) {
+            // 合并API数据、本地数据和统计数据
+            userInfo.value = {
+              ...response.data,
+              ...localUserInfo, // 覆盖本地登录信息
+              userId: userId,
+              stats: {
+                totalOrders: response.data?.totalOrders || 0,
+                favoriteCount: response.data?.favoriteCount || 0,
+                cartItemCount: response.data?.cartItemCount || 0,
+                availableCouponCount: response.data?.availableCouponCount || 0,
+                addressCount: response.data?.addressCount || 0
+              }
+            }
+            console.log('Profile - API用户信息获取成功:', userInfo.value)
+          } else {
+            throw new Error(response.message || 'API响应失败')
+          }
+        } catch (apiError) {
+          console.warn('API获取用户信息失败，使用本地信息和模拟数据:', apiError)
+          // 使用本地信息和模拟数据
           userInfo.value = {
-            ...response.data,
+            ...localUserInfo,
+            userId: userId,
+            nickname: localUserInfo?.userName || `用户${userId.slice(-4)}`,
+            avatarUrl: '/default-avatar.jpg',
+            level: 1,
             stats: {
               totalOrders: 15,
               favoriteCount: 8,
@@ -225,15 +263,25 @@ export default {
               addressCount: 2
             }
           }
-        } else {
-          console.error('获取用户信息失败:', response.message)
-          // 使用模拟数据
-          userInfo.value = getMockUserInfo()
+          console.log('Profile - 使用降级用户信息:', userInfo.value)
         }
       } catch (error) {
         console.error('获取用户信息失败:', error)
-        // 使用模拟数据作为降级方案
-        userInfo.value = getMockUserInfo()
+        // 最终降级方案
+        const userId = localStorage.getItem('userId') || 'unknown'
+        userInfo.value = {
+          userId: userId,
+          nickname: `用户${userId.slice(-4)}`,
+          avatarUrl: '/default-avatar.jpg',
+          level: 1,
+          stats: {
+            totalOrders: 0,
+            favoriteCount: 0,
+            cartItemCount: 0,
+            availableCouponCount: 0,
+            addressCount: 0
+          }
+        }
       } finally {
         loading.value = false
       }
@@ -310,21 +358,20 @@ export default {
     const handleLogout = async () => {
       try {
         // 调用登出API
-        await userAPI.logout()
-        
-        // 清除本地存储
-        localStorage.removeItem('token')
-        localStorage.removeItem('userId')
-        
-        // 跳转到登录页
-        router.push('/login')
+        const userId = localStorage.getItem('userId')
+        if (userId) {
+          await userAPI.logout(userId)
+        }
       } catch (error) {
-        console.error('退出登录失败:', error)
-        // 即使API失败也清除本地数据并跳转
-        localStorage.removeItem('token')
-        localStorage.removeItem('userId')
-        router.push('/login')
+        console.error('退出登录API调用失败:', error)
+        // 即使API失败也继续清除本地数据
       } finally {
+        // 清除所有用户认证信息
+        clearUserAuth()
+        
+        // 跳转到统一登录页面
+        window.location.href = 'http://localhost:9527/login'
+        
         hideLogoutConfirm()
       }
     }
