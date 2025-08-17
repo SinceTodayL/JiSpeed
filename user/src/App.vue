@@ -1,18 +1,26 @@
 <script setup>
 import { NConfigProvider, NMessageProvider, NDialogProvider } from 'naive-ui'
-import BottomNavigation from '@/components/common/BottomNavigation.vue'
+import BottomNavigation from '@/components/BottomNavigation.vue'
+import { useRoute } from 'vue-router'
+import { computed } from 'vue'
+
+const route = useRoute()
+
+// 判断是否显示底部导航
+const showBottomNav = computed(() => {
+  const hiddenRoutes = ['/login', '/register']
+  return !hiddenRoutes.includes(route.path)
+})
 
 // 定义全局主题覆盖
-/*
 const themeOverrides = {
   common: {
-    primaryColor: '#667eea',
-    primaryColorHover: '#5a6fd8',
-    primaryColorPressed: '#4d5dbb',
-    primaryColorSuppl: '#667eea'
+    primaryColor: '#4facfe',
+    primaryColorHover: '#3e95fd',
+    primaryColorPressed: '#2e7cfc',
+    primaryColorSuppl: '#4facfe'
   }
 }
-*/
 </script>
 
 <template>
@@ -20,33 +28,13 @@ const themeOverrides = {
     <n-message-provider>
       <n-dialog-provider>
         <div class="app-container">
-          <!-- 导航栏 -->
-          <nav class="navbar">
-            <div class="nav-brand">
-              <router-link to="/" class="brand-link">
-                🚀 JiSpeed 用户系统
-              </router-link>
-            </div>
-            <div class="nav-links">
-              <router-link to="/" class="nav-link" active-class="active">
-                首页
-              </router-link>
-              <router-link to="/browse" class="nav-link" active-class="active">
-                商家浏览
-              </router-link>
-              <router-link to="/orders" class="nav-link" active-class="active">
-                我的订单
-              </router-link>
-            </div>
-          </nav>
-          
           <!-- 主要内容区域 -->
           <main class="main-content">
             <router-view />
           </main>
 
-          <!-- 底部导航 -->
-          <BottomNavigation />
+          <!-- 底部导航 (仅在特定页面显示) -->
+          <BottomNavigation v-if="showBottomNav" />
         </div>
       </n-dialog-provider>
     </n-message-provider>

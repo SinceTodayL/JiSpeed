@@ -25,294 +25,135 @@ Base URLs:
 
 # Authentication
 
-# Address Management/地址管理
-
-## GET 获取用户地址列表
-
-GET /api/addresses
-
-### 请求参数
-
-|名称|位置|类型|必选|说明|
-|---|---|---|---|---|
-|userId|query|string| 是 |用户ID|
-
-> 返回示例
-
-> 成功响应
-
-```json
-{
-  "code": 200,
-  "message": "获取地址列表成功",
-  "data": {
-    "addresses": [
-      {
-        "addressId": "addr_001",
-        "userId": "USER123",
-        "receiverName": "张三",
-        "receiverPhone": "13800138001",
-        "detailedAddress": "北京市朝阳区建国路1号国贸大厦A座1001室",
-        "isDefault": 1,
-        "label": "公司"
-      }
-    ],
-    "total": 1
-  },
-  "timestamp": 1678886400000
-}
-```
-
-## POST 添加新地址
-
-POST /api/addresses
-
-### 请求体
-
-```json
-{
-  "userId": "USER123",
-  "receiverName": "张三",
-  "receiverPhone": "13800138001",
-  "detailedAddress": "北京市朝阳区建国路1号国贸大厦A座1001室",
-  "isDefault": 1,
-  "label": "公司"
-}
-```
-
-> 返回示例
-
-> 成功响应
-
-```json
-{
-  "code": 200,
-  "message": "地址添加成功",
-  "data": {
-    "address": {
-      "addressId": "addr_1234567890",
-      "userId": "USER123",
-      "receiverName": "张三",
-      "receiverPhone": "13800138001",
-      "detailedAddress": "北京市朝阳区建国路1号国贸大厦A座1001室",
-      "isDefault": 1,
-      "label": "公司",
-      "createTime": "2024-01-01T10:00:00Z"
-    }
-  },
-  "timestamp": 1678886400000
-}
-```
-
-## PUT 更新地址
-
-PUT /api/addresses/{addressId}
-
-### 请求参数
-
-|名称|位置|类型|必选|说明|
-|---|---|---|---|---|
-|addressId|path|string| 是 |地址ID|
-
-### 请求体
-
-```json
-{
-  "userId": "USER123",
-  "receiverName": "李四",
-  "receiverPhone": "13800138002",
-  "detailedAddress": "北京市海淀区中关村大街27号中关村广场B座2002室",
-  "isDefault": 0,
-  "label": "家"
-}
-```
-
-> 返回示例
-
-> 成功响应
-
-```json
-{
-  "code": 200,
-  "message": "地址更新成功",
-  "data": {
-    "address": {
-      "addressId": "addr_001",
-      "userId": "USER123",
-      "receiverName": "李四",
-      "receiverPhone": "13800138002",
-      "detailedAddress": "北京市海淀区中关村大街27号中关村广场B座2002室",
-      "isDefault": 0,
-      "label": "家",
-      "updateTime": "2024-01-15T15:30:00Z"
-    }
-  },
-  "timestamp": 1678886400000
-}
-```
-
-## DELETE 删除地址
-
-DELETE /api/addresses/{addressId}
-
-### 请求参数
-
-|名称|位置|类型|必选|说明|
-|---|---|---|---|---|
-|addressId|path|string| 是 |地址ID|
-
-> 返回示例
-
-> 成功响应
-
-```json
-{
-  "code": 200,
-  "message": "地址删除成功",
-  "data": {
-    "deletedAddressId": "addr_001"
-  },
-  "timestamp": 1678886400000
-}
-```
-
-> 错误响应 - 不能删除默认地址
-
-```json
-{
-  "code": 3001,
-  "message": "不能删除默认地址，请先设置其他地址为默认地址",
-  "data": null,
-  "timestamp": 1678886400000
-}
-```
-
-## PUT 设置默认地址
-
-PUT /api/addresses/{addressId}/default
-
-### 请求参数
-
-|名称|位置|类型|必选|说明|
-|---|---|---|---|---|
-|addressId|path|string| 是 |地址ID|
-
-### 请求体
-
-```json
-{
-  "userId": "USER123"
-}
-```
-
-> 返回示例
-
-> 成功响应
-
-```json
-{
-  "code": 200,
-  "message": "默认地址设置成功",
-  "data": {
-    "addressId": "addr_001",
-    "userId": "USER123"
-  },
-  "timestamp": 1678886400000
-}
-```
-
-## GET 获取地址详情
-
-GET /api/addresses/{addressId}
-
-### 请求参数
-
-|名称|位置|类型|必选|说明|
-|---|---|---|---|---|
-|addressId|path|string| 是 |地址ID|
-
-> 返回示例
-
-> 成功响应
-
-```json
-{
-  "code": 200,
-  "message": "获取地址详情成功",
-  "data": {
-    "address": {
-      "addressId": "addr_001",
-      "userId": "USER123",
-      "receiverName": "张三",
-      "receiverPhone": "13800138001",
-      "detailedAddress": "北京市朝阳区建国路1号国贸大厦A座1001室",
-      "isDefault": 1,
-      "label": "公司",
-      "createTime": "2024-01-01T10:00:00Z",
-      "updateTime": "2024-01-15T15:30:00Z"
-    }
-  },
-  "timestamp": 1678886400000
-}
-```
-
-> 错误响应 - 地址不存在
-
-```json
-{
-  "code": 50003,
-  "message": "地址不存在",
-  "data": null,
-  "timestamp": 1678886400000
-}
-```
-
-## POST 地址验证
-
-POST /api/addresses/validate
-
-验证地址是否在配送范围内
-
-### 请求体
-
-```json
-{
-  "detailedAddress": "北京市朝阳区建国路1号国贸大厦A座1001室"
-}
-```
-
-> 返回示例
-
-> 成功响应 - 地址验证通过
-
-```json
-{
-  "code": 200,
-  "message": "地址验证通过",
-  "data": {
-    "isValid": true,
-    "deliveryFee": 5.0,
-    "estimatedTime": "30-45分钟"
-  },
-  "timestamp": 1678886400000
-}
-```
-
-> 错误响应 - 地址不在配送范围
-
-```json
-{
-  "code": 30003,
-  "message": "该地址暂不支持配送",
-  "data": {
-    "address": "远郊区某地",
-    "reason": "超出配送范围"
-  },
-  "timestamp": 1678886400000
-}
-```
-
 # users/Get
+
+## GET 获取用户信息列表
+
+GET /users
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|page|query|string| 否 |none|
+|size|query|string| 否 |none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": [
+    {
+      "userId": "1d804350373d47b2b66feb88f8403e7d",
+      "nickname": "testuser002",
+      "avatarUrl": "default.jpg",
+      "gender": 3,
+      "birthday": null,
+      "level": 0,
+      "userName": null,
+      "email": null,
+      "phoneNumber": null,
+      "defaultAddress": null,
+      "stats": {
+        "totalOrders": 0,
+        "favoriteCount": 0,
+        "cartItemCount": 0,
+        "availableCouponCount": 0,
+        "addressCount": 0
+      }
+    },
+    {
+      "userId": "184268d41d9f446d9ed7d88ccf10a64a",
+      "nickname": "testuser001",
+      "avatarUrl": "default.jpg",
+      "gender": 3,
+      "birthday": null,
+      "level": 0,
+      "userName": null,
+      "email": null,
+      "phoneNumber": null,
+      "defaultAddress": null,
+      "stats": {
+        "totalOrders": 0,
+        "favoriteCount": 0,
+        "cartItemCount": 0,
+        "availableCouponCount": 0,
+        "addressCount": 0
+      }
+    },
+    {
+      "userId": "CU20240601001",
+      "nickname": "测试用户",
+      "avatarUrl": "http://example.com/avatar.png",
+      "gender": 1,
+      "birthday": null,
+      "level": 1,
+      "userName": null,
+      "email": null,
+      "phoneNumber": null,
+      "defaultAddress": null,
+      "stats": {
+        "totalOrders": 0,
+        "favoriteCount": 0,
+        "cartItemCount": 0,
+        "availableCouponCount": 0,
+        "addressCount": 0
+      }
+    },
+    {
+      "userId": "819524ce084149aa9883193b0a068c0f",
+      "nickname": "test03",
+      "avatarUrl": "default.jpg",
+      "gender": 3,
+      "birthday": null,
+      "level": 0,
+      "userName": null,
+      "email": null,
+      "phoneNumber": null,
+      "defaultAddress": null,
+      "stats": {
+        "totalOrders": 0,
+        "favoriteCount": 0,
+        "cartItemCount": 0,
+        "availableCouponCount": 0,
+        "addressCount": 0
+      }
+    },
+    {
+      "userId": "c5b370a1af08464ca7243cee690509ac",
+      "nickname": "ZHENG",
+      "avatarUrl": "default.jpg",
+      "gender": 3,
+      "birthday": null,
+      "level": 0,
+      "userName": null,
+      "email": null,
+      "phoneNumber": null,
+      "defaultAddress": null,
+      "stats": {
+        "totalOrders": 0,
+        "favoriteCount": 0,
+        "cartItemCount": 0,
+        "availableCouponCount": 0,
+        "addressCount": 0
+      }
+    }
+  ],
+  "timestamp": 1755070526286
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
 
 ## GET 根据id获取用户信息
 
@@ -390,6 +231,8 @@ GET /users/{userId}/favorites
 |名称|位置|类型|必选|说明|
 |---|---|---|---|---|
 |userId|path|string| 是 |none|
+|size|query|string| 否 |none|
+|page|query|string| 否 |none|
 
 > 返回示例
 
@@ -446,6 +289,8 @@ GET /users/{userId}/addresses
 |名称|位置|类型|必选|说明|
 |---|---|---|---|---|
 |userId|path|string| 是 |none|
+|size|query|string| 否 |none|
+|page|query|string| 否 |none|
 
 > 返回示例
 
@@ -508,6 +353,8 @@ GET /users/{userId}/cart
 |名称|位置|类型|必选|说明|
 |---|---|---|---|---|
 |userId|path|string| 是 |none|
+|size|query|string| 否 |none|
+|page|query|string| 否 |none|
 
 > 返回示例
 
@@ -568,6 +415,8 @@ GET /users/{userId}/review
 |名称|位置|类型|必选|说明|
 |---|---|---|---|---|
 |userId|path|string| 是 |none|
+|size|query|string| 否 |none|
+|page|query|string| 否 |none|
 
 > 返回示例
 
@@ -636,6 +485,8 @@ GET /users/{userId}/complaints
 |名称|位置|类型|必选|说明|
 |---|---|---|---|---|
 |userId|path|string| 是 |none|
+|size|query|string| 否 |none|
+|page|query|string| 否 |none|
 
 > 返回示例
 
@@ -1930,6 +1781,633 @@ GET /api/riders/{riderId}/assignments/{assignId}
 |»»»» receiverPhone|string|true|none||none|
 |» timestamp|integer|true|none||none|
 
+## GET 获取骑手最新位置
+
+GET /GET /api/riderlocations/{riderId}/latest
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|riderId|path|string| 是 |none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "获取成功",
+  "data": {
+    "locationId": "string",
+    "riderId": "string",
+    "longitude": 116.407526,
+    "latitude": 39.9042,
+    "locationTime": "2025-01-20T14:30:25Z",
+    "accuracy": 10.5,
+    "speed": 25.3,
+    "direction": 180,
+    "locationType": "GPS",
+    "status": 1
+  },
+  "timestamp": 1678864000000
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|object|true|none||none|
+|»» locationId|string|true|none||none|
+|»» riderId|string|true|none||none|
+|»» longitude|number|true|none||none|
+|»» latitude|number|true|none||none|
+|»» locationTime|string|true|none||none|
+|»» accuracy|number|true|none||none|
+|»» speed|number|true|none||none|
+|»» direction|integer|true|none||none|
+|»» locationType|string|true|none||none|
+|»» status|integer|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 获取骑手历史轨迹
+
+GET /GET /api/riderlocations/{riderId}/history
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|riderId|path|string| 是 |none|
+|startTime|query|string| 否 |none|
+|endTime|query|string| 否 |none|
+|pageIndex|query|integer| 否 |页码|
+|pageSize|query|integer| 否 |每页数量|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "获取成功",
+  "data": [
+    {
+      "locationId": "string",
+      "riderId": "string",
+      "longitude": 116.407526,
+      "latitude": 39.9042,
+      "locationTime": "2025-01-20T14:30:25Z",
+      "accuracy": 10.5,
+      "speed": 25.3,
+      "direction": 180,
+      "locationType": "GPS",
+      "status": 1
+    },
+    {
+      "locationId": "string2",
+      "riderId": "string",
+      "longitude": 116.408526,
+      "latitude": 39.9052,
+      "locationTime": "2025-01-20T14:31:25Z",
+      "accuracy": 12,
+      "speed": 28.5,
+      "direction": 185,
+      "locationType": "GPS",
+      "status": 1
+    }
+  ],
+  "timestamp": 1678864000000
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|[object]|true|none||none|
+|»» locationId|string|true|none||none|
+|»» riderId|string|true|none||none|
+|»» longitude|number|true|none||none|
+|»» latitude|number|true|none||none|
+|»» locationTime|string|true|none||none|
+|»» accuracy|number|true|none||none|
+|»» speed|number|true|none||none|
+|»» direction|integer|true|none||none|
+|»» locationType|string|true|none||none|
+|»» status|integer|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 获取指定区域内的骑手
+
+GET /GET /api/riderlocations/area
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|minLongitude|query|number| 是 |none|
+|maxLongitude|query|number| 是 |none|
+|minLatitude|query|number| 是 |none|
+|maxLatitude|query|number| 是 |none|
+|status|query|integer| 否 |none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "获取成功",
+  "data": [
+    {
+      "locationId": "string",
+      "riderId": "R001",
+      "longitude": 116.407526,
+      "latitude": 39.9042,
+      "locationTime": "2025-01-20T14:30:25Z",
+      "accuracy": 10.5,
+      "speed": 25.3,
+      "direction": 180,
+      "locationType": "GPS",
+      "status": 1
+    },
+    {
+      "locationId": "string2",
+      "riderId": "R002",
+      "longitude": 116.408526,
+      "latitude": 39.9052,
+      "locationTime": "2025-01-20T14:29:15Z",
+      "accuracy": 8,
+      "speed": 0,
+      "direction": 0,
+      "locationType": "GPS",
+      "status": 1
+    }
+  ],
+  "timestamp": 1678864000000
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|[object]|true|none||none|
+|»» locationId|string|true|none||none|
+|»» riderId|string|true|none||none|
+|»» longitude|number|true|none||none|
+|»» latitude|number|true|none||none|
+|»» locationTime|string|true|none||none|
+|»» accuracy|number|true|none||none|
+|»» speed|number|true|none||none|
+|»» direction|integer|true|none||none|
+|»» locationType|string|true|none||none|
+|»» status|integer|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 获取所有在线骑手位置
+
+GET /GET /api/riderlocations/online
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|pageIndex|query|integer| 否 |none|
+|pageSize|query|integer| 否 |none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "获取成功",
+  "data": [
+    {
+      "locationId": "string",
+      "riderId": "R001",
+      "longitude": 116.407526,
+      "latitude": 39.9042,
+      "locationTime": "2025-01-20T14:30:25Z",
+      "accuracy": 10.5,
+      "speed": 25.3,
+      "direction": 180,
+      "locationType": "GPS",
+      "status": 1
+    },
+    {
+      "locationId": "string2",
+      "riderId": "R003",
+      "longitude": 116.425526,
+      "latitude": 39.9152,
+      "locationTime": "2025-01-20T14:28:45Z",
+      "accuracy": 15,
+      "speed": 32.1,
+      "direction": 90,
+      "locationType": "GPS",
+      "status": 1
+    }
+  ],
+  "timestamp": 1678864000000
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|[object]|true|none||none|
+|»» locationId|string|true|none||none|
+|»» riderId|string|true|none||none|
+|»» longitude|number|true|none||none|
+|»» latitude|number|true|none||none|
+|»» locationTime|string|true|none||none|
+|»» accuracy|number|true|none||none|
+|»» speed|number|true|none||none|
+|»» direction|integer|true|none||none|
+|»» locationType|string|true|none||none|
+|»» status|integer|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 计算骑手到指定点的距离
+
+GET /GET /api/riderlocations/{riderId}/distance
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|riderId|path|string| 是 |none|
+|targetLongitude|query|number| 是 |目标经度|
+|targetLatitude|query|number| 是 |目标纬度|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "计算成功",
+  "data": {
+    "riderId": "R001",
+    "targetLongitude": 116.41,
+    "targetLatitude": 39.9,
+    "distance": 523.45
+  },
+  "timestamp": 1678864000000
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|object|true|none||none|
+|»» riderId|string|true|none||none|
+|»» targetLongitude|number|true|none||none|
+|»» targetLatitude|number|true|none||none|
+|»» distance|number|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 获取骑手当前位置的地址信息
+
+GET /GET /api/riderlocations/{riderId}/address
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|riderId|path|string| 是 |none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "获取成功",
+  "data": {
+    "riderId": "R001",
+    "address": "北京市朝阳区建国门外大街1号国贸大厦附近"
+  },
+  "timestamp": 1678864000000
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|object|true|none||none|
+|»» riderId|string|true|none||none|
+|»» address|string|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 获取骑手绩效趋势
+
+GET /GET /api/riders/{riderId}/performances/trend
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|riderId|path|string| 是 |none|
+|Query|query|integer| 否 |月份数量，默认6|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "获取成功",
+  "data": [
+    {
+      "statsMonth": "2025-01-01T00:00:00Z",
+      "totalOrders": 89,
+      "onTimeRate": 0.95,
+      "goodReviewRate": 0.92,
+      "badReviewRate": 0.03,
+      "income": 3456.78
+    },
+    {
+      "statsMonth": "2024-12-01T00:00:00Z",
+      "totalOrders": 76,
+      "onTimeRate": 0.93,
+      "goodReviewRate": 0.9,
+      "badReviewRate": 0.05,
+      "income": 2987.45
+    }
+  ],
+  "timestamp": 1678864000000
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|[object]|true|none||none|
+|»» statsMonth|string|true|none||none|
+|»» totalOrders|integer|true|none||none|
+|»» onTimeRate|number|true|none||none|
+|»» goodReviewRate|number|true|none||none|
+|»» badReviewRate|number|true|none||none|
+|»» income|number|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 获取骑手绩效排名
+
+GET /GET /api/riders/{riderId}/performances/ranking/{year}/{month}
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|riderId|path|string| 是 |none|
+|year|path|integer| 是 |none|
+|month|path|integer| 是 |none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "获取成功",
+  "data": {
+    "totalOrdersRank": 5,
+    "onTimeRateRank": 3,
+    "goodReviewRateRank": 2,
+    "incomeRank": 4,
+    "overallRank": 3
+  },
+  "timestamp": 1678864000000
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|object|true|none||none|
+|»» totalOrdersRank|integer|true|none||none|
+|»» onTimeRateRank|integer|true|none||none|
+|»» goodReviewRateRank|integer|true|none||none|
+|»» incomeRank|integer|true|none||none|
+|»» overallRank|integer|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 获取绩效优秀骑手排行榜
+
+GET /GET /api/riders/performances/top-performers/{year}/{month}
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|year|path|integer| 是 |none|
+|month|path|integer| 是 |none|
+|topCount|query|integer| 否 |返回数量，默认10|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "获取成功",
+  "data": [
+    {
+      "statsMonth": "2025-01-01T00:00:00Z",
+      "totalOrders": 125,
+      "onTimeRate": 0.98,
+      "goodReviewRate": 0.96,
+      "badReviewRate": 0.01,
+      "income": 4567.89
+    },
+    {
+      "statsMonth": "2025-01-01T00:00:00Z",
+      "totalOrders": 118,
+      "onTimeRate": 0.97,
+      "goodReviewRate": 0.95,
+      "badReviewRate": 0.02,
+      "income": 4123.45
+    }
+  ],
+  "timestamp": 1678864000000
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|[object]|true|none||none|
+|»» statsMonth|string|true|none||none|
+|»» totalOrders|integer|true|none||none|
+|»» onTimeRate|number|true|none||none|
+|»» goodReviewRate|number|true|none||none|
+|»» badReviewRate|number|true|none||none|
+|»» income|number|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 获取月度绩效概览
+
+GET /GET /api/riders/performances/overview/{year}/{month}
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|year|path|integer| 是 |none|
+|month|path|integer| 是 |none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "获取成功",
+  "data": {
+    "TotalRiders": 45,
+    "TotalOrders": 2567,
+    "AverageOnTimeRate": 0.94,
+    "AverageGoodReviewRate": 0.91,
+    "TotalIncome": 125678.9,
+    "AverageIncome": 2792.86
+  },
+  "timestamp": 1678864000000
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|object|true|none||none|
+|»» TotalRiders|integer|true|none||none|
+|»» TotalOrders|integer|true|none||none|
+|»» AverageOnTimeRate|number|true|none||none|
+|»» AverageGoodReviewRate|number|true|none||none|
+|»» TotalIncome|number|true|none||none|
+|»» AverageIncome|number|true|none||none|
+|» timestamp|integer|true|none||none|
+
 # riders/Post
 
 ## POST 创建考勤记录（签到）
@@ -2075,6 +2553,143 @@ POST /api/riders
 |»» vehicleNumber|string|true|none||none|
 |» timestamp|integer|true|none||none|
 
+## POST 更新骑手位置
+
+POST /POST /api/riderlocations
+
+> Body 请求参数
+
+```json
+{
+  "riderId": "string",
+  "longitude": 116.407526,
+  "latitude": 39.9042,
+  "accuracy": 10.5,
+  "speed": 25.3,
+  "direction": 180,
+  "locationType": "GPS"
+}
+```
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|body|body|object| 否 ||none|
+|» riderId|body|string| 是 | 骑手ID|none|
+|» longitude|body|number| 是 | 经度 (-180到180之间)|none|
+|» latitude|body|number| 是 | 纬度|none|
+|» accuracy|body|number| 否 | 定位精度|none|
+|» speed|body|number| 否 | 速度(km/h，0到200之间)|none|
+|» direction|body|integer| 否 | 方向(0-360度)|none|
+|» locationType|body|string| 否 | 定位类型(如"GPS"、"网络"等，最长20字符)|none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "位置更新成功",
+  "data": {
+    "locationId": "string",
+    "riderId": "string",
+    "longitude": 116.407526,
+    "latitude": 39.9042,
+    "locationTime": "2025-01-20T14:30:25Z",
+    "accuracy": 10.5,
+    "speed": 25.3,
+    "direction": 180,
+    "locationType": "GPS",
+    "status": 1
+  },
+  "timestamp": 1678864000000
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|object|true|none||none|
+|»» locationId|string|true|none||none|
+|»» riderId|string|true|none||none|
+|»» longitude|number|true|none||none|
+|»» latitude|number|true|none||none|
+|»» locationTime|string|true|none||none|
+|»» accuracy|number|true|none||none|
+|»» speed|number|true|none||none|
+|»» direction|integer|true|none||none|
+|»» locationType|string|true|none||none|
+|»» status|integer|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## POST 生成骑手月度绩效
+
+POST /POST /api/riders/{riderId}/performances/generate/{year}/{month}
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|riderId|path|string| 是 ||none|
+|year|path|integer| 是 ||none|
+|month|path|integer| 是 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "骑手月度绩效生成成功",
+  "data": {
+    "statsMonth": "2025-01-01T00:00:00Z",
+    "totalOrders": 89,
+    "onTimeRate": 0.95,
+    "goodReviewRate": 0.92,
+    "badReviewRate": 0.03,
+    "income": 3456.78
+  },
+  "timestamp": 1678864000000
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|object|true|none||none|
+|»» statsMonth|string|true|none||none|
+|»» totalOrders|integer|true|none||none|
+|»» onTimeRate|number|true|none||none|
+|»» goodReviewRate|number|true|none||none|
+|»» badReviewRate|number|true|none||none|
+|»» income|number|true|none||none|
+|» timestamp|integer|true|none||none|
+
 # riders/Patch
 
 ## PATCH 更新骑手信息
@@ -2093,13 +2708,13 @@ PATCH /api/riders/{riderId}
 
 ### 请求参数
 
-|名称|位置|类型|必选|说明|
-|---|---|---|---|---|
-|riderId|path|string| 是 |none|
-|body|body|object| 否 |none|
-|» name|body|string| 是 |none|
-|» phoneNumber|body|string| 是 |none|
-|» vehicleNumber|body|string| 是 |none|
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|riderId|path|string| 是 ||none|
+|body|body|object| 否 ||none|
+|» name|body|string| 是 ||none|
+|» phoneNumber|body|string| 是 ||none|
+|» vehicleNumber|body|string| 是 ||none|
 
 > 返回示例
 
@@ -2156,12 +2771,12 @@ PATCH /api/riders/{riderId}/assignments/{assignId}
 
 ### 请求参数
 
-|名称|位置|类型|必选|说明|
-|---|---|---|---|---|
-|riderId|path|string| 是 |none|
-|assignId|path|string| 是 |none|
-|body|body|object| 否 |none|
-|» acceptedStatus|body|integer| 是 |none|
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|riderId|path|string| 是 ||none|
+|assignId|path|string| 是 ||none|
+|body|body|object| 否 ||none|
+|» acceptedStatus|body|integer| 是 ||none|
 
 #### 枚举值
 
@@ -2229,12 +2844,12 @@ PATCH /api/riders/{riderId}/attendances/{attendanceId}
 
 ### 请求参数
 
-|名称|位置|类型|必选|说明|
-|---|---|---|---|---|
-|riderId|path|string| 是 |none|
-|attendanceId|path|string| 是 |none|
-|body|body|object| 否 |none|
-|» checkoutAt|body|string| 是 |none|
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|riderId|path|string| 是 ||none|
+|attendanceId|path|string| 是 ||none|
+|body|body|object| 否 ||none|
+|» checkoutAt|body|string| 是 ||none|
 
 > 返回示例
 
@@ -2281,17 +2896,67 @@ PATCH /api/riders/{riderId}/attendances/{attendanceId}
 |»» isAbsent|integer|true|none||none|
 |» timestamp|integer|true|none||none|
 
-# merchant/merchant
+## PATCH 更新骑手在线状态
 
-## GET 根据商家 ID 获取所有菜品信息
+PATCH /PATCH /api/riderlocations/{riderId}/status
 
-GET /merchant/{merchantID}/getAllDishes
+> Body 请求参数
+
+```json
+{
+  "status": 1
+}
+```
 
 ### 请求参数
 
-|名称|位置|类型|必选|说明|
-|---|---|---|---|---|
-|merchantID|path|string| 是 |none|
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|riderId|path|string| 是 ||none|
+|body|body|object| 否 ||none|
+|» status|body|integer| 是 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "骑手在线状态更新成功",
+  "data": {},
+  "timestamp": 1678864000000
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|object|true|none||none|
+|» timestamp|integer|true|none||none|
+
+# merchant
+
+## GET 根据商家 ID 获取商家所有订单
+
+GET /merchant/{merchantID}/orders
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantID|path|string| 是 ||none|
 
 > 返回示例
 
@@ -2303,46 +2968,28 @@ GET /merchant/{merchantID}/getAllDishes
   "message": "操作成功",
   "data": [
     {
-      "dishId": "DISH1234567890001",
-      "categoryId": "CAT10001",
-      "dishName": "宫保鸡丁",
-      "price": 28.5,
-      "originPrice": 35,
-      "coverUrl": "https://example.com/images/dish1.jpg",
-      "monthlySales": 120,
-      "rating": 95.5,
-      "onSale": 1,
-      "merchantId": "MER1234567890001",
-      "quantity": 58
+      "orderId": "ORDER001",
+      "userId": "USER001",
+      "addressId": "ADDR001",
+      "orderAmount": 199.99,
+      "createAt": "2025-07-23T10:00:00Z",
+      "orderStatus": 1,
+      "reconId": "RECON001",
+      "couponId": "COUPON001",
+      "assignid": "ASSIGN001"
     },
     {
-      "dishId": "DISH1234567890002",
-      "categoryId": "CAT10002",
-      "dishName": "麻婆豆腐",
-      "price": 18,
-      "originPrice": 22,
-      "coverUrl": "https://example.com/images/dish2.jpg",
-      "monthlySales": 85,
-      "rating": 93,
-      "onSale": 1,
-      "merchantId": "MER1234567890001",
-      "quantity": 33
-    },
-    {
-      "dishId": "DISH1234567890003",
-      "categoryId": "CAT10003",
-      "dishName": "酸辣土豆丝",
-      "price": 12,
-      "originPrice": 15,
-      "coverUrl": "https://example.com/images/dish3.jpg",
-      "monthlySales": 140,
-      "rating": 97,
-      "onSale": 1,
-      "merchantId": "MER1234567890001",
-      "quantity": 76
+      "orderId": "ORDER002",
+      "userId": "USER002",
+      "addressId": "ADDR002",
+      "orderAmount": 88.5,
+      "createAt": "2025-07-22T14:30:00Z",
+      "orderStatus": 2,
+      "reconId": "RECON002",
+      "couponId": "COUPON002",
+      "assignid": "ASSIGN002"
     }
-  ],
-  "timestamp": 1678886400000
+  ]
 }
 ```
 
@@ -2361,27 +3008,27 @@ GET /merchant/{merchantID}/getAllDishes
 |» code|integer(int32)|true|none||none|
 |» message|string|true|none||none|
 |» data|[object]|true|none||none|
-|»» dishId|string|true|none||none|
-|»» categoryId|string|true|none||none|
-|»» dishName|string|true|none||none|
-|»» price|number|true|none||none|
-|»» originPrice|integer|true|none||none|
-|»» coverUrl|string|true|none||none|
-|»» monthlySales|integer|true|none||none|
-|»» rating|number|true|none||none|
-|»» onSale|integer(int32)|true|none||none|
-|»» merchantId|string|true|none||none|
-|»» quantity|integer|true|none||none|
+|»» orderId|string|true|none||none|
+|»» userId|string|true|none||none|
+|»» addressId|string|true|none||none|
+|»» orderAmount|number|true|none||none|
+|»» createAt|string|true|none||none|
+|»» orderStatus|integer|true|none||none|
+|»» reconId|string|true|none||none|
+|»» couponId|string|true|none||none|
+|»» assignid|string|true|none||none|
+
+# merchant/merchant
 
 ## GET 根据 ID 获取商家信息
 
-GET /merchant/{merchantID}
+GET /api/merchants/{merchantId}
 
 ### 请求参数
 
-|名称|位置|类型|必选|说明|
-|---|---|---|---|---|
-|merchantID|path|string| 是 |none|
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantId|path|string| 是 ||none|
 
 > 返回示例
 
@@ -2401,11 +3048,28 @@ GET /merchant/{merchantID}
 }
 ```
 
+> 404 Response
+
+```json
+{
+  "code": 0,
+  "message": "string",
+  "data": {
+    "merchantId": "string",
+    "merchantName": "example.com",
+    "status": 0,
+    "contactInfo": "user@example.com",
+    "location": "string"
+  }
+}
+```
+
 ### 返回结果
 
 |状态码|状态码含义|说明|数据模型|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
 
 ### 返回数据结构
 
@@ -2422,15 +3086,106 @@ GET /merchant/{merchantID}
 |»» contactInfo|string(email)|true|none||none|
 |»» location|string|true|none||none|
 
-## GET 根据 ID 获取商家店铺数据统计信息
+状态码 **404**
 
-GET /merchant/{merchantID}/SalesStat
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer(int32)|true|none||none|
+|» message|string|true|none||none|
+|» data|object¦null|true|none||none|
+|»» merchantId|string|true|none||none|
+|»» merchantName|string(hostname)|true|none||none|
+|»» status|integer|true|none||none|
+|»» contactInfo|string(email)|true|none||none|
+|»» location|string|true|none||none|
+
+## PATCH 根据ID修改商家信息
+
+PATCH /api/merchants/{merchantId}
+
+> Body 请求参数
+
+```json
+{
+  "merchantName": "string",
+  "status": 0,
+  "contactInfo": "string",
+  "location": "string"
+}
+```
 
 ### 请求参数
 
-|名称|位置|类型|必选|说明|
-|---|---|---|---|---|
-|merchantID|path|string| 是 |none|
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantId|path|string| 是 ||none|
+|body|body|object| 否 ||none|
+|» merchantName|body|string| 否 ||none|
+|» status|body|integer| 否 ||none|
+|» contactInfo|body|string| 否 ||none|
+|» location|body|string| 否 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "商家信息修改成功",
+  "data": true,
+  "timestamp": 1754447095827
+}
+```
+
+> 404 Response
+
+```json
+{
+  "code": 1006,
+  "message": "商家不存在，ID: e71a686e0334db5b3b3bf77f0437ffa",
+  "data": null,
+  "timestamp": 1754447125447
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|boolean|true|none||none|
+|» timestamp|integer|true|none||none|
+
+状态码 **404**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 根据商家 ID 和菜品 ID 获取该菜品所有评论
+
+GET /merchant/{merchantID}/{dishID}
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantID|path|string| 是 ||none|
+|dishID|path|string| 是 ||none|
 
 > 返回示例
 
@@ -2442,150 +3197,22 @@ GET /merchant/{merchantID}/SalesStat
   "message": "操作成功",
   "data": [
     {
-      "statDate": "2025-07-20T00:00:00",
-      "salesQty": 150,
-      "salesAmount": 4320.5,
-      "merchantId": "MER1234567890001"
+      "reviewId": "REVIEW001",
+      "orderId": "ORDER001",
+      "user": "USER001",
+      "rating": 5,
+      "content": "菜品很棒，配送也很快！",
+      "isAnonymous": 1,
+      "reviewAt": "2025-07-22T18:30:00Z"
     },
     {
-      "statDate": "2025-07-21T00:00:00",
-      "salesQty": 132,
-      "salesAmount": 3895.2,
-      "merchantId": "MER1234567890001"
-    },
-    {
-      "statDate": "2025-07-22T00:00:00",
-      "salesQty": 178,
-      "salesAmount": 5128,
-      "merchantId": "MER1234567890001"
-    }
-  ],
-  "timestamp": 1678886400000
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer(int32)|true|none||none|
-|» message|string|true|none||none|
-|» data|[object]|true|none||none|
-|»» statDate|string(date)|true|none||none|
-|»» salesQty|integer|true|none||none|
-|»» salesAmount|number|true|none||none|
-|»» merchantId|string|true|none||none|
-
-## GET 根据商家 ID，优惠券 ID 获取优惠券信息
-
-GET /merchant/{merchantID}/coupon/{couponID}
-
-### 请求参数
-
-|名称|位置|类型|必选|说明|
-|---|---|---|---|---|
-|merchantID|path|string| 是 |none|
-|couponID|path|string| 是 |none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-"  \"code\": 0,\r\n  \"message\": \"操作成功\",\r\n  \"data\": {\r\n    \"couponId\": \"COUPON202507220001\",\r\n    \"faceValue\": 20.00,\r\n    \"threshold\": 100.00,\r\n    \"totalQty\": 500,\r\n    \"issuedQty\": 120,\r\n    \"startTime\": \"2025-07-22T00:00:00\",\r\n    \"endTime\": \"2025-08-31T23:59:59\"\r\n  },\r\n}"
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» couponId|string|true|none||none|
-|» faceValue|integer(int32)|true|none||none|
-|» threshold|integer(int32)|true|none||none|
-|» totalQty|integer|true|none||none|
-|» issuedQty|integer|true|none||none|
-|» startTime|string(date-time)|true|none||none|
-|» endTime|string(date-time)|true|none||none|
-
-## GET 根据商家 ID 获取所有优惠券
-
-GET /merchant/{merchantID}/coupon
-
-### 请求参数
-
-|名称|位置|类型|必选|说明|
-|---|---|---|---|---|
-|merchantID|path|string| 是 |none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "string",
-  "data": [
-    {
-      "couponId": "string",
-      "faceValue": 20,
-      "threshold": 100,
-      "totalQty": 0,
-      "issuedQty": 0,
-      "startTime": "2019-08-24T14:15:22Z",
-      "endTime": "2019-08-24T14:15:22Z"
-    },
-    {
-      "couponId": "string",
-      "faceValue": 20,
-      "threshold": 100,
-      "totalQty": 0,
-      "issuedQty": 0,
-      "startTime": "2019-08-24T14:15:22Z",
-      "endTime": "2019-08-24T14:15:22Z"
-    },
-    {
-      "couponId": "string",
-      "faceValue": 20,
-      "threshold": 100,
-      "totalQty": 0,
-      "issuedQty": 0,
-      "startTime": "2019-08-24T14:15:22Z",
-      "endTime": "2019-08-24T14:15:22Z"
-    },
-    {
-      "couponId": "string",
-      "faceValue": 20,
-      "threshold": 100,
-      "totalQty": 0,
-      "issuedQty": 0,
-      "startTime": "2019-08-24T14:15:22Z",
-      "endTime": "2019-08-24T14:15:22Z"
-    },
-    {
-      "couponId": "string",
-      "faceValue": 20,
-      "threshold": 100,
-      "totalQty": 0,
-      "issuedQty": 0,
-      "startTime": "2019-08-24T14:15:22Z",
-      "endTime": "2019-08-24T14:15:22Z"
+      "reviewId": "REVIEW002",
+      "orderId": "ORDER002",
+      "user": "USER002",
+      "rating": 3,
+      "content": "味道一般，包装不太好。",
+      "isAnonymous": 2,
+      "reviewAt": "2025-07-21T15:45:00Z"
     }
   ]
 }
@@ -2606,13 +3233,1764 @@ GET /merchant/{merchantID}/coupon
 |» code|integer|true|none||none|
 |» message|string|true|none||none|
 |» data|[object]|true|none||none|
-|»» couponId|string|true|none||none|
-|»» faceValue|integer(int32)|true|none||none|
-|»» threshold|integer(int32)|true|none||none|
-|»» totalQty|integer|true|none||none|
-|»» issuedQty|integer|true|none||none|
-|»» startTime|string(date-time)|true|none||none|
-|»» endTime|string(date-time)|true|none||none|
+|»» reviewId|string|true|none||none|
+|»» orderId|string|true|none||none|
+|»» user|string|true|none||none|
+|»» rating|integer(int32)|true|none||none|
+|»» content|string|true|none||none|
+|»» isAnonymous|integer|true|none||none|
+|»» reviewAt|string(date-time)|true|none||none|
+
+## GET 自定义筛选条件获取商家列表
+
+GET /api/merchants
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantName|query|string| 否 ||none|
+|location|query|string| 否 ||none|
+|size|query|integer| 否 ||none|
+|page|query|integer| 否 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "商家信息获取成功",
+  "data": [
+    {
+      "merchantId": "66f63f6d40bf483cb371648b239a610d",
+      "merchantName": "SinceToday",
+      "status": 1,
+      "contactInfo": "LiuZhen_1226@163.com",
+      "location": ""
+    },
+    {
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "merchantName": "test",
+      "status": 1,
+      "contactInfo": "2356215@tongji.edu.cn",
+      "location": ""
+    },
+    {
+      "merchantId": "0b5feb36d23443eab85fa5eb8c1a538b",
+      "merchantName": "merchant_lz",
+      "status": 1,
+      "contactInfo": "2352471@tongji.edu.cn",
+      "location": ""
+    }
+  ],
+  "timestamp": 1754444437577
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|[object]|true|none||none|
+|»» merchantId|string|true|none||none|
+|»» merchantName|string|true|none||none|
+|»» status|integer|true|none||none|
+|»» contactInfo|string|true|none||none|
+|»» location|string|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 模糊搜索，不太智能的智能匹配
+
+GET /api/merchants/autocomplete
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|prefix|query|string| 是 ||none|
+|limit|query|integer| 否 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "智能补全成功",
+  "data": [
+    "预制菜中王",
+    "预制菜大王",
+    "预制菜小王"
+  ],
+  "timestamp": 1754461025205
+}
+```
+
+> 400 Response
+
+```json
+{
+  "code": 1001,
+  "message": "请加长前缀长度来启用智能匹配",
+  "data": null,
+  "timestamp": 1754461076844
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|[string]|true|none||none|
+|» timestamp|integer|true|none||none|
+
+状态码 **400**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+# merchant/dish
+
+## GET 根据商家 ID 获取所有菜品信息
+
+GET /api/merchants/{merchantId}/dishes
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantId|path|string| 是 ||none|
+|categoryId|query|integer| 否 ||none|
+|orderByRating|query|boolean| 否 ||none|
+|orderByHighPrice|query|boolean| 否 ||none|
+|orderByLowPrice|query|boolean| 否 ||none|
+|size|query|integer| 否 ||none|
+|page|query|integer| 否 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "商家菜品信息获取成功",
+  "data": [
+    {
+      "dishId": "2                               ",
+      "categoryId": "1                               ",
+      "dishName": "123",
+      "price": 123,
+      "originPrice": 1233,
+      "coverUrl": "1",
+      "monthlySales": 1,
+      "rating": 1,
+      "onSale": 1,
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "reviewQuantity": 1,
+      "categoryName": "1"
+    },
+    {
+      "dishId": "8459aac761424fa0a71cc5e521e01f8f",
+      "categoryId": "1                               ",
+      "dishName": "孜然羊肉",
+      "price": 230.75,
+      "originPrice": 979.55,
+      "coverUrl": "https://picsum.photos/seed/rtaNJJ2yuq/3617/3889",
+      "monthlySales": 0,
+      "rating": 0,
+      "onSale": 0,
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "reviewQuantity": 0,
+      "categoryName": "1"
+    },
+    {
+      "dishId": "698d2ef64b9f42f0b74ba6c414a82425",
+      "categoryId": "1                               ",
+      "dishName": "爽口的的田鸡配芦笋",
+      "price": 406.49,
+      "originPrice": 381.19,
+      "coverUrl": "https://loremflickr.com/1592/1434?lock=3572024428382264",
+      "monthlySales": 0,
+      "rating": 0,
+      "onSale": 0,
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "reviewQuantity": 0,
+      "categoryName": "1"
+    },
+    {
+      "dishId": "6a08300d6e3e42b3b99e9a336f6214c7",
+      "categoryId": "1                               ",
+      "dishName": "白萝卜沙拉",
+      "price": 830.05,
+      "originPrice": 273.7,
+      "coverUrl": null,
+      "monthlySales": 0,
+      "rating": 0,
+      "onSale": 0,
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "reviewQuantity": 0,
+      "categoryName": "1"
+    },
+    {
+      "dishId": "95252778c4af4e18a70dd1fcdc9041fc",
+      "categoryId": "1                               ",
+      "dishName": "茄子炒肉",
+      "price": 769.49,
+      "originPrice": 47.8,
+      "coverUrl": "https://picsum.photos/seed/dUo59nj/3278/2989",
+      "monthlySales": 0,
+      "rating": 0,
+      "onSale": 0,
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "reviewQuantity": 0,
+      "categoryName": "1"
+    },
+    {
+      "dishId": "fa5873ecd2cf4beda2bda45a2a52a04b",
+      "categoryId": "1                               ",
+      "dishName": "葡萄派",
+      "price": 536.99,
+      "originPrice": 25.89,
+      "coverUrl": "https://picsum.photos/seed/rDChR1Vi94/3830/2327",
+      "monthlySales": 0,
+      "rating": 0,
+      "onSale": 0,
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "reviewQuantity": 0,
+      "categoryName": "1"
+    },
+    {
+      "dishId": "ecbff19ad0ee4f3cbe1c8cdaea4a99e4",
+      "categoryId": "1                               ",
+      "dishName": "醋溜土豆丝",
+      "price": 835,
+      "originPrice": 718,
+      "coverUrl": "https://picsum.photos/seed/bWXCED/2249/1977",
+      "monthlySales": 0,
+      "rating": 0,
+      "onSale": 2,
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "reviewQuantity": 0,
+      "categoryName": "1"
+    }
+  ],
+  "timestamp": 1754381634197
+}
+```
+
+> 404 Response
+
+```json
+{
+  "code": 0,
+  "message": "string",
+  "data": null,
+  "timestamp": 0
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|[object]|true|none||none|
+|»» dishId|string|true|none||none|
+|»» categoryId|string|true|none||none|
+|»» dishName|string|true|none||none|
+|»» price|integer|true|none||none|
+|»» originPrice|integer|true|none||none|
+|»» coverUrl|string¦null|true|none||none|
+|»» monthlySales|integer|true|none||none|
+|»» rating|integer|true|none||none|
+|»» onSale|integer|true|none||none|
+|»» merchantId|string|true|none||none|
+|»» reviewQuantity|integer|true|none||none|
+|»» categoryName|string|true|none||none|
+|» timestamp|integer|true|none||none|
+
+状态码 **404**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 根据主键获取菜品
+
+GET /api/merchants/{merchantId}/getDish/{dishId}
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantId|path|string| 是 ||none|
+|dishId|path|string| 是 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "商家菜品信息获取成功",
+  "data": {
+    "dishId": "ecbff19ad0ee4f3cbe1c8cdaea4a99e4",
+    "categoryId": "1                               ",
+    "dishName": "醋溜土豆丝",
+    "price": 835,
+    "originPrice": 718,
+    "coverUrl": "https://picsum.photos/seed/bWXCED/2249/1977",
+    "monthlySales": 0,
+    "rating": 0,
+    "onSale": 2,
+    "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+    "reviewQuantity": 0,
+    "categoryName": "1"
+  },
+  "timestamp": 1754378945307
+}
+```
+
+> 404 Response
+
+```json
+{
+  "code": 40001,
+  "message": "无相关数据，ID: e71a686e03f4db5b3b3bf77f0437ffa",
+  "data": null,
+  "timestamp": 1754378301082
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|object|true|none||none|
+|»» dishId|string|true|none||none|
+|»» categoryId|string|true|none||none|
+|»» dishName|string|true|none||none|
+|»» price|integer|true|none||none|
+|»» originPrice|integer|true|none||none|
+|»» coverUrl|string|true|none||none|
+|»» monthlySales|integer|true|none||none|
+|»» rating|integer|true|none||none|
+|»» onSale|integer|true|none||none|
+|»» merchantId|string|true|none||none|
+|»» reviewQuantity|integer|true|none||none|
+|»» categoryName|string|true|none||none|
+|» timestamp|integer|true|none||none|
+
+状态码 **404**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## POST 根据商家ID添加新菜品
+
+POST /api/merchants/{merchantId}/addNewDish
+
+> Body 请求参数
+
+```json
+{
+  "categoryId": "string",
+  "dishName": "string",
+  "price": 0,
+  "originPrice": 0,
+  "coverUrl": "string"
+}
+```
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantId|path|string| 是 ||none|
+|body|body|object| 否 ||none|
+|» categoryId|body|string| 是 | 分类ID|分组|
+|» dishName|body|string| 是 | 菜品名|none|
+|» price|body|number| 否 | 现价|none|
+|» originPrice|body|number| 是 | 原价|none|
+|» coverUrl|body|string| 否 | 封面链接|none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+## DELETE 根据商家ID和菜品ID删除对应的菜品
+
+DELETE /api/merchants/{merchantId}/{dishId}
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantId|path|string| 是 ||none|
+|dishId|path|string| 是 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": true,
+  "timestamp": 1754448047159
+}
+```
+
+> 404 Response
+
+```json
+{
+  "code": 40001,
+  "message": "无相关数据，DishID: 6a08300d6e3e42b3b99e9a336f6214c7",
+  "data": null,
+  "timestamp": 1754448083021
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|boolean|true|none||none|
+|» timestamp|integer|true|none||none|
+
+状态码 **404**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## PATCH 根据商家ID和菜品ID修改菜品信息
+
+PATCH /api/merchants/{merchantId}/{dishId}
+
+这个功能需要先通过前端将菜品信息预填入表单，所以请求体内的参数都为必选
+
+> Body 请求参数
+
+```json
+{
+  "categoryId": "string",
+  "dishName": "string",
+  "price": 0,
+  "originPrice": 0,
+  "coverUrl": "string"
+}
+```
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantId|path|string| 是 ||none|
+|dishId|path|string| 是 ||none|
+|body|body|object| 否 ||none|
+|» categoryId|body|string| 否 ||none|
+|» dishName|body|string| 否 ||none|
+|» price|body|number| 否 ||none|
+|» originPrice|body|number| 否 ||none|
+|» coverUrl|body|string| 否 ||none|
+|» onSale|body|integer| 否 ||暂定0-2，由前端决定|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": true,
+  "timestamp": 1754447955233
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|boolean|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 根据商家ID获取所有菜品分类
+
+GET /api/merchants/{merchantId}/dish-categories
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantId|path|string| 是 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "商家分类信息获取成功",
+  "data": [
+    {
+      "categoryId": "1                               ",
+      "categoryName": "CAT001",
+      "parentId": "1                               ",
+      "sortOrder": 1
+    },
+    {
+      "categoryId": "3                               ",
+      "categoryName": "CAT003",
+      "parentId": "2                               ",
+      "sortOrder": 1
+    },
+    {
+      "categoryId": "4                               ",
+      "categoryName": "CAT004",
+      "parentId": "2                               ",
+      "sortOrder": 1
+    },
+    {
+      "categoryId": "2                               ",
+      "categoryName": "CAT002",
+      "parentId": "1                               ",
+      "sortOrder": 2
+    }
+  ],
+  "timestamp": 1754385001328
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|[object]|true|none||none|
+|»» categoryId|string|true|none||none|
+|»» categoryName|string|true|none||none|
+|»» parentId|string|true|none||none|
+|»» sortOrder|integer|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 按分类获取商家的所有菜品(嵌套)
+
+GET /api/merchants/{merchantId}/dishesByCategory
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantId|path|string| 是 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "商家菜品信息获取成功",
+  "data": [
+    {
+      "categoryId": "1                               ",
+      "categoryName": "CAT001",
+      "dishes": [
+        {
+          "dishId": "2                               ",
+          "categoryId": "1                               ",
+          "dishName": "123",
+          "price": 123,
+          "originPrice": 1233,
+          "coverUrl": "1",
+          "monthlySales": 1,
+          "rating": 1,
+          "onSale": 1,
+          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+          "reviewQuantity": 1,
+          "categoryName": null
+        },
+        {
+          "dishId": "8459aac761424fa0a71cc5e521e01f8f",
+          "categoryId": "1                               ",
+          "dishName": "孜然羊肉",
+          "price": 230.75,
+          "originPrice": 979.55,
+          "coverUrl": "https://picsum.photos/seed/rtaNJJ2yuq/3617/3889",
+          "monthlySales": 0,
+          "rating": 0,
+          "onSale": 0,
+          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+          "reviewQuantity": 0,
+          "categoryName": null
+        },
+        {
+          "dishId": "698d2ef64b9f42f0b74ba6c414a82425",
+          "categoryId": "1                               ",
+          "dishName": "爽口的的田鸡配芦笋",
+          "price": 406.49,
+          "originPrice": 381.19,
+          "coverUrl": "https://loremflickr.com/1592/1434?lock=3572024428382264",
+          "monthlySales": 0,
+          "rating": 0,
+          "onSale": 0,
+          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+          "reviewQuantity": 0,
+          "categoryName": null
+        },
+        {
+          "dishId": "6a08300d6e3e42b3b99e9a336f6214c7",
+          "categoryId": "1                               ",
+          "dishName": "白萝卜沙拉",
+          "price": 830.05,
+          "originPrice": 273.7,
+          "coverUrl": null,
+          "monthlySales": 0,
+          "rating": 0,
+          "onSale": 0,
+          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+          "reviewQuantity": 0,
+          "categoryName": null
+        },
+        {
+          "dishId": "95252778c4af4e18a70dd1fcdc9041fc",
+          "categoryId": "1                               ",
+          "dishName": "茄子炒肉",
+          "price": 769.49,
+          "originPrice": 47.8,
+          "coverUrl": "https://picsum.photos/seed/dUo59nj/3278/2989",
+          "monthlySales": 0,
+          "rating": 0,
+          "onSale": 0,
+          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+          "reviewQuantity": 0,
+          "categoryName": null
+        },
+        {
+          "dishId": "fa5873ecd2cf4beda2bda45a2a52a04b",
+          "categoryId": "1                               ",
+          "dishName": "葡萄派",
+          "price": 536.99,
+          "originPrice": 25.89,
+          "coverUrl": "https://picsum.photos/seed/rDChR1Vi94/3830/2327",
+          "monthlySales": 0,
+          "rating": 0,
+          "onSale": 0,
+          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+          "reviewQuantity": 0,
+          "categoryName": null
+        },
+        {
+          "dishId": "ecbff19ad0ee4f3cbe1c8cdaea4a99e4",
+          "categoryId": "1                               ",
+          "dishName": "醋溜土豆丝",
+          "price": 835,
+          "originPrice": 718,
+          "coverUrl": "https://picsum.photos/seed/bWXCED/2249/1977",
+          "monthlySales": 0,
+          "rating": 0,
+          "onSale": 2,
+          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+          "reviewQuantity": 0,
+          "categoryName": null
+        }
+      ]
+    },
+    {
+      "categoryId": "2                               ",
+      "categoryName": "CAT002",
+      "dishes": [
+        {
+          "dishId": "1b55484c33a047d68b4e8f807ad9961a",
+          "categoryId": "2                               ",
+          "dishName": "木须肉",
+          "price": 907.89,
+          "originPrice": 331.25,
+          "coverUrl": "https://picsum.photos/seed/ixo2W/835/498",
+          "monthlySales": 0,
+          "rating": 0,
+          "onSale": 0,
+          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+          "reviewQuantity": 0,
+          "categoryName": null
+        },
+        {
+          "dishId": "2560ca5cff9f452fb5ad88e308eda2f0",
+          "categoryId": "2                               ",
+          "dishName": "水煮牛肉",
+          "price": 879.99,
+          "originPrice": 539.49,
+          "coverUrl": "https://loremflickr.com/1472/3395?lock=6589695793590999",
+          "monthlySales": 0,
+          "rating": 0,
+          "onSale": 0,
+          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+          "reviewQuantity": 0,
+          "categoryName": null
+        }
+      ]
+    },
+    {
+      "categoryId": "3                               ",
+      "categoryName": "CAT003",
+      "dishes": [
+        {
+          "dishId": "6961b1217d26438d8c7e897584df0625",
+          "categoryId": "3                               ",
+          "dishName": "刀削面",
+          "price": 858.82,
+          "originPrice": 597.13,
+          "coverUrl": "https://picsum.photos/seed/qbPKBNOzwm/2863/1296",
+          "monthlySales": 0,
+          "rating": 0,
+          "onSale": 0,
+          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+          "reviewQuantity": 0,
+          "categoryName": null
+        },
+        {
+          "dishId": "3e3cb76445e44a6b8339a6320505ca11",
+          "categoryId": "3                               ",
+          "dishName": "酸菜鱼",
+          "price": 108.49,
+          "originPrice": 966.57,
+          "coverUrl": "https://loremflickr.com/2811/2008?lock=4370184519791220",
+          "monthlySales": 0,
+          "rating": 0,
+          "onSale": 0,
+          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+          "reviewQuantity": 0,
+          "categoryName": null
+        }
+      ]
+    },
+    {
+      "categoryId": "4                               ",
+      "categoryName": "CAT004",
+      "dishes": [
+        {
+          "dishId": "2ec2d7311b6246b8a868d1c43649cb67",
+          "categoryId": "4                               ",
+          "dishName": "红烧鱼块",
+          "price": 132.15,
+          "originPrice": 559.69,
+          "coverUrl": "https://picsum.photos/seed/9T4AN/591/3269",
+          "monthlySales": 0,
+          "rating": 0,
+          "onSale": 0,
+          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+          "reviewQuantity": 0,
+          "categoryName": null
+        },
+        {
+          "dishId": "36cc5526bf244c8f9fa605ccfac49a51",
+          "categoryId": "4                               ",
+          "dishName": "蛇肉佐柑橘酱",
+          "price": 850.13,
+          "originPrice": 754.79,
+          "coverUrl": "https://picsum.photos/seed/zIJxA/682/177",
+          "monthlySales": 0,
+          "rating": 0,
+          "onSale": 0,
+          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+          "reviewQuantity": 0,
+          "categoryName": null
+        }
+      ]
+    }
+  ],
+  "timestamp": 1754382919556
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|[object]|true|none||none|
+|»» categoryId|string|true|none||none|
+|»» categoryName|string|true|none||none|
+|»» dishes|[object]|true|none||none|
+|»»» dishId|string|true|none||none|
+|»»» categoryId|string|true|none||none|
+|»»» dishName|string|true|none||none|
+|»»» price|integer|true|none||none|
+|»»» originPrice|integer|true|none||none|
+|»»» coverUrl|string¦null|true|none||none|
+|»»» monthlySales|integer|true|none||none|
+|»»» rating|integer|true|none||none|
+|»»» onSale|integer|true|none||none|
+|»»» merchantId|string|true|none||none|
+|»»» reviewQuantity|integer|true|none||none|
+|»»» categoryName|null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+# merchant/Application
+
+## POST 商家发起申请
+
+POST /api/merchants/{merchantId}/applications
+
+> Body 请求参数
+
+```json
+{
+  "CompanyName": "string"
+}
+```
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantId|path|string| 是 ||none|
+|body|body|object| 否 ||none|
+|» CompanyName|body|string| 是 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": true,
+  "timestamp": 1753773997377
+}
+```
+
+> 404 Response
+
+```json
+{
+  "code": 1006,
+  "message": "商家不存在，ID: e71a686e033fdb5b3b3bf77f0437ffa",
+  "data": null,
+  "timestamp": 1753774030773
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|boolean|true|none||none|
+|» timestamp|integer|true|none||none|
+
+状态码 **404**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 商家根据商家ID和自定义筛选条件获取商家申请队列
+
+GET /api/merchants/{merchantId}/applications
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantId|path|string| 是 ||none|
+|auditStatus|query|integer| 否 ||none|
+|size|query|integer| 否 ||none|
+|page|query|integer| 否 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": [
+    {
+      "applyId": "6587daf51b9d40c7a940200f77b44772",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 14:33:20",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "0",
+      "auditAt": null,
+      "rejectReason": null,
+      "adminId": null
+    },
+    {
+      "applyId": "d5cf775d7fcf4a2094026b586b808b9e",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 14:17:24",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "0",
+      "auditAt": null,
+      "rejectReason": null,
+      "adminId": null
+    },
+    {
+      "applyId": "9aabfa797ebb411abd4e4eb20041a4bd",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 14:17:23",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "0",
+      "auditAt": null,
+      "rejectReason": null,
+      "adminId": null
+    },
+    {
+      "applyId": "33cb10a62b7d4a9e9cc3bc1bc6264086",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 14:17:23",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "0",
+      "auditAt": null,
+      "rejectReason": null,
+      "adminId": null
+    },
+    {
+      "applyId": "da6888d9b8014106a93a41c9f667901a",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 14:17:22",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "0",
+      "auditAt": null,
+      "rejectReason": null,
+      "adminId": null
+    },
+    {
+      "applyId": "b158b257a5d44a3eac50a5266dca4da1",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 14:17:21",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "0",
+      "auditAt": null,
+      "rejectReason": null,
+      "adminId": null
+    },
+    {
+      "applyId": "16fe804841c34eb2b30ed5c23504c865",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 14:17:20",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "0",
+      "auditAt": null,
+      "rejectReason": null,
+      "adminId": null
+    },
+    {
+      "applyId": "d467d98455f345358f83d3744e669d40",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 14:17:19",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "0",
+      "auditAt": null,
+      "rejectReason": null,
+      "adminId": null
+    },
+    {
+      "applyId": "f56c3af62cc7437a8a98d8f56538d839",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 13:52:26",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "2",
+      "auditAt": "2025/7/29 06:33:48",
+      "rejectReason": "ullamco sit",
+      "adminId": "6f7af74d972c481c91f19596e07aae3a"
+    }
+  ],
+  "timestamp": 1753770868975
+}
+```
+
+> 404 Response
+
+```json
+{
+  "code": 1006,
+  "message": "申请不存在，ID: e71a686e033fdb5b3b3bf77f0437ffa",
+  "data": null,
+  "timestamp": 1753774229561
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|[object]|true|none||none|
+|»» applyId|string|true|none||none|
+|»» companyName|string|true|none||none|
+|»» submittedAt|string|true|none||none|
+|»» merchantId|string|true|none||none|
+|»» auditStatus|string|true|none||none|
+|»» auditAt|string¦null|true|none||none|
+|»» rejectReason|string¦null|true|none||none|
+|»» adminId|string¦null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+状态码 **404**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## PATCH 管理员同意/拒绝申请
+
+PATCH /api/admin/{adminId}/audit/{applyId}
+
+> Body 请求参数
+
+```json
+{
+  "AuditStatus": 0,
+  "RejectReason": "string"
+}
+```
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|adminId|path|string| 是 ||none|
+|applyId|path|string| 是 ||none|
+|body|body|object| 否 ||none|
+|» AuditStatus|body|integer| 是 ||none|
+|» RejectReason|body|string| 否 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": true,
+  "timestamp": 1753774074217
+}
+```
+
+> 404 Response
+
+```json
+{
+  "code": 1006,
+  "message": "管理员不存在，ID: 6f7af74d72c481c91f19596e07aae3a",
+  "data": null,
+  "timestamp": 1753774100847
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|boolean|true|none||none|
+|» timestamp|integer|true|none||none|
+
+状态码 **404**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 根据申请ID获取申请状态
+
+GET /api/applications/{applicationId}
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|applicationId|path|string| 是 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": {
+    "applyId": "d467d98455f345358f83d3744e669d40",
+    "companyName": "库悦",
+    "submittedAt": "2025/7/29 14:17:19",
+    "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+    "auditStatus": "0",
+    "auditAt": null,
+    "rejectReason": null,
+    "adminId": null
+  },
+  "timestamp": 1753774178315
+}
+```
+
+> 404 Response
+
+```json
+{
+  "code": 1006,
+  "message": "申请不存在，ID: 12312",
+  "data": null,
+  "timestamp": 1753771229190
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|object|true|none||none|
+|»» applyId|string|true|none||none|
+|»» companyName|string|true|none||none|
+|»» submittedAt|string|true|none||none|
+|»» merchantId|string|true|none||none|
+|»» auditStatus|string|true|none||none|
+|»» auditAt|null|true|none||none|
+|»» rejectReason|null|true|none||none|
+|»» adminId|null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+状态码 **404**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 管理员根据管理员ID和自定义筛选条件获取事务
+
+GET /api/admin/{adminId}/applications
+
+> Body 请求参数
+
+```json
+{}
+```
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|adminId|path|string| 是 ||none|
+|auditStatus|query|integer| 否 ||none|
+|startDate|query|string| 否 ||none|
+|endDate|query|string| 否 ||none|
+|merchantId|query|string| 否 ||none|
+|size|query|integer| 否 ||none|
+|page|query|integer| 否 ||none|
+|checkProfile|query|boolean| 是 ||none|
+|body|body|object| 否 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": [
+    {
+      "applyId": "6587daf51b9d40c7a940200f77b44772",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 14:33:20",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "0",
+      "auditAt": null,
+      "rejectReason": null,
+      "adminId": null
+    },
+    {
+      "applyId": "d5cf775d7fcf4a2094026b586b808b9e",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 14:17:24",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "0",
+      "auditAt": null,
+      "rejectReason": null,
+      "adminId": null
+    },
+    {
+      "applyId": "9aabfa797ebb411abd4e4eb20041a4bd",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 14:17:23",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "0",
+      "auditAt": null,
+      "rejectReason": null,
+      "adminId": null
+    },
+    {
+      "applyId": "33cb10a62b7d4a9e9cc3bc1bc6264086",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 14:17:23",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "0",
+      "auditAt": null,
+      "rejectReason": null,
+      "adminId": null
+    },
+    {
+      "applyId": "da6888d9b8014106a93a41c9f667901a",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 14:17:22",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "0",
+      "auditAt": null,
+      "rejectReason": null,
+      "adminId": null
+    },
+    {
+      "applyId": "b158b257a5d44a3eac50a5266dca4da1",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 14:17:21",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "0",
+      "auditAt": null,
+      "rejectReason": null,
+      "adminId": null
+    },
+    {
+      "applyId": "16fe804841c34eb2b30ed5c23504c865",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 14:17:20",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "0",
+      "auditAt": null,
+      "rejectReason": null,
+      "adminId": null
+    },
+    {
+      "applyId": "d467d98455f345358f83d3744e669d40",
+      "companyName": "库悦",
+      "submittedAt": "2025/7/29 14:17:19",
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "auditStatus": "0",
+      "auditAt": null,
+      "rejectReason": null,
+      "adminId": null
+    }
+  ],
+  "timestamp": 1753773941779
+}
+```
+
+> 404 Response
+
+```json
+{
+  "code": 1006,
+  "message": "无该状态，AuditStatus: 22",
+  "data": null,
+  "timestamp": 1753773894889
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|[object]|true|none||none|
+|»» applyId|string|true|none||none|
+|»» companyName|string|true|none||none|
+|»» submittedAt|string|true|none||none|
+|»» merchantId|string|true|none||none|
+|»» auditStatus|string|true|none||none|
+|»» auditAt|null|true|none||none|
+|»» rejectReason|null|true|none||none|
+|»» adminId|null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+状态码 **404**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+# merchant/SaleState
+
+## GET 根据主键获取统计信息
+
+GET /api/merchants/{merchantId}/SalesStat/{statDate}
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantId|path|string| 是 ||none|
+|statDate|path|string| 是 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "商家信息获取成功",
+  "data": {
+    "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+    "statDate": "2025-08-04T16:14:42",
+    "salesQty": 2,
+    "salesAmount": 3
+  },
+  "timestamp": 1754296067397
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|object|true|none||none|
+|»» merchantId|string|true|none||none|
+|»» statDate|string|true|none||none|
+|»» salesQty|integer|true|none||none|
+|»» salesAmount|integer|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 根据商家ID和自定义筛选条件获取统计信息
+
+GET /api/merchants/{merchantId}/SalesStat/
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantId|path|string| 是 ||none|
+|startTime|query|string| 否 ||none|
+|endTime|query|string| 否 ||none|
+|minAmount|query|number| 否 ||none|
+|maxAmount|query|number| 否 ||none|
+|statType|query|integer| 否 ||none|
+|size|query|integer| 否 ||none|
+|page|query|integer| 否 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "string",
+  "data": [
+    {
+      "merchantId": "string",
+      "statDate": "string",
+      "salesQty": 0,
+      "salesAmount": 0
+    }
+  ],
+  "timestamp": 0
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|[object]|true|none||none|
+|»» merchantId|string|false|none||none|
+|»» statDate|string|false|none||none|
+|»» salesQty|integer|false|none||none|
+|»» salesAmount|integer|false|none||none|
+|» timestamp|integer|true|none||none|
+
+# 登录注册
+
+## POST 登录
+
+POST /api/auth/login
+
+登录请求（username/email 2选1）
+
+> Body 请求参数
+
+```json
+{
+  "Password": "4URBDFyKts37uRo",
+  "Email": "tbfv9r_g9z@qq.com"
+}
+```
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|userType|query|integer| 是 ||none|
+|body|body|object| 否 ||none|
+|» Password|body|string| 是 ||密码长度不能少于6位|
+|» Email|body|string| 否 ||后端会进行邮箱的格式校验，前端看情况也可以再审核一遍|
+|» UserName|body|string| 否 ||只允许数字和字母|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "string",
+  "data": "string",
+  "timestamp": 0
+}
+```
+
+> 403 Response
+
+```json
+{
+  "code": 2002,
+  "message": "用户被封禁",
+  "data": null,
+  "timestamp": 1754276287920
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+|401|[Unauthorized](https://tools.ietf.org/html/rfc7235#section-3.1)|none|Inline|
+|403|[Forbidden](https://tools.ietf.org/html/rfc7231#section-6.5.3)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|string|true|none||none|
+|» timestamp|integer|true|none||none|
+
+状态码 **401**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+状态码 **403**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## POST 预注册（发送验证邮件）
+
+POST /api/auth/register
+
+> Body 请求参数
+
+```json
+{
+  "UserName": "闽磊",
+  "PassWord": "dizI6fIabdJtWmr",
+  "Email": "lm1sds_man@vip.qq.com",
+  "PhoneNumber": "08731135405"
+}
+```
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|userType|query|integer| 是 ||用户类型（1-普通用户, 2-商家, 3-骑手, 4-管理员）|
+|body|body|object| 否 ||none|
+|» UserName|body|string| 是 ||只允许数字或字母|
+|» PassWord|body|string| 是 ||前端可以加密码的格式要求|
+|» Email|body|string| 是 ||后端会进行邮箱的格式校验，前端看情况也可以再审核一遍|
+|» PhoneNumber|body|string| 否 ||做不到发验证码，手机号为选填|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "string",
+  "data": null,
+  "timestamp": 0
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|null|true|none||none|
+|» timestamp|integer|true|none||none|
+
+## GET 正式注册（验证邮箱）
+
+GET /api/auth/verify-email
+
+链接1小时内有效
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|userId|query|string| 否 ||none|
+|token|query|string| 否 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "string",
+  "data": null,
+  "timestamp": 0
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|null|true|none||none|
+|» timestamp|integer|true|none||none|
 
 # 数据模型
 
@@ -2825,4 +5203,65 @@ GET /merchant/{merchantID}/coupon
 |code|integer|true|none||none|
 |message|string|true|none||none|
 |data|object|true|none||none|
+
+<h2 id="tocS_APIResponse">APIResponse</h2>
+
+<a id="schemaapiresponse"></a>
+<a id="schema_APIResponse"></a>
+<a id="tocSapiresponse"></a>
+<a id="tocsapiresponse"></a>
+
+```json
+{
+  "code": 0,
+  "message": "string",
+  "data": {
+    "merchantId": "string",
+    "merchantName": "example.com",
+    "status": 0,
+    "contactInfo": "user@example.com",
+    "location": "string"
+  }
+}
+
+```
+
+### 属性
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|code|integer(int32)|true|none||none|
+|message|string|true|none||none|
+|data|object|true|none||none|
+|» merchantId|string|true|none||none|
+|» merchantName|string(hostname)|true|none||none|
+|» status|integer|true|none||none|
+|» contactInfo|string(email)|true|none||none|
+|» location|string|true|none||none|
+
+<h2 id="tocS_ApiResponse">ApiResponse</h2>
+
+<a id="schemaapiresponse"></a>
+<a id="schema_ApiResponse"></a>
+<a id="tocSapiresponse"></a>
+<a id="tocsapiresponse"></a>
+
+```json
+{
+  "code": 0,
+  "message": "string",
+  "data": null,
+  "timestamp": 0
+}
+
+```
+
+### 属性
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|code|integer|true|none||none|
+|message|string|true|none||none|
+|data|null|true|none||none|
+|timestamp|integer|true|none||none|
 

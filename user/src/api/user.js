@@ -2,7 +2,7 @@
 import axios from 'axios'
 
 // 从环境变量获取基础URL
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 // 创建axios实例
 const api = axios.create({
@@ -17,6 +17,10 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // 在这里可以添加token等认证信息
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
     return config
   },
   (error) => {
@@ -30,7 +34,16 @@ api.interceptors.response.use(
     return response.data
   },
   (error) => {
-    console.error('API请求错误:', error)
+    console.error('用户API请求错误:', error)
+    
+    // 处理401未授权错误
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('userId')
+      // 跳转到登录页
+      window.location.href = '/login'
+    }
+    
     return Promise.reject(error)
   }
 )
@@ -69,6 +82,23 @@ export const authAPI = {
 export const userAPI = {
   // 根据id获取用户信息
   getUserById: (userId) => {
+    // 如果是测试用户ID，返回模拟数据
+    if (userId === 'test_user_001') {
+      return Promise.resolve({
+        code: 200,
+        message: '获取用户信息成功',
+        data: {
+          id: 'test_user_001',
+          nickName: '测试用户',
+          account: 'testuser@example.com',
+          gender: 1,
+          birthday: '1990-01-01',
+          avatar: null,
+          createTime: '2024-01-01T00:00:00',
+          updateTime: '2024-01-01T00:00:00'
+        }
+      })
+    }
     return api.get(`/users/${userId}`)
   },
 
@@ -84,6 +114,15 @@ export const userAPI = {
   // 根据id部分删除用户信息
   deleteUser: (userId) => {
     return api.delete(`/users/${userId}`)
+  },
+
+  // 用户注销 (新增)
+  logout: () => {
+    return api.post('/users/logout', {}, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
   }
 }
 
@@ -91,6 +130,29 @@ export const userAPI = {
 export const addressAPI = {
   // 根据id获取用户的所有地址列表
   getUserAddresses: (userId) => {
+    // 如果是测试用户ID，返回模拟地址数据
+    if (userId === 'test_user_001') {
+      return Promise.resolve({
+        code: 200,
+        message: '获取地址列表成功',
+        data: [
+          {
+            id: 'addr_001',
+            receiverName: '张三',
+            receiverPhone: '13800138000',
+            detailedAddress: '北京市朝阳区某某街道123号',
+            isDefault: true
+          },
+          {
+            id: 'addr_002',
+            receiverName: '李四',
+            receiverPhone: '13900139000',
+            detailedAddress: '上海市浦东新区某某路456号',
+            isDefault: false
+          }
+        ]
+      })
+    }
     return api.get(`/users/${userId}/addresses`)
   },
 
@@ -119,6 +181,33 @@ export const addressAPI = {
 export const cartAPI = {
   // 根据id获取用户的购物车内容
   getUserCart: (userId) => {
+    // 如果是测试用户ID，返回模拟购物车数据
+    if (userId === 'test_user_001') {
+      return Promise.resolve({
+        code: 200,
+        message: '获取购物车成功',
+        data: [
+          {
+            id: 'cart_001',
+            dishId: 'dish_001',
+            dishName: '宫保鸡丁',
+            price: 28.0,
+            quantity: 2,
+            image: null,
+            merchantName: '川菜餐厅'
+          },
+          {
+            id: 'cart_002',
+            dishId: 'dish_002',
+            dishName: '红烧肉',
+            price: 35.0,
+            quantity: 1,
+            image: null,
+            merchantName: '家常菜馆'
+          }
+        ]
+      })
+    }
     return api.get(`/users/${userId}/cart`)
   },
 

@@ -3,9 +3,6 @@
     <!-- 页面头部 -->
     <div class="cart-header">
       <div class="header-content">
-        <button @click="goBack" class="back-btn">
-          <i class="back-icon">←</i>
-        </button>
         <h1 class="page-title">购物车</h1>
         <div class="cart-count">
           <span v-if="cartItems.length > 0">({{ totalItems }}件商品)</span>
@@ -202,7 +199,7 @@
 <script>
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { cartAPI, mockCartAPI } from '@/api/cart.js'
+import { cartAPI } from '@/api/user.js'
 
 export default {
   name: 'CartPage',
@@ -216,8 +213,8 @@ export default {
     const deleteModalMessage = ref('')
     const pendingDeleteAction = ref(null)
 
-    // 模拟用户ID（实际项目中应该从用户状态获取）
-    const currentUserId = ref('USER001')
+    // 获取当前用户ID（从localStorage获取测试用户ID）
+    const currentUserId = ref(localStorage.getItem('userId') || 'test_user_001')
 
     // 计算属性
     const totalItems = computed(() => {
@@ -288,25 +285,34 @@ export default {
     const fetchCartData = async () => {
       loading.value = true
       try {
-        // 使用模拟数据进行开发测试
-        const response = await mockCartAPI.generateMockCartData(currentUserId.value)
+        // 使用改进的购物车API
+        const response = await cartAPI.getUserCart(currentUserId.value)
         
-        if (response.code === 0) {
-          cartItems.value = response.data.items.map(item => ({
-            ...item,
-            selected: item.isAvailable // 默认选中可用商品
-          }))
+        if (response.code === 200) {
+          cartItems.value = response.data.map(item => ({
+            id: item.id,
+            dishId: item.dishId,
+            dishName: item.dishName,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.image,
+            merchantName: item.merchantName,
+            merchantId: item.merchantId || 'merchant_001',
+            isAvailable: true,
+            selected: true, // 默认选中
+            subtotal: item.price * item.quantity
+          }
+          ))
+          console.log('获取购物车数据成功:', response.data)
         } else {
           console.error('获取购物车失败:', response.message)
+          // 使用空数组作为降级
+          cartItems.value = []
         }
       } catch (error) {
         console.error('获取购物车数据失败:', error)
-        // 如果API失败，使用模拟数据
-        const mockData = mockCartAPI.generateMockCartData(currentUserId.value)
-        cartItems.value = mockData.data.items.map(item => ({
-          ...item,
-          selected: item.isAvailable
-        }))
+        // 如果API失败，使用空数组
+        cartItems.value = []
       } finally {
         loading.value = false
       }
@@ -545,29 +551,10 @@ export default {
 .header-content {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 16px 20px;
   max-width: 1200px;
   margin: 0 auto;
-}
-
-.back-btn {
-  width: 40px;
-  height: 40px;
-  background: none;
-  border: none;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 18px;
-  color: #333;
-  transition: all 0.3s ease;
-  margin-right: 12px;
-}
-
-.back-btn:hover {
-  background: #f8f9fa;
 }
 
 .page-title {
