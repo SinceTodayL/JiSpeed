@@ -424,7 +424,8 @@ namespace JISpeed.Application.Services.Order
         public async Task<string> CreateRefundByOrderIdAndUserIdAsync(
             string userId, 
             string orderId, 
-            string reason)
+            string reason,
+            decimal amount)
         {
             try
             {
@@ -456,7 +457,7 @@ namespace JISpeed.Application.Services.Order
                     ApplyAt = DateTime.Now,
                     Order = order,
                     Applicant = user,
-                    RefundAmount = paidPayment.PayAmount,
+                    RefundAmount = amount,
                     AuditStatus = (int)RefundStatus.Default
                 };
                 await _refundRepository.CreateAsync(refund);
@@ -465,12 +466,134 @@ namespace JISpeed.Application.Services.Order
                 await _orderRepository.SaveChangesAsync();
                 _logger.LogInformation("成功创建退款实体，RefundId: {RefundId}", refund.RefundId);
 
-                return refund.RefundId;
+                var orderLog = new OrderLog
+                {
+                    Actor = "user",
+                    LoggedAt = DateTime.Now,
+                    OrderId = refund.OrderId,
+                    LogId = Guid.NewGuid().ToString("N"),
+                    Remark = "用户请求退款",
+                    StatusCode = (int)OrderLogStatus.Aftersales,
+                    Order = refund.Order
+                };
+                await _orderLogRepository.CreateAsync(orderLog);
+                await _orderLogRepository.SaveChangesAsync();
+                _logger.LogInformation("成功更新退款实体，RefundId: {RefundId}", refund.RefundId);
+
+                return orderLog.LogId;
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
             {
                 _logger.LogError(ex, "创建订单退款时发生异常,OrderId: {OrderId}", orderId);
                 throw new BusinessException("创建订单退款实体失败");
+            }
+        }
+
+        public async Task<string> UpdateRefundForMerchantAsync(string merchantId, string refundId, int refundStatus)
+        {
+            try
+            {
+                _logger.LogInformation("开始更新退款实体");
+
+                var merchant = await _merchantRepository.ExistsAsync(merchantId);
+                if (!merchant)
+                {
+                    _logger.LogWarning("无相关数据,Merchant: {merchant}", merchant);
+                    throw new NotFoundException(ErrorCodes.MerchantNotFound, $"无相关数据, merchant: {merchant}");
+                }
+                var refund = await _refundRepository.GetByIdAsync(refundId);
+                if (refund == null)
+                {
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据, refundId: {refundId}");
+                }
+
+                if (refund.AuditStatus != (int)RefundStatus.Default)
+                {
+                    _logger.LogInformation("该申请已经被处理过！");
+                    throw new BusinessException(ErrorCodes.GeneralError, "该申请已经被处理过！");
+                }
+                refund.AuditStatus = refundStatus;
+                refund.FinishAt=DateTime.Now;
+                await _refundRepository.SaveChangesAsync();
+                refund.Order.OrderStatus = (int)OrderStatus.AftersalesCompleted;
+                await _orderRepository.SaveChangesAsync();
+                
+                var remark =(refundStatus==(int)RefundStatus.Refunded)?"商家同意退款":"商家拒绝退款";
+
+                var orderLog = new OrderLog
+                {
+                    Actor = "merchant",
+                    LoggedAt = DateTime.Now,
+                    OrderId = refund.OrderId,
+                    LogId = Guid.NewGuid().ToString("N"),
+                    Remark = remark,
+                    StatusCode = (int)OrderLogStatus.AftersalesCompleted,
+                    Order = refund.Order
+                };
+                await _orderLogRepository.CreateAsync(orderLog);
+                await _orderLogRepository.SaveChangesAsync();
+                _logger.LogInformation("成功更新退款实体，RefundId: {RefundId}", refund.RefundId);
+
+                return orderLog.LogId;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "更新订单退款时发生异常");
+                throw new BusinessException("更新订单退款实体失败");
+            }
+        }
+        public async  Task<string> UpdateRefundForAdminAsync(string adminId, string refundId, int refundStatus)
+        {
+            try
+            {
+                _logger.LogInformation("开始更新退款实体");
+
+                var admin = await _merchantRepository.ExistsAsync(adminId);
+                if (!admin)
+                {
+                    _logger.LogWarning("无相关数据,Admin: {admin}", admin);
+                    throw new NotFoundException(ErrorCodes.GeneralError, $"无相关数据, admin: {admin}");
+                }
+                var refund = await _refundRepository.GetByIdAsync(refundId);
+                if (refund == null)
+                {
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据, refundId: {refundId}");
+                }
+
+                if (refund.AuditStatus != (int)RefundStatus.Default)
+                {
+                    _logger.LogInformation("该申请已经被处理过！");
+                    throw new BusinessException(ErrorCodes.GeneralError, "该申请已经被处理过！");
+
+                }
+                refund.AuditStatus = refundStatus;
+                refund.FinishAt=DateTime.Now;
+                await _refundRepository.SaveChangesAsync();
+                refund.Order.OrderStatus = (int)OrderStatus.AftersalesCompleted;
+                await _orderRepository.SaveChangesAsync();
+                _logger.LogInformation("成功更新退款实体，RefundId: {RefundId}", refund.RefundId);
+                
+                var remark =(refundStatus==(int)RefundStatus.Refunded)?"管理员同意退款":"管理员拒绝退款";
+
+                var orderLog = new OrderLog
+                {
+                    Actor = "admin",
+                    LoggedAt = DateTime.Now,
+                    OrderId = refund.OrderId,
+                    LogId = Guid.NewGuid().ToString("N"),
+                    Remark = remark,
+                    StatusCode = (int)OrderLogStatus.AftersalesCompleted,
+                    Order = refund.Order
+                };
+                await _orderLogRepository.CreateAsync(orderLog);
+                await _orderLogRepository.SaveChangesAsync();
+
+                return orderLog.LogId;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "更新订单退款时发生异常");
+                throw new BusinessException("更新订单退款实体失败");
             }
         }
 

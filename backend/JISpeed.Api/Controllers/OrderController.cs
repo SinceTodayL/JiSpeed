@@ -490,7 +490,7 @@ namespace JISpeed.Api.Controllers
         }
         
         
-        // 用户创建订单，返回对应的订单日志
+        // 用户创建退款申请，返回对应的订单日志ID
         [HttpPost("users/{userId}/orders/{orderId}/refunds")]
         public async Task<ActionResult<ApiResponse<string>>> CreateRefundAsync(
             string userId,
@@ -500,7 +500,7 @@ namespace JISpeed.Api.Controllers
             try
             {
                 _logger.LogInformation("收到用户退款的请求, UserId: {UserId}", userId);
-                var orderLogId = await _orderService.CreateRefundByOrderIdAndUserIdAsync(userId,orderId,dto.Reason);
+                var orderLogId = await _orderService.CreateRefundByOrderIdAndUserIdAsync(userId,orderId,dto.Reason,dto.RefundAmount);
                 _logger.LogInformation("成功创建退款申请");
                 return Ok(ApiResponse<string>.Success(orderLogId, "用户创建订单的请求成功"));
             }
@@ -526,6 +526,136 @@ namespace JISpeed.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "创建退款实体时发生未知异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+
+        }
+        
+        // 商家同意退款
+        [HttpPatch("merchants/{merchantId}/refunds/{refundId}/approve")]
+        public async Task<ActionResult<ApiResponse<bool>>> ApproveRefundAsync(
+            string merchantId,
+            string refundId
+            )
+        {
+            try
+            {
+                _logger.LogInformation("收到商家同意的请求");
+                var orderLogId = await _orderService.UpdateRefundForMerchantAsync(merchantId,refundId,(int)RefundStatus.Refunded);
+                _logger.LogInformation("成功创建退款申请");
+                return Ok(ApiResponse<bool>.Success(true, "商家退款成功"));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败");
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(
+                    ex.ErrorCode,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "更新退款实体时发生未知异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+
+        }
+        
+        // 商家拒绝退款
+        [HttpPatch("merchants/{merchantId}/refunds/{refundId}/reject")]
+        public async Task<ActionResult<ApiResponse<bool>>> RejectRefundAsync(
+            string merchantId,
+            string refundId
+        )
+        {
+            try
+            {
+                _logger.LogInformation("收到商家拒绝退款的请求");
+                await _orderService.UpdateRefundForMerchantAsync(merchantId,refundId,(int)RefundStatus.Rejected);
+                _logger.LogInformation("成功拒绝退款申请");
+                return Ok(ApiResponse<bool>.Success(true, "商家拒绝退款成功"));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败");
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(
+                    ex.ErrorCode,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "更新退款实体时发生未知异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+
+        }
+        
+        // 管理员操作退款
+        [HttpPatch("admins/{adminId}/refunds/{refundId}/audit")]
+        public async Task<ActionResult<ApiResponse<bool>>> AuditRefundByAdminAsync(
+            string adminId,
+            string refundId,
+            [FromBody] RefundUpdateDto dto
+        )
+        {
+            try
+            {
+                _logger.LogInformation("收到管理员处理退款的请求");
+                await _orderService.UpdateRefundForAdminAsync(adminId,refundId,dto.RefundStatus);
+                _logger.LogInformation("成功更新退款申请");
+                return Ok(ApiResponse<bool>.Success(true, "管理员更新退款实体成功"));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败");
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(
+                    ex.ErrorCode,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "更新退款实体时发生未知异常");
                 return StatusCode(500, ApiResponse<object>.Fail(
                     ErrorCodes.SystemError,
                     "系统繁忙，请稍后再试"));

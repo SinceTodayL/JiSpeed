@@ -126,5 +126,11 @@ namespace JISpeed.Api.DTOs
      public class RefundRequestDto
      {
          public required string Reason { get; set; } //退款原因
+         public required decimal RefundAmount { get; set; } //退款金额
+     }
+
+     public class RefundUpdateDto
+     {
+         public required int RefundStatus{ get; set; }
      }
 }
