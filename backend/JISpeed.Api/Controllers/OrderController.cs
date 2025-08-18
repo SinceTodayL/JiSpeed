@@ -165,7 +165,7 @@ namespace JISpeed.Api.Controllers
             try
             {
                 _logger.LogInformation("收到用发起支付订单的请求, OrderId: {OrderId}", orderId);
-                var data = await _orderService.CreatePaymentByorderIdAsync(orderId, channel);
+                var data = await _orderService.CreatePaymentByOrderIdAsync(orderId, channel);
                 _logger.LogInformation("成功创建订单实体,PayId: {PayId}", data.PayId);
                 var response = _mapper.Map<PaymentDto>(data);
                 return Ok(ApiResponse<PaymentDto>.Success(response, "用发起支付订单的请求成功"));
@@ -403,6 +403,129 @@ namespace JISpeed.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "获取商家订单信息时发生未知异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+
+        }
+        [HttpGet("orderLogs/{logId}")]
+        public async Task<ActionResult<ApiResponse<OrderLogResponseDto>>> GetOrderLogByLogId(string logId)
+        {
+            try
+            {
+                _logger.LogInformation("收到查看订单日志详情的请求");
+                var orderlog = await _orderService.GetOrderLogDetailByLogIdAsync(logId);
+                var response = _mapper.Map<OrderLogResponseDto>(orderlog);
+                _logger.LogInformation("成功获取订单日志详细信息");
+                return Ok(ApiResponse<OrderLogResponseDto>.Success(response, "订单日志详细信息获取成功"));
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(
+                    ErrorCodes.ResourceNotFound,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogError(ex, "业务处理异");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取日志信息时发生未知异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+
+        }
+        
+        [HttpGet("payments/{payId}")]
+        public async Task<ActionResult<ApiResponse<PaymentResponseDto>>> GetPaymentByPayId(string payId)
+        {
+            try
+            {
+                _logger.LogInformation("收到查看订单日志详情的请求");
+                var payment = await _orderService.GetPaymentDetailByPayIdAsync(payId);
+                var response = _mapper.Map<PaymentResponseDto>(payment);
+                _logger.LogInformation("成功获取订单日志详细信息");
+                return Ok(ApiResponse<PaymentResponseDto>.Success(response, "订单日志详细信息获取成功"));
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(
+                    ErrorCodes.ResourceNotFound,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogError(ex, "业务处理异");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取日志信息时发生未知异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+
+        }
+        
+        
+        // 用户创建订单，返回对应的订单日志
+        [HttpPost("users/{userId}/orders/{orderId}/refunds")]
+        public async Task<ActionResult<ApiResponse<string>>> CreateRefundAsync(
+            string userId,
+            string orderId,
+            [FromBody] RefundRequestDto dto)
+        {
+            try
+            {
+                _logger.LogInformation("收到用户退款的请求, UserId: {UserId}", userId);
+                var orderLogId = await _orderService.CreateRefundByOrderIdAndUserIdAsync(userId,orderId,dto.Reason);
+                _logger.LogInformation("成功创建退款申请");
+                return Ok(ApiResponse<string>.Success(orderLogId, "用户创建订单的请求成功"));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败");
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(
+                    ex.ErrorCode,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "创建退款实体时发生未知异常");
                 return StatusCode(500, ApiResponse<object>.Fail(
                     ErrorCodes.SystemError,
                     "系统繁忙，请稍后再试"));

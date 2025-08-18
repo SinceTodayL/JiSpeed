@@ -17,7 +17,17 @@ namespace JISpeed.Api.DTOs
          public required string ReconId { get; set; } 
          public required string CouponId { get; set; } 
          public required string AssignId { get; set; } 
-         public required List<OrderDishDto> OrderDishes { get; set; }
+         
+         public required List<OrderDishDto> OrderDishes { get; set; }= new List<OrderDishDto>();
+         public required List<string> OrderLogIds { get; set; } = new List<string>();
+         public required List<string> PaymentIds { get; set; } = new List<string>();
+         public required List<string> RefundIds { get; set; } = new List<string>();
+         public required List<string> ComplaintIds { get; set; } = new List<string>();
+         public required List<string> ReviewIds { get; set; } = new List<string>();
+
+
+         
+
      }
 
      public class OrderDishDto
@@ -92,5 +102,29 @@ namespace JISpeed.Api.DTOs
          public decimal ?Threshold { get; set; } //满减门槛
          public required DateTime StartTime { get; set; } //可用起始
          public required DateTime EndTime { get; set; } //可用截止
+     }
+     public class OrderLogResponseDto
+     {
+         public required string LogId { get; set; } //记录ID pk
+         public required int StatusCode { get; set; } //状态码
+         public required DateTime LoggedAt { get; set; } //时间戳
+         public required string Actor { get; set; } //触发方
+         public string? Remark { get; set; } //备注
+         public required string OrderId { get; set; } //订单ID pk,fk->Order(orderId)
+     }
+
+     public class PaymentResponseDto
+     {
+         public required string PayId { get; set; } //支付ID pk
+         public required string OrderId { get; set; } //订单ID fk->Order(orderId)
+         public required string Channel { get; set; } //支付渠道
+         public required decimal PayAmount { get; set; } //应付金额
+         public required int PayStatus { get; set; } //支付状态
+         public DateTime? PayTime { get; set; } //支付完成时间 (可为空)
+     }
+     
+     public class RefundRequestDto
+     {
+         public required string Reason { get; set; } //退款原因
      }
 }

@@ -11,7 +11,7 @@ using JISpeed.Infrastructure.Repositories;
 namespace JISpeed.Infrastructure.Repositories.Order
 {
     // 退款仓储实现 - 处理退款管理的数据访问操作
-    public class RefundRepository : BaseRepository<Refund, string>
+    public class RefundRepository : BaseRepository<Refund, string>, IRefundRepository
     {
         public RefundRepository(OracleDbContext context) : base(context)
         {

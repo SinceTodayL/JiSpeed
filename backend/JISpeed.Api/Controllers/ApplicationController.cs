@@ -95,7 +95,7 @@ namespace JISpeed.Api.Controllers
         }
         
         [HttpPost("merchants/{merchantId}/applications")]
-        public async Task<ActionResult<ApiResponse<bool>>> SubmitApplication(string merchantId, [FromBody] ApplicationRequest request)
+        public async Task<ActionResult<ApiResponse<string>>> SubmitApplication(string merchantId, [FromBody] ApplicationRequest request)
         {
             try
             { 
@@ -116,11 +116,12 @@ namespace JISpeed.Api.Controllers
                     ApplyId = Guid.NewGuid().ToString("N"),
                     SubmittedAt = DateTime.Now,
                     CompanyName = entity.CompanyName,
-                    Merchant = await _merchantService.GetMerchantDetailAsync(merchantId)
+                    Merchant = await _merchantService.GetMerchantDetailAsync(merchantId),
+                    ApplicationMaterials = entity.ApplicationMaterials
                 };
                 await _applicationService.CreateApplicationEntityAsync(merchantId, application);
                 _logger.LogInformation("创建申请成功,  MerchantId: {MerchantId}", merchantId);
-                return Ok(ApiResponse<bool>.Success(true));
+                return Ok(ApiResponse<string>.Success(application.ApplyId));
             }
             catch (ValidationException ex)
             {

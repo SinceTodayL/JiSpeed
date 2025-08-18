@@ -54,6 +54,6 @@ namespace JISpeed.Core.Entities.Order
             FinishAt = null; //默认退款完成时间为空
         }
 
-        private Refund() { }
+        public Refund() { }
     }
 }

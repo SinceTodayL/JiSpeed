@@ -159,8 +159,11 @@ namespace JISpeed.Infrastructure.Repositories.Order
         {
             return await _context.Orders
                 .Include(order => order.OrderDishes) // 加载订单关联的订单项（OrderDish）
-                    .ThenInclude(orderDish => orderDish.Dish) // 从订单项加载关联的菜品（Dish）
-                    .ThenInclude(dish => dish.Merchant) // 从菜品加载关联的商家（Merchant）
+                .Include(order => order.Payments)
+                .Include(order => order.Refunds)
+                .Include(order => order.OrderLogs)
+                .Include(order => order.Complaints)
+                .Include(order => order.Reviews)
                 .FirstOrDefaultAsync(order => order.OrderId == orderId);
         }
     }

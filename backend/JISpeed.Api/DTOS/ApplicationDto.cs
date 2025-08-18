@@ -10,6 +10,7 @@ namespace JISpeed.Api.DTOs
     public class ApplicationRequest
     {
         public required string CompanyName { get; set; } //店名称
+        public required string ApplicationMaterials{ get; set; }
     }
     
     public class ApplicationResponse
@@ -21,8 +22,8 @@ namespace JISpeed.Api.DTOs
         public required string AuditStatus { get; set; }
         public string? AuditAt { get; set; }
         public string? RejectReason { get; set; }
-        public string? AdminId { get; set; }
-        public string? MerchantName { get; set; }
+        public string? AdminId { get; set; } 
+        public string? ApplicationMaterials{ get; set; }
         
     }
 }

@@ -11,7 +11,7 @@ namespace JISpeed.Core.Interfaces.IRepositories.Order
         // 根据订单ID获取支付列表
         // <param name="orderId">订单ID</param>
         // <returns>支付列表</returns>
-        Task<List<Payment>> GetByOrderIdAsync(string orderId);
+        Task<Payment?> GetByOrderIdAndStatusAsync(string orderId, int paymentStatus);
         // 根据支付状态获取支付列表
         // <param name="payStatus">支付状态</param>
         // <returns>支付列表</returns>

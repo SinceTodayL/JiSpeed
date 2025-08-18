@@ -23,6 +23,7 @@ namespace JISpeed.Application.Services.Order
         private readonly IOrderDishRepository _orderDishRepository;
         private readonly IOrderLogRepository _orderLogRepository;
         private readonly IDishRepository _dishRepository;
+        private readonly IRefundRepository _refundRepository;
         private readonly ILogger<OrderService> _logger;
 
         public OrderService(
@@ -34,6 +35,7 @@ namespace JISpeed.Application.Services.Order
             IOrderLogRepository orderLogRepository,
             IOrderDishRepository orderDishRepository,
             IDishRepository dishRepository,
+            IRefundRepository refundRepository,
             ILogger<OrderService> logger
         )
         {
@@ -45,6 +47,7 @@ namespace JISpeed.Application.Services.Order
             _orderDishRepository = orderDishRepository;
             _orderLogRepository = orderLogRepository;
             _dishRepository = dishRepository;
+            _refundRepository = refundRepository;
             _logger = logger;
         }
         
@@ -110,7 +113,7 @@ namespace JISpeed.Application.Services.Order
                     Merchant = merchant,
                     User = user,
                     Address = address,
-                    OrderLogs = new List<OrderLog> {  } 
+                    OrderLogs = new List<OrderLog>{}
                 };
                 await _orderRepository.CreateAsync(orderEntity);
                 await _orderRepository.SaveChangesAsync();
@@ -181,7 +184,7 @@ namespace JISpeed.Application.Services.Order
                     data= await _orderRepository.GetByUserIdAsync(userId,size,page);
                 _logger.LogInformation("成功用户获取订单列表信息, UserId: {UserId}", userId);
 
-                return data.Select(x => x.OrderId).ToList()??new List<string>();
+                return data.Select(x => x.OrderId).ToList();
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
             {
@@ -210,8 +213,8 @@ namespace JISpeed.Application.Services.Order
         
                 entity.OrderStatus = orderStatus ?? entity.OrderStatus;
                 await _orderRepository.SaveChangesAsync();
-                var remark = "";
-                var statusCode =0;
+                string remark;
+                int statusCode;
                 if (orderStatus == (int)OrderStatus.Confirmed)
                 {
                     remark = "用户确认收货";
@@ -299,7 +302,7 @@ namespace JISpeed.Application.Services.Order
             }
         }
 
-        public async Task<Payment> CreatePaymentByorderIdAsync(string orderId, string channel)
+        public async Task<Payment> CreatePaymentByOrderIdAsync(string orderId, string channel)
         {
             try
             {
@@ -321,7 +324,7 @@ namespace JISpeed.Application.Services.Order
                     Order = entity,
                     PayAmount = entity.OrderAmount
                 };
-                var res = await _paymentRepository.CreateAsync(data);
+                await _paymentRepository.CreateAsync(data);
                 await _paymentRepository.SaveChangesAsync();
                 _logger.LogInformation("成功创建订单实体，PayId: {PayId}", data.PayId);
 
@@ -362,7 +365,8 @@ namespace JISpeed.Application.Services.Order
                 }
                 else
                     data = await _orderRepository.GetByMerchantIdAsync(merchantId, size, page);
-                return data.Select(x => x.OrderId).ToList()??new List<string>();
+
+                return data.Select(x => x.OrderId).ToList();
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
             {
@@ -371,6 +375,104 @@ namespace JISpeed.Application.Services.Order
             }
         }
 
+        public async Task<OrderLog> GetOrderLogDetailByLogIdAsync(string logId)
+        {
+            try
+            {
+                _logger.LogInformation("开始获取订单日志信息");
+
+                var entity= await _orderLogRepository.GetByIdAsync(logId);
+                if (entity == null)
+                {
+                    _logger.LogWarning("无相关数据");
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据，ID: {logId}");
+                }
+                _logger.LogInformation("成功获取订单日志信息");
+
+                return entity;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取订单日志信息时发生异常");
+                throw new BusinessException("获取订单日志信息失败");
+            }
+        }
+
+        public async Task<Payment> GetPaymentDetailByPayIdAsync(string payId)
+        {
+            try
+            {
+                _logger.LogInformation("开始获取支付实体信息");
+
+                var entity= await _paymentRepository.GetByIdAsync(payId);
+                if (entity == null)
+                {
+                    _logger.LogWarning("无相关数据");
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据，ID: {payId}");
+                }
+                _logger.LogInformation("成功获取支付实体信息");
+
+                return entity;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取支付实体信息时发生异常");
+                throw new BusinessException("获取支付实体信息失败");
+            }
+        }
+
+        public async Task<string> CreateRefundByOrderIdAndUserIdAsync(
+            string userId, 
+            string orderId, 
+            string reason)
+        {
+            try
+            {
+                _logger.LogInformation("开始创建用户退款实体");
+
+                var order = await _orderRepository.GetByIdAsync(orderId);
+                if (order==null)
+                {
+                    _logger.LogWarning("无相关数据,OrderId: {OrderId}", orderId);
+                    throw new NotFoundException(ErrorCodes.OrderNotFound, $"无相关数据, OrderId: {orderId}");
+                }
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw new NotFoundException(ErrorCodes.UserNotFound, $"无相关数据, UserID: {userId}");
+                }
+
+                var paidPayment = await _paymentRepository.GetByOrderIdAndStatusAsync(orderId,(int)PayStatus.Paid);
+                if (paidPayment == null)
+                {
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, "无相关支付实体");
+                }
+                var refund = new Refund()
+                {
+                    RefundId = Guid.NewGuid().ToString("N"),
+                    OrderId = orderId,
+                    Reason = reason,
+                    ApplicationId = userId,
+                    ApplyAt = DateTime.Now,
+                    Order = order,
+                    Applicant = user,
+                    RefundAmount = paidPayment.PayAmount,
+                    AuditStatus = (int)RefundStatus.Default
+                };
+                await _refundRepository.CreateAsync(refund);
+                await _refundRepository.SaveChangesAsync();
+                order.OrderStatus = (int)OrderStatus.Aftersales;
+                await _orderRepository.SaveChangesAsync();
+                _logger.LogInformation("成功创建退款实体，RefundId: {RefundId}", refund.RefundId);
+
+                return refund.RefundId;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "创建订单退款时发生异常,OrderId: {OrderId}", orderId);
+                throw new BusinessException("创建订单退款实体失败");
+            }
+        }
 
 
     }
