@@ -40,6 +40,15 @@ namespace JISpeed.Core.Interfaces.IServices
         Task<string> CreateRefundByOrderIdAndUserIdAsync(string userId, string orderId, string reason,decimal amount);
         Task<string> UpdateRefundForMerchantAsync(string merchantId, string refundId, int refundStatus);
         Task<string> UpdateRefundForAdminAsync(string adminId, string refundId, int refundStatus);
+        Task<Refund> GetRefundDetailByRefundIdAsync(string refundId);
+        
+        Task<List<string>> GetRefundListByFilterAsync(
+            string? userId,
+            string?merchantId,
+            string? adminId,
+            int? auditStatus,
+            int?size,int?page);
+
 
     }
     public enum PayStatus
@@ -73,9 +82,12 @@ namespace JISpeed.Core.Interfaces.IServices
     
     public enum RefundStatus
     {
-        Default  = 0, // 默认
-        Rejected = 1, // 拒绝
-        Refunded = 2, // 退款
+        Default  = 0,         // 默认
+        Rejected = 1,         // 商家拒绝
+        Refunded = 2,         // 商家退款
+        DefaultForAdmin = 3,  // 等待管理员处理
+        RejectedForAdmin = 4, // 管理员拒绝退款
+        RefundedForAdmin = 5, // 管理员同意退款
     }
     
     public class DishQuantityDto

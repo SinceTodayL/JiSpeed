@@ -46,13 +46,14 @@ namespace JISpeed.Infrastructure.Repositories.Order
 
         // 重写GetAllAsync以包含关联数据和排序
         // <returns>退款列表</returns>
-        public override async Task<List<Refund>> GetAllAsync()
+        public async Task<List<Refund>> GetAllAsync(int? size, int? page)
         {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
             return await _context.Refunds
-                .Include(r => r.Order)
-                .ThenInclude(o => o.User)
-                .Include(r => r.Applicant)
                 .OrderByDescending(r => r.ApplyAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 
@@ -81,7 +82,128 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .ToListAsync();
         }
 
-        // 根据商家ID查询退款记录  
+        public async Task<List<Refund>> GetByUserIdAndStatusAsync(
+            string userId, int? status,
+            int? size, int? page)
+        {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
+            return status switch
+            {
+                // 处理中
+                1 => await _context.Refunds
+                    .Where(r => r.ApplicationId == userId && (r.AuditStatus == 0 || r.AuditStatus == 3))
+                    .OrderByDescending(r => r.ApplyAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                // 拒绝
+                2 => await _context.Refunds
+                    .Where(r => r.ApplicationId == userId && (r.AuditStatus == 1 || r.AuditStatus == 4))
+                    .OrderByDescending(r => r.ApplyAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                // 通过
+                3 => await _context.Refunds
+                    .Where(r => r.ApplicationId == userId && (r.AuditStatus == 2 || r.AuditStatus == 5))
+                    .OrderByDescending(r => r.ApplyAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                // 默认
+                null => await _context.Refunds
+                    .Where(r => r.ApplicationId == userId)
+                    .OrderByDescending(r => r.ApplyAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                // 剩余
+                _ => await _context.Refunds
+                    .Where(r => r.ApplicationId == userId)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync()
+            };
+        }
+
+        public async Task<List<Refund>> GetByMerchantIdAndStatusAsync(
+            string merchantId, int? status,
+            int? size, int? page)
+        {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
+            return status switch{
+            // 处理中
+            1 => await _context.Refunds
+                .Where(r => r.Order.MerchantId == merchantId && (r.AuditStatus == 0|| r.AuditStatus == 3))
+                .OrderByDescending(r => r.ApplyAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(),
+            // 拒绝
+            2 => await _context.Refunds
+                .Where(r => r.Order.MerchantId == merchantId && (r.AuditStatus == 1|| r.AuditStatus == 4))
+                .OrderByDescending(r => r.ApplyAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(),
+            // 通过
+            3 => await _context.Refunds
+                .Where(r => r.Order.MerchantId == merchantId && (r.AuditStatus == 2|| r.AuditStatus == 5))
+                .OrderByDescending(r => r.ApplyAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(),
+            // 默认
+            null => await _context.Refunds
+                .Where(r => r.Order.MerchantId == merchantId)
+                .OrderByDescending(r => r.ApplyAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(),
+            // 剩余
+            _ => await _context.Refunds
+                .Where(r => r.Order.MerchantId == merchantId)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync()
+        };
+    }
+        
+        public async Task<List<Refund>> GetAllByStatusForAdminAsync(
+            int? status,
+            int? size, int? page)
+        {
+            {
+                int currentPage = page ?? 1;
+                int pageSize = size ?? 20;
+                return status switch
+                {
+                    // 需要管理员处理
+                    1 => await _context.Refunds
+                        .Where(r =>  r.AuditStatus == 3)
+                        .OrderByDescending(r => r.ApplyAt)
+                        .Skip((currentPage - 1) * pageSize)
+                        .Take(pageSize)
+                        .ToListAsync(),
+                    // 全部的拒绝
+                    2 => await _context.Refunds
+                        .Where(r => (r.AuditStatus == 4 || r.AuditStatus == 5))
+                        .OrderByDescending(r => r.ApplyAt)
+                        .Skip((currentPage - 1) * pageSize)
+                        .Take(pageSize)
+                        .ToListAsync(),
+                    // 剩余
+                    _ => await _context.Refunds
+                        .Skip((currentPage - 1) * pageSize)
+                        .Take(pageSize)
+                        .ToListAsync()
+                };
+            }
+        }
+
+// 根据商家ID查询退款记录  
         public async Task<IEnumerable<Refund>> GetByMerchantIdAsync(string merchantId)
         {
             return await _context.Refunds

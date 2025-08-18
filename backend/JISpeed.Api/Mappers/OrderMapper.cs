@@ -28,6 +28,7 @@ namespace JISpeed.Api.Mappers
             CreateMap<OrderDish, OrderDishDto>();
             CreateMap<OrderLog, OrderLogResponseDto>();
             CreateMap<Payment, PaymentResponseDto>();
+            CreateMap<Refund, RefundResponseDto>();
         }
 
     }

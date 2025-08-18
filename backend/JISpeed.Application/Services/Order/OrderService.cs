@@ -1,6 +1,7 @@
 using JISpeed.Core.Constants;
 using JISpeed.Core.Entities.Order;
 using JISpeed.Core.Exceptions;
+using JISpeed.Core.Interfaces.IRepositories.Admin;
 using JISpeed.Core.Interfaces.IRepositories.Dish;
 using JISpeed.Core.Interfaces.IRepositories.Junctions;
 using JISpeed.Core.Interfaces.IRepositories.Merchant;
@@ -16,6 +17,7 @@ namespace JISpeed.Application.Services.Order
     public class OrderService : IOrderService
     {
         private readonly IOrderRepository _orderRepository;
+        private readonly IAdminRepository _adminRepository;
         private readonly IUserRepository _userRepository;
         private readonly IPaymentRepository _paymentRepository;
         private readonly IMerchantRepository _merchantRepository;
@@ -28,6 +30,7 @@ namespace JISpeed.Application.Services.Order
 
         public OrderService(
             IOrderRepository orderRepository,
+            IAdminRepository adminRepository,
             IUserRepository userRepository,
             IPaymentRepository paymentRepository,
             IMerchantRepository merchantRepository,
@@ -40,6 +43,7 @@ namespace JISpeed.Application.Services.Order
         )
         {
             _orderRepository = orderRepository;
+            _adminRepository = adminRepository;
             _userRepository = userRepository;
             _paymentRepository = paymentRepository;
             _merchantRepository = merchantRepository;
@@ -480,7 +484,7 @@ namespace JISpeed.Application.Services.Order
                 await _orderLogRepository.SaveChangesAsync();
                 _logger.LogInformation("成功更新退款实体，RefundId: {RefundId}", refund.RefundId);
 
-                return orderLog.LogId;
+                return refund.RefundId;
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
             {
@@ -548,7 +552,7 @@ namespace JISpeed.Application.Services.Order
             {
                 _logger.LogInformation("开始更新退款实体");
 
-                var admin = await _merchantRepository.ExistsAsync(adminId);
+                var admin = await _adminRepository.ExistsAsync(adminId);
                 if (!admin)
                 {
                     _logger.LogWarning("无相关数据,Admin: {admin}", admin);
@@ -560,7 +564,7 @@ namespace JISpeed.Application.Services.Order
                     throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据, refundId: {refundId}");
                 }
 
-                if (refund.AuditStatus != (int)RefundStatus.Default)
+                if (refund.AuditStatus != (int)RefundStatus.DefaultForAdmin && refund.AuditStatus != (int)RefundStatus.Default)
                 {
                     _logger.LogInformation("该申请已经被处理过！");
                     throw new BusinessException(ErrorCodes.GeneralError, "该申请已经被处理过！");
@@ -597,6 +601,70 @@ namespace JISpeed.Application.Services.Order
             }
         }
 
+        public async Task<Refund> GetRefundDetailByRefundIdAsync(string refundId)
+        {
+            try
+            {
+                _logger.LogInformation("开始获取退款实体信息");
+
+                var entity= await _refundRepository.GetByIdAsync(refundId);
+                if (entity == null)
+                {
+                    _logger.LogWarning("无相关数据");
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据，ID: {refundId}");
+                }
+                _logger.LogInformation("成功获取退款实体信息");
+
+                return entity;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取支付实体信息时发生异常");
+                throw new BusinessException("获取支付实体信息失败");
+            }
+        }
+
+        public async Task<List<string>> GetRefundListByFilterAsync(
+            string? userId,
+            string? merchantId,
+            string? adminId,
+            int? auditStatus,
+            int? size, int? page)
+        {
+            try
+            {
+                _logger.LogInformation("开始获取退款列表信息");
+
+                List<Refund>? refundList;
+                if(userId != null)
+                    refundList = await _refundRepository.GetByUserIdAndStatusAsync(userId, auditStatus,size,page);
+                else if (merchantId != null)
+                    refundList = await _refundRepository.GetByMerchantIdAndStatusAsync(merchantId, auditStatus,size,page);
+                else if (adminId != null)
+                {
+                    var admin = await _adminRepository.ExistsAsync(adminId);
+                    if (!admin)
+                        throw new NotFoundException(ErrorCodes.ResourceNotFound, "管理员不存在");
+                    refundList = await _refundRepository.GetAllByStatusForAdminAsync(auditStatus,size,page);
+                }
+                else
+                    refundList = await _refundRepository.GetAllAsync(size,page);
+                
+                if (refundList == null)
+                {
+                    _logger.LogWarning("无相关数据");
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, "无相关数据");
+                }
+                _logger.LogInformation("成功获取退款实体信息");
+                
+                return refundList.Select(r => r.RefundId).ToList();
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取退款实体列表时发生异常");
+                throw new BusinessException("获取退款实体列表失败");
+            }
+        }
 
     }
 }

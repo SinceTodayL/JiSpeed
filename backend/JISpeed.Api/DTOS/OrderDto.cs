@@ -133,4 +133,16 @@ namespace JISpeed.Api.DTOs
      {
          public required int RefundStatus{ get; set; }
      }
+
+     public class RefundResponseDto
+     {
+         public required string RefundId { get; set; } //退款ID pk
+         public required string OrderId { get; set; } //订单ID fk->Order(orderId)
+         public required string ApplicationId { get; set; } //申请人ID fk->User(userId)
+         public string? Reason { get; set; } //退款原因
+         public required decimal RefundAmount { get; set; } //退款金额
+         public required DateTime ApplyAt { get; set; } //申请时间
+         public required int AuditStatus { get; set; } //审核状态
+         public DateTime? FinishAt { get; set; } //退款完成时间 (可为空)
+     }
 }

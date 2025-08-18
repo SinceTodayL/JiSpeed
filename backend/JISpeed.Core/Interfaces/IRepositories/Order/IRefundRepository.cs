@@ -12,10 +12,23 @@ namespace JISpeed.Core.Interfaces.IRepositories.Order
 
         // 根据订单ID查询退款记录
         Task<IEnumerable<Refund>> GetByOrderIdAsync(string orderId);
+        Task<List<Refund>> GetAllAsync(int? size, int? page);
 
         // 根据用户ID查询退款记录
         Task<IEnumerable<Refund>> GetByUserIdAsync(string userId);
 
+        Task<List<Refund>> GetByUserIdAndStatusAsync(
+            string userId,int? status,
+            int?size,int?page);
+        Task<List<Refund>> GetByMerchantIdAndStatusAsync(
+            string merchantId,int? status,
+            int?size,int?page);
+        
+        
+        Task<List<Refund>> GetAllByStatusForAdminAsync(
+            int? status,
+            int?size,int?page);
+        
         // 根据商家ID查询退款记录
         Task<IEnumerable<Refund>> GetByMerchantIdAsync(string merchantId);
 
