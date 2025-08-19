@@ -32,5 +32,16 @@ namespace JISpeed.Core.Interfaces.IServices
             int? statType, int? size, int? page,
             DateTime? startTime,DateTime? endTime,
             decimal? minAmount, decimal?maxAmount);
+        
+        Task<bool> BanMerchantAsync(string merchantId,string adminId);
     }
+    
+    
+    public enum MerchantStatus
+    { 
+        Baned = 0,               // 封禁中
+        Open = 1,                // 正常营业
+        Close = 2,               // 休息中
+    }
+
 }

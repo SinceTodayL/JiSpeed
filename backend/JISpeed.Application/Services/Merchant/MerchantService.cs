@@ -3,6 +3,7 @@ using JISpeed.Core.Interfaces.IRepositories.Merchant;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Core.Constants;
 using JISpeed.Core.Exceptions;
+using JISpeed.Core.Interfaces.IRepositories.Admin;
 using Microsoft.Extensions.Logging;
 using MerchantEntity = JISpeed.Core.Entities.Merchant.Merchant;
 
@@ -12,16 +13,19 @@ namespace JISpeed.Application.Services.Merchant
     {
         private readonly IMerchantRepository _merchantRepository;
         private readonly ISalesStatRepository _salesStatRepository;
+        private readonly IAdminRepository _adminRepository;
         private readonly ILogger<MerchantService> _logger;
 
         public MerchantService(
             IMerchantRepository merchantRepository,
             ISalesStatRepository salesStatRepository,
+            IAdminRepository adminRepository,
             ILogger<MerchantService> logger
             )
         {
             _merchantRepository = merchantRepository;
             _salesStatRepository = salesStatRepository;
+            _adminRepository = adminRepository;
             _logger = logger;
         }
 
@@ -198,6 +202,36 @@ namespace JISpeed.Application.Services.Merchant
                 throw new BusinessException("获取商家数据统计信息失败");
             }
         }
+
+        public async Task<bool> BanMerchantAsync(string merchantId, string adminId)
+        { 
+            try
+            {
+                _logger.LogInformation("开始封禁商家, MerchantId: {MerchantId}", merchantId);
+                var admin = await _adminRepository.ExistsAsync(adminId);
+                if (!admin)
+                {
+                    _logger.LogWarning("无相关数据,adminId: {adminId}", adminId);
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据, adminId: {adminId}");
+                }
+                var merchant = await _merchantRepository.GetByIdAsync(merchantId);
+                if (merchant == null)
+                {
+                    throw new NotFoundException(ErrorCodes.MerchantNotFound,"商家不存在");
+                }
+
+                merchant.Status = (int)MerchantStatus.Baned;
+                _logger.LogInformation("成功封禁商家, MerchantId: {MerchantId}", merchantId);
+
+                return true;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "封禁商家时发生异常, MerchantId: {MerchantId}", merchantId);
+                throw new BusinessException("封禁商家失败");
+            }
+        }
+
 
 
     }

@@ -904,11 +904,11 @@ namespace JISpeed.Application.Services.Order
                 }
                 else if (adminId != null)
                 {
-                    var admin = await _userRepository.ExistsAsync(adminId);
+                    var admin = await _adminRepository.ExistsAsync(adminId);
                     if (!admin)
                     {
-                        _logger.LogWarning("无相关数据,userId: {userId}", userId);
-                        throw new NotFoundException(ErrorCodes.UserNotFound, $"无相关数据, userId: {userId}");
+                        _logger.LogWarning("无相关数据,adminId: {adminId}", adminId);
+                        throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据, adminId: {adminId}");
                     }
                     complaints = await _complaintRepository.GetAllByFilterAsync(status,size, page);
                 }

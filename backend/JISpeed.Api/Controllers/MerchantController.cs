@@ -229,7 +229,51 @@ namespace JISpeed.Api.Controllers
                     "系统繁忙，请稍后再试"));
             }
         }
-
+        
+         [HttpPatch("admins/{adminId}/merchants/{merchantId}")]
+        public async Task<ActionResult<ApiResponse<bool>>> BanMerchant(
+            string adminId,
+            string merchantId)
+        {
+            try
+            {
+                _logger.LogInformation("收到管理员ban商家的请求, MerchantID: {MerchantID}", merchantId);
+                
+                // 修改商家信息
+                await _merchantService.BanMerchantAsync(merchantId, adminId);
+                
+                _logger.LogInformation("成功ban商家详细信息, MerchantId: {MerchantId}", merchantId);
+                return Ok(ApiResponse<bool>.Success(true, "ban商家成功"));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败, MerchantId: {MerchantId}", merchantId);
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex, "商家不存在, MerchantId: {MerchantId}", merchantId);
+                return NotFound(ApiResponse<object>.Fail(
+                    ErrorCodes.ResourceNotFound,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogError(ex, "业务处理异常, MerchantId: {MerchantId}", merchantId);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ban商家时发生未知异常, MerchantId: {MerchantId}", merchantId);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+        }
         
     }
     
