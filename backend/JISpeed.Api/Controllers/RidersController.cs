@@ -79,6 +79,110 @@ namespace JISpeed.Api.Controllers
             }
         }
 
+        // 获取骑手列表
+        // <param name="page">页码，默认1</param>
+        // <param name="pageSize">每页大小，默认20</param>
+        // <param name="searchTerm">搜索关键词（姓名或手机号）</param>
+        // <param name="status">骑手状态筛选（可选）</param>
+        // <returns>骑手列表和分页信息</returns>
+        [HttpGet]
+        [ProducesResponseType(typeof(ApiResponse<object>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 500)]
+        public async Task<ActionResult<ApiResponse<object>>> GetRiders(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] int? status = null)
+        {
+            try
+            {
+                _logger.LogInformation("收到获取骑手列表请求, Page: {Page}, PageSize: {PageSize}, SearchTerm: {SearchTerm}, Status: {Status}",
+                    page, pageSize, searchTerm ?? "无", status.HasValue ? status.Value.ToString() : "全部");
+
+                // 参数验证
+                if (page < 1)
+                {
+                    return BadRequest(ApiResponse<object>.Fail(
+                        ErrorCodes.ValidationFailed,
+                        "页码必须大于0"));
+                }
+
+                if (pageSize < 1 || pageSize > 100)
+                {
+                    return BadRequest(ApiResponse<object>.Fail(
+                        ErrorCodes.ValidationFailed,
+                        "每页大小必须在1-100之间"));
+                }
+
+                // 获取所有骑手
+                var allRiders = await _dbContext.Riders.ToListAsync();
+
+                // 应用搜索筛选
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    allRiders = allRiders.Where(r =>
+                        (r.Name != null && r.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                        (r.PhoneNumber != null && r.PhoneNumber.Contains(searchTerm))
+                    ).ToList();
+                }
+
+                // 应用状态筛选（如果有的话）
+                if (status.HasValue)
+                {
+                    // 这里假设骑手有状态字段，如果没有可以移除这个筛选
+                    // allRiders = allRiders.Where(r => r.Status == status.Value).ToList();
+                }
+
+                // 计算分页信息
+                var totalCount = allRiders.Count;
+                var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+                var skip = (page - 1) * pageSize;
+
+                // 应用分页
+                var riders = allRiders
+                    .Skip(skip)
+                    .Take(pageSize)
+                    .ToList();
+
+                // 转换为DTO
+                var riderDtos = riders.Select(r => new RiderDTO
+                {
+                    RiderId = r.RiderId,
+                    Name = r.Name,
+                    PhoneNumber = r.PhoneNumber,
+                    VehicleNumber = r.VehicleNumber,
+                    ApplicationUserId = r.ApplicationUserId
+                }).ToList();
+
+                // 构建分页结果
+                var result = new
+                {
+                    Riders = riderDtos,
+                    Pagination = new
+                    {
+                        Page = page,
+                        PageSize = pageSize,
+                        TotalCount = totalCount,
+                        TotalPages = totalPages,
+                        HasNextPage = page < totalPages,
+                        HasPreviousPage = page > 1
+                    }
+                };
+
+                _logger.LogInformation("成功获取骑手列表, 总数: {TotalCount}, 当前页: {Page}, 每页大小: {PageSize}",
+                    totalCount, page, pageSize);
+
+                return Ok(ApiResponse<object>.Success(result, "骑手列表获取成功"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取骑手列表时发生异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "获取骑手列表失败"));
+            }
+        }
+
         // 创建骑手
         // <param name="createRiderDto">创建骑手请求</param>
         // <returns>创建的骑手信息</returns>

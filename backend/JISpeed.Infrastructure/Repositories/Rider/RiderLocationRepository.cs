@@ -117,10 +117,11 @@ namespace JISpeed.Infrastructure.Repositories.Rider
                     .GroupBy(l => l.RiderId)
                     .Select(g => g.OrderByDescending(l => l.LocationTime).FirstOrDefault())
                     .Where(l => l != null)
+                    .Cast<RiderLocation>() // 明确转换为非空类型
                     .ToListAsync();
 
-                // 筛选出在指定区域内的位置
-                var locationsInArea = allLatestLocations!
+                // 筛选出在指定区域内的位置（移除空引用断言操作符）
+                var locationsInArea = allLatestLocations
                     .Where(l => l.Longitude >= minLongitude && l.Longitude <= maxLongitude &&
                                 l.Latitude >= minLatitude && l.Latitude <= maxLatitude)
                     .ToList();

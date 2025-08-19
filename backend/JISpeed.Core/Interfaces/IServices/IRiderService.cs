@@ -21,6 +21,14 @@ namespace JISpeed.Core.Interfaces.IServices
         // <returns>骑手实体</returns>
         Task<Rider> GetRiderByIdAsync(string riderId);
 
+        // 获取骑手列表（支持分页和搜索）
+        // <param name="page">页码</param>
+        // <param name="pageSize">每页大小</param>
+        // <param name="searchTerm">搜索关键词</param>
+        // <returns>骑手列表和分页信息</returns>
+        Task<(IEnumerable<JISpeed.Core.Entities.Rider.Rider> Riders, int TotalCount, int TotalPages)> GetRidersAsync(
+            int page, int pageSize, string? searchTerm = null);
+            
         // 创建新骑手
         // <param name="rider">骑手实体</param>
         // <returns>创建的骑手实体</returns>
