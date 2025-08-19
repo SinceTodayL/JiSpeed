@@ -58,6 +58,7 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IAssignmentRepository, AssignmentRepository>();
             services.AddScoped<IAttendanceRepository, AttendanceRepository>();
             services.AddScoped<IPerformanceRepository, PerformanceRepository>();
+            services.AddScoped<IRiderLocationRepository, RiderLocationRepository>();
 
             return services;
         }
@@ -83,6 +84,15 @@ namespace JISpeed.Api.Extensions
             
             // 定时任务
             services.AddHostedService<DailyCreator>();
+            
+            // 骑手相关服务
+            services.AddScoped<IPerformanceService, PerformanceService>();
+            services.AddScoped<IMapService, AMapService>();
+            services.AddScoped<ILocationPushService, LocationPushService>();
+            services.AddScoped<IRiderLocationService, RiderLocationService>();
+            // 注册考勤服务
+            services.AddScoped<IAttendanceService, AttendanceService>();
+            
             return services;
         }
     }
