@@ -83,26 +83,8 @@ builder.Services.Configure<AuthenticationOptions>(options =>
 
 // 注册仓储层服务（统一封装）
 builder.Services.AddRepositories();
-
-// 注册骑手定位相关仓储
-builder.Services.AddScoped<IRiderLocationRepository, RiderLocationRepository>();
-
 // 注册：接口 -> 实现类
-builder.Services.AddScoped<IRegistrationService, RegistrationService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
-// builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IRiderService, RiderService>();
-builder.Services.AddScoped<IPerformanceService, PerformanceService>();
-// builder.Services.AddScoped<IMerchantService, MerchantService>();
-// builder.Services.AddScoped<IAdminService, AdminService>();
-
-// 注册骑手定位相关服务
-builder.Services.AddScoped<IMapService, AMapService>();
-builder.Services.AddScoped<ILocationPushService, LocationPushService>();
-builder.Services.AddScoped<IRiderLocationService, RiderLocationService>();
-
-// 注册考勤服务
-builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+builder.Services.AddServices();
 
 // 5. 添加 Swagger
 builder.Services.AddSwaggerGen();
