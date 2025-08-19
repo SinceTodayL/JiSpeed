@@ -870,7 +870,7 @@ namespace JISpeed.Application.Services.Order
                     {
                         throw new NotFoundException(ErrorCodes.MerchantNotFound,"商家不存在");
                     }
-                    complaints = await _complaintRepository.GetByMerchantIdAsync(merchantId, status,size, page);
+                    complaints = await _complaintRepository.GetByMerchantIdAndStatusAsync(merchantId, status,size, page);
                 }
                 else if(userId != null)
                 {
@@ -879,7 +879,7 @@ namespace JISpeed.Application.Services.Order
                     {
                         throw new NotFoundException(ErrorCodes.UserNotFound,"用户不存在");
                     }
-                    complaints = await _complaintRepository.GetByUserIdAsync(userId, status,size, page);
+                    complaints = await _complaintRepository.GetByUserIdAndStatusAsync(userId, status,size, page);
                 }
                 else if (adminId != null)
                 {

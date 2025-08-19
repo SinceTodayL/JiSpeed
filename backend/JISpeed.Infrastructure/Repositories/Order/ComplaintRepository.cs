@@ -69,8 +69,18 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .ToListAsync();
         }
 
+        
         // 根据用户ID查询投诉列表
-        public async Task<List<Complaint>> GetByUserIdAsync(
+        public async Task<List<Complaint>> GetByUserIdAsync(string userId)
+        {
+            return await _context.Complaints
+                .Include(c => c.Order)
+                .Where(c => c.ComplainantId == userId)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<List<Complaint>> GetByUserIdAndStatusAsync(
                 string userId,
                 int ? status, 
                 int?size,int?page)
@@ -115,7 +125,20 @@ namespace JISpeed.Infrastructure.Repositories.Order
         }
 
         // 根据商家ID查询投诉列表
-        public async Task<List<Complaint>> GetByMerchantIdAsync(
+        public async Task<List<Complaint>> GetByMerchantIdAsync(string merchantId)
+        {
+            return await _context.Complaints 
+                .Include(c => c.Order) 
+                .ThenInclude(o => o.User) 
+                .Include(c => c.Order) 
+                .ThenInclude(o => o.OrderDishes) 
+                .ThenInclude(od => od.Dish) 
+                .Include(c => c.Complainant) 
+                .Where(c => c.Order.MerchantId== merchantId)
+                .OrderByDescending(c => c.CreatedAt) 
+                .ToListAsync();
+        }
+        public async Task<List<Complaint>> GetByMerchantIdAndStatusAsync(
             string merchantId,
             int? status,
             int? size, int? page)

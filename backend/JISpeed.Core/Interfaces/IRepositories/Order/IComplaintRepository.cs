@@ -17,16 +17,18 @@ namespace JISpeed.Core.Interfaces.IRepositories.Order
         Task<IEnumerable<Complaint>> GetByOrderIdAsync(string orderId);
 
         // 根据用户ID查询投诉列表
-        Task<List<Complaint>> GetByUserIdAsync(
+        Task<List<Complaint>> GetByUserIdAndStatusAsync(
             string userId,
             int ? status, 
             int?size,int?page);
+        Task<List<Complaint>> GetByUserIdAsync(string userId);
 
         // 根据商家ID查询投诉列表
-        Task<List<Complaint>> GetByMerchantIdAsync(
+        Task<List<Complaint>> GetByMerchantIdAndStatusAsync(
             string merchantId,
             int ? status,
             int?size,int?page);
+        Task<List<Complaint>> GetByMerchantIdAsync(string merchantId);
         Task<List<Complaint>> GetAllByFilterAsync(
             int ? status,
             int?size,int?page);
