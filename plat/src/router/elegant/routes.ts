@@ -45,7 +45,8 @@ export const generatedRoutes: GeneratedRoute[] = [
     component: 'layout.base$view.complaint-handle',
     meta: {
       title: 'complaint-handle',
-      i18nKey: 'route.complaint-handle'
+      i18nKey: 'route.complaint-handle',
+      order: 5
     }
   },
   {
@@ -90,7 +91,8 @@ export const generatedRoutes: GeneratedRoute[] = [
     component: 'layout.base$view.merchant-manage',
     meta: {
       title: 'merchant-manage',
-      i18nKey: 'route.merchant-manage'
+      i18nKey: 'route.merchant-manage',
+      order: 3
     }
   },
   {
@@ -99,7 +101,8 @@ export const generatedRoutes: GeneratedRoute[] = [
     component: 'layout.base$view.rider-manage',
     meta: {
       title: 'rider-manage',
-      i18nKey: 'route.rider-manage'
+      i18nKey: 'route.rider-manage',
+      order: 4
     }
   },
   {
@@ -108,7 +111,8 @@ export const generatedRoutes: GeneratedRoute[] = [
     component: 'layout.base$view.user-manage',
     meta: {
       title: 'user-manage',
-      i18nKey: 'route.user-manage'
+      i18nKey: 'route.user-manage',
+      order: 2
     }
   }
 ];

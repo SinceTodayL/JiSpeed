@@ -166,7 +166,11 @@ const local: App.I18n.Schema = {
     404: '页面不存在',
     500: '服务器错误',
     'iframe-page': '外链页面',
-    home: '首页',
+    home: '控制台',
+    'user-manage': '用户管理',
+    'merchant-manage': '商家管理',
+    'rider-manage': '骑手管理',
+    'complaint-handle': '投诉处理',
     'order-manage': '订单管理',
     'goods-management': '货物管理'
   },
@@ -218,7 +222,10 @@ const local: App.I18n.Schema = {
       }
     },
     home: {
-
+      title: '首页',
+      performanceOverview: {
+        title: '平台成绩概览'
+      },
       greeting: '早安，{userName}, 今天又是充满活力的一天!',
       weatherDesc: '今日多云转晴，30℃ - 35℃!',
       projectCount: '项目数',
@@ -235,15 +242,29 @@ const local: App.I18n.Schema = {
       turnover: '成交额',
       dealCount: '成交量',
       projectNews: {
-        title: '项目动态',
+        title: '平台动态',
         moreNews: '更多动态',
-        desc1: '我们的 JiSpeed 外卖平台开始开发了！',
-        desc2: '不知道谁向 admin 提交了一个bug，妈的',
-        desc3: 'Soybean 准备为 admin 的发布做充分的准备工作!',
-        desc4: '我们正在忙于为admin写项目说明文档！',
-        desc5: '终于写完了，我们的项目就要正式上线了！'
+        desc1: 'JiSpeed 平台管理系统 v1.0.0 正式发布！',
+        desc2: '用户管理模块已成功上线，现已支持用户列表查询。',
+        desc3: '商家管理模块开发中，预计下周上线。',
+        desc4: '骑手管理模块已完成UI设计，即将进入开发阶段。',
+        desc5: '投诉处理系统已完成初步规划，保障平台公平公正。'
       },
-      creativity: '创意'
+      creativity: '创意',
+      announcement: {
+        title: '平台公告',
+        publish: '发布公告',
+        publishModalTitle: '发布新公告',
+        noAnnouncements: '暂无公告'
+      },
+      reconciliation: {
+        title: '对账处理',
+        noReconciliations: '暂无待处理的对账'
+      },
+      coupon: {
+        title: '优惠券发放',
+        issue: '发放优惠券'
+      }
     }
   },
   form: {

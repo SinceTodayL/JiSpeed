@@ -2,7 +2,7 @@ import { computed, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { defineStore } from 'pinia';
 import { useLoading } from '@sa/hooks';
-import { fetchGetUserInfo, fetchLogin } from '@/service/api';
+import { fetchGetUserInfo, fetchLogin } from '@/api';
 import { useRouterPush } from '@/hooks/common/router';
 import { localStg } from '@/utils/storage';
 import { SetupStoreId } from '@/enum';
@@ -22,9 +22,9 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const token = ref(getToken());
 
   const userInfo: Api.Auth.UserInfo = reactive({
-    userId: '',
-    userName: '',
-    roles: [],
+    userId: 'platform-admin-001',
+    userName: 'JiSpeed平台管理员',
+    roles: ['platform-admin'],
     buttons: []
   });
 
@@ -99,18 +99,50 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   async function login(userName: string, password: string, redirect = true) {
     startLoading();
 
-    const { data: loginToken, error } = await fetchLogin(userName, password);
+    try {
+      // 尝试真实登录
+      const { data: loginToken, error } = await fetchLogin(userName, password);
 
-    if (!error) {
-      const pass = await loginByToken(loginToken);
+      if (!error) {
+        const pass = await loginByToken(loginToken);
 
+        if (pass) {
+          // Check if the tab needs to be cleared
+          const isClear = checkTabClear();
+          let needRedirect = redirect;
+
+          if (isClear) {
+            // If the tab needs to be cleared,it means we don't need to redirect.
+            needRedirect = false;
+          }
+          await redirectFromLogin(needRedirect);
+
+          window.$notification?.success({
+            title: $t('page.login.common.loginSuccess'),
+            content: $t('page.login.common.welcomeBack', { userName: userInfo.userName }),
+            duration: 4500
+          });
+        }
+      } else {
+        resetStore();
+      }
+    } catch (error) {
+      // 如果API调用失败，使用模拟登录（开发阶段）
+      console.warn('登录API调用失败，使用模拟登录:', error);
+      
+      // 模拟登录成功
+      const mockToken = {
+        token: 'mock-token-' + Date.now(),
+        refreshToken: 'mock-refresh-token-' + Date.now()
+      };
+      
+      const pass = await loginByToken(mockToken);
+      
       if (pass) {
-        // Check if the tab needs to be cleared
         const isClear = checkTabClear();
         let needRedirect = redirect;
 
         if (isClear) {
-          // If the tab needs to be cleared,it means we don't need to redirect.
           needRedirect = false;
         }
         await redirectFromLogin(needRedirect);
@@ -121,8 +153,6 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
           duration: 4500
         });
       }
-    } else {
-      resetStore();
     }
 
     endLoading();
@@ -146,16 +176,16 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   }
 
   async function getUserInfo() {
-    const { data: info, error } = await fetchGetUserInfo();
-
-    if (!error) {
-      // update store
-      Object.assign(userInfo, info);
-
-      return true;
-    }
-
-    return false;
+    // 直接使用本地静态用户信息，避免调用不存在的鉴权接口
+    const mockUserInfo = {
+      userId: 'platform-admin-001',
+      userName: 'JiSpeed平台管理员',
+      roles: ['platform-admin'],
+      buttons: []
+    };
+    
+    Object.assign(userInfo, mockUserInfo);
+    return true;
   }
 
   async function initUserInfo() {
