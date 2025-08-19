@@ -123,6 +123,54 @@ namespace JISpeed.Application.Services.Rider
             }
         }
 
+        // 获取骑手列表（支持分页和搜索）
+        // <param name="page">页码</param>
+        // <param name="pageSize">每页大小</param>
+        // <param name="searchTerm">搜索关键词</param>
+        // <returns>骑手列表和分页信息</returns>
+        public async Task<(IEnumerable<JISpeed.Core.Entities.Rider.Rider> Riders, int TotalCount, int TotalPages)> GetRidersAsync(
+            int page, int pageSize, string? searchTerm = null)
+        {
+            try
+            {
+                _logger.LogInformation("开始获取骑手列表, Page: {Page}, PageSize: {PageSize}, SearchTerm: {SearchTerm}",
+                    page, pageSize, searchTerm ?? "无");
+
+                // 获取所有骑手
+                var allRiders = await _riderRepository.GetAllAsync();
+
+                // 应用搜索筛选
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    allRiders = allRiders.Where(r => 
+                        (r.Name != null && r.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                        (r.PhoneNumber != null && r.PhoneNumber.Contains(searchTerm))
+                    ).ToList();
+                }
+
+                // 计算分页信息
+                var totalCount = allRiders.Count();
+                var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+                var skip = (page - 1) * pageSize;
+
+                // 应用分页
+                var riders = allRiders
+                    .Skip(skip)
+                    .Take(pageSize)
+                    .ToList();
+
+                _logger.LogInformation("成功获取骑手列表, 总数: {TotalCount}, 当前页: {Page}, 每页大小: {PageSize}",
+                    totalCount, page, pageSize);
+
+                return (riders, totalCount, totalPages);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取骑手列表时发生异常");
+                throw new BusinessException("获取骑手列表失败");
+            }
+        }
+        
         // 创建骑手
         // <param name="rider">骑手实体</param>
         // <returns>创建的骑手实体</returns>

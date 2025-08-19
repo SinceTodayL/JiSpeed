@@ -112,17 +112,17 @@ namespace JISpeed.Core.Interfaces.IServices
         Resolved = 1,         // 已解决
         Cancelled = 2,        // 关闭
     }
-
+    public class DishQuantityDto
+    {
+        public required string DishId { get; set; }
+        public required int Quantity { get; set; }
+    }
+    
     public enum Role
     {
         User = 0,
         Merchant = 1,
         Rider = 2,
-    }
-    public class DishQuantityDto
-    {
-        public required string DishId { get; set; }
-        public required int Quantity { get; set; }
     }
 
 }
