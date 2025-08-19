@@ -92,6 +92,7 @@ namespace JISpeed.Api.Controllers
         public async Task<ActionResult<ApiResponse<List<MerchantDto>>>> GetAllMerchant(
             [FromQuery] string ?merchantName,
             [FromQuery] string? location,
+            [FromQuery] int? status,
             [FromQuery] int ?size, [FromQuery] int ?page
             )
         {
@@ -99,7 +100,7 @@ namespace JISpeed.Api.Controllers
             {
                 _logger.LogInformation("收到获取获取商家列表信息请求");
                 // 获取商家详细信息
-                var data = await _merchantService.GetMerchantByFiltersAsync(size,page,merchantName,location);
+                var data = await _merchantService.GetMerchantByFiltersAsync(size,page,status,merchantName,location);
                 // 转换为DTO
                 var response = _mapper.Map<List<MerchantDto>>(data);
 

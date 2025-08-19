@@ -21,6 +21,7 @@ namespace JISpeed.Core.Interfaces.IServices
         
         Task<List<Merchant>> GetMerchantByFiltersAsync(
             int? size, int? page,
+            int? status,
             string? merchantName,
             string? location);
 

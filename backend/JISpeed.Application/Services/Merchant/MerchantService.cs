@@ -97,6 +97,7 @@ namespace JISpeed.Application.Services.Merchant
         }
         public async Task<List<MerchantEntity>> GetMerchantByFiltersAsync(
             int? size, int? page,
+            int? status,
             string? merchantName,
             string? location)
         {
@@ -113,11 +114,15 @@ namespace JISpeed.Application.Services.Merchant
                 {
                     data = await _merchantRepository.SearchByLocationAsync(location,size,page);
                 }
+                else if (status.HasValue)
+                {
+                    data = await _merchantRepository.GetByStatusAsync(status.Value,size,page);
+                }
                 else
                 {
                     data = await _merchantRepository.GetAllMerchantsAsync(size,page);
                 }
-                if (data == null||!data.Any())
+                if (data == null)
                 {
                     _logger.LogWarning("商家不存在");
                     throw new NotFoundException(ErrorCodes.ResourceNotFound, "商家不存在");

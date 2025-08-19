@@ -24,7 +24,9 @@ namespace JISpeed.Core.Interfaces.IRepositories.Merchant
         // 根据状态获取商家列表
         // <param name="status">状态</param>
         // <returns>商家列表</returns>
-        Task<List<JISpeed.Core.Entities.Merchant.Merchant>> GetByStatusAsync(int status);
+        Task<List<JISpeed.Core.Entities.Merchant.Merchant>> GetByStatusAsync(
+            int status,
+            int? size,int? page);
 
         // 根据位置搜索商家
         // <param name="location">位置</param>

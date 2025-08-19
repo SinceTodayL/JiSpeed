@@ -76,10 +76,16 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
         // 根据状态获取商家列表
         // <param name="status">状态</param>
         // <returns>商家列表</returns>
-        public async Task<List<MerchantEntity>> GetByStatusAsync(int status)
+        public async Task<List<MerchantEntity>> GetByStatusAsync(
+            int status,
+            int? size,int? page)
         {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
             return await _context.Merchants
                 .Where(m => m.Status == status)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 
