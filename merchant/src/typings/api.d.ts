@@ -114,12 +114,14 @@ declare namespace Api {
       onSale: number | null;
       /** 商家ID - maps to MerchantId */
       merchantId: string | null;
-      /** 库存数量 - NOT in backend DTO, frontend only */
-      quantity?: number;
+      /** 库存数量  */
+      StockQuantity?: number;
       /** 评论数量 - maps to ReviewQuantity */
       reviewQuantity?: number | null;
       /** 分类名称 - maps to CategoryName */
       categoryName?: string | null;
+      /** 菜品描述 */
+      Description?: string | null;
     }
 
     /** Create dish request - matches backend CreateDishesDto */
@@ -134,6 +136,10 @@ declare namespace Api {
       originPrice: number;
       /** 封面图片URL - optional */
       coverUrl?: string;
+      /** 菜品描述 - optional */
+      Description?: string;
+      /** 库存数量 - optional */
+      StockQuantity?: number;
     }
 
     /** Update dish request - matches backend UpdateDishesDto */
@@ -150,6 +156,10 @@ declare namespace Api {
       coverUrl?: string;
       /** 是否在售 - optional */
       onSale?: number;
+      /** 库存数量 - optional */
+      StockQuantity?: number;
+      /** 菜品描述 - optional */
+      Description?: string;
     }
 
     /** 菜品列表响应 */
@@ -253,14 +263,12 @@ declare namespace Api {
    * backend api module: "order"
    */
   namespace Order {
-    /** 订单数据项 */
+    /** 订单数据项 - 匹配后端OrderDto */
     interface OrderItem {
       /** 订单ID */
       orderId: string;
-      /** 用户ID */
-      userId: string;
-      /** 地址ID */
-      addressId: string;
+      /** 商家ID */
+      merchantId: string;
       /** 订单金额 */
       orderAmount: number;
       /** 创建时间 */
@@ -272,17 +280,57 @@ declare namespace Api {
       /** 优惠券ID */
       couponId: string;
       /** 分配ID */
-      assignid: string;
+      assignId: string;
     }
 
-    /** 订单响应 */
-    interface OrderResponse {
+    /** 订单详情数据项 - 匹配后端OrderDetailDto */
+    interface OrderDetailItem extends OrderItem {
+      /** 用户ID */
+      userId: string;
+      /** 地址ID */
+      addressId: string;
+      /** 订单菜品列表 */
+      orderDishes: OrderDishItem[];
+      /** 订单日志ID列表 */
+      orderLogIds: string[];
+      /** 支付ID列表 */
+      paymentIds: string[];
+      /** 退款ID列表 */
+      refundIds: string[];
+      /** 投诉ID列表 */
+      complaintIds: string[];
+      /** 评价ID列表 */
+      reviewIds: string[];
+    }
+
+    /** 订单菜品项 - 匹配后端OrderDishDto */
+    interface OrderDishItem {
+      /** 菜品ID */
+      dishId: string;
+      /** 数量 */
+      quantity: number;
+      /** 菜品详细信息（前端补充） */
+      dishDetails?: Api.Goods.DishItem | null;
+    }
+
+    /** 订单ID列表响应 */
+    interface OrderIdsResponse {
       /** 响应码 */
       code: number;
       /** 响应信息 */
       message: string;
-      /** 订单数据 */
-      data: OrderItem[];
+      /** 订单ID数据 */
+      data: string[];
+    }
+
+    /** 订单详情响应 */
+    interface OrderDetailResponse {
+      /** 响应码 */
+      code: number;
+      /** 响应信息 */
+      message: string;
+      /** 订单详情数据 */
+      data: OrderDetailItem;
     }
 
     /** 订单状态映射 */
@@ -384,6 +432,60 @@ declare namespace Api {
       isAnonymous?: number;
       /** 评论状态 */
       status?: number;
+    }
+  }
+
+  /**
+   * Application - 申请相关接口
+   */
+  namespace Application {
+    /** 申请状态类型 */
+    type AuditStatus = 0 | 1 | 2; // 0: 待审核, 1: 通过, 2: 拒绝
+
+    /** 提交申请响应 */
+    interface SubmitApplicationResponse {
+      /** 申请ID */
+      applyId: string;
+    }
+
+    /** 申请信息 */
+    interface ApplicationResponse {
+      /** 申请ID */
+      applyId: string;
+      /** 公司名称 */
+      companyName: string;
+      /** 提交时间 */
+      submittedAt: string;
+      /** 商家ID */
+      merchantId: string;
+      /** 审核状态 */
+      auditStatus: string;
+      /** 审核时间 */
+      auditAt?: string;
+      /** 拒绝原因 */
+      rejectReason?: string;
+      /** 管理员ID */
+      adminId?: string;
+      /** 申请材料/申请理由 */
+      applicationMaterials?: string;
+    }
+
+    /** 申请列表查询参数 */
+    interface ApplicationListParams {
+      /** 审核状态筛选 */
+      auditStatus?: AuditStatus;
+      /** 页面大小 */
+      size?: number;
+      /** 页码 */
+      page?: number;
+    }
+
+    /** 提交申请请求参数 */
+    interface SubmitApplicationRequest {
+      /** 公司名称 */
+      companyName: string;
+      /** 申请材料/申请理由 */
+      applicationMaterials: string;
     }
   }
 }

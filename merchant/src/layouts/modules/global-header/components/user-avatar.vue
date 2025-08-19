@@ -50,8 +50,22 @@ function logout() {
     content: $t('common.logoutConfirm'),
     positiveText: $t('common.confirm'),
     negativeText: $t('common.cancel'),
-    onPositiveClick: () => {
-      authStore.resetStore();
+    onPositiveClick: async () => {
+      await authStore.resetStore();
+      
+      // 清除所有本地浏览器数据
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // 清除所有Cookie（当前域名下）
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      
+      // 退出登录后跳转到外部登录页面
+      toLogin();
     }
   });
 }

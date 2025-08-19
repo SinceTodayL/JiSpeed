@@ -42,7 +42,7 @@ const title = computed(() => {
 
 type Model = Pick<
   Api.Goods.DishItem,
-  'dishName' | 'price' | 'originPrice' | 'coverUrl' | 'categoryId' | 'onSale' | 'quantity'
+  'dishName' | 'price' | 'originPrice' | 'coverUrl' | 'categoryId' | 'onSale' | 'StockQuantity' | 'Description'
 >;
 
 const model = ref(createDefaultModel());
@@ -55,7 +55,8 @@ function createDefaultModel(): Model {
     coverUrl: '',
     categoryId: '',
     onSale: 1,
-    quantity: 0
+    StockQuantity: 0,
+    Description: ''
   };
 }
 
@@ -84,7 +85,8 @@ function handleInitModel() {
       coverUrl: props.rowData.coverUrl,
       categoryId: props.rowData.categoryId,
       onSale: props.rowData.onSale,
-      quantity: props.rowData.quantity
+      StockQuantity: props.rowData.StockQuantity || 0,
+      Description: props.rowData.Description || ''
     });
   }
 }
@@ -104,7 +106,9 @@ async function handleSubmit() {
         dishName: model.value.dishName,
         price: model.value.price,
         originPrice: model.value.originPrice,
-        coverUrl: model.value.coverUrl || undefined
+        coverUrl: model.value.coverUrl || undefined,
+        Description: model.value.Description,
+        StockQuantity: model.value.StockQuantity
       };
       
       const result = await createDish(merchantStore.merchantId, createData);
@@ -122,7 +126,9 @@ async function handleSubmit() {
         price: model.value.price,
         originPrice: model.value.originPrice,
         coverUrl: model.value.coverUrl || undefined,
-        onSale: model.value.onSale
+        onSale: model.value.onSale,
+        StockQuantity: model.value.StockQuantity,
+        Description: model.value.Description
       };
       
       const result = await updateDish(merchantStore.merchantId, props.rowData.dishId, updateData);
@@ -174,8 +180,16 @@ watch(visible, () => {
         <NFormItem label="原价" path="originPrice">
           <NInputNumber v-model:value="model.originPrice" placeholder="请输入原价" :precision="2" :min="0" class="w-full" />
         </NFormItem>
-        <NFormItem label="库存数量" path="quantity">
-          <NInputNumber v-model:value="model.quantity" placeholder="请输入库存数量" :min="0" class="w-full" />
+        <NFormItem label="库存数量" path="StockQuantity">
+          <NInputNumber v-model:value="model.StockQuantity" placeholder="请输入库存数量" :min="0" class="w-full" />
+        </NFormItem>
+        <NFormItem label="菜品描述" path="Description">
+          <NInput 
+            v-model:value="model.Description" 
+            type="textarea" 
+            placeholder="请输入菜品描述" 
+            :autosize="{ minRows: 2, maxRows: 4 }"
+          />
         </NFormItem>
         <NFormItem label="商品图片" path="coverUrl">
           <NInput v-model:value="model.coverUrl" placeholder="请输入图片URL" />

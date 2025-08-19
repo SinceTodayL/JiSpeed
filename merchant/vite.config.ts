@@ -14,7 +14,8 @@ export default defineConfig(configEnv => {
     VITE_OTHER_SERVICE_BASE_URL: '{}',
     VITE_SERVICE_SUCCESS_CODE: '0',
     VITE_HTTP_PROXY: 'N',
-    VITE_PROXY_LOG: 'N'
+    VITE_PROXY_LOG: 'N',
+    VITE_LOGIN_URL: 'http://localhost:9527'
   };
   
   const customEnv = Object.assign({}, defaultEnv, viteEnv) as Env.ImportMeta;
@@ -46,7 +47,8 @@ export default defineConfig(configEnv => {
       'import.meta.env.VITE_SERVICE_BASE_URL': JSON.stringify(customEnv.VITE_SERVICE_BASE_URL),
       'import.meta.env.VITE_SERVICE_SUCCESS_CODE': JSON.stringify(customEnv.VITE_SERVICE_SUCCESS_CODE),
       'import.meta.env.VITE_OTHER_SERVICE_BASE_URL': JSON.stringify(customEnv.VITE_OTHER_SERVICE_BASE_URL),
-      'import.meta.env.VITE_HTTP_PROXY': JSON.stringify(customEnv.VITE_HTTP_PROXY)
+      'import.meta.env.VITE_HTTP_PROXY': JSON.stringify(customEnv.VITE_HTTP_PROXY),
+      'import.meta.env.VITE_LOGIN_URL': JSON.stringify(customEnv.VITE_LOGIN_URL)
     },
 
     server: {
