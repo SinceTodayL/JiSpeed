@@ -21,7 +21,7 @@ namespace JISpeed.Core.Entities.Merchant
         [StringLength(50)]
         public required string MerchantName { get; set; }
         
-        public int Status { get; set; } = 1;
+        public int Status { get; set; } = 0;
         
         [StringLength(50)]
         public string? ContactInfo { get; set; }
