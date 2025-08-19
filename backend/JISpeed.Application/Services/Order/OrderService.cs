@@ -26,6 +26,7 @@ namespace JISpeed.Application.Services.Order
         private readonly IOrderLogRepository _orderLogRepository;
         private readonly IDishRepository _dishRepository;
         private readonly IRefundRepository _refundRepository;
+        private readonly IComplaintRepository _complaintRepository;
         private readonly ILogger<OrderService> _logger;
 
         public OrderService(
@@ -39,6 +40,7 @@ namespace JISpeed.Application.Services.Order
             IOrderDishRepository orderDishRepository,
             IDishRepository dishRepository,
             IRefundRepository refundRepository,
+            IComplaintRepository complaintRepository,
             ILogger<OrderService> logger
         )
         {
@@ -52,6 +54,7 @@ namespace JISpeed.Application.Services.Order
             _orderLogRepository = orderLogRepository;
             _dishRepository = dishRepository;
             _refundRepository = refundRepository;
+            _complaintRepository = complaintRepository;
             _logger = logger;
         }
         
@@ -619,8 +622,8 @@ namespace JISpeed.Application.Services.Order
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
             {
-                _logger.LogError(ex, "获取支付实体信息时发生异常");
-                throw new BusinessException("获取支付实体信息失败");
+                _logger.LogError(ex, "获取退款实体信息时发生异常");
+                throw new BusinessException("获取退款实体信息失败");
             }
         }
 
@@ -665,6 +668,251 @@ namespace JISpeed.Application.Services.Order
                 throw new BusinessException("获取退款实体列表失败");
             }
         }
+
+        public async Task<Complaint> GetComplaintDetailByComplainantIdAsync(string complaintId)
+        {
+            try
+            {
+                _logger.LogInformation("开始获取投诉实体信息");
+
+                var entity= await _complaintRepository.GetByIdAsync(complaintId);
+                if (entity == null)
+                {
+                    _logger.LogWarning("无相关数据");
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据，ID: {complaintId}");
+                }
+                _logger.LogInformation("成功获取投诉实体信息");
+
+                return entity;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取投诉实体信息时发生异常");
+                throw new BusinessException("获取投诉实体信息失败");
+            }
+        }
+
+        public async Task<string> CreateComplaintDetailAsync(
+            string orderId, string userId,
+            int cmplRole, string? cmplDescription)
+        {
+            try
+            {
+                
+                _logger.LogInformation("开始创建投诉实体信息");
+
+                // 参数检查
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    _logger.LogWarning("无相关数据,userId: {userId}", userId);
+                    throw new NotFoundException(ErrorCodes.UserNotFound, $"无相关数据, userId: {userId}");
+                }
+                var order =  await _orderRepository.GetByIdAsync(orderId); 
+                if (order==null)
+                {
+                    _logger.LogWarning("无相关数据,OrderId: {OrderId}", orderId);
+                    throw new NotFoundException(ErrorCodes.OrderNotFound, $"无相关数据, OrderId: {orderId}");
+                }
+                
+                var complaint = new Complaint
+                {
+                    OrderId = orderId,
+                    ComplaintId = Guid.NewGuid().ToString("N"),
+                    CmplRole = cmplRole,
+                    CmplDescription = cmplDescription,
+                    CmplStatus = (int)ComplaintStatus.Default, //默认状态为待处理
+                    CreatedAt = DateTime.UtcNow, //设置创建时间为当前时间
+                    ComplainantId = userId,
+                    Order = order,
+                    Complainant = user
+                };
+                
+                
+                
+                var orderLog = new OrderLog
+                {
+                    Actor = "user",
+                    LoggedAt = DateTime.Now,
+                    OrderId = orderId,
+                    LogId = Guid.NewGuid().ToString("N"),
+                    Remark = "用户投诉订单",
+                    StatusCode = (int)OrderLogStatus.Aftersales,
+                    Order = order
+                };
+                await _complaintRepository.CreateAsync(complaint);
+                await _complaintRepository.SaveChangesAsync();
+                await _orderLogRepository.CreateAsync(orderLog);
+                await _orderLogRepository.SaveChangesAsync();
+                
+                _logger.LogInformation("成功创建投诉实体信息");
+
+                return complaint.ComplaintId;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取投诉实体信息时发生异常");
+                throw new BusinessException("获取投诉实体信息失败");
+            }
+        }
+
+        public async Task<bool> AuditComplaintAsync(string adminId, string complaintId)
+        {
+            try
+            {
+                
+                _logger.LogInformation("开始更新投诉实体信息");
+
+                // 参数检查
+                var admin = await _adminRepository.ExistsAsync(adminId);
+                if (!admin)
+                {
+                    _logger.LogWarning("无相关数据,adminId: {adminId}", adminId);
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据, adminId: {adminId}");
+                }
+                var complaint =  await _complaintRepository.GetByIdAsync(complaintId); 
+                if (complaint==null)
+                {
+                    _logger.LogWarning("无相关数据,complaintId: {complaintId}", complaintId);
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据, complaintId: {complaintId}");
+                }
+
+                complaint.CmplStatus = (int)ComplaintStatus.Resolved;
+                await _complaintRepository.SaveChangesAsync();
+                _logger.LogInformation("成功更新投诉实体信息");
+                var orderLog = new OrderLog
+                {
+                    Actor = "admin",
+                    LoggedAt = DateTime.Now,
+                    OrderId = complaint.OrderId,
+                    LogId = Guid.NewGuid().ToString("N"),
+                    Remark = "管理员审核投诉",
+                    StatusCode = (int)OrderLogStatus.AftersalesCompleted,
+                    Order = complaint.Order
+                };
+                complaint.Order.OrderStatus = (int)OrderStatus.AftersalesCompleted;
+                await _orderRepository.SaveChangesAsync();
+                await _orderLogRepository.CreateAsync(orderLog);
+                await _orderLogRepository.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "更新投诉实体信息时发生异常");
+                throw new BusinessException("更新投诉实体信息失败");
+            }
+        }
+
+        public async Task<bool> CancelComplaintAsync(string userId, string complaintId)
+        {
+            try
+            {
+                
+                _logger.LogInformation("开始关闭投诉实体信息");
+
+                // 参数检查
+                var user = await _userRepository.ExistsAsync(userId);
+                if (!user)
+                {
+                    _logger.LogWarning("无相关数据,userId: {userId}", userId);
+                    throw new NotFoundException(ErrorCodes.UserNotFound, $"无相关数据, userId: {userId}");
+                }
+                var complaint =  await _complaintRepository.GetByIdAsync(complaintId); 
+                if (complaint==null)
+                {
+                    _logger.LogWarning("无相关数据,complaintId: {complaintId}", complaintId);
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据, complaintId: {complaintId}");
+                }
+
+                complaint.CmplStatus = (int)ComplaintStatus.Cancelled;
+                await _complaintRepository.SaveChangesAsync();
+                _logger.LogInformation("成功关闭投诉实体信息");
+                var orderLog = new OrderLog
+                {
+                    Actor = "user",
+                    LoggedAt = DateTime.Now,
+                    OrderId = complaint.OrderId,
+                    LogId = Guid.NewGuid().ToString("N"),
+                    Remark = "用户撤销投诉",
+                    StatusCode = (int)OrderLogStatus.AftersalesCompleted,
+                    Order = complaint.Order
+                };
+                complaint.Order.OrderStatus = (int)OrderStatus.AftersalesCompleted;
+                await _orderRepository.SaveChangesAsync();
+                await _orderLogRepository.CreateAsync(orderLog);
+                await _orderLogRepository.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "关闭投诉实体信息时发生异常");
+                throw new BusinessException("更新投诉实体信息失败");
+            }
+        }
+
+        public async Task<List<string>> GetComplaintListByFilterAsync(
+            string? userId, 
+            string? merchantId,
+            int? status,
+            string? adminId,
+            int? size, int? page)
+        {
+            try
+            {
+                _logger.LogInformation("开始获取投诉列表信息");
+                List<Complaint>? complaints;
+                if (merchantId != null)
+                {
+                    var merchant = await _merchantRepository.ExistsAsync(merchantId);
+                    if (!merchant)
+                    {
+                        throw new NotFoundException(ErrorCodes.MerchantNotFound,"商家不存在");
+                    }
+                    complaints = await _complaintRepository.GetByMerchantIdAsync(merchantId, status,size, page);
+                }
+                else if(userId != null)
+                {
+                    var user = await _userRepository.ExistsAsync(userId);
+                    if (!user)
+                    {
+                        throw new NotFoundException(ErrorCodes.UserNotFound,"用户不存在");
+                    }
+                    complaints = await _complaintRepository.GetByUserIdAsync(userId, status,size, page);
+                }
+                else if (adminId != null)
+                {
+                    var admin = await _userRepository.ExistsAsync(adminId);
+                    if (!admin)
+                    {
+                        _logger.LogWarning("无相关数据,userId: {userId}", userId);
+                        throw new NotFoundException(ErrorCodes.UserNotFound, $"无相关数据, userId: {userId}");
+                    }
+                    complaints = await _complaintRepository.GetAllByFilterAsync(status,size, page);
+                }
+                else
+                {
+                    complaints = await _complaintRepository.GetAllAsync(size,page);
+                }
+               
+                if (complaints == null)
+                {
+                    _logger.LogWarning("无相关数据");
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, "无相关数据");
+                }
+                _logger.LogInformation("成功获取投诉实体信息");
+                
+                return complaints.Select(c => c.ComplaintId).ToList();
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取投诉实体列表时发生异常");
+                throw new BusinessException("获取投诉实体列表失败");
+            }
+        }
+
+
 
     }
 }

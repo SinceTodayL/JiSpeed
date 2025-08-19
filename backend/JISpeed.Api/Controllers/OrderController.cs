@@ -841,5 +841,207 @@ namespace JISpeed.Api.Controllers
             }
 
         }
+        
+        [HttpGet("complaints/{complaintId}")]
+        public async Task<ActionResult<ApiResponse<ComplaintDetailDto>>> GetComplaintDetailAsync(string complaintId)
+        {
+            try
+            {
+                _logger.LogInformation("收到查看投诉详情的请求");
+                var complaint = await _orderService.GetComplaintDetailByComplainantIdAsync(complaintId);
+                _logger.LogInformation("成功查看投诉详情");
+                var response = _mapper.Map<ComplaintDetailDto>(complaint);
+                return Ok(ApiResponse<ComplaintDetailDto>.Success(response, "查看投诉详情成功"));
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(
+                    ErrorCodes.ResourceNotFound,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogError(ex, "业务处理异");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取投诉详情时发生未知异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+
+        }
+        
+        [HttpPost("complaints")]
+        public async Task<ActionResult<ApiResponse<string>>> CreateComplaintAsync(
+            [FromBody]ComplaintRequestDto dto)
+        {
+            try
+            {
+                _logger.LogInformation("收到创建投诉的请求");
+                var complaintId = await _orderService.CreateComplaintDetailAsync(dto.OrderId,dto.ComplainantId,dto.CmplRole,dto.CmplDescription);
+                _logger.LogInformation("成功创建投诉"); 
+                return Ok(ApiResponse<string>.Success(complaintId, "查看投诉详情成功"));
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(
+                    ErrorCodes.ResourceNotFound,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogError(ex, "业务处理异");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "创建投诉详情时发生未知异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+
+        }
+        
+        [HttpPatch("admin/{adminId}complaints/{complaintId}/audit")]
+        public async Task<ActionResult<ApiResponse<bool>>> UpdateComplaintAsync(string adminId,string complaintId)
+        {
+            try
+            {
+                _logger.LogInformation("收到更新投诉的请求");
+                await _orderService.AuditComplaintAsync(adminId, complaintId);
+                _logger.LogInformation("成功更新投诉"); 
+                return Ok(ApiResponse<bool>.Success(true,"更新投诉详情成功"));
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(
+                    ErrorCodes.ResourceNotFound,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogError(ex, "业务处理异");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "更新投诉时发生未知异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+
+        }
+        
+        [HttpPatch("users/{userId}complaints/{complaintId}/cancel")]
+        public async Task<ActionResult<ApiResponse<bool>>> CancelComplaintAsync(string userId,string complaintId)
+        {
+            try
+            {
+                _logger.LogInformation("收到用户关闭投诉的请求");
+                await _orderService.CancelComplaintAsync(userId, complaintId);
+                _logger.LogInformation("成功关闭投诉"); 
+                return Ok(ApiResponse<bool>.Success(true,"关闭投诉详情成功"));
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(
+                    ErrorCodes.ResourceNotFound,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogError(ex, "业务处理异");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "关闭投诉时发生未知异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+
+        }
+        
+        [HttpGet("complaints")]
+        public async Task<ActionResult<ApiResponse<List<string>>>> GetComplaintListByFilter(
+            [FromQuery]string? userId,
+            [FromQuery]string? merchantId,
+            [FromQuery]int? status,
+            [FromQuery]string? adminId,
+            [FromQuery]int? size,[FromQuery]int? page)
+        {
+            try
+            {
+                _logger.LogInformation("收到获取投诉的请求");
+                var complaintIds = await _orderService.GetComplaintListByFilterAsync(userId, merchantId, status,adminId, size, page);
+                _logger.LogInformation("成功获取投诉"); 
+                return Ok(ApiResponse<List<string>>.Success(complaintIds,"获取列表成功"));
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(
+                    ErrorCodes.ResourceNotFound,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogError(ex, "业务处理异");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取投诉时发生未知异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+
+        }
     }
 }

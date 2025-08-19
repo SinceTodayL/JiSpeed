@@ -145,4 +145,30 @@ namespace JISpeed.Api.DTOs
          public required int AuditStatus { get; set; } //审核状态
          public DateTime? FinishAt { get; set; } //退款完成时间 (可为空)
      }
+     
+     public class ComplaintDetailDto
+     {
+         public required string ComplaintId { get; set; } //投诉ID pk
+        
+         public required string OrderId { get; set; } //订单ID fk->Order(orderId)
+        
+         public required string ComplainantId { get; set; } //投诉人ID fk->User(userId)
+
+         public required int CmplRole { get; set; } // 投诉对象的角色 1: 商家, 2: 骑手
+        
+         public string? CmplDescription { get; set; } //投诉描述
+
+         public required int CmplStatus { get; set; } //投诉状态 
+
+         public required DateTime CreatedAt { get; set; } //投诉创建时间
+     }
+
+     public class ComplaintRequestDto
+     {
+         public required string OrderId { get; set; } //订单ID fk->Order(orderId)
+         public required string ComplainantId { get; set; } //投诉人ID fk->User(userId)
+         public required int CmplRole { get; set; } // 投诉对象的角色 1: 商家, 2: 骑手
+         public string? CmplDescription { get; set; } //投诉描述
+     }
+     
 }

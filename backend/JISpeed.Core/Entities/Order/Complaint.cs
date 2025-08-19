@@ -51,6 +51,6 @@ namespace JISpeed.Core.Entities.Order
             CreatedAt = DateTime.UtcNow; //设置创建时间为当前时间
         }
 
-        private Complaint() { }
+        public Complaint() { }
     }
 }

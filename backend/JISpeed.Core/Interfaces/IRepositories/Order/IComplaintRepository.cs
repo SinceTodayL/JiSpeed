@@ -8,19 +8,29 @@ namespace JISpeed.Core.Interfaces.IRepositories.Order
     // 投诉仓储接口 - 处理投诉管理的数据访问操作
     public interface IComplaintRepository : IBaseRepository<Complaint, string>
     {
+
+        Task<List<Complaint>> GetAllAsync(int? size, int? page);
+
         // === 业务专用查询方法 ===
 
         // 根据订单ID查询投诉
         Task<IEnumerable<Complaint>> GetByOrderIdAsync(string orderId);
 
         // 根据用户ID查询投诉列表
-        Task<IEnumerable<Complaint>> GetByUserIdAsync(string userId);
+        Task<List<Complaint>> GetByUserIdAsync(
+            string userId,
+            int ? status, 
+            int?size,int?page);
 
         // 根据商家ID查询投诉列表
-        Task<IEnumerable<Complaint>> GetByMerchantIdAsync(string merchantId);
-
-        // 根据处理管理员ID查询投诉
-        Task<IEnumerable<Complaint>> GetByHandlerIdAsync(string handlerId);
+        Task<List<Complaint>> GetByMerchantIdAsync(
+            string merchantId,
+            int ? status,
+            int?size,int?page);
+        Task<List<Complaint>> GetAllByFilterAsync(
+            int ? status,
+            int?size,int?page);
+        
 
         // 根据投诉状态查询
         Task<IEnumerable<Complaint>> GetByStatusAsync(string status);

@@ -1,4 +1,5 @@
 using JISpeed.Core.Entities.Order;
+using JISpeed.Core.Entities.Rider;
 using OrderEntity = JISpeed.Core.Entities.Order.Order;
 namespace JISpeed.Core.Interfaces.IServices
 {
@@ -41,13 +42,29 @@ namespace JISpeed.Core.Interfaces.IServices
         Task<string> UpdateRefundForMerchantAsync(string merchantId, string refundId, int refundStatus);
         Task<string> UpdateRefundForAdminAsync(string adminId, string refundId, int refundStatus);
         Task<Refund> GetRefundDetailByRefundIdAsync(string refundId);
-        
         Task<List<string>> GetRefundListByFilterAsync(
             string? userId,
             string?merchantId,
             string? adminId,
             int? auditStatus,
             int?size,int?page);
+        
+        // Complaint
+        Task<Complaint> GetComplaintDetailByComplainantIdAsync(string complaintId);
+        Task<string> CreateComplaintDetailAsync(
+            string orderId,string userId,
+            int cmplRole,string? cmplDescription);
+        Task<bool>AuditComplaintAsync(string adminId, string complaintId);
+        Task<bool>CancelComplaintAsync(string userId, string complaintId);
+
+        Task<List<string>> GetComplaintListByFilterAsync(
+            string? userId,
+            string? merchantId,
+            int? status,
+            string? adminId,
+            int? size, int? page);
+
+
 
 
     }
@@ -89,10 +106,23 @@ namespace JISpeed.Core.Interfaces.IServices
         RejectedForAdmin = 4, // 管理员拒绝退款
         RefundedForAdmin = 5, // 管理员同意退款
     }
-    
+    public enum ComplaintStatus
+    {
+        Default  = 0,         // 处理中
+        Resolved = 1,         // 已解决
+        Cancelled = 2,        // 关闭
+    }
+
+    public enum Role
+    {
+        User = 0,
+        Merchant = 1,
+        Rider = 2,
+    }
     public class DishQuantityDto
     {
         public required string DishId { get; set; }
         public required int Quantity { get; set; }
     }
+
 }

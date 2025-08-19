@@ -41,13 +41,17 @@ namespace JISpeed.Infrastructure.Repositories.Order
         }
 
         // 重写：获取所有投诉
-        public override async Task<List<Complaint>> GetAllAsync()
+        public async Task<List<Complaint>> GetAllAsync(int? size, int? page)
         {
+            int pageSize = size ?? 20;
+            int currentPage = page ?? 1;
             return await _context.Complaints
                 .Include(c => c.Order)
                 .ThenInclude(o => o.User)
                 .Include(c => c.Complainant)
                 .OrderByDescending(c => c.CreatedAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 
@@ -66,42 +70,134 @@ namespace JISpeed.Infrastructure.Repositories.Order
         }
 
         // 根据用户ID查询投诉列表
-        public async Task<IEnumerable<Complaint>> GetByUserIdAsync(string userId)
+        public async Task<List<Complaint>> GetByUserIdAsync(
+                string userId,
+                int ? status, 
+                int?size,int?page)
         {
-            return await _context.Complaints
-                .Include(c => c.Order)
-                .Include(c => c.Complainant)
-                .Where(c => c.Order.UserId == userId)
-                .OrderByDescending(c => c.CreatedAt)
-                .ToListAsync();
+            int pageSize = size ?? 20;
+            int currentPage = page ?? 1;
+            return status switch
+            {
+                // 处理中
+                0 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .Where(c => c.ComplainantId == userId && c.CmplStatus == 0)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                // 已解决
+                1 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .Where(c => c.ComplainantId == userId && c.CmplStatus == 1)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                // 已关闭
+                2 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .Where(c => c.ComplainantId == userId && c.CmplStatus == 2)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                //全部
+                _ => await _context.Complaints
+                    .Include(c => c.Order)
+                    .Where(c => c.ComplainantId == userId)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync()
+            };
         }
 
         // 根据商家ID查询投诉列表
-        public async Task<IEnumerable<Complaint>> GetByMerchantIdAsync(string merchantId)
+        public async Task<List<Complaint>> GetByMerchantIdAsync(
+            string merchantId,
+            int? status,
+            int? size, int? page)
         {
-            return await _context.Complaints
-                .Include(c => c.Order)
-                .ThenInclude(o => o.User)
-                .Include(c => c.Order)
-                .ThenInclude(o => o.OrderDishes)
-                .ThenInclude(od => od.Dish)
-                .Include(c => c.Complainant)
-                .Where(c => c.Order.OrderDishes.Any(od => od.Dish.MerchantId == merchantId))
-                .OrderByDescending(c => c.CreatedAt)
-                .ToListAsync();
+            int pageSize = size ?? 20;
+            int currentPage = page ?? 1;
+            return status switch
+            {
+                // 处理中
+                0 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .Where(c => c.Order.MerchantId == merchantId && c.CmplStatus == 0)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                // 已解决
+                1 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .Where(c => c.Order.MerchantId == merchantId && c.CmplStatus == 1)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                // 已关闭
+                2 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .Where(c => c.Order.MerchantId == merchantId && c.CmplStatus == 2)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                //全部
+                _ => await _context.Complaints
+                    .Include(c => c.Order)
+                    .Where(c => c.Order.MerchantId == merchantId)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync()
+            };
         }
 
-        // 根据处理管理员ID查询投诉
-        public async Task<IEnumerable<Complaint>> GetByHandlerIdAsync(string handlerId)
+        public async Task<List<Complaint>> GetAllByFilterAsync(
+            int? status,
+            int? size, int? page)
         {
-            return await _context.Complaints
-                .Include(c => c.Order)
-                .ThenInclude(o => o.User)
-                .Include(c => c.Complainant)
-                .Where(c => c.ComplainantId == handlerId)
-                .OrderByDescending(c => c.CreatedAt)
-                .ToListAsync();
+            int pageSize = size ?? 20;
+            int currentPage = page ?? 1;
+            return status switch
+            {
+                // 处理中
+                0 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                // 已解决
+                1 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                // 已关闭
+                2 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                //全部
+                _ => await _context.Complaints
+                    .Include(c => c.Order)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync()
+            };
         }
+
 
         // 根据投诉状态查询
         public async Task<IEnumerable<Complaint>> GetByStatusAsync(string status)
