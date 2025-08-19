@@ -25,6 +25,7 @@ namespace JISpeed.Application.Services.Order
         private readonly IOrderDishRepository _orderDishRepository;
         private readonly IOrderLogRepository _orderLogRepository;
         private readonly IDishRepository _dishRepository;
+        private readonly ISalesStatRepository _salesStatRepository;
         private readonly IRefundRepository _refundRepository;
         private readonly IComplaintRepository _complaintRepository;
         private readonly ILogger<OrderService> _logger;
@@ -41,6 +42,7 @@ namespace JISpeed.Application.Services.Order
             IDishRepository dishRepository,
             IRefundRepository refundRepository,
             IComplaintRepository complaintRepository,
+            ISalesStatRepository salesStatRepository,
             ILogger<OrderService> logger
         )
         {
@@ -55,6 +57,7 @@ namespace JISpeed.Application.Services.Order
             _dishRepository = dishRepository;
             _refundRepository = refundRepository;
             _complaintRepository = complaintRepository;
+            _salesStatRepository = salesStatRepository;
             _logger = logger;
         }
         
@@ -308,7 +311,16 @@ namespace JISpeed.Application.Services.Order
                 await _orderLogRepository.CreateAsync(orderLog);
                 await _orderLogRepository.SaveChangesAsync();
                 _logger.LogInformation("更新支付信息成功，PayId: {PayId}", payId);
-        
+
+                var salesStat =
+                    await _salesStatRepository.GetByIdAsync(DateTime.Now.Date, entity.Order.MerchantId);
+                if (salesStat == null)
+                {
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, "无法找到该商家今日销售清单实体");
+                }
+                salesStat.SalesQty += 1;
+                salesStat.SalesAmount += entity.PayAmount;
+                await _salesStatRepository.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException||ex is BusinessException))

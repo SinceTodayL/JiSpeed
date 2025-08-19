@@ -134,7 +134,7 @@ namespace JISpeed.Application.Services.Merchant
                 _logger.LogInformation("开始获取商家数据统计信息, MerchantId: {MerchantId}", merchantId);
                 
 
-                var data = await _salesStatRepository.GetByIdAsync(statTime,merchantId);
+                var data = await _salesStatRepository.GetByIdAsync(statTime.Date,merchantId);
 
                 if (data == null)
                 {

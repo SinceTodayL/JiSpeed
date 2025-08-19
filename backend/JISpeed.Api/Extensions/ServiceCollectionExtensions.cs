@@ -15,6 +15,7 @@ using JISpeed.Core.Interfaces.IRepositories.Reconciliation;
 using JISpeed.Core.Interfaces.IRepositories.Rider;
 using JISpeed.Core.Interfaces.IRepositories.User;
 using JISpeed.Core.Interfaces.IServices;
+using JISpeed.Infrastructure.DailyServices;
 using JISpeed.Infrastructure.Repositories.Admin;
 using JISpeed.Infrastructure.Repositories.Common;
 using JISpeed.Infrastructure.Repositories.Dish;
@@ -79,7 +80,9 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IMerchantService, MerchantService>();
             services.AddScoped<IAdminService, AdminService>();
             services.AddScoped<ICouponService, CouponService>();
-
+            
+            // 定时任务
+            services.AddHostedService<DailyCreator>();
             return services;
         }
     }
