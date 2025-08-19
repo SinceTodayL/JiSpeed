@@ -141,6 +141,9 @@ namespace JISpeed.Application.Services.Order
                         Quantity = dishQuantity.Quantity,
                     };
                     await _orderDishRepository.CreateAsync(orderdish);
+                    // 减去dish中对应的数量
+                    dish.StockQuantity -= dishQuantity.Quantity;
+                    await _dishRepository.SaveChangesAsync();
                 }
                 await _orderDishRepository.SaveChangesAsync();
                 var orderLog = new OrderLog
@@ -220,6 +223,7 @@ namespace JISpeed.Application.Services.Order
         
                 entity.OrderStatus = orderStatus ?? entity.OrderStatus;
                 await _orderRepository.SaveChangesAsync();
+                
                 string remark;
                 int statusCode;
                 if (orderStatus == (int)OrderStatus.Confirmed)
@@ -231,6 +235,11 @@ namespace JISpeed.Application.Services.Order
                 {
                     remark = "用户取消订单";
                     statusCode = (int)OrderLogStatus.Cancelled;
+                    // 将库存返还
+                    foreach (var dish in entity.OrderDishes)
+                    {
+                       dish.Dish.StockQuantity+=dish.Quantity;
+                    }
                 }
                
                 var orderLog = new OrderLog

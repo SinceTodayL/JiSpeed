@@ -34,6 +34,6 @@ namespace JISpeed.Core.Entities.Merchant
             SalesAmount = salesAmount;
         }
 
-        private SalesStat() { }
+        public SalesStat() { }
     }
 }

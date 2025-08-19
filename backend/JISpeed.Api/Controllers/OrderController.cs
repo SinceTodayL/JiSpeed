@@ -2,7 +2,6 @@ using AutoMapper;
 using JISpeed.Api.Common;
 using JISpeed.Api.DTOs;
 using JISpeed.Core.Constants;
-using JISpeed.Core.Entities.Junctions;
 using JISpeed.Core.Entities.Order;
 using JISpeed.Core.Exceptions;
 using JISpeed.Core.Interfaces.IServices;
@@ -213,7 +212,7 @@ namespace JISpeed.Api.Controllers
             try
             {
                 _logger.LogInformation("收到用支付订单的请求, PayId: {payId}", payId);
-                var data = await _orderService.UpdatePaymentAsync(payId, (int)PayStatus.Paid, payAmount);
+                await _orderService.UpdatePaymentAsync(payId, (int)PayStatus.Paid, payAmount);
                 _logger.LogInformation("成功支付订单, PayId: {payId}", payId);
 
                 return Ok(ApiResponse<bool>.Success(true, "用户支付订单成功"));
@@ -254,7 +253,7 @@ namespace JISpeed.Api.Controllers
             try
             {
                 _logger.LogInformation("收到用户取消订单的请求, PayId: {payId}", payId);
-                var data = await _orderService.UpdatePaymentAsync(payId, (int)PayStatus.Cancelled, null);
+                await _orderService.UpdatePaymentAsync(payId, (int)PayStatus.Cancelled, null);
                 _logger.LogInformation("成功取消订单, PayId: {payId}", payId);
 
                 return Ok(ApiResponse<bool>.Success(true, "用户取消订单成功"));
@@ -295,7 +294,7 @@ namespace JISpeed.Api.Controllers
             try
             {
                 _logger.LogInformation("收到用户确认收货的请求, OrderId: {OrderId}", orderId);
-                var data = await _orderService.UpdateOrderAsync(orderId, (int)OrderStatus.Confirmed);
+                await _orderService.UpdateOrderAsync(orderId, (int)OrderStatus.Confirmed);
                 _logger.LogInformation("成功确认收货, OrderId: {OrderId}", orderId);
 
                 return Ok(ApiResponse<bool>.Success(true, "用户确认收货成功"));
@@ -336,7 +335,7 @@ namespace JISpeed.Api.Controllers
             try
             {
                 _logger.LogInformation("收到用户取消订单的请求, OrderId: {OrderId}", orderId);
-                var data = await _orderService.UpdateOrderAsync(orderId, (int)OrderStatus.Cancelled);
+                await _orderService.UpdateOrderAsync(orderId, (int)OrderStatus.Cancelled);
                 _logger.LogInformation("成功取消订单, OrderId: {OrderId}", orderId);
 
                 return Ok(ApiResponse<bool>.Success(true, "用户取消订单成功"));
@@ -553,8 +552,7 @@ namespace JISpeed.Api.Controllers
             try
             {
                 _logger.LogInformation("收到商家同意的请求");
-                var orderLogId =
-                    await _orderService.UpdateRefundForMerchantAsync(merchantId, refundId, (int)RefundStatus.Refunded);
+                await _orderService.UpdateRefundForMerchantAsync(merchantId, refundId, (int)RefundStatus.Refunded);
                 _logger.LogInformation("成功创建退款申请");
                 return Ok(ApiResponse<bool>.Success(true, "商家退款成功"));
             }
