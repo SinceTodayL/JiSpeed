@@ -83,4 +83,12 @@ namespace JISpeed.Core.Interfaces.IServices
             };
         }
     }
+
+    public enum UserType
+    {
+        User = 1,
+        Merchant =2,
+        Rider = 3,
+        Admin =4
+    }
 }

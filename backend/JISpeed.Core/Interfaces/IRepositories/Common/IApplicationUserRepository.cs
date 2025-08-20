@@ -25,7 +25,10 @@ namespace JISpeed.Core.Interfaces.IRepositories.Common
         // 根据用户类型获取应用用户列表
         // <param name="userType">用户类型</param>
         // <returns>应用用户列表</returns>
-        Task<List<ApplicationUser>> GetByUserTypeAsync(int userType);
+        Task<List<ApplicationUser>> GetByUserTypeAndTimeRangeAsync(
+            int userType,
+            DateTime start,
+            DateTime end);
 
         // 根据状态获取应用用户列表
         // <param name="status">状态</param>

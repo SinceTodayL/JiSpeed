@@ -50,10 +50,12 @@ namespace JISpeed.Infrastructure.Repositories.Common
         // 根据用户类型获取应用用户列表
         // <param name="userType">用户类型</param>
         // <returns>应用用户列表</returns>
-        public async Task<List<ApplicationUser>> GetByUserTypeAsync(int userType)
+        public async Task<List<ApplicationUser>> GetByUserTypeAndTimeRangeAsync(  int userType,
+            DateTime start,
+            DateTime end)
         {
             return await _context.ApplicationUsers
-                .Where(u => u.UserType == userType)
+                .Where(u => u.UserType == userType&&u.CreatedAt >= start && u.CreatedAt <= end)
                 .OrderByDescending(u => u.CreatedAt)
                 .ToListAsync();
         }

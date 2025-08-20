@@ -151,7 +151,17 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .OrderByDescending(o => o.CreateAt)
                 .ToListAsync();
         }
-        
+
+        public async Task<List<JISpeed.Core.Entities.Order.Order>> GetByTimeRangeAndStatusAsync(
+            DateTime startTime, 
+            DateTime endTime,
+            int status)
+        {
+            return await _context.Orders
+                .Where(o => o.CreateAt >= startTime && o.CreateAt <= endTime&& o.OrderStatus == status)
+                .ToListAsync();
+        }
+
         /// <summary>
         /// 根据订单ID查询订单，包含菜品名称和商家名称
         /// </summary>

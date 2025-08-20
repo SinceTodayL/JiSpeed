@@ -4,6 +4,7 @@ using JISpeed.Application.Services.Email;
 using JISpeed.Application.Services.Merchant;
 using JISpeed.Application.Services.Customer;
 using JISpeed.Application.Services.Order;
+using JISpeed.Application.Services.Platform;
 using JISpeed.Application.Services.Rider;
 using JISpeed.Core.Interfaces.IRepositories.Admin;
 using JISpeed.Core.Interfaces.IRepositories.Common;
@@ -92,6 +93,10 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IRiderLocationService, RiderLocationService>();
             // 注册考勤服务
             services.AddScoped<IAttendanceService, AttendanceService>();
+            
+            // 平台服务
+            services.AddScoped<IPlatformService, PlatformService>();
+
             
             return services;
         }

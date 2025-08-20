@@ -202,22 +202,22 @@ namespace JISpeed.Application.Services.Common
                 _logger.LogInformation("开始创建业务实体, UserType: {UserType}, ApplicationUserId: {UserId}",
                     user.UserType, user.Id);
                 // 顾客
-                if (user.UserType == 1)
+                if (user.UserType == (int)UserType.User)
                 {
                     await _userRepository.CreateFromApplicationUserAsync(user);
                 }
                 // 商家
-                else if (user.UserType == 2)
+                else if (user.UserType == (int)UserType.Merchant)
                 {
                     await _merchantRepository.CreateFromApplicationUserAsync(user);
                 }
                 // 骑手
-                else if (user.UserType == 3)
+                else if (user.UserType == (int)UserType.Rider)
                 {
                     await _riderRepository.CreateFromApplicationUserAsync(user);
                 }
                 // 管理员
-                else if (user.UserType == 4)
+                else if (user.UserType == (int)UserType.Admin)
                 {
                     await _adminRepository.CreateFromApplicationUserAsync(user);
                 }

@@ -48,6 +48,8 @@ namespace JISpeed.Core.Interfaces.IRepositories.Order
         // <param name="endTime">结束时间</param>
         // <returns>订单列表</returns>
         Task<List<JISpeed.Core.Entities.Order.Order>> GetByTimeRangeAsync(DateTime startTime, DateTime endTime);
+        Task<List<JISpeed.Core.Entities.Order.Order>> GetByTimeRangeAndStatusAsync(DateTime startTime, DateTime endTime,int status);
+
         Task<JISpeed.Core.Entities.Order.Order?> GetOrderWithDishesAndMerchantsAsync(string orderId);
 
     }
