@@ -1,40 +1,114 @@
-# 需要添加到数据库中的字段
-
-## user:
+# JiSpeed 项目功能点
 
 
 
-
-
-## rider:
-
-
+>[!NOTE]
+>
+>可以删除难以实现的功能点、或者添加已经实现但未写出的功能点
 
 
 
-## merchant: 
+### 1 用户注册、登录、注销
 
-`dish` 表中缺少 “库存数量” 这一属性✔️
-public required int StockQuantity { get; set; }
+所有角色都可以注册
 
-`order` 表中缺少 “merchantId” 这一属性
-[StringLength(450)]
-[Column(TypeName = "VARCHAR(450)")]
-public required string MerchantId { get; set; }
+商家已实现登录
 
-`dish` 表中可增加 “描述” 这一属性？✔️
-[StringLength(65535)]
-public string? Description { get; set; } 
 
-`merchant` 表中可增加 “描述” 这一属性？✔️
-[StringLength(65535)]
-public string? Description { get; set; } 
 
-## admin:
+### 2 用户资料维护
 
-`Application` 表中缺少 “申请材料” 这一属性✔️
-[StringLength(65535)]
-public string? ApplicationMaterials { get; set; }
 
-`Coupon` 表中缺少 “是否被使用” 这一属性✔️
-public required bool IsUsed { get; set; }
+
+### 3 菜品浏览功能
+
+
+
+### 4 菜品分类检索功能
+
+
+
+### 5 菜品收藏与取消收藏
+
+
+
+### 6 购物车商品管理与订单生成
+
+
+
+### 7 在线支付与支付状态同步
+
+
+
+### 8 订单状态管理与跟踪
+
+
+
+### 9 订单取消与退款申请功能
+
+
+
+### 10 订单完成后评价功能
+
+
+
+### 11 投诉提交与仲裁处理
+
+
+
+### 12 骑手排班与签到管理
+
+
+
+### 13 平台订单指派功能
+
+
+
+### 14 骑手绩效统计分析
+
+
+
+### 15 商家入驻申请与平台审核
+
+商家入驻申请部分完成
+
+
+
+### 16 商家菜单管理功能
+
+已完成菜品查看、信息修改
+
+菜品评论部分后端未连接
+
+
+
+### [+] 商家统计信息维护与展示
+
+在商家首页展示销售额、单日销量等统计信息，已经完成
+
+
+
+### 17 店铺优惠券创建与发放
+
+
+
+### 18 平台管理员权限管理
+
+
+
+### 19 商家销量排行查询
+
+
+
+### 20 平台结算单生成与导出
+
+
+
+### 21 平台公告与站内消息推送
+
+商家可以正确接受并展示公告信息
+
+
+
+### 22 对账异常检测与处理  
+
