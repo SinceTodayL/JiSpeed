@@ -39,17 +39,17 @@ namespace JISpeed.Application.Services.Platform
                 throw new BusinessException(ErrorCodes.UnsupportedOperation,"Start time must be before end time");
             }
             // 总单数
-            var ordrQuantity = (await _orderRepository.GetByTimeRangeAsync(start, end)).Count;
+            var ordrQuantity = (await _orderRepository.GetByTimeRangeAsync(start.Date, end.Date)).Count;
             // 取消单数
-            var cancelledOrderQuantity = (await _orderRepository.GetByTimeRangeAndStatusAsync(start, end,(int)OrderStatus.Cancelled)).Count;
+            var cancelledOrderQuantity = (await _orderRepository.GetByTimeRangeAndStatusAsync(start.Date, end.Date,(int)OrderStatus.Cancelled)).Count;
             // 售后完成的单数
-            var aftersalesCompletedOrderQuantity = (await _orderRepository.GetByTimeRangeAndStatusAsync(start, end,(int)OrderStatus.AftersalesCompleted)).Count;
+            var aftersalesCompletedOrderQuantity = (await _orderRepository.GetByTimeRangeAndStatusAsync(start.Date, end.Date,(int)OrderStatus.AftersalesCompleted)).Count;
             // 用户数量
-            var userQuantity = (await _applicationUserRepository.GetByUserTypeAndTimeRangeAsync((int)UserType.User,start, end)).Count;
+            var userQuantity = (await _applicationUserRepository.GetByUserTypeAndTimeRangeAsync((int)UserType.User,start.Date, end.Date)).Count;
             // 商家数量
-            var merchantQuantity = (await _applicationUserRepository.GetByUserTypeAndTimeRangeAsync((int)UserType.Merchant,start, end)).Count;
+            var merchantQuantity = (await _applicationUserRepository.GetByUserTypeAndTimeRangeAsync((int)UserType.Merchant,start.Date, end.Date)).Count;
             // 骑手数量
-            var riderQuantity = (await _applicationUserRepository.GetByUserTypeAndTimeRangeAsync((int)UserType.Rider,start, end)).Count;
+            var riderQuantity = (await _applicationUserRepository.GetByUserTypeAndTimeRangeAsync((int)UserType.Rider,start.Date, end.Date)).Count;
 
             var response = new OperationalDataDto()
             {

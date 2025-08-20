@@ -2,6 +2,7 @@ using JISpeed.Core.Constants;
 using JISpeed.Core.Entities.Order;
 using JISpeed.Core.Exceptions;
 using JISpeed.Core.Interfaces.IRepositories.Admin;
+using JISpeed.Core.Interfaces.IRepositories.Common;
 using JISpeed.Core.Interfaces.IRepositories.Dish;
 using JISpeed.Core.Interfaces.IRepositories.Junctions;
 using JISpeed.Core.Interfaces.IRepositories.Merchant;
@@ -27,6 +28,8 @@ namespace JISpeed.Application.Services.Order
         private readonly IDishRepository _dishRepository;
         private readonly ISalesStatRepository _salesStatRepository;
         private readonly IRefundRepository _refundRepository;
+        private readonly ICouponRepository _couponRepository;
+
         private readonly IComplaintRepository _complaintRepository;
         private readonly ILogger<OrderService> _logger;
 
@@ -43,6 +46,7 @@ namespace JISpeed.Application.Services.Order
             IRefundRepository refundRepository,
             IComplaintRepository complaintRepository,
             ISalesStatRepository salesStatRepository,
+            ICouponRepository couponRepository,
             ILogger<OrderService> logger
         )
         {
@@ -58,6 +62,7 @@ namespace JISpeed.Application.Services.Order
             _refundRepository = refundRepository;
             _complaintRepository = complaintRepository;
             _salesStatRepository = salesStatRepository;
+            _couponRepository = couponRepository;
             _logger = logger;
         }
         
@@ -110,6 +115,14 @@ namespace JISpeed.Application.Services.Order
                     throw new NotFoundException(ErrorCodes.UserAddressNotFound,"地址不存在");
                 }
 
+                if (couponId != null)
+                {
+                    var coupon = await _couponRepository.GetByIdAsync(couponId);
+                    if (coupon == null)
+                        throw new NotFoundException(ErrorCodes.ResourceNotFound,"优惠券不存在");
+                    if (coupon.IsUsed)
+                        throw new BusinessException(ErrorCodes.GeneralError, "优惠券已经被使用");
+                }
                 var orderEntity = new OrderEntity()
                 {
                     OrderId = Guid.NewGuid().ToString("N"),
@@ -310,6 +323,11 @@ namespace JISpeed.Application.Services.Order
                 };
                 await _orderLogRepository.CreateAsync(orderLog);
                 await _orderLogRepository.SaveChangesAsync();
+                if (payStatus == (int)PayStatus.Cancelled&& entity.Order.Coupon!=null)
+                {
+                    entity.Order.Coupon.IsUsed=false;
+                    await _couponRepository.SaveChangesAsync();
+                }
                 _logger.LogInformation("更新支付信息成功，PayId: {PayId}", payId);
 
                 var salesStat =
@@ -336,24 +354,31 @@ namespace JISpeed.Application.Services.Order
             {
                 _logger.LogInformation("开始创建用户支付订单实体");
 
-                var entity = await _orderRepository.GetByIdAsync(orderId);
-                if (entity==null)
+                var order = await _orderRepository.GetByIdAsync(orderId);
+                if (order==null)
                 {
                     _logger.LogWarning("无相关数据,OrderId: {OrderId}", orderId);
                     throw new NotFoundException(ErrorCodes.OrderNotFound, $"无相关数据, OrderId: {orderId}");
                 }
 
+                decimal faceValue = 0;
+                if (order.Coupon != null)
+                {
+                    faceValue = order.Coupon.FaceValue;
+                    order.Coupon.IsUsed = true;
+                }
                 var data = new Payment()
                 {
                     PayId = Guid.NewGuid().ToString("N"),
                     Channel = channel,
                     OrderId = orderId,
                     PayStatus = (int)PayStatus.Unpaid,
-                    Order = entity,
-                    PayAmount = entity.OrderAmount
+                    Order = order,
+                    PayAmount = order.OrderAmount-faceValue,
                 };
                 await _paymentRepository.CreateAsync(data);
                 await _paymentRepository.SaveChangesAsync();
+                await _couponRepository.SaveChangesAsync();
                 _logger.LogInformation("成功创建订单实体，PayId: {PayId}", data.PayId);
 
                 return data;
