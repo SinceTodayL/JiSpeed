@@ -29,6 +29,12 @@ namespace JISpeed.Api.Mappers
             };
         }
 
+        // 将User实体列表映射为UserDetailDto列表
+        public static List<UserDetailDto> ToUserDetailDtoList(IEnumerable<User> users)
+        {
+            return users.Select(user => ToUserDetailDto(user)).ToList();
+        }
+
 
         /// 将Address实体映射为AddressDto
 

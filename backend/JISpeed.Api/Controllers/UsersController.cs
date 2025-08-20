@@ -76,13 +76,34 @@ namespace JISpeed.Api.Controllers
             }
         }
 
-        /// <summary>
+        /// 获取用户信息列表
+        /// <param name="size">每页大小</param>
+        /// <param name="page">页码</param>
+        /// <returns>用户信息列表</returns>
+        [HttpGet]
+        public async Task<ApiResponse<List<UserDetailDto>>> GetUsers([FromQuery] int? size, [FromQuery] int? page)
+        {
+            try
+            {
+                var users = await _userRepository.GetAllUsersAsync(size ?? 10, page ?? 1);
+                var userDtos = UserMapper.ToUserDetailDtoList(users);
+
+                return ApiResponse<List<UserDetailDto>>.Success(userDtos);
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取用户列表时发生异常");
+                throw new BusinessException("获取用户列表失败");
+            }
+        }
+
         /// 根据ID获取用户收藏的商品列表
         /// </summary>
         /// <param name="userId">用户ID</param>
         /// <returns>收藏商品列表</returns>
         [HttpGet("{userId}/favorites")]
-        public async Task<ApiResponse<List<UserFavoriteDto>>> GetUserFavorites(string userId)
+        public async Task<ApiResponse<List<UserFavoriteDto>>> GetUserFavorites(string userId,
+        [FromQuery] int ?size, [FromQuery] int ?page)
         {
             try
             {
@@ -93,8 +114,12 @@ namespace JISpeed.Api.Controllers
                 }
 
                 var userWithDetails = await _userRepository.GetWithDetailsAsync(userId);
-                var favorites = userWithDetails?.Favorites ?? new List<Favorite>();
-                var favoriteDtos = UserMapper.ToUserFavoriteDtoList(favorites);
+                var allFavorites = userWithDetails?.Favorites ?? new List<Favorite>();
+                var paginatedFavorites = allFavorites
+                    .Skip(((page ?? 1) - 1) * (size ?? 10))
+                    .Take(size ?? 10)
+                    .ToList();
+                var favoriteDtos = UserMapper.ToUserFavoriteDtoList(paginatedFavorites);
 
                 return ApiResponse<List<UserFavoriteDto>>.Success(favoriteDtos);
             }
@@ -105,13 +130,13 @@ namespace JISpeed.Api.Controllers
             }
         }
 
-        /// <summary>
         /// 根据ID获取用户的所有地址列表
         /// </summary>
         /// <param name="userId">用户ID</param>
         /// <returns>地址列表</returns>
         [HttpGet("{userId}/addresses")]
-        public async Task<ApiResponse<List<UserAddressDto>>> GetUserAddresses(string userId)
+        public async Task<ApiResponse<List<UserAddressDto>>> GetUserAddresses(string userId,
+        [FromQuery] int? size, [FromQuery] int? page)
         {
             try
             {
@@ -122,7 +147,11 @@ namespace JISpeed.Api.Controllers
                 }
 
                 var addresses = await _addressRepository.GetByUserIdAsync(userId);
-                var addressDtos = UserMapper.ToUserAddressDtoList(addresses);
+                var paginatedAddresses = addresses
+                    .Skip(((page ?? 1) - 1) * (size ?? 10))
+                    .Take(size ?? 10)
+                    .ToList();
+                var addressDtos = UserMapper.ToUserAddressDtoList(paginatedAddresses);
 
                 return ApiResponse<List<UserAddressDto>>.Success(addressDtos);
             }
@@ -133,13 +162,13 @@ namespace JISpeed.Api.Controllers
             }
         }
 
-        /// <summary>
         /// 根据ID获取用户的购物车内容
         /// </summary>
         /// <param name="userId">用户ID</param>
         /// <returns>购物车内容</returns>
         [HttpGet("{userId}/cart")]
-        public async Task<ApiResponse<List<UserCartItemDto>>> GetUserCart(string userId)
+        public async Task<ApiResponse<List<UserCartItemDto>>> GetUserCart(string userId,
+        [FromQuery] int? size, [FromQuery] int? page)
         {
             try
             {
@@ -151,7 +180,12 @@ namespace JISpeed.Api.Controllers
 
                 var userWithDetails = await _userRepository.GetWithDetailsAsync(userId);
                 var cartItems = userWithDetails?.CartItems ?? new List<CartItem>();
-                var cartItemDtos = UserMapper.ToUserCartItemDtoList(cartItems);
+
+                var paginatedCartItems = cartItems
+                    .Skip(((page ?? 1) - 1) * (size ?? 10))
+                    .Take(size ?? 10)
+                    .ToList();
+                var cartItemDtos = UserMapper.ToUserCartItemDtoList(paginatedCartItems);
 
                 return ApiResponse<List<UserCartItemDto>>.Success(cartItemDtos);
             }
@@ -162,13 +196,13 @@ namespace JISpeed.Api.Controllers
             }
         }
 
-        /// <summary>
         /// 根据ID获取用户发布的所有评论
         /// </summary>
         /// <param name="userId">用户ID</param>
         /// <returns>评论列表</returns>
         [HttpGet("{userId}/review")]
-        public async Task<ApiResponse<List<UserReviewDto>>> GetUserReviews(string userId)
+        public async Task<ApiResponse<List<UserReviewDto>>> GetUserReviews(string userId,
+        [FromQuery] int? size, [FromQuery] int? page)
         {
             try
             {
@@ -179,7 +213,11 @@ namespace JISpeed.Api.Controllers
                 }
 
                 var reviews = await _reviewRepository.GetByUserIdAsync(userId);
-                var reviewDtos = UserMapper.ToUserReviewDtoList(reviews);
+                var paginatedReviews = reviews
+                    .Skip(((page ?? 1) - 1) * (size ?? 10))
+                    .Take(size ?? 10)
+                    .ToList();
+                var reviewDtos = UserMapper.ToUserReviewDtoList(paginatedReviews);
 
                 return ApiResponse<List<UserReviewDto>>.Success(reviewDtos);
             }
@@ -190,13 +228,13 @@ namespace JISpeed.Api.Controllers
             }
         }
 
-        /// <summary>
         /// 根据ID获取用户提交的所有投诉
         /// </summary>
         /// <param name="userId">用户ID</param>
         /// <returns>投诉列表</returns>
         [HttpGet("{userId}/complaints")]
-        public async Task<ApiResponse<List<UserComplaintDto>>> GetUserComplaints(string userId)
+        public async Task<ApiResponse<List<UserComplaintDto>>> GetUserComplaints(string userId,
+        [FromQuery] int? size, [FromQuery] int? page)
         {
             try
             {
@@ -207,7 +245,11 @@ namespace JISpeed.Api.Controllers
                 }
 
                 var complaints = await _complaintRepository.GetByUserIdAsync(userId);
-                var complaintDtos = UserMapper.ToUserComplaintDtoList(complaints);
+                var paginatedComplaints = complaints
+                    .Skip(((page ?? 1) - 1) * (size ?? 10))
+                    .Take(size ?? 10)
+                    .ToList();
+                var complaintDtos = UserMapper.ToUserComplaintDtoList(paginatedComplaints);
 
                 return ApiResponse<List<UserComplaintDto>>.Success(complaintDtos);
             }

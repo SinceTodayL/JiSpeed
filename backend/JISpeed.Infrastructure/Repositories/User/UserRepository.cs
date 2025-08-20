@@ -33,6 +33,20 @@ namespace JISpeed.Infrastructure.Repositories.User
 
         // === 业务专用查询方法 ===
 
+        // 获取全部用户信息
+        // <returns>用户列表</returns>
+        public async Task<List<UserEntity>> GetAllUsersAsync(int size, int page)
+        {
+            var query = _context.CustomUsers.AsQueryable();
+
+            if (page > 0 && size > 0)
+            {
+                query = query.Skip((page - 1) * size).Take(size);
+            }
+
+            return await query.ToListAsync();
+        }
+
         // 根据ApplicationUserId获取用户信息
         // <param name="applicationUserId">应用用户ID</param>
         // <returns>用户实体，如果不存在则返回null</returns>
