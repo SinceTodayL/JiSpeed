@@ -11,16 +11,16 @@ namespace JISpeed.Application.Services.Common
     public class JwtTokenService : IJwtTokenService
     {
 
-        /// <summary>
+
         /// 构造函数，注入配置
-        /// </summary>
+
         public JwtTokenService()
         {
         }
 
-        /// <summary>
+
         /// 生成 JWT Token
-        /// </summary>
+
         /// <param name="userName">Identity 用户实体</param>
         /// <returns>JWT 字符串</returns>
         public string GenerateToken(string userName)

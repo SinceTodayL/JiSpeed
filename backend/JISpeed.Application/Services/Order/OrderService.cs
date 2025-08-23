@@ -9,6 +9,7 @@ using JISpeed.Core.Interfaces.IRepositories.Merchant;
 using JISpeed.Core.Interfaces.IRepositories.Order;
 using JISpeed.Core.Interfaces.IRepositories.User;
 using JISpeed.Core.Interfaces.IServices;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OrderEntity = JISpeed.Core.Entities.Order.Order;
 using OrderDishEntity = JISpeed.Core.Entities.Junctions.OrderDish;
@@ -32,6 +33,7 @@ namespace JISpeed.Application.Services.Order
 
         private readonly IComplaintRepository _complaintRepository;
         private readonly ILogger<OrderService> _logger;
+        private readonly IServiceProvider _serviceProvider;
 
         public OrderService(
             IOrderRepository orderRepository,
@@ -47,6 +49,7 @@ namespace JISpeed.Application.Services.Order
             IComplaintRepository complaintRepository,
             ISalesStatRepository salesStatRepository,
             ICouponRepository couponRepository,
+            IServiceProvider serviceProvider,
             ILogger<OrderService> logger
         )
         {
@@ -63,17 +66,18 @@ namespace JISpeed.Application.Services.Order
             _complaintRepository = complaintRepository;
             _salesStatRepository = salesStatRepository;
             _couponRepository = couponRepository;
+            _serviceProvider = serviceProvider;
             _logger = logger;
         }
-        
-        
+
+
         public async Task<OrderEntity> GetOrderDetailByOrderIdAsync(string orderId)
         {
             try
             {
                 _logger.LogInformation("开始获取订单信息, OrderId: {OrderId}", orderId);
 
-                var entity= await _orderRepository.GetOrderWithDishesAndMerchantsAsync(orderId);
+                var entity = await _orderRepository.GetOrderWithDishesAndMerchantsAsync(orderId);
                 if (entity == null)
                 {
                     _logger.LogWarning("无相关数据, OrderId: {OrderId}", orderId);
@@ -91,9 +95,9 @@ namespace JISpeed.Application.Services.Order
         }
 
         public async Task<string> CreateOrderByUserIdAsync(
-            string userId, decimal orderAmount, 
+            string userId, decimal orderAmount,
             string? couponId, string addressId,
-            string merchantId,List<DishQuantityDto> dishQuantities)
+            string merchantId, List<DishQuantityDto> dishQuantities)
         {
             try
             {
@@ -102,24 +106,24 @@ namespace JISpeed.Application.Services.Order
                 var user = await _userRepository.GetByIdAsync(userId);
                 if (user == null)
                 {
-                    throw new NotFoundException(ErrorCodes.UserNotFound,"用户不存在");
+                    throw new NotFoundException(ErrorCodes.UserNotFound, "用户不存在");
                 }
                 var merchant = await _merchantRepository.GetByIdAsync(merchantId);
                 if (merchant == null)
                 {
-                    throw new NotFoundException(ErrorCodes.MerchantNotFound,"商家不存在");
+                    throw new NotFoundException(ErrorCodes.MerchantNotFound, "商家不存在");
                 }
                 var address = await _addressRepository.GetByIdAsync(addressId);
                 if (address == null)
                 {
-                    throw new NotFoundException(ErrorCodes.UserAddressNotFound,"地址不存在");
+                    throw new NotFoundException(ErrorCodes.UserAddressNotFound, "地址不存在");
                 }
 
                 if (couponId != null)
                 {
                     var coupon = await _couponRepository.GetByIdAsync(couponId);
                     if (coupon == null)
-                        throw new NotFoundException(ErrorCodes.ResourceNotFound,"优惠券不存在");
+                        throw new NotFoundException(ErrorCodes.ResourceNotFound, "优惠券不存在");
                     if (coupon.IsUsed)
                         throw new BusinessException(ErrorCodes.GeneralError, "优惠券已经被使用");
                 }
@@ -136,7 +140,7 @@ namespace JISpeed.Application.Services.Order
                     Merchant = merchant,
                     User = user,
                     Address = address,
-                    OrderLogs = new List<OrderLog>{}
+                    OrderLogs = new List<OrderLog> { }
                 };
                 await _orderRepository.CreateAsync(orderEntity);
                 await _orderRepository.SaveChangesAsync();
@@ -172,11 +176,22 @@ namespace JISpeed.Application.Services.Order
                     StatusCode = (int)OrderLogStatus.Created,
                     Order = orderEntity
                 };
-                
+
                 await _orderLogRepository.CreateAsync(orderLog);
                 await _orderLogRepository.SaveChangesAsync();
-             
-                
+
+                // 安排订单自动取消任务
+                var autoOrderService = _serviceProvider.GetService(typeof(IAutoOrderService)) as IAutoOrderService;
+                if (autoOrderService != null)
+                {
+                    autoOrderService.ScheduleOrderCancellation(orderEntity.OrderId, orderEntity.CreateAt);
+                    _logger.LogInformation("已为订单 {OrderId} 安排15分钟自动取消任务", orderEntity.OrderId);
+                }
+                else
+                {
+                    _logger.LogWarning("未能获取AutoOrderService服务实例，订单 {OrderId} 将不会自动取消", orderEntity.OrderId);
+                }
+
                 _logger.LogInformation("成功创建订单信息, OrderId: {OrderId}", orderEntity.OrderId);
 
                 return orderLog.LogId;
@@ -189,8 +204,8 @@ namespace JISpeed.Application.Services.Order
         }
 
         public async Task<List<string>> GetOrderIdByUserIdAsync(
-            string userId,int? orderStatus,
-            int?size,int? page)
+            string userId, int? orderStatus,
+            int? size, int? page)
         {
             try
             {
@@ -205,9 +220,9 @@ namespace JISpeed.Application.Services.Order
 
                 List<OrderEntity> data;
                 if (orderStatus.HasValue)
-                    data= await _orderRepository.GetByUserIdAndStatusAsync(userId,orderStatus.Value,size,page);
+                    data = await _orderRepository.GetByUserIdAndStatusAsync(userId, orderStatus.Value, size, page);
                 else
-                    data= await _orderRepository.GetByUserIdAsync(userId,size,page);
+                    data = await _orderRepository.GetByUserIdAsync(userId, size, page);
                 _logger.LogInformation("成功用户获取订单列表信息, UserId: {UserId}", userId);
 
                 return data.Select(x => x.OrderId).ToList();
@@ -224,7 +239,7 @@ namespace JISpeed.Application.Services.Order
             try
             {
                 _logger.LogInformation("开始更新订单信息");
-        
+
                 var entity = await _orderRepository.GetByIdAsync(orderId);
                 if (entity == null)
                 {
@@ -236,10 +251,10 @@ namespace JISpeed.Application.Services.Order
                 {
                     throw new BusinessException("无法重复操作！");
                 }
-        
+
                 entity.OrderStatus = orderStatus ?? entity.OrderStatus;
                 await _orderRepository.SaveChangesAsync();
-                
+
                 string remark;
                 int statusCode;
                 if (orderStatus == (int)OrderStatus.Confirmed)
@@ -254,10 +269,10 @@ namespace JISpeed.Application.Services.Order
                     // 将库存返还
                     foreach (var dish in entity.OrderDishes)
                     {
-                       dish.Dish.StockQuantity+=dish.Quantity;
+                        dish.Dish.StockQuantity += dish.Quantity;
                     }
                 }
-               
+
                 var orderLog = new OrderLog
                 {
                     Actor = "user",
@@ -273,19 +288,19 @@ namespace JISpeed.Application.Services.Order
                 _logger.LogInformation("更新订单信息成功, OrderId: {OrderId}", orderId);
                 return true;
             }
-            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException ||ex is BusinessException))
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException || ex is BusinessException))
             {
                 _logger.LogError(ex, "更新订单信息时发生异常, OrderId: {OrderId}", orderId);
                 throw new BusinessException("更新订单信息失败");
             }
         }
 
-        public async Task<bool> UpdatePaymentAsync(string payId, int payStatus,int? amount)
+        public async Task<bool> UpdatePaymentAsync(string payId, int payStatus, int? amount)
         {
             try
             {
                 _logger.LogInformation("开始更新支付信息");
-        
+
                 var entity = await _paymentRepository.GetWithDetailsAsync(payId);
                 if (entity == null)
                 {
@@ -302,15 +317,15 @@ namespace JISpeed.Application.Services.Order
                 {
                     entity.PayStatus = payStatus;
                     entity.Order.OrderStatus = (int)OrderStatus.Paid;
-                    entity.PayTime=DateTime.Now;
+                    entity.PayTime = DateTime.Now;
                 }
                 else
                     entity.PayStatus = payStatus;
-                
-                entity.PayAmount = amount??entity.PayAmount;
+
+                entity.PayAmount = amount ?? entity.PayAmount;
                 await _paymentRepository.SaveChangesAsync();
                 await _orderRepository.SaveChangesAsync();
-                var remark =(payStatus==(int)PayStatus.Paid)?"用户支付订单":"用户取消支付";
+                var remark = (payStatus == (int)PayStatus.Paid) ? "用户支付订单" : "用户取消支付";
                 var orderLog = new OrderLog
                 {
                     Actor = "user",
@@ -323,9 +338,9 @@ namespace JISpeed.Application.Services.Order
                 };
                 await _orderLogRepository.CreateAsync(orderLog);
                 await _orderLogRepository.SaveChangesAsync();
-                if (payStatus == (int)PayStatus.Cancelled&& entity.Order.Coupon!=null)
+                if (payStatus == (int)PayStatus.Cancelled && entity.Order.Coupon != null)
                 {
-                    entity.Order.Coupon.IsUsed=false;
+                    entity.Order.Coupon.IsUsed = false;
                     await _couponRepository.SaveChangesAsync();
                 }
                 _logger.LogInformation("更新支付信息成功，PayId: {PayId}", payId);
@@ -341,7 +356,7 @@ namespace JISpeed.Application.Services.Order
                 await _salesStatRepository.SaveChangesAsync();
                 return true;
             }
-            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException||ex is BusinessException))
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException || ex is BusinessException))
             {
                 _logger.LogError(ex, "更新支付信息时发生异常，PayId: {PayId}", payId);
                 throw new BusinessException("更新支付信息失败");
@@ -355,7 +370,7 @@ namespace JISpeed.Application.Services.Order
                 _logger.LogInformation("开始创建用户支付订单实体");
 
                 var order = await _orderRepository.GetByIdAsync(orderId);
-                if (order==null)
+                if (order == null)
                 {
                     _logger.LogWarning("无相关数据,OrderId: {OrderId}", orderId);
                     throw new NotFoundException(ErrorCodes.OrderNotFound, $"无相关数据, OrderId: {orderId}");
@@ -374,7 +389,7 @@ namespace JISpeed.Application.Services.Order
                     OrderId = orderId,
                     PayStatus = (int)PayStatus.Unpaid,
                     Order = order,
-                    PayAmount = order.OrderAmount-faceValue,
+                    PayAmount = order.OrderAmount - faceValue,
                 };
                 await _paymentRepository.CreateAsync(data);
                 await _paymentRepository.SaveChangesAsync();
@@ -408,7 +423,7 @@ namespace JISpeed.Application.Services.Order
 
                 List<OrderEntity> data;
                 if (orderStatus.HasValue)
-                    data= await _orderRepository.GetByMerchantIdAndStatusAsync(merchantId,orderStatus.Value,size,page);
+                    data = await _orderRepository.GetByMerchantIdAndStatusAsync(merchantId, orderStatus.Value, size, page);
                 else if (startDate.HasValue || endDate.HasValue)
                 {
                     var start = startDate.HasValue ? startDate.Value : DateTime.MinValue;
@@ -434,7 +449,7 @@ namespace JISpeed.Application.Services.Order
             {
                 _logger.LogInformation("开始获取订单日志信息");
 
-                var entity= await _orderLogRepository.GetByIdAsync(logId);
+                var entity = await _orderLogRepository.GetByIdAsync(logId);
                 if (entity == null)
                 {
                     _logger.LogWarning("无相关数据");
@@ -457,7 +472,7 @@ namespace JISpeed.Application.Services.Order
             {
                 _logger.LogInformation("开始获取支付实体信息");
 
-                var entity= await _paymentRepository.GetByIdAsync(payId);
+                var entity = await _paymentRepository.GetByIdAsync(payId);
                 if (entity == null)
                 {
                     _logger.LogWarning("无相关数据");
@@ -475,8 +490,8 @@ namespace JISpeed.Application.Services.Order
         }
 
         public async Task<string> CreateRefundByOrderIdAndUserIdAsync(
-            string userId, 
-            string orderId, 
+            string userId,
+            string orderId,
             string reason,
             decimal amount)
         {
@@ -485,7 +500,7 @@ namespace JISpeed.Application.Services.Order
                 _logger.LogInformation("开始创建用户退款实体");
 
                 var order = await _orderRepository.GetByIdAsync(orderId);
-                if (order==null)
+                if (order == null)
                 {
                     _logger.LogWarning("无相关数据,OrderId: {OrderId}", orderId);
                     throw new NotFoundException(ErrorCodes.OrderNotFound, $"无相关数据, OrderId: {orderId}");
@@ -496,7 +511,7 @@ namespace JISpeed.Application.Services.Order
                     throw new NotFoundException(ErrorCodes.UserNotFound, $"无相关数据, UserID: {userId}");
                 }
 
-                var paidPayment = await _paymentRepository.GetByOrderIdAndStatusAsync(orderId,(int)PayStatus.Paid);
+                var paidPayment = await _paymentRepository.GetByOrderIdAndStatusAsync(orderId, (int)PayStatus.Paid);
                 if (paidPayment == null)
                 {
                     throw new NotFoundException(ErrorCodes.ResourceNotFound, "无相关支付实体");
@@ -566,12 +581,12 @@ namespace JISpeed.Application.Services.Order
                     throw new BusinessException(ErrorCodes.GeneralError, "该申请已经被处理过！");
                 }
                 refund.AuditStatus = refundStatus;
-                refund.FinishAt=DateTime.Now;
+                refund.FinishAt = DateTime.Now;
                 await _refundRepository.SaveChangesAsync();
                 refund.Order.OrderStatus = (int)OrderStatus.AftersalesCompleted;
                 await _orderRepository.SaveChangesAsync();
-                
-                var remark =(refundStatus==(int)RefundStatus.Refunded)?"商家同意退款":"商家拒绝退款";
+
+                var remark = (refundStatus == (int)RefundStatus.Refunded) ? "商家同意退款" : "商家拒绝退款";
 
                 var orderLog = new OrderLog
                 {
@@ -595,7 +610,7 @@ namespace JISpeed.Application.Services.Order
                 throw new BusinessException("更新订单退款实体失败");
             }
         }
-        public async  Task<string> UpdateRefundForAdminAsync(string adminId, string refundId, int refundStatus)
+        public async Task<string> UpdateRefundForAdminAsync(string adminId, string refundId, int refundStatus)
         {
             try
             {
@@ -620,13 +635,13 @@ namespace JISpeed.Application.Services.Order
 
                 }
                 refund.AuditStatus = refundStatus;
-                refund.FinishAt=DateTime.Now;
+                refund.FinishAt = DateTime.Now;
                 await _refundRepository.SaveChangesAsync();
                 refund.Order.OrderStatus = (int)OrderStatus.AftersalesCompleted;
                 await _orderRepository.SaveChangesAsync();
                 _logger.LogInformation("成功更新退款实体，RefundId: {RefundId}", refund.RefundId);
-                
-                var remark =(refundStatus==(int)RefundStatus.Refunded)?"管理员同意退款":"管理员拒绝退款";
+
+                var remark = (refundStatus == (int)RefundStatus.Refunded) ? "管理员同意退款" : "管理员拒绝退款";
 
                 var orderLog = new OrderLog
                 {
@@ -656,7 +671,7 @@ namespace JISpeed.Application.Services.Order
             {
                 _logger.LogInformation("开始获取退款实体信息");
 
-                var entity= await _refundRepository.GetByIdAsync(refundId);
+                var entity = await _refundRepository.GetByIdAsync(refundId);
                 if (entity == null)
                 {
                     _logger.LogWarning("无相关数据");
@@ -685,27 +700,27 @@ namespace JISpeed.Application.Services.Order
                 _logger.LogInformation("开始获取退款列表信息");
 
                 List<Refund>? refundList;
-                if(userId != null)
-                    refundList = await _refundRepository.GetByUserIdAndStatusAsync(userId, auditStatus,size,page);
+                if (userId != null)
+                    refundList = await _refundRepository.GetByUserIdAndStatusAsync(userId, auditStatus, size, page);
                 else if (merchantId != null)
-                    refundList = await _refundRepository.GetByMerchantIdAndStatusAsync(merchantId, auditStatus,size,page);
+                    refundList = await _refundRepository.GetByMerchantIdAndStatusAsync(merchantId, auditStatus, size, page);
                 else if (adminId != null)
                 {
                     var admin = await _adminRepository.ExistsAsync(adminId);
                     if (!admin)
                         throw new NotFoundException(ErrorCodes.ResourceNotFound, "管理员不存在");
-                    refundList = await _refundRepository.GetAllByStatusForAdminAsync(auditStatus,size,page);
+                    refundList = await _refundRepository.GetAllByStatusForAdminAsync(auditStatus, size, page);
                 }
                 else
-                    refundList = await _refundRepository.GetAllAsync(size,page);
-                
+                    refundList = await _refundRepository.GetAllAsync(size, page);
+
                 if (refundList == null)
                 {
                     _logger.LogWarning("无相关数据");
                     throw new NotFoundException(ErrorCodes.ResourceNotFound, "无相关数据");
                 }
                 _logger.LogInformation("成功获取退款实体信息");
-                
+
                 return refundList.Select(r => r.RefundId).ToList();
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
@@ -721,7 +736,7 @@ namespace JISpeed.Application.Services.Order
             {
                 _logger.LogInformation("开始获取投诉实体信息");
 
-                var entity= await _complaintRepository.GetByIdAsync(complaintId);
+                var entity = await _complaintRepository.GetByIdAsync(complaintId);
                 if (entity == null)
                 {
                     _logger.LogWarning("无相关数据");
@@ -744,7 +759,7 @@ namespace JISpeed.Application.Services.Order
         {
             try
             {
-                
+
                 _logger.LogInformation("开始创建投诉实体信息");
 
                 // 参数检查
@@ -754,13 +769,13 @@ namespace JISpeed.Application.Services.Order
                     _logger.LogWarning("无相关数据,userId: {userId}", userId);
                     throw new NotFoundException(ErrorCodes.UserNotFound, $"无相关数据, userId: {userId}");
                 }
-                var order =  await _orderRepository.GetByIdAsync(orderId); 
-                if (order==null)
+                var order = await _orderRepository.GetByIdAsync(orderId);
+                if (order == null)
                 {
                     _logger.LogWarning("无相关数据,OrderId: {OrderId}", orderId);
                     throw new NotFoundException(ErrorCodes.OrderNotFound, $"无相关数据, OrderId: {orderId}");
                 }
-                
+
                 var complaint = new Complaint
                 {
                     OrderId = orderId,
@@ -773,9 +788,9 @@ namespace JISpeed.Application.Services.Order
                     Order = order,
                     Complainant = user
                 };
-                
-                
-                
+
+
+
                 var orderLog = new OrderLog
                 {
                     Actor = "user",
@@ -790,7 +805,7 @@ namespace JISpeed.Application.Services.Order
                 await _complaintRepository.SaveChangesAsync();
                 await _orderLogRepository.CreateAsync(orderLog);
                 await _orderLogRepository.SaveChangesAsync();
-                
+
                 _logger.LogInformation("成功创建投诉实体信息");
 
                 return complaint.ComplaintId;
@@ -806,7 +821,7 @@ namespace JISpeed.Application.Services.Order
         {
             try
             {
-                
+
                 _logger.LogInformation("开始更新投诉实体信息");
 
                 // 参数检查
@@ -816,8 +831,8 @@ namespace JISpeed.Application.Services.Order
                     _logger.LogWarning("无相关数据,adminId: {adminId}", adminId);
                     throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据, adminId: {adminId}");
                 }
-                var complaint =  await _complaintRepository.GetByIdAsync(complaintId); 
-                if (complaint==null)
+                var complaint = await _complaintRepository.GetByIdAsync(complaintId);
+                if (complaint == null)
                 {
                     _logger.LogWarning("无相关数据,complaintId: {complaintId}", complaintId);
                     throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据, complaintId: {complaintId}");
@@ -854,7 +869,7 @@ namespace JISpeed.Application.Services.Order
         {
             try
             {
-                
+
                 _logger.LogInformation("开始关闭投诉实体信息");
 
                 // 参数检查
@@ -864,8 +879,8 @@ namespace JISpeed.Application.Services.Order
                     _logger.LogWarning("无相关数据,userId: {userId}", userId);
                     throw new NotFoundException(ErrorCodes.UserNotFound, $"无相关数据, userId: {userId}");
                 }
-                var complaint =  await _complaintRepository.GetByIdAsync(complaintId); 
-                if (complaint==null)
+                var complaint = await _complaintRepository.GetByIdAsync(complaintId);
+                if (complaint == null)
                 {
                     _logger.LogWarning("无相关数据,complaintId: {complaintId}", complaintId);
                     throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据, complaintId: {complaintId}");
@@ -899,7 +914,7 @@ namespace JISpeed.Application.Services.Order
         }
 
         public async Task<List<string>> GetComplaintListByFilterAsync(
-            string? userId, 
+            string? userId,
             string? merchantId,
             int? status,
             string? adminId,
@@ -914,18 +929,18 @@ namespace JISpeed.Application.Services.Order
                     var merchant = await _merchantRepository.ExistsAsync(merchantId);
                     if (!merchant)
                     {
-                        throw new NotFoundException(ErrorCodes.MerchantNotFound,"商家不存在");
+                        throw new NotFoundException(ErrorCodes.MerchantNotFound, "商家不存在");
                     }
-                    complaints = await _complaintRepository.GetByMerchantIdAndStatusAsync(merchantId, status,size, page);
+                    complaints = await _complaintRepository.GetByMerchantIdAndStatusAsync(merchantId, status, size, page);
                 }
-                else if(userId != null)
+                else if (userId != null)
                 {
                     var user = await _userRepository.ExistsAsync(userId);
                     if (!user)
                     {
-                        throw new NotFoundException(ErrorCodes.UserNotFound,"用户不存在");
+                        throw new NotFoundException(ErrorCodes.UserNotFound, "用户不存在");
                     }
-                    complaints = await _complaintRepository.GetByUserIdAndStatusAsync(userId, status,size, page);
+                    complaints = await _complaintRepository.GetByUserIdAndStatusAsync(userId, status, size, page);
                 }
                 else if (adminId != null)
                 {
@@ -935,20 +950,20 @@ namespace JISpeed.Application.Services.Order
                         _logger.LogWarning("无相关数据,adminId: {adminId}", adminId);
                         throw new NotFoundException(ErrorCodes.ResourceNotFound, $"无相关数据, adminId: {adminId}");
                     }
-                    complaints = await _complaintRepository.GetAllByFilterAsync(status,size, page);
+                    complaints = await _complaintRepository.GetAllByFilterAsync(status, size, page);
                 }
                 else
                 {
-                    complaints = await _complaintRepository.GetAllAsync(size,page);
+                    complaints = await _complaintRepository.GetAllAsync(size, page);
                 }
-               
+
                 if (complaints == null)
                 {
                     _logger.LogWarning("无相关数据");
                     throw new NotFoundException(ErrorCodes.ResourceNotFound, "无相关数据");
                 }
                 _logger.LogInformation("成功获取投诉实体信息");
-                
+
                 return complaints.Select(c => c.ComplaintId).ToList();
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))

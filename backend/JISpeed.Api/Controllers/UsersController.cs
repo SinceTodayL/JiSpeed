@@ -48,9 +48,9 @@ namespace JISpeed.Api.Controllers
             _userManager = userManager;
         }
 
-        /// <summary>
+
         /// 根据ID获取用户信息
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <returns>用户详细信息</returns>
         [HttpGet("{userId}")]
@@ -98,12 +98,12 @@ namespace JISpeed.Api.Controllers
         }
 
         /// 根据ID获取用户收藏的商品列表
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <returns>收藏商品列表</returns>
         [HttpGet("{userId}/favorites")]
         public async Task<ApiResponse<List<UserFavoriteDto>>> GetUserFavorites(string userId,
-        [FromQuery] int ?size, [FromQuery] int ?page)
+        [FromQuery] int? size, [FromQuery] int? page)
         {
             try
             {
@@ -131,7 +131,7 @@ namespace JISpeed.Api.Controllers
         }
 
         /// 根据ID获取用户的所有地址列表
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <returns>地址列表</returns>
         [HttpGet("{userId}/addresses")]
@@ -163,7 +163,7 @@ namespace JISpeed.Api.Controllers
         }
 
         /// 根据ID获取用户的购物车内容
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <returns>购物车内容</returns>
         [HttpGet("{userId}/cart")]
@@ -197,7 +197,7 @@ namespace JISpeed.Api.Controllers
         }
 
         /// 根据ID获取用户发布的所有评论
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <returns>评论列表</returns>
         [HttpGet("{userId}/review")]
@@ -229,7 +229,7 @@ namespace JISpeed.Api.Controllers
         }
 
         /// 根据ID获取用户提交的所有投诉
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <returns>投诉列表</returns>
         [HttpGet("{userId}/complaints")]
@@ -260,9 +260,9 @@ namespace JISpeed.Api.Controllers
             }
         }
 
-        /// <summary>
+
         /// 用户添加收藏夹
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <param name="request">收藏请求</param>
         /// <returns>操作结果</returns>
@@ -305,9 +305,9 @@ namespace JISpeed.Api.Controllers
             }
         }
 
-        /// <summary>
+
         /// 删除收藏
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <param name="dishId">菜品ID</param>
         /// <returns>操作结果</returns>
@@ -338,9 +338,9 @@ namespace JISpeed.Api.Controllers
             }
         }
 
-        /// <summary>
+
         /// 添加地址
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <param name="request">地址请求</param>
         /// <returns>操作结果</returns>
@@ -384,9 +384,9 @@ namespace JISpeed.Api.Controllers
             }
         }
 
-        /// <summary>
+
         /// 修改地址
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <param name="addressId">地址ID</param>
         /// <param name="request">地址请求</param>
@@ -438,9 +438,9 @@ namespace JISpeed.Api.Controllers
             }
         }
 
-        /// <summary>
+
         /// 删除地址
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <param name="addressId">地址ID</param>
         /// <returns>操作结果</returns>
@@ -477,9 +477,9 @@ namespace JISpeed.Api.Controllers
             }
         }
 
-        /// <summary>
+
         /// 添加到购物车
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <param name="request">购物车请求</param>
         /// <returns>操作结果</returns>
@@ -522,9 +522,9 @@ namespace JISpeed.Api.Controllers
             }
         }
 
-        /// <summary>
+
         /// 从购物车删除商品
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <param name="cartItemId">购物车项ID</param>
         /// <returns>操作结果</returns>

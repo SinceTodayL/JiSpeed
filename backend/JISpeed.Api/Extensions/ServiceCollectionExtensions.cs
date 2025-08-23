@@ -16,6 +16,7 @@ using JISpeed.Core.Interfaces.IRepositories.Reconciliation;
 using JISpeed.Core.Interfaces.IRepositories.Rider;
 using JISpeed.Core.Interfaces.IRepositories.User;
 using JISpeed.Core.Interfaces.IServices;
+using JISpeed.Infrastructure.AutoServices;
 using JISpeed.Infrastructure.DailyServices;
 using JISpeed.Infrastructure.Repositories.Admin;
 using JISpeed.Infrastructure.Repositories.Common;
@@ -48,9 +49,9 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IAddressRepository, AddressRepository>();
             services.AddScoped<IReviewRepository, ReviewRepository>();
             services.AddScoped<IComplaintRepository, ComplaintRepository>();
-            services.AddScoped<ISettlementRepository,SettlementRepository>();
-            services.AddScoped<IPaymentRepository,PaymentRepository>();
-            services.AddScoped<IAnnouncementRepository,AnnouncementRepository>();
+            services.AddScoped<ISettlementRepository, SettlementRepository>();
+            services.AddScoped<IPaymentRepository, PaymentRepository>();
+            services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
             services.AddScoped<IReconciliationRepository, ReconciliationRepository>();
             services.AddScoped<ICouponRepository, CouponRepository>();
             services.AddScoped<IOrderLogRepository, OrderLogRepository>();
@@ -74,7 +75,7 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<ILoginService, LoginService>();
             services.AddScoped<IJwtTokenService, JwtTokenService>();
             services.AddScoped<IOrderService, OrderService>();
-            services.AddScoped<ISettlementService,SettlementService>();
+            services.AddScoped<ISettlementService, SettlementService>();
             services.AddScoped<IRegistrationService, RegistrationService>();
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IUserService, UserService>();
@@ -82,22 +83,24 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IMerchantService, MerchantService>();
             services.AddScoped<IAdminService, AdminService>();
             services.AddScoped<ICouponService, CouponService>();
-            
+
+
             // 定时任务
             services.AddHostedService<DailyCreator>();
-            
-            // 骑手相关服务
+            services.AddHostedService<AutoOrderService>();
+            services.AddSingleton<IAutoOrderService>(provider =>
+                provider.GetServices<IHostedService>().OfType<AutoOrderService>().First());            // 骑手相关服务
             services.AddScoped<IPerformanceService, PerformanceService>();
             services.AddScoped<IMapService, AMapService>();
             services.AddScoped<ILocationPushService, LocationPushService>();
             services.AddScoped<IRiderLocationService, RiderLocationService>();
             // 注册考勤服务
             services.AddScoped<IAttendanceService, AttendanceService>();
-            
+
             // 平台服务
             services.AddScoped<IPlatformService, PlatformService>();
 
-            
+
             return services;
         }
     }

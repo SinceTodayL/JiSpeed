@@ -468,9 +468,9 @@ namespace JISpeed.Api.Controllers
                     "获取骑手当前位置的地址信息失败"));
             }
         }
-        /// <summary>
+
         /// 测试位置推送功能
-        /// </summary>
+
         [HttpPost("test-push/{riderId}")]
         [ProducesResponseType(typeof(ApiResponse<object>), 200)]
         public async Task<ActionResult<ApiResponse<object>>> TestLocationPush(string riderId)

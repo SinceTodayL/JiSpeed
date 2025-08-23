@@ -47,7 +47,7 @@ namespace JISpeed.Infrastructure.Repositories.Order
         // <returns>订单列表</returns>
         public async Task<List<JISpeed.Core.Entities.Order.Order>> GetByUserIdAsync(
             string userId,
-            int?size,int? page)
+            int? size, int? page)
         {
             int currentPage = page ?? 1;
             int pageSize = size ?? 20;
@@ -81,7 +81,7 @@ namespace JISpeed.Infrastructure.Repositories.Order
         // <returns>订单列表</returns>
         public async Task<List<JISpeed.Core.Entities.Order.Order>> GetByUserIdAndStatusAsync(
             string userId, int status,
-            int?size,int? page)
+            int? size, int? page)
         {
             int currentPage = page ?? 1;
             int pageSize = size ?? 20;
@@ -153,18 +153,18 @@ namespace JISpeed.Infrastructure.Repositories.Order
         }
 
         public async Task<List<JISpeed.Core.Entities.Order.Order>> GetByTimeRangeAndStatusAsync(
-            DateTime startTime, 
+            DateTime startTime,
             DateTime endTime,
             int status)
         {
             return await _context.Orders
-                .Where(o => o.CreateAt >= startTime && o.CreateAt <= endTime&& o.OrderStatus == status)
+                .Where(o => o.CreateAt >= startTime && o.CreateAt <= endTime && o.OrderStatus == status)
                 .ToListAsync();
         }
 
-        /// <summary>
+
         /// 根据订单ID查询订单，包含菜品名称和商家名称
-        /// </summary>
+
         public async Task<JISpeed.Core.Entities.Order.Order?> GetOrderWithDishesAndMerchantsAsync(string orderId)
         {
             return await _context.Orders
