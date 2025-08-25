@@ -34,5 +34,10 @@ namespace JISpeed.Core.Interfaces.IServices
         /// 手动检查和取消已超时未支付的订单
 
         Task CheckAndCancelOverdueOrdersAsync();
+
+
+        /// 手动检查和处理已超时未评价的订单
+
+        Task CheckAndAddOverdueReviewsAsync();
     }
 }

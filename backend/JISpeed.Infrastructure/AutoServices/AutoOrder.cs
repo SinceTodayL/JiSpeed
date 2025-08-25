@@ -64,12 +64,20 @@ namespace JISpeed.Infrastructure.AutoServices
                     .Where(o => currentTime.Subtract(o.CreateAt).TotalMinutes < 15)
                     .ToList();
 
-                // 恢复已确认订单的自动评价任务（3天内创建且已确认但未评价）
-                var confirmedOrders = await context.Orders
-                    .Where(o => o.OrderStatus == 2 && // 已确认
-                               o.CreateAt > cutoffTimeForConfirmed)
+                // 查找所有已确认但未评价的订单（不限制创建时间）
+                var allConfirmedOrders = await context.Orders
+                    .Where(o => o.OrderStatus == 2) // 已确认
                     .Select(o => new { o.OrderId, o.UserId, o.CreateAt })
                     .ToListAsync();
+
+                // 分离需要立即处理和需要定时处理的订单
+                var overdueToReviewOrders = allConfirmedOrders
+                    .Where(o => currentTime.Subtract(o.CreateAt).TotalDays >= 3)
+                    .ToList();
+
+                var confirmedOrders = allConfirmedOrders
+                    .Where(o => currentTime.Subtract(o.CreateAt).TotalDays < 3)
+                    .ToList();
 
                 // 立即处理已经超时的订单
                 foreach (var order in overdueToCancelOrders)
@@ -85,22 +93,21 @@ namespace JISpeed.Infrastructure.AutoServices
                     ScheduleOrderCancellation(order.OrderId, order.CreateAt);
                 }
 
-                // 为已确认订单安排自动评价任务
-                foreach (var order in confirmedOrders)
+                // 立即处理已经超过3天的已确认订单
+                foreach (var order in overdueToReviewOrders)
                 {
-                    var remainingTime = TimeSpan.FromDays(3) - currentTime.Subtract(order.CreateAt);
-                    if (remainingTime > TimeSpan.Zero)
-                    {
-                        ScheduleAutoReview(order.OrderId, order.UserId, order.CreateAt);
-                    }
-                    else
-                    {
-                        // 已经超时，立即处理
-                        _ = Task.Run(() => AddAutoReviewAsync(order.OrderId, order.UserId));
-                    }
+                    _logger.LogInformation($"发现超过3天未评价的已确认订单: {order.OrderId}，创建于 {order.CreateAt:yyyy-MM-dd HH:mm:ss}，立即添加默认评价");
+                    // 立即处理，但不使用Task.Run以避免并发问题
+                    await AddAutoReviewAsync(order.OrderId, order.UserId);
                 }
 
-                _logger.LogInformation($"恢复了 {unpaidOrders.Count} 个订单取消任务和 {confirmedOrders.Count} 个自动评价任务");
+                // 为未超过3天的已确认订单安排自动评价任务
+                foreach (var order in confirmedOrders)
+                {
+                    ScheduleAutoReview(order.OrderId, order.UserId, order.CreateAt);
+                }
+
+                _logger.LogInformation($"恢复了 {unpaidOrders.Count} 个订单取消任务和 {confirmedOrders.Count} 个自动评价任务，立即处理了 {overdueToCancelOrders.Count} 个超时未支付订单和 {overdueToReviewOrders.Count} 个超时未评价订单");
             }
             catch (Exception ex)
             {
@@ -419,6 +426,43 @@ namespace JISpeed.Infrastructure.AutoServices
             catch (Exception ex)
             {
                 _logger.LogError(ex, "手动检查超时未支付订单时发生错误");
+            }
+        }
+
+
+        /// 手动检查和处理已超时未评价的订单
+
+        public async Task CheckAndAddOverdueReviewsAsync()
+        {
+            try
+            {
+                _logger.LogInformation("开始手动检查超时未评价订单");
+                using var scope = _serviceProvider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<OracleDbContext>();
+
+                var currentTime = DateTime.Now;
+
+                // 查找所有已超时的已确认未评价订单（创建时间超过3天且状态为已确认）
+                var overdueReviewOrders = await context.Orders
+                    .Where(o => o.OrderStatus == 2 &&
+                           currentTime.Subtract(o.CreateAt).TotalDays >= 3)
+                    .Select(o => new { o.OrderId, o.UserId, o.CreateAt })
+                    .ToListAsync();
+
+                _logger.LogInformation($"发现 {overdueReviewOrders.Count} 个超时未评价的已确认订单");
+
+                // 逐个添加默认评价
+                foreach (var order in overdueReviewOrders)
+                {
+                    _logger.LogInformation($"开始为超时未评价订单添加默认评价: {order.OrderId}, 创建时间: {order.CreateAt:yyyy-MM-dd HH:mm:ss}");
+                    await AddAutoReviewAsync(order.OrderId, order.UserId);
+                }
+
+                _logger.LogInformation($"超时未评价订单检查完成，处理了 {overdueReviewOrders.Count} 个订单");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "手动检查超时未评价订单时发生错误");
             }
         }
 
