@@ -50,5 +50,44 @@ namespace JISpeed.Api.Controllers
             }
         }
 
+
+        /// 手动触发超时未评价订单检查（测试用）
+
+        [HttpPost("test/check-overdue-reviews")]
+        public ActionResult<ApiResponse<object>> CheckOverdueReviews()
+        {
+            try
+            {
+                _logger.LogInformation("手动触发超时未评价订单检查");
+                var autoOrderService = _serviceProvider.GetService(typeof(IAutoOrderService)) as IAutoOrderService;
+
+                if (autoOrderService == null)
+                {
+                    _logger.LogWarning("未能获取AutoOrderService服务实例");
+                    return NotFound(ApiResponse<object>.Fail(1001, "未能获取AutoOrderService服务实例"));
+                }
+
+                // 获取活跃任务数
+                int activeTaskCount = autoOrderService.GetActiveTaskCount();
+
+                // 调用公共方法检查超时评价订单
+                var checkTask = Task.Run(async () => await autoOrderService.CheckAndAddOverdueReviewsAsync());
+                checkTask.Wait(); // 等待执行完成
+
+                _logger.LogInformation("手动触发超时未评价订单检查完成");
+                return Ok(ApiResponse<object>.Success(new
+                {
+                    message = "手动触发超时未评价订单检查完成",
+                    activeTasksBeforeCheck = activeTaskCount,
+                    activeTasksAfterCheck = autoOrderService.GetActiveTaskCount()
+                }, "操作成功"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "手动触发超时未评价订单检查时发生异常");
+                return StatusCode(500, ApiResponse<object>.Fail(1000, $"系统错误: {ex.Message}"));
+            }
+        }
+
     }
 }
