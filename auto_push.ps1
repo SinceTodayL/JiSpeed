@@ -49,7 +49,7 @@ try {
         $commitMessage = "update at $timestamp"
         
         git commit -m $commitMessage
-        git push origin main
+        git push origin frontend-dist
         
         Write-Host "[*] Successfully committed and pushed to main branch (Timestamp: $timestamp)." -ForegroundColor Green
     } else {
