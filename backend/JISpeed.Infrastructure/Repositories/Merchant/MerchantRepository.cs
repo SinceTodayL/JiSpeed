@@ -41,6 +41,7 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
             int currentPage = page ?? 1;
             int pageSize = size ?? 20;
             return await _context.Merchants
+                .OrderByDescending(m => m.Orders.Count)
                 .Skip((currentPage - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -55,6 +56,7 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
             int pageSize = size ?? 20;
             return await _context.Merchants
                 .Where(m => m.MerchantName.Contains(name))
+                .OrderByDescending(m => m.Orders.Count)
                 .Skip((currentPage - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -84,6 +86,7 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
             int pageSize = size ?? 20;
             return await _context.Merchants
                 .Where(m => m.Status == status)
+                .OrderByDescending(m => m.Orders.Count)
                 .Skip((currentPage - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -98,6 +101,7 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
             int pageSize = size ?? 20;
             return await _context.Merchants
                 .Where(m => !string.IsNullOrEmpty(m.Location) && m.Location.Contains(location))
+                .OrderByDescending(m => m.Orders.Count)
                 .Skip((currentPage - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
