@@ -51,7 +51,7 @@ try {
         git commit -m $commitMessage
         git push origin frontend-dist
         
-        Write-Host "[*] Successfully committed and pushed to main branch (Timestamp: $timestamp)." -ForegroundColor Green
+        Write-Host "[*] Successfully committed and pushed to frontend-dist branch (Timestamp: $timestamp)." -ForegroundColor Green
     } else {
         Write-Host "[*] No content to commit." -ForegroundColor White
     }
