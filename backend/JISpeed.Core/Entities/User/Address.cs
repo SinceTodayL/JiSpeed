@@ -29,6 +29,12 @@ namespace JISpeed.Core.Entities.User
 
         public required int IsDefault { get; set; } //是否默认地址 1: 是, 2: 否
 
+        [Column(TypeName = "DECIMAL(10, 6)")]
+        public decimal? Longitude { get; set; } // 经度
+
+        [Column(TypeName = "DECIMAL(10, 6)")]
+        public decimal? Latitude { get; set; } // 纬度
+
         //导航属性
         [ForeignKey("UserId")]
         public virtual required User User { get; set; }

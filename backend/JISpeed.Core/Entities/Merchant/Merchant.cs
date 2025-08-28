@@ -33,6 +33,12 @@ namespace JISpeed.Core.Entities.Merchant
         [StringLength(200)]
         public string? Location { get; set; }
         
+        [Column(TypeName = "DECIMAL(10, 6)")]
+        public decimal? Longitude { get; set; } // 经度
+
+        [Column(TypeName = "DECIMAL(10, 6)")]
+        public decimal? Latitude { get; set; } // 纬度
+
         // 身份验证用户关联
         [StringLength(450)]
         [Column(TypeName = "VARCHAR(450)")]
