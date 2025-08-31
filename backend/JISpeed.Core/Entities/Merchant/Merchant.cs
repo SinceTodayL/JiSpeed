@@ -60,6 +60,8 @@ namespace JISpeed.Core.Entities.Merchant
             MerchantId = merchantId;
             MerchantName = merchantName;
             ApplicationUserId = applicationUserId;
+            Longitude = 116.397128m;
+            Latitude = 39.916527m;
         }
         
         // 用于 EF Core 的私有构造函数
