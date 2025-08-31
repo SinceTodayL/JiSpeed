@@ -147,9 +147,7 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
                     MerchantId = userId,
                     MerchantName = userNickname, 
                     ContactInfo = applicationUser.Email,
-                    ApplicationUserId = applicationUser.Id,
-                    Longitude = 116.397128m,
-                    Latitude = 39.916527m 
+                    ApplicationUserId = applicationUser.Id
                 };
                 
                 // 保存到数据库

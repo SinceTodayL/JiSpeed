@@ -34,10 +34,10 @@ namespace JISpeed.Core.Entities.Merchant
         public string? Location { get; set; }
         
         [Column(TypeName = "DECIMAL(10, 6)")]
-        public decimal? Longitude { get; set; } // 经度
+        public decimal Longitude { get; set; } = 116.397128m;
 
         [Column(TypeName = "DECIMAL(10, 6)")]
-        public decimal? Latitude { get; set; } // 纬度
+        public decimal Latitude { get; set; } = 39.916527m;
 
         // 身份验证用户关联
         [StringLength(450)]
@@ -60,8 +60,6 @@ namespace JISpeed.Core.Entities.Merchant
             MerchantId = merchantId;
             MerchantName = merchantName;
             ApplicationUserId = applicationUserId;
-            Longitude = 116.397128m;
-            Latitude = 39.916527m;
         }
         
         // 用于 EF Core 的私有构造函数
