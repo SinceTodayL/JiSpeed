@@ -28,6 +28,7 @@ using JISpeed.Infrastructure.Repositories.Reconciliation;
 using JISpeed.Infrastructure.Repositories.Rider;
 using JISpeed.Infrastructure.Repositories.User;
 using Microsoft.Extensions.DependencyInjection;
+using JISpeed.Application.Services.Navigation;
 
 namespace JISpeed.Api.Extensions
 {
@@ -100,6 +101,7 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<ILocationPushService, LocationPushService>();
             services.AddScoped<IRiderLocationService, RiderLocationService>();
             services.AddScoped<IOrderAssignmentService, OrderAssignmentService>();
+            services.AddScoped<INavigationService, NavigationService>();
             // 注册考勤服务
             services.AddScoped<IAttendanceService, AttendanceService>();
             // 订单分配服务
