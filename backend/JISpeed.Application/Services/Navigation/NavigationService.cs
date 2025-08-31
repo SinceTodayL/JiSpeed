@@ -4,6 +4,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using JISpeed.Core.DTOs;
 using JISpeed.Core.Interfaces.IServices;
+using JISpeed.Core.Interfaces.IRepositories.Order;
+using JISpeed.Core.Interfaces.IRepositories.Rider;
+using JISpeed.Core.Interfaces.IRepositories.Merchant;
+using JISpeed.Core.Interfaces.IRepositories.User;
+using JISpeed.Core.Entities.Order;
+using JISpeed.Core.Entities.Rider;
+using Microsoft.Extensions.Logging;
 
 namespace JISpeed.Application.Services.Navigation
 {
@@ -11,14 +18,155 @@ namespace JISpeed.Application.Services.Navigation
     public class NavigationService : INavigationService
     {
         private readonly IMapService _mapService;
-        // 用于存储导航会话的临时字典（生产环境应该使用Redis或数据库）
-        private static readonly Dictionary<string, NavigationSessionInfo> _navigationSessions = new();
+        private readonly IOrderRepository _orderRepository;
+        private readonly IRiderLocationRepository _riderLocationRepository;
+        private readonly IMerchantRepository _merchantRepository;
+        private readonly IAddressRepository _addressRepository;
+        private readonly IAssignmentRepository _assignmentRepository;
+        private readonly ILogger<NavigationService> _logger;
 
-        public NavigationService(IMapService mapService)
+        public NavigationService(
+            IMapService mapService,
+            IOrderRepository orderRepository,
+            IRiderLocationRepository riderLocationRepository,
+            IMerchantRepository merchantRepository,
+            IAddressRepository addressRepository,
+            IAssignmentRepository assignmentRepository,
+            ILogger<NavigationService> logger)
         {
             _mapService = mapService ?? throw new ArgumentNullException(nameof(mapService));
+            _orderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
+            _riderLocationRepository = riderLocationRepository ?? throw new ArgumentNullException(nameof(riderLocationRepository));
+            _merchantRepository = merchantRepository ?? throw new ArgumentNullException(nameof(merchantRepository));
+            _addressRepository = addressRepository ?? throw new ArgumentNullException(nameof(addressRepository));
+            _assignmentRepository = assignmentRepository ?? throw new ArgumentNullException(nameof(assignmentRepository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        // 根据订单ID获取导航路线（骑手接单后调用）
+        // <param name="orderId">订单ID</param>
+        // <param name="riderId">骑手ID</param>
+        // <returns>导航路线信息</returns>
+        public async Task<NavigationRouteInfo> GetOrderNavigationRouteAsync(string orderId, string riderId)
+        {
+            try
+            {
+                _logger.LogInformation("开始获取订单导航路线, OrderId: {OrderId}, RiderId: {RiderId}", orderId, riderId);
+
+                // 1. 获取订单信息，包含商家和用户地址
+                var order = await _orderRepository.GetWithDetailsAsync(orderId);
+                if (order == null)
+                {
+                    _logger.LogWarning("订单不存在, OrderId: {OrderId}", orderId);
+                    throw new InvalidOperationException("订单不存在");
+                }
+
+                // 2. 验证骑手是否已接单 - 使用现有的Assignment实体关系
+                if (string.IsNullOrEmpty(order.AssignId))
+                {
+                    _logger.LogWarning("订单未分配, OrderId: {OrderId}", orderId);
+                    throw new InvalidOperationException("订单未分配");
+                }
+
+                var assignment = await _assignmentRepository.GetByIdAsync(order.AssignId);
+                if (assignment == null || assignment.RiderId != riderId)
+                {
+                    _logger.LogWarning("骑手未接此订单或订单未分配, OrderId: {OrderId}, RiderId: {RiderId}", orderId, riderId);
+                    throw new InvalidOperationException("骑手未接此订单或订单未分配");
+                }
+
+                // 3. 获取骑手当前位置 - 使用现有的GetLatestLocationAsync方法
+                var riderLocation = await _riderLocationRepository.GetLatestLocationAsync(riderId);
+                if (riderLocation == null)
+                {
+                    _logger.LogWarning("无法获取骑手位置信息, RiderId: {RiderId}", riderId);
+                    throw new InvalidOperationException("无法获取骑手位置信息");
+                }
+
+                // 4. 获取商家位置（取餐点）
+                var merchant = await _merchantRepository.GetByIdAsync(order.MerchantId);
+                if (merchant == null)
+                {
+                    _logger.LogWarning("商家信息不存在, MerchantId: {MerchantId}", order.MerchantId);
+                    throw new InvalidOperationException("商家信息不存在");
+                }
+
+                // 5. 获取用户收货地址位置（送餐点）
+                var userAddress = await _addressRepository.GetByIdAsync(order.AddressId);
+                if (userAddress == null || !userAddress.Longitude.HasValue || !userAddress.Latitude.HasValue)
+                {
+                    _logger.LogWarning("用户地址信息不完整, AddressId: {AddressId}", order.AddressId);
+                    throw new InvalidOperationException("用户地址信息不完整");
+                }
+
+                // 6. 生成导航路线：骑手位置 -> 商家位置 -> 用户位置
+                var routeInfo = await GenerateMultiPointRouteAsync(
+                    riderLocation.Longitude, riderLocation.Latitude,
+                    merchant.Longitude, merchant.Latitude,
+                    userAddress.Longitude.Value, userAddress.Latitude.Value
+                );
+
+                // 7. 设置订单相关信息
+                routeInfo.RouteId = Guid.NewGuid().ToString();
+
+                _logger.LogInformation("成功生成订单导航路线, OrderId: {OrderId}, RouteId: {RouteId}", orderId, routeInfo.RouteId);
+
+                return routeInfo;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取订单导航路线失败, OrderId: {OrderId}, RiderId: {RiderId}", orderId, riderId);
+                throw new InvalidOperationException($"获取订单导航路线失败: {ex.Message}", ex);
+            }
+        }
+
+        // 获取实时导航更新（基于骑手实际位置）
+        // <param name="orderId">订单ID</param>
+        // <param name="riderId">骑手ID</param>
+        // <returns>实时导航更新信息</returns>
+        public async Task<NavigationUpdateInfo> GetOrderNavigationUpdatesAsync(string orderId, string riderId)
+        {
+            try
+            {
+                _logger.LogInformation("开始获取订单导航更新, OrderId: {OrderId}, RiderId: {RiderId}", orderId, riderId);
+
+                // 1. 获取骑手当前位置
+                var riderLocation = await _riderLocationRepository.GetLatestLocationAsync(riderId);
+                if (riderLocation == null)
+                {
+                    throw new InvalidOperationException("无法获取骑手位置");
+                }
+
+                // 2. 获取订单导航路线
+                var routeInfo = await GetOrderNavigationRouteAsync(orderId, riderId);
+
+                // 3. 计算剩余距离和时间
+                var remainingInfo = await CalculateRemainingInfoAsync(
+                    riderLocation.Longitude, riderLocation.Latitude, routeInfo);
+
+                // 4. 构建导航更新信息
+                var updateInfo = new NavigationUpdateInfo
+                {
+                    RouteId = routeInfo.RouteId,
+                    CurrentLongitude = riderLocation.Longitude,
+                    CurrentLatitude = riderLocation.Latitude,
+                    CurrentSpeed = (double)(riderLocation.Speed ?? 0),
+                    RemainingDistance = remainingInfo.RemainingDistance,
+                    RemainingTime = remainingInfo.RemainingTime,
+                    NextInstruction = remainingInfo.NextInstruction,
+                    Timestamp = DateTime.UtcNow
+                };
+
+                return updateInfo;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取订单导航更新失败, OrderId: {OrderId}, RiderId: {RiderId}", orderId, riderId);
+                throw new InvalidOperationException($"获取订单导航更新失败: {ex.Message}", ex);
+            }
+        }
+
+        // 获取实时导航路径（基础路径规划）
         public async Task<NavigationRouteInfo> GetRealTimeNavigationAsync(
             decimal startLongitude, decimal startLatitude,
             decimal endLongitude, decimal endLatitude,
@@ -26,29 +174,25 @@ namespace JISpeed.Application.Services.Navigation
         {
             try
             {
-                // 调用地图服务获取导航路径
+                // 调用现有的地图服务获取导航路径
                 var routeInfo = await _mapService.GetNavigationRouteAsync(
                     startLongitude, startLatitude, endLongitude, endLatitude, mode);
-
-                // 这里可以添加额外的业务逻辑，比如：
-                // - 路况分析
-                // - 时间估算优化
-                // - 路径推荐算法
 
                 return routeInfo;
             }
             catch (Exception ex)
             {
-                // 记录日志
+                _logger.LogError(ex, "获取导航路径失败");
                 throw new InvalidOperationException($"获取导航路径失败: {ex.Message}", ex);
             }
         }
 
+        // 获取导航路线信息（基础导航路线）
         public async Task<NavigationRouteInfo> GetNavigationRouteAsync(NavigationRouteRequest request)
         {
             try
             {
-                // 调用地图服务获取导航路径
+                // 调用现有的地图服务获取导航路径
                 var routeInfo = await _mapService.GetNavigationRouteAsync(
                     request.StartLongitude, request.StartLatitude,
                     request.EndLongitude, request.EndLatitude, request.Mode);
@@ -60,190 +204,19 @@ namespace JISpeed.Application.Services.Navigation
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "获取导航路线失败");
                 throw new InvalidOperationException($"获取导航路线失败: {ex.Message}", ex);
             }
         }
 
-        public async Task<NavigationUpdateInfo> GetNavigationUpdatesAsync(string routeId)
-        {
-            try
-            {
-                // 这里应该从数据库或缓存中获取实时导航更新
-                // 暂时返回模拟数据
-                var updateInfo = new NavigationUpdateInfo
-                {
-                    RouteId = routeId,
-                    CurrentLongitude = 116.3974m, // 模拟当前位置
-                    CurrentLatitude = 39.9093m,
-                    CurrentSpeed = 15.0, // 15米/秒
-                    RemainingTime = 1800, // 30分钟
-                    RemainingDistance = 5000.0, // 5公里
-                    NextInstruction = "前方500米右转",
-                    Timestamp = DateTime.UtcNow
-                };
-
-                return updateInfo;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"获取导航更新失败: {ex.Message}", ex);
-            }
-        }
-
-        public async Task<NavigationSessionInfo> StartNavigationAsync(StartNavigationRequest request)
-        {
-            try
-            {
-                // 创建新的导航会话
-                var sessionInfo = new NavigationSessionInfo
-                {
-                    SessionId = Guid.NewGuid().ToString(),
-                    RouteId = request.RouteId,
-                    UserId = request.UserId,
-                    StartTime = DateTime.UtcNow,
-                    Status = "active"
-                };
-
-                // 存储会话信息（生产环境应该使用Redis或数据库）
-                _navigationSessions[sessionInfo.SessionId] = sessionInfo;
-
-                return sessionInfo;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"开始导航失败: {ex.Message}", ex);
-            }
-        }
-
-        public async Task<bool> UpdateNavigationStatusAsync(string sessionId, UpdateNavigationStatusRequest request)
-        {
-            try
-            {
-                // 检查会话是否存在
-                if (!_navigationSessions.ContainsKey(sessionId))
-                {
-                    throw new InvalidOperationException("导航会话不存在");
-                }
-
-                var session = _navigationSessions[sessionId];
-
-                // 更新会话状态
-                if (!string.IsNullOrEmpty(request.Status))
-                {
-                    session.Status = request.Status;
-                }
-
-                // 这里可以添加更多状态更新逻辑
-                // 比如记录位置历史、计算进度等
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"更新导航状态失败: {ex.Message}", ex);
-            }
-        }
-
-        public async Task<NavigationSessionInfo> GetNavigationSessionAsync(string sessionId)
-        {
-            try
-            {
-                if (_navigationSessions.TryGetValue(sessionId, out var session))
-                {
-                    return session;
-                }
-
-                throw new InvalidOperationException("导航会话不存在");
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"获取导航会话失败: {ex.Message}", ex);
-            }
-        }
-
-        public async Task<bool> EndNavigationAsync(string sessionId)
-        {
-            try
-            {
-                if (_navigationSessions.TryGetValue(sessionId, out var session))
-                {
-                    session.Status = "completed";
-                    // 这里可以添加结束导航的逻辑，比如保存最终状态到数据库
-                    return true;
-                }
-
-                return false;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"结束导航失败: {ex.Message}", ex);
-            }
-        }
-
-        public async Task<bool> PauseNavigationAsync(string sessionId)
-        {
-            try
-            {
-                if (_navigationSessions.TryGetValue(sessionId, out var session))
-                {
-                    session.Status = "paused";
-                    return true;
-                }
-
-                return false;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"暂停导航失败: {ex.Message}", ex);
-            }
-        }
-
-        public async Task<bool> ResumeNavigationAsync(string sessionId)
-        {
-            try
-            {
-                if (_navigationSessions.TryGetValue(sessionId, out var session))
-                {
-                    session.Status = "active";
-                    return true;
-                }
-
-                return false;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"恢复导航失败: {ex.Message}", ex);
-            }
-        }
-
-        public async Task<IEnumerable<NavigationRouteInfo>> GetNavigationHistoryAsync(string userId)
-        {
-            // TODO: 实现从数据库获取用户导航历史
-            // 这里需要注入相应的仓储接口
-            throw new NotImplementedException("导航历史功能待实现");
-        }
-
-        public async Task<bool> SaveNavigationRecordAsync(NavigationRouteInfo routeInfo, string userId)
-        {
-            // TODO: 实现保存导航记录到数据库
-            // 这里需要注入相应的仓储接口
-            throw new NotImplementedException("保存导航记录功能待实现");
-        }
-
-        public async Task<string> GetTrafficInfoAsync(decimal longitude, decimal latitude, int radius = 1000)
-        {
-            // TODO: 实现获取路况信息
-            // 可以调用第三方地图API获取实时路况
-            throw new NotImplementedException("路况信息功能待实现");
-        }
-
+        // 获取附近的服务点（加油站、餐厅等）
         public async Task<IEnumerable<dynamic>> GetNearbyServicesAsync(
             decimal longitude, decimal latitude,
             string serviceType = "all", int radius = 2000)
         {
             try
             {
-                // 调用地图服务获取附近POI
+                // 调用现有的地图服务获取附近POI
                 var pois = await _mapService.GetNearbyPOIsAsync(longitude, latitude, radius);
 
                 // 根据服务类型过滤
@@ -256,8 +229,137 @@ namespace JISpeed.Application.Services.Navigation
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "获取附近服务点失败");
                 throw new InvalidOperationException($"获取附近服务点失败: {ex.Message}", ex);
             }
         }
+
+        // 生成多点导航路线（骑手->商家->用户）
+        private async Task<NavigationRouteInfo> GenerateMultiPointRouteAsync(
+            decimal riderLng, decimal riderLat,
+            decimal merchantLng, decimal merchantLat,
+            decimal userLng, decimal userLat)
+        {
+            // 第一段：骑手到商家（取餐）
+            var routeToMerchant = await _mapService.GetNavigationRouteAsync(
+                riderLng, riderLat, merchantLng, merchantLat, "driving");
+
+            // 第二段：商家到用户（送餐）
+            var routeToUser = await _mapService.GetNavigationRouteAsync(
+                merchantLng, merchantLat, userLng, userLat, "driving");
+
+            // 合并路线信息
+            var combinedRoute = new NavigationRouteInfo
+            {
+                RouteId = Guid.NewGuid().ToString(),
+                TotalDistance = routeToMerchant.TotalDistance + routeToUser.TotalDistance,
+                EstimatedDuration = routeToMerchant.EstimatedDuration + routeToUser.EstimatedDuration,
+                Mode = "driving",
+                Steps = new List<RouteStep>()
+            };
+
+            // 骑手到商家的步骤
+            combinedRoute.Steps.AddRange(routeToMerchant.Steps);
+
+            // 中间过渡步骤
+            combinedRoute.Steps.Add(new RouteStep
+            {
+                Instruction = "到达商家，准备取餐",
+                Distance = 0,
+                Duration = 0,
+                RoadName = "商家位置",
+                TurnType = "arrive",
+                Polyline = new List<(decimal longitude, decimal latitude)> { (merchantLng, merchantLat) }
+            });
+
+            // 商家到用户的步骤
+            combinedRoute.Steps.AddRange(routeToUser.Steps);
+
+            // 合并Polyline坐标点
+            combinedRoute.Polyline = CombinePolylines(routeToMerchant.Polyline, routeToUser.Polyline);
+
+            return combinedRoute;
+        }
+
+        // 辅助方法
+        private string CombinePolylines(string polyline1, string polyline2)
+        {
+            if (string.IsNullOrEmpty(polyline1)) return polyline2;
+            if (string.IsNullOrEmpty(polyline2)) return polyline1;
+
+            return $"{polyline1};{polyline2}";
+        }
+
+        // 计算剩余距离、时间和下一个导航指令
+        private async Task<RemainingInfo> CalculateRemainingInfoAsync(
+            decimal currentLng, decimal currentLat, NavigationRouteInfo routeInfo)
+        {
+            var remainingInfo = new RemainingInfo();
+
+            try
+            {
+                if (routeInfo.Steps != null && routeInfo.Steps.Any())
+                {
+                    // 找到商家位置步骤
+                    var merchantStep = routeInfo.Steps.FirstOrDefault(s => s.RoadName == "商家位置");
+                    if (merchantStep != null && merchantStep.Polyline.Any())
+                    {
+                        // 获取商家坐标（使用merchantStep的坐标）
+                        var merchantCoord = merchantStep.Polyline.First();
+
+                        // 计算到商家的距离
+                        var distanceToMerchant = await _mapService.CalculateDistanceAsync(
+                            currentLng, currentLat, merchantCoord.longitude, merchantCoord.latitude);
+
+                        if (distanceToMerchant <= 100) // 100米范围内
+                        {
+                            // 骑手在商家位置
+                            remainingInfo.CurrentWaypoint = "pickup";
+
+                            // 找到最后一个步骤（用户位置）
+                            var lastStep = routeInfo.Steps.Last();
+                            if (lastStep.Polyline.Any())
+                            {
+                                var userCoord = lastStep.Polyline.Last();
+                                var distanceToUser = await _mapService.CalculateDistanceAsync(
+                                    currentLng, currentLat, userCoord.longitude, userCoord.latitude);
+
+                                remainingInfo.RemainingDistance = distanceToUser;
+                                remainingInfo.RemainingTime = (int)(distanceToUser / 15.0);
+                                remainingInfo.NextInstruction = "已到达商家，准备取餐后前往用户位置";
+                            }
+                        }
+                        else
+                        {
+                            // 骑手在前往商家的途中
+                            remainingInfo.RemainingDistance = distanceToMerchant;
+                            remainingInfo.RemainingTime = (int)(distanceToMerchant / 15.0);
+                            remainingInfo.NextInstruction = "正在前往商家取餐";
+                            remainingInfo.CurrentWaypoint = "en_route";
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "计算剩余信息失败");
+                // 返回默认值
+                remainingInfo.RemainingDistance = routeInfo.TotalDistance;
+                remainingInfo.RemainingTime = routeInfo.EstimatedDuration;
+                remainingInfo.NextInstruction = "正在导航中";
+                remainingInfo.CurrentWaypoint = "en_route";
+            }
+
+            return remainingInfo;
+        }
+    }
+
+    // 剩余信息类
+    public class RemainingInfo
+    {
+        public double RemainingDistance { get; set; }
+        public int RemainingTime { get; set; }
+        public string NextInstruction { get; set; } = string.Empty;
+        public string CurrentWaypoint { get; set; } = string.Empty;
     }
 }
