@@ -102,7 +102,7 @@ export function formatMerchantStatus(status) {
  * @param adminId - 管理员ID
  * @param params - 筛选参数
  */
-export function fetchApplications(adminId, params = {}) {
+export function fetchApplications(adminId = '6f7af74d972c481c91f19596e07aae3a', params = {}) {
   console.log(`获取申请列表，管理员ID: ${adminId}`, params);
   return get(`/api/admin/${adminId}/applications`, params);
 }

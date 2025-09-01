@@ -106,6 +106,17 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'settlement-manage',
+    path: '/settlement-manage',
+    component: 'layout.base$view.settlement-manage',
+    meta: {
+      title: 'settlement-manage',
+      i18nKey: 'route.settlement-manage',
+      icon: 'mdi:wallet',
+      order: 6
+    }
+  },
+  {
     name: 'user-manage',
     path: '/user-manage',
     component: 'layout.base$view.user-manage',
