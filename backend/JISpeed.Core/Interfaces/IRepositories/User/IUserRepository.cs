@@ -21,7 +21,7 @@ namespace JISpeed.Core.Interfaces.IRepositories.User
         // 根据昵称搜索用户
         // <param name="nickname">昵称</param>
         // <returns>用户列表</returns>
-        Task<List<JISpeed.Core.Entities.User.User>> SearchByNicknameAsync(string nickname);
+        Task<List<JISpeed.Core.Entities.User.User>> SearchByNicknameAsync(string nickname, int size, int page);
 
         // 根据等级获取用户列表
         // <param name="level">等级</param>
