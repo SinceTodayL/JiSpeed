@@ -18,8 +18,9 @@ namespace JISpeed.Api.Mappers
                 .ForMember(dest => dest.Location, 
                     opt => opt.MapFrom(src => src.Location ?? ""))
                 .ForMember(dest => dest.Description, 
-                opt => opt.MapFrom(src => src.Description ?? ""));
-
+                opt => opt.MapFrom(src => src.Description ?? ""))
+                .ForMember(dest => dest.OrdersCount,
+                    opt => opt.MapFrom(src => src.Orders.Count));
 
             CreateMap<UpdateMerchantDto, Merchant>();
             CreateMap<UpdateDishesDto, Dish>();

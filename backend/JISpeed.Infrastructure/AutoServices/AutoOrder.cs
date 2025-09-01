@@ -50,7 +50,7 @@ namespace JISpeed.Infrastructure.AutoServices
 
                 // 处理所有未支付订单
                 var allUnpaidOrders = await context.Orders
-                    .Where(o => o.OrderStatus == 0) // 所有未支付订单
+                    .Where(o => o.OrderStatus == (int)OrderStatus.Unpaid) // 所有未支付订单
                     .Select(o => new { o.OrderId, o.CreateAt })
                     .ToListAsync();
 
@@ -66,7 +66,7 @@ namespace JISpeed.Infrastructure.AutoServices
 
                 // 查找所有已确认但未评价的订单（不限制创建时间）
                 var allConfirmedOrders = await context.Orders
-                    .Where(o => o.OrderStatus == 2) // 已确认
+                    .Where(o => o.OrderStatus == (int)OrderStatus.Confirmed) // 已确认
                     .Select(o => new { o.OrderId, o.UserId, o.CreateAt })
                     .ToListAsync();
 

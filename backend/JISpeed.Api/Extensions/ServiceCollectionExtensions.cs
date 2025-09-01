@@ -28,6 +28,7 @@ using JISpeed.Infrastructure.Repositories.Reconciliation;
 using JISpeed.Infrastructure.Repositories.Rider;
 using JISpeed.Infrastructure.Repositories.User;
 using Microsoft.Extensions.DependencyInjection;
+using JISpeed.Application.Services.Navigation;
 
 namespace JISpeed.Api.Extensions
 {
@@ -88,14 +89,23 @@ namespace JISpeed.Api.Extensions
             // 定时任务
             services.AddHostedService<DailyCreator>();
             services.AddHostedService<AutoOrderService>();
+            services.AddHostedService<AutoOrderAssignmentService>();
             services.AddSingleton<IAutoOrderService>(provider =>
-                provider.GetServices<IHostedService>().OfType<AutoOrderService>().First());            // 骑手相关服务
+                provider.GetServices<IHostedService>().OfType<AutoOrderService>().First());
+            // 自动派单服务单例注册
+            services.AddSingleton<IAutoOrderAssignmentService>(provider =>
+                provider.GetServices<IHostedService>().OfType<AutoOrderAssignmentService>().First());            
+            // 骑手相关服务
             services.AddScoped<IPerformanceService, PerformanceService>();
             services.AddScoped<IMapService, AMapService>();
             services.AddScoped<ILocationPushService, LocationPushService>();
             services.AddScoped<IRiderLocationService, RiderLocationService>();
+            services.AddScoped<IOrderAssignmentService, OrderAssignmentService>();
+            services.AddScoped<INavigationService, NavigationService>();
             // 注册考勤服务
             services.AddScoped<IAttendanceService, AttendanceService>();
+            // 订单分配服务
+            services.AddScoped<IOrderAssignmentService, OrderAssignmentService>();
 
             // 平台服务
             services.AddScoped<IPlatformService, PlatformService>();

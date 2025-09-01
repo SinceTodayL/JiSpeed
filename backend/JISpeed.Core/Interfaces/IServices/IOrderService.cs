@@ -84,6 +84,8 @@ namespace JISpeed.Core.Interfaces.IServices
         Aftersales = 4,// 售后中
         AftersalesCompleted = 5, // 售后结束
         Cancelled = 6, // 订单关闭(超时/主动取消)
+        Assigned = 7,            // 已派单
+        InDelivery = 8,          // 配送中
     }
 
     public enum OrderLogStatus
@@ -95,6 +97,8 @@ namespace JISpeed.Core.Interfaces.IServices
         Cancelled = 4,           // 取消
         Aftersales = 5,          // 售后中
         AftersalesCompleted = 6, // 售后结束
+        Assigned = 7,            // 已派单
+        InDelivery = 8,          // 配送中
     }
 
     public enum RefundStatus

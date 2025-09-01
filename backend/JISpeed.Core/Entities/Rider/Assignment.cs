@@ -45,5 +45,8 @@ namespace JISpeed.Core.Entities.Rider
             AcceptedAt = acceptedAt; //默认未接单
             TimeOut = timeOut; //默认无超时
         }
+
+        // 无参构造函数用于 EF Core
+        public Assignment() { }
     }
 }

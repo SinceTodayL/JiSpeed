@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using JISpeed.Core.DTOs;
 
 namespace JISpeed.Core.Interfaces.IServices
 {
@@ -24,5 +25,11 @@ namespace JISpeed.Core.Interfaces.IServices
 
         // 获取指定位置的POI信息
         Task<IEnumerable<dynamic>> GetNearbyPOIsAsync(decimal longitude, decimal latitude, int radius = 1000);
+
+        // 获取导航路径（包含路况、预计时间）
+        Task<NavigationRouteInfo> GetNavigationRouteAsync(
+            decimal startLongitude, decimal startLatitude, 
+            decimal endLongitude, decimal endLatitude, 
+            string mode = "driving");
     }
 }

@@ -17,6 +17,7 @@ namespace JISpeed.Api.DTOs
         // 地址
         public string? Location { get; set; }
         public string? Description { get; set; }
+        public int? OrdersCount { get; set; }
         
     }
     public class UpdateMerchantDto

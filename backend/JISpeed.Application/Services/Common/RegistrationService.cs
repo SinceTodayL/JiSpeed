@@ -141,8 +141,11 @@ namespace JISpeed.Application.Services.Common
                 }
 
 
-                // 4. 解码令牌并验证（使用数据库用户对象）
-                if (token != preRegData.Token)
+                // 4. 验证令牌（忽略URL传输中可能改变的字符，包括+转换成的空格）
+                var sanitizedToken = token.Replace(" ", "").Replace("+", "").Replace("/", "").Replace("=", "");
+                var sanitizedPreToken = preRegData.Token.Replace("+", "").Replace("/", "").Replace("=", "");
+
+                if (sanitizedToken != sanitizedPreToken)
                 {
                     // 输出具体错误原因（关键调试信息）
                     _logger.LogWarning("令牌验证失败，用户ID: {UserId}，token：{Token}，preToken:{pretoken}", userId, token,preRegData.Token);
