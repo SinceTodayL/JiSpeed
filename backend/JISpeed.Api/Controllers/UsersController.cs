@@ -81,15 +81,11 @@ namespace JISpeed.Api.Controllers
         /// <param name="page">页码</param>
         /// <returns>用户信息列表</returns>
         [HttpGet]
-        public async Task<ApiResponse<List<UserDetailDto>>> GetUsers(
-            [FromQuery] int? size, 
-            [FromQuery] int? page,
-            [FromQuery] string? userId,
-            [FromQuery] string? nickname)
+        public async Task<ApiResponse<List<UserDetailDto>>> GetUsers([FromQuery] int? size, [FromQuery] int? page)
         {
             try
             {
-                var users = await _userService.GetUsersByFiltersAsync(size ?? 10, page ?? 1, userId, nickname);
+                var users = await _userRepository.GetAllUsersAsync(size ?? 10, page ?? 1);
                 var userDtos = UserMapper.ToUserDetailDtoList(users);
 
                 return ApiResponse<List<UserDetailDto>>.Success(userDtos);

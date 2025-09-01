@@ -25,14 +25,6 @@ namespace JISpeed.Core.Interfaces.IServices
         /// <returns>用户实体</returns>
         Task<User> GetUserByIdAsync(string userId);
 
-        /// 根据条件获取用户列表
-        /// <param name="size">每页大小</param>
-        /// <param name="page">页码</param>
-        /// <param name="userId">用户ID过滤</param>
-        /// <param name="nickname">昵称过滤</param>
-        /// <returns>用户列表</returns>
-        Task<List<User>> GetUsersByFiltersAsync(int? size, int? page, string? userId, string? nickname);
-
 
         /// 更新用户信息
 
