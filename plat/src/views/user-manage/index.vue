@@ -152,7 +152,18 @@ async function getUserList() {
     const response = await fetchUserList();
     
     if (response && Array.isArray(response.data)) {
-      tableData.value = response.data.map((user, index) => ({
+      // 获取用户ID列表
+      const userIds = response.data.map(user => user.userId);
+      
+      // 并发获取所有用户的详细信息
+      const userDetailPromises = userIds.map(id => fetchUserInfo(id));
+      const results = await Promise.allSettled(userDetailPromises);
+      
+      const detailedUsers = results
+        .filter(result => result.status === 'fulfilled' && result.value.data)
+        .map(result => result.value.data);
+        
+      tableData.value = detailedUsers.map((user, index) => ({
         ...user,
         index: index + 1,
         genderText: formatGender(user.gender),
@@ -162,7 +173,8 @@ async function getUserList() {
         hasEmail: user.email ? '是' : '否',
         hasPhone: user.phoneNumber ? '是' : '否'
       }));
-      message.success(`成功加载 ${response.data.length} 个用户数据`);
+
+      message.success(`成功加载 ${detailedUsers.length} 个用户的详细数据`);
     } else {
       message.error(response.message || '获取用户列表失败');
       tableData.value = [];

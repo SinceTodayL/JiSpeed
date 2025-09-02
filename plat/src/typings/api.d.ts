@@ -78,6 +78,7 @@ declare namespace Api {
       phoneNumber: string;
       vehicleNumber: string;
       applicationUserId: string;
+      status?: number;
     }
 
     /** Rider performance */
@@ -89,6 +90,59 @@ declare namespace Api {
       goodReviewRate: number;
       badReviewRate: number;
       income: number;
+    }
+  }
+
+  /** Order API */
+  namespace Order {
+    /** Order info */
+    interface OrderInfo {
+      orderId: string;
+      userId: string;
+      merchantId: string;
+      orderStatus: number;
+      totalAmount: number;
+      createdAt: string;
+      assignId?: string;
+      merchantName?: string;
+      userName?: string;
+      address?: {
+        addressId: string;
+        longitude?: number;
+        latitude?: number;
+        detailAddress: string;
+      };
+    }
+
+    /** Order assignment info */
+    interface AssignmentInfo {
+      assignmentId: string;
+      orderId: string;
+      riderId: string;
+      assignedAt: string;
+      assignmentStatus: number;
+      remark?: string;
+    }
+
+    /** Auto assignment result */
+    interface AutoAssignmentResult {
+      isSuccess: boolean;
+      assignmentId?: string;
+      riderId?: string;
+      errorMessage?: string;
+    }
+
+    /** Order assignment request */
+    interface AssignmentRequest {
+      orderId: string;
+      riderId: string;
+    }
+
+    /** Order status update request */
+    interface StatusUpdateRequest {
+      orderId: string;
+      newStatus: number;
+      remark?: string;
     }
   }
 }

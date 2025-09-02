@@ -460,7 +460,17 @@ async function getApplicationList() {
     const response = await fetchApplications(currentAdminId.value);
     
     if (response && response.data) {
-      applicationData.value = Array.isArray(response.data) ? response.data : [response.data];
+      const rawList = Array.isArray(response.data) ? response.data : [response.data];
+      // 统一后端字段到表格使用的字段
+      applicationData.value = rawList.map((item: any) => ({
+        ...item,
+        id: item.id || item.applyId || item.applicationId || item.ApplyId,
+        applicantName: item.applicantName || item.contactName || item.applicant || item.userName || item.name,
+        businessName: item.businessName || item.companyName || item.merchantName || item.shopName || item.name,
+        contactInfo: item.contactInfo || item.phone || item.mobile || item.contactPhone || item.contact || item.tel,
+        status: item.status ?? item.applyStatus ?? item.auditStatus ?? item.state ?? 'pending',
+        createdAt: item.createdAt || item.createdTime || item.applyTime || item.createTime
+      }));
       console.log('申请列表:', applicationData.value);
     } else {
       message.error('获取申请列表失败：返回数据为空');
@@ -954,8 +964,7 @@ onMounted(() => {
           :columns="applicationColumns"
           :data="applicationData"
           :pagination="{ pageSize: 8, showSizePicker: true }"
-          flex-height
-          max-height="400px"
+          style="height: 400px;"
           :row-class-name="() => 'hover:bg-purple-50 transition-colors duration-200'"
         />
       </div>

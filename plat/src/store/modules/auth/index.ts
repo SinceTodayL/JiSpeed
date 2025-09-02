@@ -188,7 +188,84 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     return true;
   }
 
+  /**
+   * Login by URL parameters (from login page redirect)
+   * @param urlToken Token from URL parameter
+   * @param urlUserId User ID from URL parameter
+   */
+  async function loginByUrlParams(urlToken: string, urlUserId: string) {
+    startLoading();
+    
+    try {
+      // 使用URL参数中的token和用户ID
+      const mockToken = {
+        token: urlToken,
+        refreshToken: 'refresh-' + urlToken
+      };
+      
+      const pass = await loginByToken(mockToken);
+      
+      if (pass) {
+        // 更新用户信息，使用URL中的用户ID
+        Object.assign(userInfo, {
+          userId: urlUserId,
+          userName: 'JiSpeed平台管理员',
+          roles: ['platform-admin'],
+          buttons: []
+        });
+        
+        const isClear = checkTabClear();
+        await redirectFromLogin(!isClear);
+
+        window.$notification?.success({
+          title: $t('page.login.common.loginSuccess'),
+          content: $t('page.login.common.welcomeBack', { userName: userInfo.userName }),
+          duration: 4500
+        });
+        
+        // 清理URL参数
+        const url = new URL(window.location.href);
+        url.searchParams.delete('token');
+        url.searchParams.delete('id');
+        window.history.replaceState({}, '', url.toString());
+        
+        return true;
+      }
+    } catch (error) {
+      console.error('URL参数登录失败:', error);
+      resetStore();
+    } finally {
+      endLoading();
+    }
+    
+    return false;
+  }
+
+  /**
+   * Check and handle URL parameters for auto login
+   */
+  async function checkUrlParamsLogin() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get('token');
+    const urlUserId = urlParams.get('id');
+    
+    if (urlToken && urlUserId) {
+      console.log('检测到URL登录参数，执行自动登录');
+      return await loginByUrlParams(urlToken, urlUserId);
+    }
+    
+    return false;
+  }
+
   async function initUserInfo() {
+    // 首先检查URL参数登录
+    const urlLoginSuccess = await checkUrlParamsLogin();
+    
+    if (urlLoginSuccess) {
+      return; // URL登录成功，无需继续检查本地token
+    }
+    
+    // 检查本地存储的token
     const hasToken = getToken();
 
     if (hasToken) {
@@ -208,6 +285,8 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     loginLoading,
     resetStore,
     login,
-    initUserInfo
+    initUserInfo,
+    loginByUrlParams,
+    checkUrlParamsLogin
   };
 });
