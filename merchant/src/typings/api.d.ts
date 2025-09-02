@@ -224,6 +224,40 @@ declare namespace Api {
       /** 销售统计数据 */
       data: SalesStatItem;
     }
+
+    /** 商家排行榜项目 */
+    interface MerchantRankingItem {
+      /** 商家ID */
+      merchantId: string;
+      /** 商家名称 */
+      merchantName: string;
+      /** 商家状态 */
+      status: number;
+      /** 联系信息 */
+      contactInfo: string;
+      /** 位置 */
+      location: string;
+      /** 描述 */
+      description: string;
+      /** 订单数量 */
+      ordersCount: number;
+      /** 时间戳 */
+      timestamp?: number;
+    }
+
+    /** 单日销售统计项 */
+    interface SalesStatByDateItem {
+      /** 商家ID */
+      merchantId: string;
+      /** 统计日期 */
+      statDate: string;
+      /** 销售数量 */
+      salesQty: number;
+      /** 销售金额（分） */
+      salesAmount: number;
+      /** 时间戳 */
+      timestamp: number;
+    }
   }
 
   /**
@@ -486,6 +520,48 @@ declare namespace Api {
       companyName: string;
       /** 申请材料/申请理由 */
       applicationMaterials: string;
+    }
+  }
+
+  /**
+   * namespace Refund
+   *
+   * backend api module: "refund"
+   */
+  namespace Refund {
+    /** 退款申请项 */
+    interface RefundItem {
+      /** 退款申请ID */
+      refundId: string;
+      /** 订单ID */
+      orderId: string;
+      /** 申请ID */
+      applicationId: string;
+      /** 申请理由 */
+      reason: string | null;
+      /** 退款金额 */
+      refundAmount: number;
+      /** 申请时间 */
+      applyAt: string;
+      /** 审核状态：1-待处理，2-已同意，3-已拒绝 */
+      auditStatus: number;
+      /** 处理完成时间 */
+      finishAt: string | null;
+    }
+
+    /** 退款状态映射 */
+    type RefundStatusMap = Record<number, string>;
+
+    /** 退款操作响应 */
+    interface RefundOperationResponse {
+      /** 响应码 */
+      code: number;
+      /** 响应消息 */
+      message: string;
+      /** 操作结果 */
+      data: boolean;
+      /** 时间戳 */
+      timestamp: number;
     }
   }
 }

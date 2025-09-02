@@ -20,13 +20,13 @@ declare module "@elegant-router/types" {
     "403": "/403";
     "404": "/404";
     "500": "/500";
-    "coupon-management": "/coupon-management";
     "goods-management": "/goods-management";
     "home": "/home";
     "iframe-page": "/iframe-page/:url";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
     "order-management": "/order-management";
     "profile": "/profile";
+    "refund-management": "/refund-management";
   };
 
   /**
@@ -61,13 +61,13 @@ declare module "@elegant-router/types" {
     | "403"
     | "404"
     | "500"
-    | "coupon-management"
     | "goods-management"
     | "home"
     | "iframe-page"
     | "login"
     | "order-management"
     | "profile"
+    | "refund-management"
   >;
 
   /**
@@ -89,11 +89,11 @@ declare module "@elegant-router/types" {
     | "500"
     | "iframe-page"
     | "login"
-    | "coupon-management"
     | "goods-management"
     | "home"
     | "order-management"
     | "profile"
+    | "refund-management"
   >;
 
   /**

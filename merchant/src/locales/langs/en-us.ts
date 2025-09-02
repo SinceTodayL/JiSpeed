@@ -171,6 +171,7 @@ const local: App.I18n.Schema = {
     'goods-management': 'Goods Management',
     'coupon-management': 'Coupon Management',
     'order-management': 'Order Management',
+    'refund-management': 'Refund Management',
     profile: 'Profile'
   },
   page: {

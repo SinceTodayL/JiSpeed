@@ -34,8 +34,8 @@ const getData = async () => {
   try {
     console.log('开始获取订单数据，商家ID:', merchantStore.merchantId);
     
-    // 分别获取状态1-4的订单ID列表
-    const statusesToFetch = [1, 2, 3, 4]; // 已支付、确认收货、已评价、售后中
+    // 分别获取所有状态的订单ID列表
+    const statusesToFetch = [0, 1, 2, 3, 4, 5, 6]; // 未支付、已支付、确认收货、已评价、售后中、售后结束、订单关闭
     const allOrderPromises = statusesToFetch.map(status => 
       fetchGetAllOrders(merchantStore.merchantId, { orderStatus: status })
     );

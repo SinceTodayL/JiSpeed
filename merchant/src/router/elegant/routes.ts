@@ -40,17 +40,6 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
-    name: 'coupon-management',
-    path: '/coupon-management',
-    component: 'layout.base$view.coupon-management',
-    meta: {
-      title: 'coupon-management',
-      i18nKey: 'route.coupon-management',
-      icon: 'mdi:ticket-percent',
-      order: 3
-    }
-  },
-  {
     name: 'goods-management',
     path: '/goods-management',
     component: 'layout.base$view.goods-management',
@@ -116,6 +105,17 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: 'profile',
       i18nKey: 'route.profile',
       icon: 'mdi:account-circle',
+      order: 6
+    }
+  },
+  {
+    name: 'refund-management',
+    path: '/refund-management',
+    component: 'layout.base$view.refund-management',
+    meta: {
+      title: 'refund-management',
+      i18nKey: 'route.refund-management',
+      icon: 'mdi:cash-refund',
       order: 5
     }
   }

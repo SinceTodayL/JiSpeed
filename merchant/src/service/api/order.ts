@@ -41,12 +41,13 @@ export function fetchGetAllOrders(
  * 订单状态映射
  */
 export const ORDER_STATUS_MAP: Api.Order.OrderStatusMap = {
-  0: '未支付',     // Unpaid
-  1: '已支付',     // Paid
-  2: '确认收货',   // Confirmed
-  3: '已评价',     // Reviewed
-  4: '售后中',     // Aftersales
-  5: '已取消'      // Cancelled
+  0: '未支付',      // Unpaid
+  1: '已支付',      // Paid
+  2: '确认收货',    // Confirmed
+  3: '已评价',      // Reviewed
+  4: '售后中',      // Aftersales
+  5: '售后结束',    // AftersalesCompleted
+  6: '订单关闭'     // Cancelled
 };
 
 /**
