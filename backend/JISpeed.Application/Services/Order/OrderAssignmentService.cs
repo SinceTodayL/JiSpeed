@@ -224,18 +224,33 @@ namespace JISpeed.Application.Services.Order
             {
                 _logger.LogInformation("骑手接受订单, OrderId: {OrderId}, RiderId: {RiderId}", orderId, riderId);
 
-                // 获取分配记录
-                var assignment = await _assignmentRepository.GetByIdAsync(orderId);
+                // 获取订单
+                var order = await _orderRepository.GetByIdAsync(orderId);
+                if (order == null)
+                {
+                    _logger.LogWarning("订单不存在, OrderId: {OrderId}", orderId);
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, "订单不存在");
+                }
+
+                // 检查订单是否已分配
+                if (string.IsNullOrEmpty(order.AssignId))
+                {
+                    _logger.LogWarning("订单未分配, OrderId: {OrderId}", orderId);
+                    throw new BusinessException(ErrorCodes.ResourceNotFound, "订单未分配给任何骑手");
+                }
+
+                // 用订单的AssignId获取分配记录
+                var assignment = await _assignmentRepository.GetByIdAsync(order.AssignId);
                 if (assignment == null)
                 {
-                    _logger.LogWarning("分配记录不存在, OrderId: {OrderId}", orderId);
+                    _logger.LogWarning("分配记录不存在, OrderId: {OrderId}, AssignId: {AssignId}", orderId, order.AssignId);
                     throw new NotFoundException(ErrorCodes.ResourceNotFound, "分配记录不存在");
                 }
 
                 // 验证骑手身份
                 if (assignment.RiderId != riderId)
                 {
-                    _logger.LogWarning("骑手身份验证失败, OrderId: {OrderId}, ExpectedRider: {ExpectedRider}, ActualRider: {ActualRider}", 
+                    _logger.LogWarning("骑手身份验证失败, OrderId: {OrderId}, ExpectedRider: {ExpectedRider}, ActualRider: {ActualRider}",
                         orderId, assignment.RiderId, riderId);
                     throw new BusinessException(ErrorCodes.Forbidden, "无权操作此订单");
                 }
@@ -243,7 +258,7 @@ namespace JISpeed.Application.Services.Order
                 // 检查分配状态
                 if (assignment.AcceptedStatus != 0)
                 {
-                    _logger.LogWarning("分配状态不允许接受, OrderId: {OrderId}, Status: {Status}", 
+                    _logger.LogWarning("分配状态不允许接受, OrderId: {OrderId}, Status: {Status}",
                         orderId, assignment.AcceptedStatus);
                     throw new BusinessException(ErrorCodes.OrderStatusError, "订单状态不允许接受");
                 }
@@ -253,13 +268,9 @@ namespace JISpeed.Application.Services.Order
                 assignment.AcceptedAt = DateTime.Now;
                 await _assignmentRepository.SaveChangesAsync();
 
-                // 更新订单状态
-                var order = await _orderRepository.GetByIdAsync(orderId);
-                if (order != null)
-                {
-                    order.OrderStatus = (int)OrderStatus.InDelivery;
-                    await _orderRepository.SaveChangesAsync();
-                }
+                // 更新订单状态（order已经获取过了，不需要重新获取）
+                order.OrderStatus = (int)OrderStatus.InDelivery;
+                await _orderRepository.SaveChangesAsync();
 
                 _logger.LogInformation("骑手接受订单成功, OrderId: {OrderId}, RiderId: {RiderId}", orderId, riderId);
                 return true;
