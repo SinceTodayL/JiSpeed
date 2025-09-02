@@ -13,8 +13,14 @@ function request(config) {
   
   // 处理查询参数
   if (params && Object.keys(params).length > 0) {
-    const searchParams = new URLSearchParams(params);
-    fullUrl += `?${searchParams.toString()}`;
+    // 过滤掉undefined值
+    const filteredParams = Object.fromEntries(
+      Object.entries(params).filter(([_, value]) => value !== undefined && value !== null)
+    );
+    if (Object.keys(filteredParams).length > 0) {
+      const searchParams = new URLSearchParams(filteredParams);
+      fullUrl += `?${searchParams.toString()}`;
+    }
   }
   
   const fetchOptions = {

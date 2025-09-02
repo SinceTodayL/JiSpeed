@@ -139,10 +139,10 @@
       </template>
       
       <n-form :model="settlementSearchParams" inline label-placement="left" label-width="80">
-        <n-form-item label="商家名称">
+        <n-form-item label="商家ID">
           <n-input
-            v-model:value="settlementSearchParams.merchantName"
-            placeholder="输入商家名称"
+            v-model:value="settlementSearchParams.merchantId"
+            placeholder="输入商家ID"
             clearable
             style="width: 200px"
           />
@@ -178,15 +178,7 @@
           />
         </n-form-item>
 
-        <n-form-item label="抽佣范围">
-          <n-select
-            v-model:value="settlementSearchParams.commissionRange"
-            :options="commissionRangeOptions"
-            placeholder="选择抽佣范围"
-            clearable
-            style="width: 150px"
-          />
-        </n-form-item>
+
       </n-form>
     </n-card>
 
@@ -206,14 +198,7 @@
           <n-text depth="3">
             显示 {{ filteredSettlementData.length }} / {{ settlementData.length }} 条记录
           </n-text>
-          <n-button size="small" @click="exportSettlements" :loading="exportLoading">
-            <template #icon>
-              <n-icon>
-                <DownloadOutline />
-              </n-icon>
-            </template>
-            导出Excel
-          </n-button>
+
           <n-button size="small" @click="handleSettlementRefresh" :loading="settlementLoading">
             <template #icon>
               <n-icon>
@@ -229,10 +214,11 @@
         :columns="settlementColumns"
         :data="filteredSettlementData"
         :loading="settlementLoading"
-        :pagination="{ pageSize: 15, showSizePicker: true, pageSizes: [10, 15, 20, 50] }"
+        :pagination="{ pageSize: 10, showSizePicker: true, pageSizes: [5, 10, 15, 20] }"
         flex-height
         class="min-h-500px"
         :row-class-name="() => 'hover:bg-purple-50 transition-colors duration-200'"
+        :row-props="() => ({ style: 'height: 80px;' })"
       />
     </n-card>
 
@@ -280,7 +266,7 @@
             <n-gi>
               <div class="text-center">
                 <div class="text-2xl font-bold text-blue-600">
-                  {{ currentSettlement.periodText || '-' }}
+                  {{ formatPeriodText(currentSettlement.periodStart, currentSettlement.periodEnd) }}
                 </div>
                 <div class="text-sm text-gray-600">结算周期</div>
               </div>
@@ -331,7 +317,7 @@
                 <div class="flex justify-between items-center py-2 border-b border-gray-100">
                   <span class="text-gray-600 font-medium">结算周期</span>
                   <div class="text-right">
-                    <div class="text-sm font-medium">{{ currentSettlement.periodText || '-' }}</div>
+                    <div class="text-sm font-medium">{{ formatPeriodText(currentSettlement.periodStart, currentSettlement.periodEnd) }}</div>
                     <div class="text-xs text-gray-500">
                       {{ currentSettlement.periodStart ? new Date(currentSettlement.periodStart).toLocaleDateString('zh-CN') : '' }} - 
                       {{ currentSettlement.periodEnd ? new Date(currentSettlement.periodEnd).toLocaleDateString('zh-CN') : '' }}
@@ -437,20 +423,7 @@
           <n-button size="medium" @click="showSettlementDetailModal = false">
             关闭
           </n-button>
-          <n-button 
-            v-if="!currentSettlement.settledAt" 
-            type="primary" 
-            size="medium" 
-            @click="handleProcessSettlement"
-            :loading="processLoading"
-          >
-            <template #icon>
-              <n-icon>
-                <CheckmarkCircleOutline />
-              </n-icon>
-            </template>
-            确认结算
-          </n-button>
+
         </div>
       </div>
       
@@ -470,29 +443,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, h } from 'vue'
 import { useMessage } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import {
   WalletOutline,
   ReceiptOutline,
-  CheckmarkCircleOutline,
   TimeOutline,
   SearchOutline,
   RefreshOutline,
   StatsChartOutline,
   CardOutline,
-  DownloadOutline
+  CheckmarkCircleOutline
 } from '@vicons/ionicons5'
-import { getSettlements, getSettlementDetail } from '@/api'
+import { getSettlements, getSettlementDetail, getSettlementsByMerchant } from '@/api'
 
 // 结算单接口定义
 interface SettlementItem {
   settleId: string
-  merchantId: string
-  merchantName: string
-  startDate: string
-  endDate: string
+  merchantId?: string
+  merchantName?: string
+  periodStart: string
+  periodEnd: string
   grossAmount: number
   commissionFee: number
   netAmount: number
@@ -506,8 +478,8 @@ const message = useMessage()
 // 响应式数据
 const settlementLoading = ref(false)
 const settlementDetailLoading = ref(false)
-const exportLoading = ref(false)
-const processLoading = ref(false)
+
+
 const showSettlementDetailModal = ref(false)
 
 // 结算单数据
@@ -516,11 +488,10 @@ const currentSettlement = ref<Partial<SettlementItem>>({})
 
 // 搜索参数
 const settlementSearchParams = reactive({
-  merchantName: '',
+  merchantId: '',
   startDate: null as number | null,
   endDate: null as number | null,
-  isSettled: null as boolean | null,
-  commissionRange: null as string | null
+  isSettled: null as boolean | null
 })
 
 // 筛选选项
@@ -530,23 +501,16 @@ const settlementStatusOptions = [
   { label: '待结算', value: false }
 ]
 
-const commissionRangeOptions = [
-  { label: '全部', value: null },
-  { label: '0-5%', value: '0-5' },
-  { label: '5-10%', value: '5-10' },
-  { label: '10-15%', value: '10-15' },
-  { label: '15%以上', value: '15+' }
-]
+
 
 // 计算属性
 const filteredSettlementData = computed(() => {
   let filtered = [...settlementData.value]
   
-  // 商家名称筛选
-  if (settlementSearchParams.merchantName) {
-    const keyword = settlementSearchParams.merchantName.toLowerCase()
+  // 商家ID筛选
+  if (settlementSearchParams.merchantId) {
     filtered = filtered.filter(item => 
-      item.merchantName?.toLowerCase().includes(keyword)
+      item.merchantId === settlementSearchParams.merchantId
     )
   }
   
@@ -570,20 +534,7 @@ const filteredSettlementData = computed(() => {
     )
   }
   
-  // 抽佣范围筛选
-  if (settlementSearchParams.commissionRange) {
-    const range = settlementSearchParams.commissionRange
-    filtered = filtered.filter(item => {
-      const rate = item.commissionRate || 0
-      switch (range) {
-        case '0-5': return rate >= 0 && rate <= 5
-        case '5-10': return rate > 5 && rate <= 10
-        case '10-15': return rate > 10 && rate <= 15
-        case '15+': return rate > 15
-        default: return true
-      }
-    })
-  }
+
   
   return filtered
 })
@@ -614,103 +565,100 @@ const settlementColumns: DataTableColumns<SettlementItem> = [
   {
     title: '序号',
     key: 'index',
-    width: 80,
+    width: 70,
     render: (_, index) => index + 1
   },
   {
     title: '结算单号',
     key: 'settleId',
-    width: 200,
+    width: 180,
     ellipsis: {
       tooltip: true
-    }
-  },
-  {
-    title: '商家名称',
-    key: 'merchantName',
-    width: 150,
-    ellipsis: {
-      tooltip: true
+    },
+    render: (row) => {
+      return h('div', { class: 'space-y-1' }, [
+        h('div', { class: 'font-mono text-xs text-blue-600' }, row.settleId),
+        h('div', { class: 'text-xs text-gray-500' }, `创建时间: ${formatPeriodText(row.periodStart, row.periodEnd)}`)
+      ])
     }
   },
   {
     title: '结算周期',
     key: 'period',
-    width: 180,
-    render: (row) => row.periodText || '-'
+    width: 160,
+    render: (row) => {
+      return h('div', { class: 'space-y-1' }, [
+        h('div', { class: 'font-medium text-sm' }, formatPeriodText(row.periodStart, row.periodEnd)),
+        h('div', { class: 'text-xs text-gray-500' }, [
+          h('div', `开始: ${row.periodStart ? new Date(row.periodStart).toLocaleDateString('zh-CN') : '-'}`),
+          h('div', `结束: ${row.periodEnd ? new Date(row.periodEnd).toLocaleDateString('zh-CN') : '-'}`)
+        ])
+      ])
+    }
   },
   {
-    title: '毛收入(¥)',
-    key: 'grossAmount',
-    width: 120,
+    title: '收入明细',
+    key: 'income',
+    width: 200,
     align: 'right',
-    render: (row) => formatAmount(row.grossAmount || 0)
+    render: (row) => {
+      return h('div', { class: 'space-y-1 text-right' }, [
+        h('div', { class: 'flex justify-between items-center' }, [
+          h('span', { class: 'text-xs text-gray-500' }, '毛收入:'),
+          h('span', { class: 'font-medium text-green-600' }, `¥${formatAmount(row.grossAmount || 0)}`)
+        ]),
+        h('div', { class: 'flex justify-between items-center' }, [
+          h('span', { class: 'text-xs text-gray-500' }, '抽佣:'),
+          h('span', { class: 'font-medium text-orange-600' }, `¥${formatAmount(row.commissionFee || 0)}`)
+        ]),
+        h('div', { class: 'flex justify-between items-center pt-1 border-t border-gray-200' }, [
+          h('span', { class: 'text-xs text-gray-700 font-medium' }, '应结:'),
+          h('span', { class: 'font-bold text-blue-600' }, `¥${formatAmount(row.netAmount || 0)}`)
+        ])
+      ])
+    }
   },
   {
-    title: '抽佣(¥)',
-    key: 'commissionFee',
+    title: '抽佣信息',
+    key: 'commission',
     width: 120,
-    align: 'right',
-    render: (row) => formatAmount(row.commissionFee || 0)
-  },
-  {
-    title: '抽佣率',
-    key: 'commissionRate',
-    width: 100,
     align: 'center',
-    render: (row) => `${row.commissionRate || 0}%`
+    render: (row) => {
+      const rate = row.commissionRate || 0
+      return h('div', { class: 'space-y-1' }, [
+        h('div', { class: 'text-lg font-bold text-purple-600' }, `${rate}%`),
+        h('div', { class: 'text-xs text-gray-500' }, '平台抽佣率'),
+        h('div', { class: 'text-xs font-medium' }, [
+          `¥${formatAmount(row.commissionFee || 0)}`
+        ])
+      ])
+    }
   },
   {
-    title: '应结金额(¥)',
-    key: 'netAmount',
-    width: 120,
-    align: 'right',
-    render: (row) => formatAmount(row.netAmount || 0)
-  },
-  {
-    title: '结算状态',
+    title: '状态与时间',
     key: 'status',
-    width: 100,
+    width: 160,
     align: 'center',
     render: (row) => {
       const isSettled = Boolean(row.settledAt)
-      return h(
-        'n-tag',
-        {
-          type: isSettled ? 'success' : 'warning',
-          size: 'small'
-        },
-        () => isSettled ? '已结算' : '待结算'
-      )
-    }
-  },
-  {
-    title: '结算时间',
-    key: 'settledAt',
-    width: 180,
-    render: (row) => {
-      return row.settledAt 
-        ? new Date(row.settledAt).toLocaleString('zh-CN')
-        : '-'
-    }
-  },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 100,
-    align: 'center',
-    fixed: 'right',
-    render: (row) => {
-      return h(
-        'n-button',
-        {
-          size: 'small',
-          type: 'primary',
-          ghost: true,
-          onClick: () => handleViewSettlementDetail(row)
-        },
-        () => '详情'
-      )
+      return h('div', { class: 'space-y-2' }, [
+        h(
+          'n-tag',
+          {
+            type: isSettled ? 'success' : 'warning',
+            size: 'small'
+          },
+          () => isSettled ? '已结算' : '待结算'
+        ),
+        h('div', { class: 'text-xs text-gray-500' }, [
+          h('div', '结算时间:'),
+          h('div', { class: 'font-medium' }, 
+            row.settledAt 
+              ? new Date(row.settledAt).toLocaleString('zh-CN')
+              : '待结算'
+          )
+        ])
+      ])
     }
   }
 ]
@@ -729,22 +677,26 @@ const getSettlementStatusType = (settledAt?: string) => {
 
 // 事件处理函数
 const handleSettlementSearch = () => {
-  // 筛选逻辑已在计算属性中实现
+  console.log('🔍 用户触发搜索操作', settlementSearchParams)
+  loadSettlements()
   message.success('搜索完成')
 }
 
 const handleSettlementReset = () => {
+  console.log('🔄 用户触发重置操作，之前的搜索条件:', { ...settlementSearchParams })
   Object.assign(settlementSearchParams, {
-    merchantName: '',
+    merchantId: '',
     startDate: null,
     endDate: null,
-    isSettled: null,
-    commissionRange: null
+    isSettled: null
   })
+  console.log('🆕 重置后的搜索条件:', { ...settlementSearchParams })
+  loadSettlements()
   message.info('筛选条件已重置')
 }
 
 const handleSettlementRefresh = async () => {
+  console.log('🔄 用户触发刷新操作，当前搜索条件:', { ...settlementSearchParams })
   await loadSettlements()
   message.success('数据已刷新')
 }
@@ -769,56 +721,155 @@ const handleViewSettlementDetail = async (settlement: SettlementItem) => {
   }
 }
 
-const handleProcessSettlement = async () => {
-  try {
-    processLoading.value = true
-    
-    // 这里调用确认结算的API
-    // await processSettlement(currentSettlement.value.settleId!)
-    
-    message.success('结算处理成功')
-    showSettlementDetailModal.value = false
-    await loadSettlements()
-  } catch (error) {
-    message.error('结算处理失败')
-    console.error('结算处理失败:', error)
-  } finally {
-    processLoading.value = false
-  }
-}
 
-const exportSettlements = async () => {
-  try {
-    exportLoading.value = true
-    
-    // 这里实现导出Excel功能
-    // const blob = await exportSettlementsToExcel(filteredSettlementData.value)
-    // downloadFile(blob, `结算单列表_${new Date().toLocaleDateString()}.xlsx`)
-    
-    message.success('导出成功')
-  } catch (error) {
-    message.error('导出失败')
-    console.error('导出失败:', error)
-  } finally {
-    exportLoading.value = false
-  }
-}
+
+
 
 // 数据加载
 const loadSettlements = async () => {
+  console.log('🔄 开始加载结算数据...')
   try {
     settlementLoading.value = true
     
-    const response = await getSettlements({})
-    settlementData.value = response.settlements.map(item => ({
-      ...item,
-      periodText: formatPeriodText(item.periodStart, item.periodEnd)
-    }))
+    // 构建查询参数
+    const params: any = {
+      page: 1,
+      size: 50
+    }
+    
+    // 只添加有值的参数
+    if (settlementSearchParams.startDate) {
+      params.startDate = settlementSearchParams.startDate
+    }
+    if (settlementSearchParams.endDate) {
+      params.endDate = settlementSearchParams.endDate
+    }
+    if (settlementSearchParams.isSettled !== undefined && settlementSearchParams.isSettled !== null) {
+      params.isSettled = settlementSearchParams.isSettled
+    }
+    
+    console.log('📋 查询参数:', {
+      merchant: settlementSearchParams.merchantId ? `商家ID: ${settlementSearchParams.merchantId}` : '全部商家',
+      dateRange: settlementSearchParams.startDate && settlementSearchParams.endDate 
+        ? `${settlementSearchParams.startDate} ~ ${settlementSearchParams.endDate}` 
+        : '全部时间',
+      isSettled: settlementSearchParams.isSettled !== undefined 
+        ? (settlementSearchParams.isSettled ? '已结算' : '未结算') 
+        : '全部状态',
+      apiParams: params
+    })
+    
+    let response
+    let apiName
+    if (settlementSearchParams.merchantId) {
+      // 根据商家ID获取结算单
+      apiName = 'getSettlementsByMerchant'
+      console.log(`🌐 调用API: ${apiName}`, { merchantId: settlementSearchParams.merchantId, params })
+      apiRequestCount.value++
+      response = await getSettlementsByMerchant(settlementSearchParams.merchantId, params)
+      successfulApiCount.value++
+    } else {
+      // 获取所有结算单
+      apiName = 'getSettlements'
+      console.log(`🌐 调用API: ${apiName}`, { params })
+      apiRequestCount.value++
+      response = await getSettlements(params)
+      successfulApiCount.value++
+    }
+    
+    console.log(`✅ ${apiName} API响应:`, {
+      status: 'success',
+      dataCount: response.settlements ? response.settlements.length : 0,
+      totalCount: response.total || 0,
+      response: response
+    })
+    
+    const settlements = response.settlements || []
+    if (settlements.length === 0) {
+      console.log('⚠️ 未获取到结算单数据')
+      settlementData.value = []
+      return
+    }
+    
+    console.log(`🔄 开始加载 ${settlements.length} 个结算单的详细信息...`)
+    
+    // 为每个结算单加载详细信息
+    const settlementsWithDetails = await Promise.all(
+      settlements.map(async (settlement, index) => {
+        try {
+          console.log(`📝 [${index + 1}/${settlements.length}] 加载结算单详情: ${settlement.settleId}`)
+          apiRequestCount.value++
+          const detail = await getSettlementDetail(settlement.settleId)
+          successfulApiCount.value++
+          
+          console.log(`✅ [${index + 1}/${settlements.length}] 详情加载成功:`, {
+            settleId: settlement.settleId,
+            grossAmount: detail.grossAmount,
+            commissionFee: detail.commissionFee,
+            netAmount: detail.netAmount
+          })
+          
+          const commissionRate = detail.grossAmount > 0 ? (detail.commissionFee / detail.grossAmount * 100) : 0
+          
+          return {
+            ...settlement,
+            ...detail,
+            commissionRate: commissionRate
+          }
+        } catch (error) {
+          failedApiCount.value++
+          console.error(`❌ [${index + 1}/${settlements.length}] 获取结算单 ${settlement.settleId} 详情失败:`, {
+            error: error.message || error,
+            fullError: error
+          })
+          // 如果获取详情失败，返回基础信息
+          return {
+            ...settlement,
+            grossAmount: 0,
+            commissionFee: 0,
+            netAmount: 0,
+            commissionRate: 0
+          }
+        }
+      })
+    )
+    
+    console.log('🎉 所有结算单数据加载完成:', {
+      总数量: settlementsWithDetails.length,
+      成功加载详情: settlementsWithDetails.filter(s => s.grossAmount > 0 || s.netAmount > 0).length,
+      详情加载失败: settlementsWithDetails.filter(s => s.grossAmount === 0 && s.netAmount === 0).length,
+      API调用统计: {
+        总请求数: apiRequestCount.value,
+        成功请求: successfulApiCount.value,
+        失败请求: failedApiCount.value
+      }
+    })
+    
+    settlementData.value = settlementsWithDetails
   } catch (error) {
+    failedApiCount.value++
+    console.error('❌ 加载结算数据失败:', {
+      错误信息: (error as Error).message || error,
+      完整错误: error,
+      搜索条件: settlementSearchParams,
+      API调用统计: {
+        总请求数: apiRequestCount.value,
+        成功请求: successfulApiCount.value,
+        失败请求: failedApiCount.value
+      }
+    })
     message.error('加载结算数据失败')
-    console.error('加载结算数据失败:', error)
   } finally {
     settlementLoading.value = false
+    console.log('🏁 结算数据加载流程结束', {
+      最终数据条数: settlementData.value.length,
+      API调用统计: {
+        总请求数: apiRequestCount.value,
+        成功请求: successfulApiCount.value,
+        失败请求: failedApiCount.value,
+        成功率: apiRequestCount.value > 0 ? `${(successfulApiCount.value / apiRequestCount.value * 100).toFixed(1)}%` : 'N/A'
+      }
+    })
   }
 }
 
@@ -834,8 +885,19 @@ const formatPeriodText = (start?: string, end?: string): string => {
   return `${startStr} ~ ${endStr}`
 }
 
+// 添加一个简单的请求计数器，用于调试
+const apiRequestCount = ref(0)
+const successfulApiCount = ref(0)
+const failedApiCount = ref(0)
+
 // 生命周期
 onMounted(() => {
+  console.log('🚀 结算管理页面初始化，开始加载数据...')
+  console.log('📊 调试统计初始化:', { 
+    apiRequestCount: apiRequestCount.value,
+    successfulApiCount: successfulApiCount.value,
+    failedApiCount: failedApiCount.value
+  })
   loadSettlements()
 })
 </script>
