@@ -9,7 +9,7 @@ import { SetupStoreId } from '@/enum';
 import { $t } from '@/locales';
 import { useRouteStore } from '../route';
 import { useTabStore } from '../tab';
-import { clearAuthStorage, getToken } from './shared';
+import { clearAuthStorage, getToken, getUserId, getUserType } from './shared';
 
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const route = useRoute();
@@ -22,9 +22,9 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const token = ref(getToken());
 
   const userInfo: Api.Auth.UserInfo = reactive({
-    userId: 'platform-admin-001',
-    userName: 'JiSpeed平台管理员',
-    roles: ['platform-admin'],
+    userId: '',
+    userName: '',
+    roles: ['admin'],
     buttons: []
   });
 
@@ -52,6 +52,30 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
     tabStore.cacheTabs();
     routeStore.resetStore();
+  }
+
+  /** Reset auth store without redirect (for logout) */
+  async function resetStoreWithoutRedirect() {
+    console.log('执行resetStoreWithoutRedirect...');
+    
+    recordUserId();
+
+    clearAuthStorage();
+
+    // 重置store状态
+    token.value = '';
+    Object.assign(userInfo, {
+      userId: '',
+      userName: '',
+      roles: ['admin'],
+      buttons: []
+    });
+
+    // 清理标签页和路由缓存
+    tabStore.cacheTabs();
+    routeStore.resetStore();
+    
+    console.log('认证状态重置完成');
   }
 
   /** Record the user ID of the previous login session Used to compare with the current user ID on next login */
@@ -144,6 +168,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
         if (isClear) {
           needRedirect = false;
+          console.log('检测到新用户或清除标签页，跳转到首页');
         }
         await redirectFromLogin(needRedirect);
 
@@ -176,95 +201,30 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   }
 
   async function getUserInfo() {
-    // 直接使用本地静态用户信息，避免调用不存在的鉴权接口
-    const mockUserInfo = {
-      userId: 'platform-admin-001',
-      userName: 'JiSpeed平台管理员',
-      roles: ['platform-admin'],
-      buttons: []
-    };
+    // 从localStorage获取存储的认证信息
+    const storedUserId = getUserId();
+    const storedUserType = getUserType();
     
-    Object.assign(userInfo, mockUserInfo);
-    return true;
-  }
-
-  /**
-   * Login by URL parameters (from login page redirect)
-   * @param urlToken Token from URL parameter
-   * @param urlUserId User ID from URL parameter
-   */
-  async function loginByUrlParams(urlToken: string, urlUserId: string) {
-    startLoading();
-    
-    try {
-      // 使用URL参数中的token和用户ID
-      const mockToken = {
-        token: urlToken,
-        refreshToken: 'refresh-' + urlToken
+    if (storedUserId && storedUserType) {
+      const dynamicUserInfo = {
+        userId: storedUserId,
+        userName: '平台管理员',
+        roles: ['admin'],
+        buttons: []
       };
       
-      const pass = await loginByToken(mockToken);
-      
-      if (pass) {
-        // 更新用户信息，使用URL中的用户ID
-        Object.assign(userInfo, {
-          userId: urlUserId,
-          userName: 'JiSpeed平台管理员',
-          roles: ['platform-admin'],
-          buttons: []
-        });
-        
-        const isClear = checkTabClear();
-        await redirectFromLogin(!isClear);
-
-        window.$notification?.success({
-          title: $t('page.login.common.loginSuccess'),
-          content: $t('page.login.common.welcomeBack', { userName: userInfo.userName }),
-          duration: 4500
-        });
-        
-        // 清理URL参数
-        const url = new URL(window.location.href);
-        url.searchParams.delete('token');
-        url.searchParams.delete('id');
-        window.history.replaceState({}, '', url.toString());
-        
-        return true;
-      }
-    } catch (error) {
-      console.error('URL参数登录失败:', error);
-      resetStore();
-    } finally {
-      endLoading();
+      console.log('🔄 更新用户信息:', dynamicUserInfo);
+      Object.assign(userInfo, dynamicUserInfo);
+      return true;
     }
     
+    console.warn('❌ 未找到存储的用户认证信息');
     return false;
   }
 
-  /**
-   * Check and handle URL parameters for auto login
-   */
-  async function checkUrlParamsLogin() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlToken = urlParams.get('token');
-    const urlUserId = urlParams.get('id');
-    
-    if (urlToken && urlUserId) {
-      console.log('检测到URL登录参数，执行自动登录');
-      return await loginByUrlParams(urlToken, urlUserId);
-    }
-    
-    return false;
-  }
+
 
   async function initUserInfo() {
-    // 首先检查URL参数登录
-    const urlLoginSuccess = await checkUrlParamsLogin();
-    
-    if (urlLoginSuccess) {
-      return; // URL登录成功，无需继续检查本地token
-    }
-    
     // 检查本地存储的token
     const hasToken = getToken();
 
@@ -272,8 +232,11 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
       const pass = await getUserInfo();
 
       if (!pass) {
+        console.warn('⚠️ 用户信息获取失败，重置认证状态');
         resetStore();
       }
+    } else {
+      console.warn('⚠️ 未找到认证token');
     }
   }
 
@@ -284,9 +247,8 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     isLogin,
     loginLoading,
     resetStore,
+    resetStoreWithoutRedirect,
     login,
-    initUserInfo,
-    loginByUrlParams,
-    checkUrlParamsLogin
+    initUserInfo
   };
 });

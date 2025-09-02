@@ -17,7 +17,7 @@ export default defineConfig(configEnv => {
     VITE_USER_FRONTEND_URL: 'http://121.4.90.75/user',     // 用户端前端地址
     VITE_MERCHANT_FRONTEND_URL: 'http://121.4.90.75/merchant',  // 商家端前端地址
     VITE_RIDER_FRONTEND_URL: 'http://121.4.90.75/rider',    // 骑手端前端地址
-    VITE_ADMIN_FRONTEND_URL: 'http://121.4.90.75/admin'     // 管理员端前端地址
+    VITE_ADMIN_FRONTEND_URL: 'http://121.4.90.75/plat'     // 管理员端前端地址
   };
   
   const customEnv = Object.assign({}, defaultEnv, viteEnv) as Env.ImportMeta;

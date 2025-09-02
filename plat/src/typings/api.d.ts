@@ -7,6 +7,23 @@ declare namespace Api {
     timestamp?: number;
   }
 
+  /** Auth API */
+  namespace Auth {
+    /** User info for authentication */
+    interface UserInfo {
+      userId: string;
+      userName: string;
+      roles: string[];
+      buttons: string[];
+    }
+
+    /** Login token */
+    interface LoginToken {
+      token: string;
+      refreshToken: string;
+    }
+  }
+
   /** User API */
   namespace User {
     /** User info */

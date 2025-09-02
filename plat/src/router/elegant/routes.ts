@@ -46,6 +46,7 @@ export const generatedRoutes: GeneratedRoute[] = [
     meta: {
       title: 'complaint-handle',
       i18nKey: 'route.complaint-handle',
+      icon: 'mdi:message-alert',
       order: 5
     }
   },
@@ -92,6 +93,7 @@ export const generatedRoutes: GeneratedRoute[] = [
     meta: {
       title: 'merchant-manage',
       i18nKey: 'route.merchant-manage',
+      icon: 'mdi:store',
       order: 3
     }
   },
@@ -102,6 +104,7 @@ export const generatedRoutes: GeneratedRoute[] = [
     meta: {
       title: 'rider-manage',
       i18nKey: 'route.rider-manage',
+      icon: 'mdi:motorbike',
       order: 4
     }
   },
@@ -123,6 +126,7 @@ export const generatedRoutes: GeneratedRoute[] = [
     meta: {
       title: 'user-manage',
       i18nKey: 'route.user-manage',
+      icon: 'mdi:account-group',
       order: 2
     }
   }
