@@ -32,7 +32,7 @@ export function createServiceConfig(env: Env.ImportMeta) {
   });
 
   const config: App.Service.ServiceConfig = {
-    baseURL: httpConfig.baseURL,
+    baseURL: 'https://m1.apifoxmock.com/m1/6766716-6478713-default',
     proxyPattern: createProxyPattern(),
     other: otherConfig
   };

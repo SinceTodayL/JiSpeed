@@ -20,6 +20,7 @@ const zhCN = {
     _root: 'JiSpeed 平台管理',
     'root-path': '主页',
     'not-found': '未找到',
+    home: '首页',
     'user-manage': '用户管理',
     'merchant-manage': '商家管理',
     'rider-manage': '骑手管理',

@@ -1,4 +1,4 @@
-import { request } from '../request';
+import request from '../utils/request.js';
 
 /**
  * Login
@@ -6,8 +6,8 @@ import { request } from '../request';
  * @param userName User name
  * @param password Password
  */
-export function fetchLogin(userName: string, password: string) {
-  return request<Api.Auth.LoginToken>({
+export function fetchLogin(userName, password) {
+  return request({
     url: '/auth/login',
     method: 'post',
     data: {
@@ -19,7 +19,7 @@ export function fetchLogin(userName: string, password: string) {
 
 /** Get user info */
 export function fetchGetUserInfo() {
-  return request<Api.Auth.UserInfo>({ url: '/auth/getUserInfo' });
+  return request({ url: '/auth/getUserInfo' });
 }
 
 /**
@@ -27,8 +27,8 @@ export function fetchGetUserInfo() {
  *
  * @param refreshToken Refresh token
  */
-export function fetchRefreshToken(refreshToken: string) {
-  return request<Api.Auth.LoginToken>({
+export function fetchRefreshToken(refreshToken) {
+  return request({
     url: '/auth/refreshToken',
     method: 'post',
     data: {
