@@ -11,11 +11,12 @@ defineOptions({
 });
 
 const authStore = useAuthStore();
-const { routerPushByKey, toLogin } = useRouterPush();
+const { routerPushByKey } = useRouterPush();
 const { SvgIconVNode } = useSvgIcon();
 
 function loginOrRegister() {
-  toLogin();
+  // 跳转到根目录的登录页面，而不是rider模块内的登录页面
+  window.location.href = 'http://localhost:9527/';
 }
 
 type DropdownKey = 'user-center' | 'logout';
@@ -59,6 +60,7 @@ function logout() {
     positiveText: $t('common.confirm'),
     negativeText: $t('common.cancel'),
     onPositiveClick: () => {
+      // 调用store的reset方法，它会清理所有认证相关存储
       authStore.resetStore();
     }
   });
@@ -67,9 +69,9 @@ function logout() {
 function handleDropdown(key: DropdownKey) {
   if (key === 'logout') {
     logout();
-  } else {
-    // If your other options are jumps from other routes, they will be directly supported here
-    routerPushByKey(key);
+  } else if (key === 'user-center') {
+    // 用户中心功能，暂时跳转到个人信息页面
+    routerPushByKey('profile');
   }
 }
 </script>

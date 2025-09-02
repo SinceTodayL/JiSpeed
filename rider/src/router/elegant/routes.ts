@@ -7,34 +7,12 @@ import type { GeneratedRoute } from '@elegant-router/types';
 
 export const generatedRoutes: GeneratedRoute[] = [
   {
-    name: '403',
-    path: '/403',
-    component: 'layout.blank$view.403',
-    meta: {
-      title: '403',
-      i18nKey: 'route.403',
-      constant: true,
-      hideInMenu: true
-    }
-  },
-  {
     name: '404',
     path: '/404',
-    component: 'layout.blank$view.404',
+    component: 'layout.base$view.404',
     meta: {
       title: '404',
       i18nKey: 'route.404',
-      constant: true,
-      hideInMenu: true
-    }
-  },
-  {
-    name: '500',
-    path: '/500',
-    component: 'layout.blank$view.500',
-    meta: {
-      title: '500',
-      i18nKey: 'route.500',
       constant: true,
       hideInMenu: true
     }
@@ -47,7 +25,8 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: 'attendance',
       i18nKey: 'route.attendance',
       icon: 'mdi:clock-check-outline',
-      order: 4
+      order: 4,
+      roles: ['rider']
     }
   },
   {
@@ -58,7 +37,8 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: 'delivery',
       i18nKey: 'route.delivery',
       icon: 'mdi:truck-delivery-outline',
-      order: 1
+      order: 1,
+      roles: ['rider']
     }
   },
   {
@@ -69,7 +49,8 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: 'home',
       i18nKey: 'route.home',
       icon: 'mdi:monitor-dashboard',
-      order: 2
+      order: 2,
+      roles: ['rider']
     }
   },
   {
@@ -80,9 +61,7 @@ export const generatedRoutes: GeneratedRoute[] = [
     meta: {
       title: 'iframe-page',
       i18nKey: 'route.iframe-page',
-      constant: true,
-      hideInMenu: true,
-      keepAlive: true
+      hideInMenu: true
     }
   },
   {
@@ -104,8 +83,9 @@ export const generatedRoutes: GeneratedRoute[] = [
     meta: {
       title: 'profile',
       i18nKey: 'route.profile',
-      icon: 'mdi:account-circle-outline',
-      order: 3
+      icon: 'mdi:account-circle',
+      order: 5,
+      roles: ['rider']
     }
   }
 ];

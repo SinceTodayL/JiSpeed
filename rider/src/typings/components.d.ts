@@ -8,6 +8,8 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AmapMap: typeof import('./../components/delivery/amap-map.vue')['default']
+    AmapTools: typeof import('./../components/map/amap-tools.vue')['default']
     AppProvider: typeof import('./../components/common/app-provider.vue')['default']
     BetterScroll: typeof import('./../components/custom/better-scroll.vue')['default']
     ButtonIcon: typeof import('./../components/custom/button-icon.vue')['default']
@@ -53,6 +55,7 @@ declare module 'vue' {
     'IconMingcute:zoomOutLine': typeof import('~icons/mingcute/zoom-out-line')['default']
     IconUilSearch: typeof import('~icons/uil/search')['default']
     LangSwitch: typeof import('./../components/common/lang-switch.vue')['default']
+    LogoutButton: typeof import('./../components/LogoutButton.vue')['default']
     LookForward: typeof import('./../components/custom/look-forward.vue')['default']
     MenuToggler: typeof import('./../components/common/menu-toggler.vue')['default']
     NAlert: typeof import('naive-ui')['NAlert']

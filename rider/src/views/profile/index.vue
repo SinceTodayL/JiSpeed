@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import type { FormInst, FormRules } from 'naive-ui';
+import { Icon } from '@iconify/vue';
 import { getRiderInfo, updateRiderInfo } from '@/service/api/rider';
+import { useAuthStore } from '../../store/modules/auth';
 
-// 骑手ID - 使用真实的后端骑手ID
-const riderId = '1663b73718a54c65b32f5b6787972949';
+const authStore = useAuthStore();
+
+// 骑手ID - 使用登录用户的ID
+const riderId = computed(() => authStore.userInfo.userId);
 
 const formRef = ref<FormInst | null>(null);
 const loading = ref(false);
@@ -32,7 +36,7 @@ const rules: FormRules = {
 
 async function fetchRiderInfo() {
   try {
-    const { data } = await getRiderInfo({ riderId });
+    const { data } = await getRiderInfo({ riderId: riderId.value });
     if (data) {
       Object.assign(formModel, data);
     }
@@ -41,16 +45,31 @@ async function fetchRiderInfo() {
     window.$message?.error('获取骑手信息失败，请检查网络连接');
     // 当API调用失败时，使用模拟数据
     Object.assign(formModel, {
-      applicationUserId: 'mock_user_001',
+      applicationUserId: riderId.value || `rider_${Date.now()}`,
       name: '测试骑手',
       phoneNumber: '13800138000',
-      riderId,
+      riderId: riderId.value,
       vehicleNumber: '宁A12345'
     });
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // 检查用户信息是否已初始化
+  if (!authStore.userInfo.userId && authStore.token) {
+    await authStore.initUserInfo();
+  }
+
+  // 如果仍然没有用户信息，使用模拟数据
+  if (!authStore.userInfo.userId) {
+    Object.assign(authStore.userInfo, {
+      userId: `rider_${Date.now()}`,
+      userName: '测试骑手',
+      roles: ['rider'],
+      buttons: []
+    });
+  }
+
   fetchRiderInfo();
 });
 
@@ -103,7 +122,7 @@ async function handleUpdate() {
         <NCard :bordered="false" class="rounded-16px shadow-sm">
           <template #header>
             <div class="flex items-center">
-              <Icon name="mdi:account-edit" class="text-xl text-blue-500" />
+              <Icon icon="mdi:account-edit" class="text-xl text-blue-500" />
               <span class="text-lg font-semibold">基本信息</span>
             </div>
           </template>
@@ -148,7 +167,7 @@ async function handleUpdate() {
                   <NFormItem label="姓名" path="name">
                     <NInput v-model:value="formModel.name" placeholder="请输入您的真实姓名" clearable>
                       <template #prefix>
-                        <Icon name="mdi:account" class="text-gray-400" />
+                        <Icon icon="mdi:account" class="text-gray-400" />
                       </template>
                     </NInput>
                   </NFormItem>
@@ -157,7 +176,7 @@ async function handleUpdate() {
                   <NFormItem label="手机号" path="phoneNumber">
                     <NInput v-model:value="formModel.phoneNumber" placeholder="请输入手机号码" clearable>
                       <template #prefix>
-                        <Icon name="mdi:phone" class="text-gray-400" />
+                        <Icon icon="mdi:phone" class="text-gray-400" />
                       </template>
                     </NInput>
                   </NFormItem>
@@ -170,7 +189,7 @@ async function handleUpdate() {
                   <NFormItem label="车辆编号" path="vehicleNumber">
                     <NInput v-model:value="formModel.vehicleNumber" placeholder="请输入车辆编号" clearable>
                       <template #prefix>
-                        <Icon name="mdi:car" class="text-gray-400" />
+                        <Icon icon="mdi:car" class="text-gray-400" />
                       </template>
                     </NInput>
                   </NFormItem>
@@ -183,7 +202,7 @@ async function handleUpdate() {
             <div class="mt-24px flex justify-center border-t border-gray-200 pt-16px dark:border-gray-700">
               <NButton type="primary" size="large" :loading="loading" @click="handleUpdate">
                 <template #icon>
-                  <Icon name="mdi:content-save" />
+                  <Icon icon="mdi:content-save" />
                 </template>
                 保存更改
               </NButton>
@@ -199,7 +218,7 @@ async function handleUpdate() {
           <NCard :bordered="false">
             <template #header>
               <div class="flex items-center">
-                <Icon name="mdi:account-edit" class="text-xl text-blue-500" />
+                <Icon icon="mdi:account-check" class="text-xl text-green-500" />
                 <span class="text-lg font-semibold">账户状态</span>
               </div>
             </template>
