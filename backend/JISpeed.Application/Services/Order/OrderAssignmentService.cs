@@ -290,7 +290,7 @@ namespace JISpeed.Application.Services.Order
                 _logger.LogInformation("骑手拒绝订单, OrderId: {OrderId}, RiderId: {RiderId}", orderId, riderId);
 
                 // 获取分配记录
-                var assignment = await _assignmentRepository.GetByIdAsync(orderId);
+                var assignment = await _assignmentRepository.GetByIdAsync(order.AssignId);
                 if (assignment == null)
                 {
                     _logger.LogWarning("分配记录不存在, OrderId: {OrderId}", orderId);
