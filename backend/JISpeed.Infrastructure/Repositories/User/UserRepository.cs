@@ -59,12 +59,17 @@ namespace JISpeed.Infrastructure.Repositories.User
         // 根据昵称搜索用户
         // <param name="nickname">昵称</param>
         // <returns>用户列表</returns>
-        public async Task<List<UserEntity>> SearchByNicknameAsync(string nickname)
+        public async Task<List<UserEntity>> SearchByNicknameAsync(string nickname, int size, int page)
         {
-            return await _context.CustomUsers
-                .Where(u => u.Nickname.Contains(nickname))
-                .OrderBy(u => u.Nickname)
-                .ToListAsync();
+            var query = _context.CustomUsers
+                .Where(u => u.Nickname.Contains(nickname));
+
+            if (page > 0 && size > 0)
+            {
+                query = query.Skip((page - 1) * size).Take(size);
+            }
+
+            return await query.ToListAsync();
         }
 
         // 根据等级获取用户列表

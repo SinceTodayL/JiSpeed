@@ -268,6 +268,29 @@ namespace JISpeed.Application.Services.Customer
             }
         }
 
+        public async Task<List<User>> GetUsersByFiltersAsync(int? size, int? page, string? userId, string? nickname)
+        {
+            List<User> users = new List<User>();
+            if (userId != null)
+            {
+                User? user = await _userRepository.GetByIdAsync(userId);
+                if (user != null)
+                {
+                    users.Add(user);
+                }
+            }
+            else if (nickname != null)
+            {
+                users = await _userRepository.SearchByNicknameAsync(nickname, size ?? 10, page ?? 1);
+            }
+            else
+            {
+                users = await _userRepository.GetAllUsersAsync(size ?? 10, page ?? 1);
+            }
+
+            return users;
+        }
+
 
         /// 移除收藏
 
