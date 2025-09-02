@@ -3,6 +3,29 @@
 const baseURL = ''; // 使用相对路径，通过Vite代理转发
 
 /**
+ * 获取当前用户ID（用于API请求）
+ * @returns {string} 用户ID
+ */
+function getCurrentUserId() {
+  // 优先从localStorage获取
+  const storedUserId = localStorage.getItem('userId');
+  if (storedUserId) {
+    return storedUserId;
+  }
+  
+  // 从URL参数获取（适用于刷新页面时）
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlId = urlParams.get('id');
+  if (urlId) {
+    localStorage.setItem('userId', urlId); // 缓存到localStorage
+    return urlId;
+  }
+  
+  // 默认值
+  return 'admin-001';
+}
+
+/**
  * 通用请求函数
  * @param {Object} config - 请求配置
  */
@@ -13,14 +36,21 @@ function request(config) {
   
   // 处理查询参数
   if (params && Object.keys(params).length > 0) {
-    const searchParams = new URLSearchParams(params);
-    fullUrl += `?${searchParams.toString()}`;
+    // 过滤掉undefined值
+    const filteredParams = Object.fromEntries(
+      Object.entries(params).filter(([_, value]) => value !== undefined && value !== null)
+    );
+    if (Object.keys(filteredParams).length > 0) {
+      const searchParams = new URLSearchParams(filteredParams);
+      fullUrl += `?${searchParams.toString()}`;
+    }
   }
   
   const fetchOptions = {
     method: method.toUpperCase(),
     headers: {
       'Content-Type': 'application/json',
+      'X-User-Id': getCurrentUserId(), // 自动添加用户ID到请求头
     },
   };
   

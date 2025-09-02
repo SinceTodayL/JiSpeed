@@ -200,7 +200,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
           console.log('[Fallback] Tab clear status:', isClear, 'Final needRedirect:', needRedirect, 'UserType:', userType);
 
-          await handleLoginRedirect(userType, needRedirect);
+          await handleLoginRedirect(userType, needRedirect, fallbackToken, fallbackUserId);
 
           window.$notification?.success({
             title: $t('page.login.common.loginSuccess'),
@@ -237,18 +237,11 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
         const isClear = checkTabClear();
         let needRedirect = redirect;
 
-        // 对于外部跳转（如骑手端、商家端），即使需要清除标签页也应该跳转
-        // 只有内部路由跳转才受tab清除逻辑影响
-        if (isClear && userType !== 2 && userType !== 3) {
-          // If the tab needs to be cleared for internal routes, we don't need to redirect.
-          // But external redirects (like rider, merchant) should still happen.
-          needRedirect = false;
-        }
 
         console.log('Tab clear status:', isClear, 'Final needRedirect:', needRedirect, 'UserType:', userType);
 
         // 根据用户类型进行页面跳转
-        await handleLoginRedirect(userType, needRedirect);
+        await handleLoginRedirect(userType, needRedirect, userToken, userId);
 
         window.$notification?.success({
           title: $t('page.login.common.loginSuccess'),
@@ -289,18 +282,17 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
    * Handle login redirect based on user type
    * @param userType User role type
    * @param needRedirect Whether to redirect
+   * @param token Direct token value to use
+   * @param userId Direct userId value to use
    */
-  async function handleLoginRedirect(userType: number, needRedirect: boolean) {
+  async function handleLoginRedirect(userType: number, needRedirect: boolean, token?: string, userId?: string) {
     console.log('handleLoginRedirect called with:', { userType, needRedirect });
 
-    if (!needRedirect) {
-      console.log('跳转被取消, needRedirect为false');
-      return;
-    }
 
-    // 获取当前用户信息用于URL参数
-    const currentToken = getToken();
-    const currentUserId = getUserId();
+
+    // 直接使用传入的token和userId，避免localStorage时序问题
+    const currentToken = token || getToken();
+    const currentUserId = userId || getUserId();
     console.log('跳转参数 - Token:', currentToken, 'UserId:', currentUserId);
 
     switch (userType) {

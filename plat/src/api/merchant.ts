@@ -99,12 +99,23 @@ export function formatMerchantStatus(status) {
 
 /**
  * 管理员根据管理员ID和自定义筛选条件获取事务申请
- * @param adminId - 管理员ID
+ * @param adminId - 管理员ID（可选，如果不提供则从localStorage或URL获取）
  * @param params - 筛选参数
  */
-export function fetchApplications(adminId, params = {}) {
-  console.log(`获取申请列表，管理员ID: ${adminId}`, params);
-  return get(`/api/admin/${adminId}/applications`, params);
+export function fetchApplications(adminId = null, params = {}) {
+  // 如果没有提供adminId，从localStorage或URL获取当前用户ID
+  const currentAdminId = adminId || localStorage.getItem('userId') || getCurrentUserIdFromUrl();
+  console.log(`获取申请列表，管理员ID: ${currentAdminId}`, params);
+  return get(`/api/admin/${currentAdminId}/applications`, params);
+}
+
+/**
+ * 从URL获取用户ID的辅助函数
+ * @returns {string} 用户ID
+ */
+function getCurrentUserIdFromUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('id') || '6f7af74d972c481c91f19596e07aae3a'; // 保留默认值作为最后的后备
 }
 
 /**
@@ -118,13 +129,15 @@ export function fetchApplicationStatus(applicationId) {
 
 /**
  * 管理员同意/拒绝申请
- * @param adminId - 管理员ID
+ * @param adminId - 管理员ID（可选，如果不提供则自动获取当前用户ID）
  * @param applyId - 申请ID
  * @param auditData - 审核数据 {decision: 'approve'|'reject', reason?: string}
  */
-export function auditApplication(adminId, applyId, auditData) {
-  console.log(`审核申请，管理员ID: ${adminId}, 申请ID: ${applyId}`, auditData);
-  return patch(`/api/admin/${adminId}/audit/${applyId}`, auditData);
+export function auditApplication(adminId = null, applyId, auditData) {
+  // 如果没有提供adminId，从localStorage或URL获取当前用户ID
+  const currentAdminId = adminId || localStorage.getItem('userId') || getCurrentUserIdFromUrl();
+  console.log(`审核申请，管理员ID: ${currentAdminId}, 申请ID: ${applyId}`, auditData);
+  return patch(`/api/admin/${currentAdminId}/audit/${applyId}`, auditData);
 }
 
 // 工具: 获取状态对应的标签类型

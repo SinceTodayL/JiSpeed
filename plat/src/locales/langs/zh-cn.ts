@@ -170,6 +170,7 @@ const local: App.I18n.Schema = {
     'user-manage': '用户管理',
     'merchant-manage': '商家管理',
     'rider-manage': '骑手管理',
+    'settlement-manage': '结算管理',
     'complaint-handle': '投诉处理',
     'order-manage': '订单管理',
     'goods-management': '货物管理'

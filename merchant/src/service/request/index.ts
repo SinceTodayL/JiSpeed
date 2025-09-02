@@ -80,7 +80,6 @@ export const request = createFlatRequest<App.Service.Response, RequestInstanceSt
       }
 
       // 简化错误处理，不依赖环境变量配置
-
       showErrorMsg(request.state, message);
     }
   }

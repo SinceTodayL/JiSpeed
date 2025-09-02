@@ -7,6 +7,7 @@ import Announcement from './modules/announcement.vue';
 import Reconciliation from './modules/reconciliation.vue';
 import CouponIssue from './modules/coupon-issue.vue';
 import LineChart from './modules/line-chart.vue';
+import OperationsChart from './modules/operations-chart.vue';
 
 const appStore = useAppStore();
 
@@ -28,15 +29,13 @@ const gap = computed(() => (appStore.isMobile ? 0 : 16));
         <CardData />
       </div>
 
-      <!-- 订单趋势图表区域 -->
+      <!-- 营业数据分析区域 -->
       <div class="rounded-2xl bg-white/95 backdrop-blur-sm shadow-lg hover:shadow-xl transition-shadow duration-300">
         <NCard 
-          title="订单趋势分析" 
           :bordered="false" 
           class="rounded-2xl"
         >
-
-          <LineChart />
+          <OperationsChart />
         </NCard>
       </div>
 

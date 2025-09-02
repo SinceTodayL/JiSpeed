@@ -22,6 +22,21 @@ export function getOrderTrends(months = 6) {
   return get('/api/riders/order-trends', { months });
 }
 
+/**
+ * 根据时间范围获取营业数据
+ * @param start - 开始时间 (可选)
+ * @param end - 结束时间 (可选)
+ */
+export function getRecentOperations(start?: string, end?: string) {
+  const params: Record<string, string> = {};
+  if (start) params.start = start;
+  if (end) params.end = end;
+  
+  console.log('🔗 调用营业数据API:', '/api/operations/recent', params);
+  
+  return get('/api/operations/recent', params);
+}
+
 /** Get rider info by ID */
 export function fetchRiderInfo(riderId) {
   console.log(`获取骑手信息: ${riderId}`);

@@ -86,13 +86,15 @@ const loadMerchantInfo = async () => {
     
     // 检查不同的数据结构可能性
     let merchantData = null;
-    if (result?.data?.data) {
+    const resultAny = result as any; // 使用 any 类型来处理不同的数据结构
+    
+    if (resultAny?.data?.data) {
       // 嵌套结构: { data: { data: {...} } }
-      merchantData = result.data.data;
+      merchantData = resultAny.data.data;
       console.log('使用嵌套数据结构 result.data.data:', merchantData);
-    } else if (result?.data) {
+    } else if (resultAny?.data) {
       // 直接结构: { data: {...} }
-      merchantData = result.data;
+      merchantData = resultAny.data;
       console.log('使用直接数据结构 result.data:', merchantData);
     } else if (result && typeof result === 'object') {
       // API直接返回数据
