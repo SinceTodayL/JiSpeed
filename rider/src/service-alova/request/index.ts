@@ -70,12 +70,17 @@ export const alova = createAlovaRequest(
       function handleLogout() {
         showErrorMsg(state, message);
         authStore.resetStore();
+        // 跳转到指定的登录页面
+        window.location.href = 'http://121.4.90.75/login';
       }
 
       function logoutAndCleanup() {
-        handleLogout();
+        showErrorMsg(state, message);
+        authStore.resetStore();
         window.removeEventListener('beforeunload', handleLogout);
         state.errMsgStack = state.errMsgStack.filter(msg => msg !== message);
+        // 跳转到指定的登录页面
+        window.location.href = 'http://121.4.90.75/login';
       }
 
       // when the backend response code is in `logoutCodes`, it means the user will be logged out and redirected to login page

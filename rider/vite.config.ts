@@ -27,7 +27,9 @@ export default defineConfig(configEnv => {
     },
     plugins: setupVitePlugins(viteEnv, buildTime),
     define: {
-      BUILD_TIME: JSON.stringify(buildTime)
+      BUILD_TIME: JSON.stringify(buildTime),
+      'import.meta.env.VITE_ROUTE_HOME': JSON.stringify('home'),
+      'import.meta.env.VITE_AUTH_ROUTE_MODE': JSON.stringify('static')
     },
     server: {
       proxy: {

@@ -26,6 +26,8 @@ export async function handleRefreshToken() {
     localStg.set('refreshToken', data.refreshToken);
   } catch (error) {
     resetStore();
+    // 跳转到指定的登录页面
+    window.location.href = 'http://121.4.90.75/login';
     throw error;
   }
 }

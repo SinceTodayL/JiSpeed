@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { useAuthStore } from '@/store/modules/auth';
-import { useRouterPush } from '@/hooks/common/router';
-import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { useAppStore } from '@/store/modules/app';
+import { useAuthStore } from '@/store/modules/auth';
+import { useFormRules, useNaiveForm } from '@/hooks/common/form';
+import { useRouterPush } from '@/hooks/common/router';
 import { $t } from '@/locales';
 
 defineOptions({
@@ -49,9 +49,9 @@ async function handleSubmit() {
     toggleLoginModule('code-login');
     return;
   }
-  
+
   await validate();
-  
+
   // 根据选择的角色确定userType
   const userTypeMap = {
     'user': 1,
@@ -59,9 +59,33 @@ async function handleSubmit() {
     'rider': 3,
     'admin': 4
   };
-  
+
   const userType = userTypeMap[loginRole.value];
   await authStore.login(model.loginKey, model.password, userType);
+
+  // 登录成功后跳转到相应的模块
+  await redirectToModule(loginRole.value);
+}
+
+// 根据用户角色跳转到相应的模块
+async function redirectToModule(role: 'user' | 'rider' | 'merchant' | 'admin') {
+  const moduleUrls = {
+    'user': import.meta.env.VITE_USER_FRONTEND_URL,
+    'merchant': import.meta.env.VITE_MERCHANT_FRONTEND_URL,
+    'rider': import.meta.env.VITE_RIDER_FRONTEND_URL,
+    'admin': import.meta.env.VITE_ADMIN_FRONTEND_URL
+  };
+
+  const targetUrl = moduleUrls[role];
+
+  if (targetUrl) {
+    // 延迟跳转，确保登录状态已保存
+    setTimeout(() => {
+      window.location.href = targetUrl;
+    }, 500);
+  } else {
+    console.warn(`No frontend URL configured for role: ${role}`);
+  }
 }
 
 // 登录角色选项
@@ -69,32 +93,32 @@ const loginRoleOptions = computed(() => {
   // 使用现有的翻译键和手动映射相结合
   return [
     { label: $t('page.login.pwdLogin.user'), value: 'user' as const },
-    { 
-      label: $t('page.login.pwdLogin.rider'), 
-      value: 'rider' as const 
+    {
+      label: $t('page.login.pwdLogin.rider'),
+      value: 'rider' as const
     },
-    { 
-      label: $t('page.login.pwdLogin.merchant'), 
-      value: 'merchant' as const 
+    {
+      label: $t('page.login.pwdLogin.merchant'),
+      value: 'merchant' as const
     },
     { label: $t('page.login.pwdLogin.admin'), value: 'admin' as const },
   ];
 });
 
-// 登录方式选项  
+// 登录方式选项
 const loginMethodOptions = computed(() => {
   return [
-    { 
-      label: $t('page.login.pwdLogin.usernameLogin'), 
-      value: 'username' as const 
+    {
+      label: $t('page.login.pwdLogin.usernameLogin'),
+      value: 'username' as const
     },
-    { 
-      label: $t('page.login.pwdLogin.emailLogin'), 
-      value: 'email' as const 
+    {
+      label: $t('page.login.pwdLogin.emailLogin'),
+      value: 'email' as const
     },
-    { 
-      label: $t('page.login.pwdLogin.phoneLogin'), 
-      value: 'phone' as const 
+    {
+      label: $t('page.login.pwdLogin.phoneLogin'),
+      value: 'phone' as const
     }
   ];
 });
@@ -110,12 +134,15 @@ watch(loginMethod, (newMethod) => {
 
 // 检查登录前状态
 onMounted(async () => {
-  // 检查是否已经登录，如果已登录则直接跳转
-  const isAuthenticated = await authStore.checkAuthBeforeLogin();
-  if (isAuthenticated) {
-    // checkAuthBeforeLogin方法已经处理了跳转逻辑
-    console.log('User already authenticated, redirecting...');
-  }
+  // 注释掉自动检查认证状态的逻辑，防止退出登录后自动跳转
+  // const isAuthenticated = await authStore.checkAuthBeforeLogin();
+  // if (isAuthenticated) {
+  //   // checkAuthBeforeLogin方法已经处理了跳转逻辑
+  //   console.log('User already authenticated, redirecting...');
+  // }
+
+  // 直接显示登录页面，不进行自动认证检查
+  console.log('Showing login page without auto auth check');
 });
 </script>
 
@@ -150,8 +177,8 @@ onMounted(async () => {
           <label class="form-label">
             {{ appStore.locale === 'zh-CN' ? '用户名或邮箱' : 'Username or Email' }}
           </label>
-          <NInput 
-            v-model:value="model.loginKey" 
+          <NInput
+            v-model:value="model.loginKey"
             :placeholder="appStore.locale === 'zh-CN' ? '请输入用户名或邮箱' : 'Enter username or email'"
           />
         </div>
@@ -175,7 +202,7 @@ onMounted(async () => {
       <NFormItem>
         <div class="w-full">
           <NAlert type="info">
-            {{ loginMethod === 'email' 
+            {{ loginMethod === 'email'
               ? $t('page.login.common.redirectToEmailLogin')
               : $t('page.login.common.redirectToPhoneLogin')
             }}
@@ -193,17 +220,17 @@ onMounted(async () => {
           {{ $t('page.login.pwdLogin.forgetPassword') }}
         </NButton>
       </div>
-      
-      <NButton 
-        type="primary" 
-        size="large" 
-        round 
-        block 
-        :loading="authStore.loginLoading" 
+
+      <NButton
+        type="primary"
+        size="large"
+        round
+        block
+        :loading="authStore.loginLoading"
         @click="handleSubmit"
       >
-        {{ loginMethod === 'username' 
-          ? $t('common.confirm') 
+        {{ loginMethod === 'username'
+          ? $t('common.confirm')
           : $t('page.login.common.continue')
         }}
       </NButton>

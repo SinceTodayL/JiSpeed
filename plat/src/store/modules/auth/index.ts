@@ -2,14 +2,14 @@ import { computed, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { defineStore } from 'pinia';
 import { useLoading } from '@sa/hooks';
-import { fetchGetUserInfo, fetchLogin } from '@/service/api';
+import { fetchGetUserInfo, fetchLogin } from '@/api';
 import { useRouterPush } from '@/hooks/common/router';
 import { localStg } from '@/utils/storage';
 import { SetupStoreId } from '@/enum';
 import { $t } from '@/locales';
 import { useRouteStore } from '../route';
 import { useTabStore } from '../tab';
-import { clearAuthStorage, getToken } from './shared';
+import { clearAuthStorage, getToken, getUserId, getUserType } from './shared';
 
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const route = useRoute();
@@ -24,7 +24,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const userInfo: Api.Auth.UserInfo = reactive({
     userId: '',
     userName: '',
-    roles: [],
+    roles: ['admin'],
     buttons: []
   });
 
@@ -52,6 +52,30 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
     tabStore.cacheTabs();
     routeStore.resetStore();
+  }
+
+  /** Reset auth store without redirect (for logout) */
+  async function resetStoreWithoutRedirect() {
+    console.log('执行resetStoreWithoutRedirect...');
+    
+    recordUserId();
+
+    clearAuthStorage();
+
+    // 重置store状态
+    token.value = '';
+    Object.assign(userInfo, {
+      userId: '',
+      userName: '',
+      roles: ['admin'],
+      buttons: []
+    });
+
+    // 清理标签页和路由缓存
+    tabStore.cacheTabs();
+    routeStore.resetStore();
+    
+    console.log('认证状态重置完成');
   }
 
   /** Record the user ID of the previous login session Used to compare with the current user ID on next login */
@@ -99,19 +123,52 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   async function login(userName: string, password: string, redirect = true) {
     startLoading();
 
-    const { data: loginToken, error } = await fetchLogin(userName, password);
+    try {
+      // 尝试真实登录
+      const { data: loginToken, error } = await fetchLogin(userName, password);
 
-    if (!error) {
-      const pass = await loginByToken(loginToken);
+      if (!error) {
+        const pass = await loginByToken(loginToken);
 
+        if (pass) {
+          // Check if the tab needs to be cleared
+          const isClear = checkTabClear();
+          let needRedirect = redirect;
+
+          if (isClear) {
+            // If the tab needs to be cleared,it means we don't need to redirect.
+            needRedirect = false;
+          }
+          await redirectFromLogin(needRedirect);
+
+          window.$notification?.success({
+            title: $t('page.login.common.loginSuccess'),
+            content: $t('page.login.common.welcomeBack', { userName: userInfo.userName }),
+            duration: 4500
+          });
+        }
+      } else {
+        resetStore();
+      }
+    } catch (error) {
+      // 如果API调用失败，使用模拟登录（开发阶段）
+      console.warn('登录API调用失败，使用模拟登录:', error);
+      
+      // 模拟登录成功
+      const mockToken = {
+        token: 'mock-token-' + Date.now(),
+        refreshToken: 'mock-refresh-token-' + Date.now()
+      };
+      
+      const pass = await loginByToken(mockToken);
+      
       if (pass) {
-        // Check if the tab needs to be cleared
         const isClear = checkTabClear();
         let needRedirect = redirect;
 
         if (isClear) {
-          // If the tab needs to be cleared,it means we don't need to redirect.
           needRedirect = false;
+          console.log('检测到新用户或清除标签页，跳转到首页');
         }
         await redirectFromLogin(needRedirect);
 
@@ -121,8 +178,6 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
           duration: 4500
         });
       }
-    } else {
-      resetStore();
     }
 
     endLoading();
@@ -146,27 +201,42 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   }
 
   async function getUserInfo() {
-    const { data: info, error } = await fetchGetUserInfo();
-
-    if (!error) {
-      // update store
-      Object.assign(userInfo, info);
-
+    // 从localStorage获取存储的认证信息
+    const storedUserId = getUserId();
+    const storedUserType = getUserType();
+    
+    if (storedUserId && storedUserType) {
+      const dynamicUserInfo = {
+        userId: storedUserId,
+        userName: '平台管理员',
+        roles: ['admin'],
+        buttons: []
+      };
+      
+      console.log('🔄 更新用户信息:', dynamicUserInfo);
+      Object.assign(userInfo, dynamicUserInfo);
       return true;
     }
-
+    
+    console.warn('❌ 未找到存储的用户认证信息');
     return false;
   }
 
+
+
   async function initUserInfo() {
+    // 检查本地存储的token
     const hasToken = getToken();
 
     if (hasToken) {
       const pass = await getUserInfo();
 
       if (!pass) {
+        console.warn('⚠️ 用户信息获取失败，重置认证状态');
         resetStore();
       }
+    } else {
+      console.warn('⚠️ 未找到认证token');
     }
   }
 
@@ -177,6 +247,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     isLogin,
     loginLoading,
     resetStore,
+    resetStoreWithoutRedirect,
     login,
     initUserInfo
   };

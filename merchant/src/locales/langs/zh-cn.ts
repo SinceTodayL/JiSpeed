@@ -171,6 +171,7 @@ const local: App.I18n.Schema = {
     'goods-management': '商品管理',
     'coupon-management': '优惠券管理',
     'order-management': '订单管理',
+    'refund-management': '退款管理',
     profile: '我的'
   },
   page: {

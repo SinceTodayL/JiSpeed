@@ -1,14 +1,31 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { getRiderInfo } from '@/service/api/rider';
+import {
+  getMonthlyPerformanceOverview,
+  getRiderPerformance,
+  getRiderPerformanceRanking,
+  getRiderPerformanceTrend
+} from '@/service/api/rider-performance';
 import { useEcharts } from '@/hooks/common/echarts';
+import { useAuthStore } from '../../store/modules/auth';
+import { useRiderStore } from '../../store/modules/rider';
 
-// 骑手ID
-const riderId = '1663b73718a54c65b32f5b6787972949';
+const authStore = useAuthStore();
+const riderStore = useRiderStore();
+
+// 骑手ID - 使用统一的 riderStore 获取
+const riderId = computed(() => riderStore.riderId || authStore.userInfo.userId);
 
 // 数据状态
 const loading = ref(false);
-const riderDetail = ref<Api.Rider.DetailData | null>(null);
+const riderDetail = ref<Api.Rider.InfoData | null>(null);
+
+// 绩效数据
+const performanceData = ref<Api.Rider.TimeResponse | null>(null);
+const performanceTrend = ref<Api.Rider.PerformanceTrendResponse | null>(null);
+const performanceRanking = ref<Api.Rider.PerformanceRankingResponse | null>(null);
+const monthlyOverview = ref<Api.Rider.PerformanceOverviewResponse | null>(null);
 
 // 考勤状态
 const attendanceStatus = ref<'未签到' | '已签到' | '已签退'>('未签到');
@@ -23,27 +40,13 @@ const weatherInfo = ref({
   windSpeed: 3.2
 });
 
-// 模拟订单数据（用于图表）
-const orderStats = ref([
-  { date: '周一', completed: 8, pending: 3, income: 120 },
-  { date: '周二', completed: 12, pending: 2, income: 180 },
-  { date: '周三', completed: 10, pending: 4, income: 150 },
-  { date: '周四', completed: 15, pending: 1, income: 225 },
-  { date: '周五', completed: 18, pending: 2, income: 270 },
-  { date: '周六', completed: 22, pending: 0, income: 330 },
-  { date: '周日', completed: 16, pending: 3, income: 240 }
-]);
-
-// 模拟订单类型分布
-const orderTypeStats = ref([
-  { name: '外卖配送', value: 65, color: '#5da8ff' },
-  { name: '同城快递', value: 20, color: '#8e9dff' },
-  { name: '生鲜配送', value: 10, color: '#fedc69' },
-  { name: '其他', value: 5, color: '#26deca' }
-]);
+// 当前年月
+const currentDate = new Date();
+const currentYear = currentDate.getFullYear();
+const currentMonth = currentDate.getMonth() + 1;
 
 // 折线图配置
-const { domRef: lineChartRef, updateOptions: _updateLineChart } = useEcharts(() => ({
+const { domRef: lineChartRef, updateOptions: updateLineChart } = useEcharts(() => ({
   tooltip: {
     trigger: 'axis',
     axisPointer: {
@@ -54,7 +57,7 @@ const { domRef: lineChartRef, updateOptions: _updateLineChart } = useEcharts(() 
     }
   },
   legend: {
-    data: ['完成订单', '待处理订单', '收入']
+    data: ['完成订单', '准时率', '好评率']
   },
   grid: {
     left: '3%',
@@ -65,7 +68,7 @@ const { domRef: lineChartRef, updateOptions: _updateLineChart } = useEcharts(() 
   xAxis: {
     type: 'category',
     boundaryGap: false,
-    data: orderStats.value.map(item => item.date)
+    data: performanceTrend.value?.trendData?.map((item: any) => item.date) || []
   },
   yAxis: [
     {
@@ -75,8 +78,13 @@ const { domRef: lineChartRef, updateOptions: _updateLineChart } = useEcharts(() 
     },
     {
       type: 'value',
-      name: '收入 (¥)',
-      position: 'right'
+      name: '百分比',
+      position: 'right',
+      min: 0,
+      max: 100,
+      axisLabel: {
+        formatter: '{value}%'
+      }
     }
   ],
   series: [
@@ -99,32 +107,11 @@ const { domRef: lineChartRef, updateOptions: _updateLineChart } = useEcharts(() 
         }
       },
       emphasis: { focus: 'series' },
-      data: orderStats.value.map(item => item.completed)
-    },
-    {
-      color: '#ff7875',
-      name: '待处理订单',
-      type: 'line',
-      smooth: true,
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0.25, color: '#ff7875' },
-            { offset: 1, color: '#fff' }
-          ]
-        }
-      },
-      emphasis: { focus: 'series' },
-      data: orderStats.value.map(item => item.pending)
+      data: performanceTrend.value?.trendData?.map((item: any) => item.completedOrders) || []
     },
     {
       color: '#26deca',
-      name: '收入',
+      name: '准时率',
       type: 'line',
       smooth: true,
       yAxisIndex: 1,
@@ -142,13 +129,35 @@ const { domRef: lineChartRef, updateOptions: _updateLineChart } = useEcharts(() 
         }
       },
       emphasis: { focus: 'series' },
-      data: orderStats.value.map(item => item.income)
+      data: performanceTrend.value?.trendData?.map((item: any) => Math.round(item.onTimeRate * 100)) || []
+    },
+    {
+      color: '#fedc69',
+      name: '好评率',
+      type: 'line',
+      smooth: true,
+      yAxisIndex: 1,
+      areaStyle: {
+        color: {
+          type: 'linear',
+          x: 0,
+          y: 0,
+          x2: 0,
+          y2: 1,
+          colorStops: [
+            { offset: 0.25, color: '#fedc69' },
+            { offset: 1, color: '#fff' }
+          ]
+        }
+      },
+      emphasis: { focus: 'series' },
+      data: performanceTrend.value?.trendData?.map((item: any) => Math.round(item.goodReviewRate * 100)) || []
     }
   ]
 }));
 
 // 饼图配置
-const { domRef: pieChartRef, updateOptions: _updatePieChart } = useEcharts(() => ({
+const { domRef: pieChartRef, updateOptions: updatePieChart } = useEcharts(() => ({
   tooltip: {
     trigger: 'item',
     formatter: '{a} <br/>{b}: {c}单 ({d}%)'
@@ -181,25 +190,31 @@ const { domRef: pieChartRef, updateOptions: _updatePieChart } = useEcharts(() =>
         }
       },
       labelLine: { show: false },
-      data: orderTypeStats.value
+      data: [
+        { name: '外卖配送', value: performanceData.value?.deliveryOrders || 0, color: '#5da8ff' },
+        { name: '同城快递', value: performanceData.value?.expressOrders || 0, color: '#8e9dff' },
+        { name: '生鲜配送', value: performanceData.value?.freshOrders || 0, color: '#fedc69' },
+        { name: '其他', value: performanceData.value?.otherOrders || 0, color: '#26deca' }
+      ]
     }
   ]
 }));
 
 // 计算属性
 const completionRate = computed(() => {
-  if (!riderDetail.value) return 0;
-  const total = riderDetail.value.currentTaskCount + riderDetail.value.todayCompletedOrders;
-  return total > 0 ? Math.round((riderDetail.value.todayCompletedOrders / total) * 100) : 0;
+  if (!performanceData.value) return 0;
+  const total = performanceData.value.totalOrders || 0;
+  const completed = performanceData.value.completedOrders || 0;
+  return total > 0 ? Math.round((completed / total) * 100) : 0;
 });
 
 const onTimeRatePercent = computed(() => {
-  return riderDetail.value?.performance?.onTimeRate ? Math.round(riderDetail.value.performance.onTimeRate * 100) : 0;
+  return performanceData.value?.onTimeRate ? Math.round(performanceData.value.onTimeRate * 100) : 0;
 });
 
 const goodReviewRatePercent = computed(() => {
-  return riderDetail.value?.performance?.goodReviewRate
-    ? Math.round(riderDetail.value.performance.goodReviewRate * 100)
+  return performanceData.value?.goodReviewRate
+    ? Math.round(performanceData.value.goodReviewRate * 100)
     : 0;
 });
 
@@ -216,20 +231,19 @@ const attendanceStatusColor = computed(() => {
 
 // 统计卡片数据
 const cardData = computed(() => {
-  const completionRateValue = completionRate.value;
   return [
     {
-      key: 'todayCompleted',
-      title: '今日完成订单',
-      value: riderDetail.value?.todayCompletedOrders || 0,
+      key: 'completedOrders',
+      title: '本月完成订单',
+      value: performanceData.value?.completedOrders || 0,
       unit: '单',
       color: { start: '#ec4786', end: '#b955a4' },
       icon: 'mdi:truck-delivery'
     },
     {
-      key: 'currentTask',
-      title: '当前任务',
-      value: riderDetail.value?.currentTaskCount || 0,
+      key: 'totalOrders',
+      title: '本月总订单',
+      value: performanceData.value?.totalOrders || 0,
       unit: '单',
       color: { start: '#865ec0', end: '#5144b4' },
       icon: 'mdi:clock-outline'
@@ -237,7 +251,7 @@ const cardData = computed(() => {
     {
       key: 'completionRate',
       title: '完成率',
-      value: completionRateValue,
+      value: completionRate.value,
       unit: '%',
       color: { start: '#56cdf3', end: '#719de3' },
       icon: 'mdi:chart-line'
@@ -245,7 +259,7 @@ const cardData = computed(() => {
     {
       key: 'monthlyIncome',
       title: '本月收入',
-      value: Math.round(riderDetail.value?.performance?.income || 0),
+      value: Math.round(performanceData.value?.income || 0),
       unit: '¥',
       color: { start: '#fcbc25', end: '#f68057' },
       icon: 'ant-design:money-collect-outlined'
@@ -256,43 +270,88 @@ const cardData = computed(() => {
 // 获取骑手详细信息
 async function fetchRiderDetail() {
   try {
-    const { data } = await getRiderInfo({ riderId });
+    const { data } = await getRiderInfo({ riderId: riderId.value });
     if (data) {
-      // 使用基本骑手信息，添加模拟的绩效数据
-      riderDetail.value = {
-        ...data,
-        currentTaskCount: 3,
-        todayCompletedOrders: 8,
-        performance: {
-          statsMonth: '2024-01',
-          totalOrders: 156,
-          onTimeRate: 0.95,
-          goodReviewRate: 0.92,
-          badReviewRate: 0.03,
-          income: 4560.5
-        }
-      };
+      riderDetail.value = data;
     }
   } catch (error) {
     console.error('获取骑手详细信息失败', error);
-    // 使用模拟数据
-    riderDetail.value = {
-      applicationUserId: 'mock_user_001',
-      name: '测试骑手',
-      phoneNumber: '13800138000',
-      riderId,
-      vehicleNumber: '宁A12345',
-      currentTaskCount: 3,
-      todayCompletedOrders: 8,
-      performance: {
-        statsMonth: '2024-01',
-        totalOrders: 156,
-        onTimeRate: 0.95,
-        goodReviewRate: 0.92,
-        badReviewRate: 0.03,
-        income: 4560.5
-      }
+  }
+}
+
+// 获取骑手绩效数据
+async function fetchRiderPerformance() {
+  try {
+    const params = {
+      riderId: riderId.value,
+      year: currentYear,
+      month: currentMonth
     };
+
+    const { data } = await getRiderPerformance(params);
+    if (data) {
+      performanceData.value = data;
+    }
+  } catch (error) {
+    console.error('获取骑手绩效数据失败', error);
+  }
+}
+
+// 获取骑手绩效趋势
+async function fetchPerformanceTrend() {
+  try {
+    const params = {
+      riderId: riderId.value,
+      year: currentYear,
+      month: currentMonth,
+      days: 7 // 获取最近7天的趋势
+    };
+
+    const { data } = await getRiderPerformanceTrend(params);
+    if (data) {
+      performanceTrend.value = data;
+      // 更新图表
+      nextTick(() => {
+        updateLineChart();
+      });
+    }
+  } catch (error) {
+    console.error('获取绩效趋势失败', error);
+  }
+}
+
+// 获取骑手绩效排名
+async function fetchPerformanceRanking() {
+  try {
+    const params = {
+      riderId: riderId.value,
+      year: currentYear,
+      month: currentMonth
+    };
+
+    const { data } = await getRiderPerformanceRanking(params);
+    if (data) {
+      performanceRanking.value = data;
+    }
+  } catch (error) {
+    console.error('获取绩效排名失败', error);
+  }
+}
+
+// 获取月度绩效概览
+async function fetchMonthlyOverview() {
+  try {
+    const params = {
+      year: currentYear,
+      month: currentMonth
+    };
+
+    const { data } = await getMonthlyPerformanceOverview(params);
+    if (data) {
+      monthlyOverview.value = data;
+    }
+  } catch (error) {
+    console.error('获取月度概览失败', error);
   }
 }
 
@@ -366,8 +425,48 @@ function getGradientColor(color: { start: string; end: string }) {
 // 页面加载
 onMounted(async () => {
   loading.value = true;
+
+  // 检查用户信息是否已初始化
+  console.log('=== 骑手首页加载 ===');
+  console.log('当前用户信息:', authStore.userInfo);
+  console.log('当前token:', authStore.token);
+
+  // 如果没有用户信息但有token，尝试初始化
+  if (!authStore.userInfo.userId && authStore.token) {
+    console.log('检测到token但用户信息为空，尝试初始化用户信息...');
+    await authStore.initUserInfo();
+    console.log('初始化后的用户信息:', authStore.userInfo);
+  }
+
+  // 如果仍然没有用户信息，使用模拟数据
+  if (!authStore.userInfo.userId) {
+    console.log('用户信息初始化失败，使用模拟数据');
+    // 设置模拟用户信息
+    Object.assign(authStore.userInfo, {
+      userId: `rider_${Date.now()}`,
+      userName: '测试骑手',
+      roles: ['rider'],
+      buttons: []
+    });
+    console.log('设置的模拟用户信息:', authStore.userInfo);
+  }
+
   try {
-    await Promise.all([fetchRiderDetail(), fetchAttendanceStatus(), fetchWeatherInfo()]);
+    await Promise.all([
+      fetchRiderDetail(),
+      fetchRiderPerformance(),
+      fetchPerformanceTrend(),
+      fetchPerformanceRanking(),
+      fetchMonthlyOverview(),
+      fetchAttendanceStatus(),
+      fetchWeatherInfo()
+    ]);
+
+    // 更新图表
+    nextTick(() => {
+      updateLineChart();
+      updatePieChart();
+    });
   } finally {
     loading.value = false;
   }
@@ -428,7 +527,7 @@ onMounted(async () => {
     <!-- 图表区域 -->
     <NGrid :cols="24" :x-gap="16" :y-gap="16" class="mb-24px">
       <NGi :span="16">
-        <NCard title="本周订单趋势" :bordered="false">
+        <NCard title="本月绩效趋势" :bordered="false">
           <div ref="lineChartRef" class="h-360px overflow-hidden"></div>
         </NCard>
       </NGi>
@@ -494,7 +593,7 @@ onMounted(async () => {
 
             <div class="flex items-center justify-between">
               <span>本月总订单</span>
-              <span class="font-semibold">{{ riderDetail?.performance?.totalOrders || 0 }}单</span>
+              <span class="font-semibold">{{ performanceData?.totalOrders || 0 }}单</span>
             </div>
           </NSpace>
         </NCard>
@@ -541,7 +640,7 @@ onMounted(async () => {
           <div>
             <div class="text-blue-800 font-medium dark:text-blue-200">工作提醒</div>
             <div class="text-sm text-blue-600 dark:text-blue-300">
-              今日有 {{ riderDetail?.currentTaskCount || 0 }} 个待处理订单，请及时处理
+              本月已完成 {{ performanceData?.completedOrders || 0 }} 个订单，完成率 {{ completionRate }}%
             </div>
           </div>
         </div>
@@ -551,7 +650,7 @@ onMounted(async () => {
           <div>
             <div class="text-green-800 font-medium dark:text-green-200">完成情况</div>
             <div class="text-sm text-green-600 dark:text-green-300">
-              今日已完成 {{ riderDetail?.todayCompletedOrders || 0 }} 个订单，完成率 {{ completionRate }}%
+              本月总订单 {{ performanceData?.totalOrders || 0 }} 单，收入 {{ Math.round(performanceData?.income || 0) }} 元
             </div>
           </div>
         </div>

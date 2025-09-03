@@ -96,9 +96,13 @@ export function useRouterPush(inSetup = true) {
   async function redirectFromLogin(needRedirect = true) {
     const redirect = route.value.query?.redirect as string;
 
+    console.log('redirectFromLogin调用 - needRedirect:', needRedirect, 'redirect:', redirect);
+
     if (needRedirect && redirect) {
+      console.log('执行重定向到:', redirect);
       await routerPush(redirect);
     } else {
+      console.log('跳转到首页 - needRedirect:', needRedirect, 'redirect存在:', !!redirect);
       await toHome();
     }
   }

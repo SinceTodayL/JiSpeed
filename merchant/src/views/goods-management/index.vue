@@ -94,9 +94,10 @@ const getData = async () => {
           rating: dish.Rating || dish.rating || 0,
           onSale: dish.OnSale !== undefined ? dish.OnSale : (dish.onSale !== undefined ? dish.onSale : 1),
           merchantId: dish.MerchantId || dish.merchantId || merchantStore.merchantId,
-          quantity: 0, // Frontend-only field, default to 0
+          StockQuantity: dish.StockQuantity || dish.stockQuantity || 0, // 正确映射库存数量
           reviewQuantity: dish.ReviewQuantity || dish.reviewQuantity || 0,
-          categoryName: dish.CategoryName || dish.categoryName || undefined
+          categoryName: dish.CategoryName || dish.categoryName || undefined,
+          Description: dish.Description || dish.description || undefined // 添加菜品描述映射
         };
         
         return transformedDish;
@@ -258,8 +259,9 @@ const columnChecks = ref([
   { key: 'monthlySales', title: '月销量', checked: true },
   { key: 'rating', title: '评分', checked: true },
   { key: 'onSale', title: '销售状态', checked: true },
-  { key: 'quantity', title: '库存数量', checked: true },
-  { key: 'operate', title: '操作', checked: true }
+  { key: 'StockQuantity', title: '库存数量', checked: true },
+  { key: 'Description', title: '菜品描述', checked: true },
+  { key: 'operate', title: '操作', checked: true },
 ]);
 
 const columns = computed(() => {
@@ -335,10 +337,18 @@ const columns = computed(() => {
       }
     },
     {
-      key: 'quantity',
+      key: 'StockQuantity',
       title: '库存数量',
       align: 'center' as const,
-      width: 100
+      width: 100,
+      render: (row: Api.Goods.DishItem) => row.StockQuantity || 0
+    },
+    {
+      key: 'Description',
+      title: '菜品描述',
+      align: 'center' as const,
+      width: 150,
+      render: (row: Api.Goods.DishItem) => row.Description || '-'
     },
     {
       key: 'operate',
@@ -398,7 +408,7 @@ getData();
         :data="data"
         size="small"
         :flex-height="!appStore.isMobile"
-        :scroll-x="1012"
+        :scroll-x="1162"
         :loading="loading"
         remote
         :row-key="(row: Api.Goods.DishItem) => row.dishId"
