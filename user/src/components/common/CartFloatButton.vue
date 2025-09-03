@@ -18,7 +18,7 @@
 <script>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { cartAPI, mockCartAPI } from '@/api/cart.js'
+import { cartAPI } from '@/api/cart.js'
 
 export default {
   name: 'CartFloatButton',
@@ -46,9 +46,8 @@ export default {
     // 方法
     const fetchCartData = async () => {
       try {
-        // 使用模拟数据
-        const response = await mockCartAPI.generateMockCartData(currentUserId.value)
-        if (response.code === 0) {
+        const response = await cartAPI.getUserCart(currentUserId.value)
+        if (response && response.data) {
           cartData.value = response.data
         }
       } catch (error) {

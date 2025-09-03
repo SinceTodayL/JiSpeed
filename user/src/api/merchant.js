@@ -2,7 +2,7 @@
 import axios from 'axios'
 
 // 从环境变量获取基础URL
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 // 创建axios实例
 const api = axios.create({
@@ -41,211 +41,146 @@ api.interceptors.response.use(
 
 // 商家信息相关API
 export const merchantAPI = {
-  // 获取商家列表 (新增，基于后端API文档)
+  // 自定义筛选条件获取商家列表
   getMerchantList: (params = {}) => {
-    return api.get('/api/merchants', { params })
+    const { merchantName, location, size, page, status } = params
+    return api.get('/api/merchants', {
+      params: {
+        merchantName,
+        location,
+        size,
+        page,
+        status
+      }
+    })
   },
 
-  // 商家自动完成搜索 (新增，基于后端API文档)
-  getMerchantAutocomplete: (params = {}) => {
-    return api.get('/api/merchants/autocomplete', { params })
+  // 模糊搜索，智能匹配
+  getMerchantAutocomplete: (prefix, limit) => {
+    return api.get('/api/merchants/autocomplete', {
+      params: {
+        prefix,
+        limit
+      }
+    })
   },
 
-  // 根据ID获取商家信息 (更新路径以匹配后端API)
+  // 根据ID获取商家信息
   getMerchantById: (merchantId) => {
     return api.get(`/api/merchants/${merchantId}`)
   },
 
-  // 根据商家ID获取所有菜品信息 (更新路径)
+  // 根据ID修改商家信息
+  updateMerchant: (merchantId, merchantData) => {
+    return api.patch(`/api/merchants/${merchantId}`, {
+      merchantName: merchantData.merchantName,
+      status: merchantData.status,
+      contactInfo: merchantData.contactInfo,
+      location: merchantData.location,
+      description: merchantData.description
+    })
+  }
+}
+
+// 商家菜品相关API
+export const merchantDishAPI = {
+  // 根据商家ID获取所有菜品信息
   getAllDishes: (merchantId, params = {}) => {
-    return api.get(`/api/merchants/${merchantId}/dishes`, { params })
-  },
-
-  // 获取商家和菜品的评论 (新增，基于后端API文档)
-  getMerchantDishReviews: (merchantId, dishId, params = {}) => {
-    return api.get(`/api/merchants/${merchantId}/dishes/${dishId}/reviews`, { params })
-  },
-
-  // 根据ID获取商家店铺数据统计信息
-  getSalesStat: (merchantId) => {
-    return api.get(`/merchant/${merchantId}/SalesStat`)
-  }
-}
-
-// 商家优惠券相关API
-export const merchantCouponAPI = {
-  // 根据商家ID获取所有优惠券
-  getAllCoupons: (merchantId) => {
-    return api.get(`/merchant/${merchantId}/coupon`)
-  },
-
-  // 根据商家ID和优惠券ID获取优惠券信息
-  getCouponById: (merchantId, couponId) => {
-    return api.get(`/merchant/${merchantId}/coupon/${couponId}`)
-  }
-}
-
-// 模拟数据API (用于开发测试)
-export const mockMerchantAPI = {
-  // 生成模拟商家列表数据
-  generateMockMerchantList: (params = {}) => {
-    const { page = 1, size = 10, keyword = '', sortBy = 'recommended' } = params
-    
-    const allMerchants = [
-      {
-        merchantId: 'M001',
-        name: '麻辣香锅店',
-        description: '正宗四川口味，香辣过瘾',
-        imageUrl: '/images/merchant1.jpg',
-        rating: 4.6,
-        reviewCount: 1256,
-        distance: 0.8,
-        deliveryFee: 3,
-        deliveryTime: '25-35',
-        minOrderAmount: 20,
-        isOnline: true,
-        tags: ['川菜', '香锅', '麻辣'],
-        categoryId: 'chinese'
-      },
-      {
-        merchantId: 'M002', 
-        name: '日式料理屋',
-        description: '新鲜刺身，地道日料',
-        imageUrl: '/images/merchant2.jpg',
-        rating: 4.8,
-        reviewCount: 892,
-        distance: 1.2,
-        deliveryFee: 5,
-        deliveryTime: '40-50',
-        minOrderAmount: 50,
-        isOnline: true,
-        tags: ['日料', '刺身', '寿司'],
-        categoryId: 'japanese'
-      },
-      {
-        merchantId: 'M003',
-        name: '汉堡王',
-        description: '美式快餐，经典汉堡',
-        imageUrl: '/images/merchant3.jpg',
-        rating: 4.3,
-        reviewCount: 2156,
-        distance: 2.1,
-        deliveryFee: 4,
-        deliveryTime: '20-30',
-        minOrderAmount: 25,
-        isOnline: false,
-        tags: ['快餐', '汉堡', '薯条'],
-        categoryId: 'fast-food'
-      },
-      {
-        merchantId: 'M004',
-        name: '星巴克咖啡',
-        description: '精品咖啡，舒适环境',
-        imageUrl: '/images/merchant4.jpg',
-        rating: 4.5,
-        reviewCount: 1687,
-        distance: 0.6,
-        deliveryFee: 6,
-        deliveryTime: '15-25',
-        minOrderAmount: 30,
-        isOnline: true,
-        tags: ['咖啡', '饮品', '甜品'],
-        categoryId: 'drinks'
-      },
-      {
-        merchantId: 'M005',
-        name: '海底捞火锅',
-        description: '服务贴心，口味正宗',
-        imageUrl: '/images/merchant5.jpg',
-        rating: 4.7,
-        reviewCount: 3421,
-        distance: 1.8,
-        deliveryFee: 8,
-        deliveryTime: '50-70',
-        minOrderAmount: 80,
-        isOnline: true,
-        tags: ['火锅', '聚餐', '川味'],
-        categoryId: 'hotpot'
-      },
-      {
-        merchantId: 'M006',
-        name: '烧烤一条街',
-        description: '深夜美食，烧烤天堂',
-        imageUrl: '/images/merchant6.jpg',
-        rating: 4.4,
-        reviewCount: 987,
-        distance: 1.5,
-        deliveryFee: 4,
-        deliveryTime: '35-45',
-        minOrderAmount: 35,
-        isOnline: true,
-        tags: ['烧烤', '夜宵', '啤酒'],
-        categoryId: 'barbecue'
+    const { page, size } = params
+    return api.get(`/api/merchants/${merchantId}/dishes`, {
+      params: {
+        page,
+        size
       }
-    ]
-    
-    // 模拟筛选
-    let filteredMerchants = allMerchants
-    
-    if (keyword) {
-      filteredMerchants = allMerchants.filter(merchant => 
-        merchant.name.includes(keyword) || 
-        merchant.description.includes(keyword) ||
-        merchant.tags.some(tag => tag.includes(keyword))
-      )
-    }
-    
-    // 模拟排序
-    if (sortBy === 'rating') {
-      filteredMerchants.sort((a, b) => b.rating - a.rating)
-    } else if (sortBy === 'distance') {
-      filteredMerchants.sort((a, b) => a.distance - b.distance)
-    } else if (sortBy === 'sales') {
-      filteredMerchants.sort((a, b) => b.reviewCount - a.reviewCount)
-    }
-    
-    // 模拟分页
-    const startIndex = (page - 1) * size
-    const endIndex = startIndex + size
-    const paginatedMerchants = filteredMerchants.slice(startIndex, endIndex)
-    
-    return Promise.resolve({
-      code: 0,
-      message: '商家信息获取成功',
-      data: paginatedMerchants,
-      total: filteredMerchants.length,
-      page,
-      size
     })
   },
 
-  // 生成模拟商家详情数据
-  generateMockMerchantDetail: (merchantId) => {
-    const merchantDetails = {
-      'M001': {
-        merchantId: 'M001',
-        name: '麻辣香锅店',
-        description: '正宗四川口味，香辣过瘾',
-        imageUrl: '/images/merchant1.jpg',
-        rating: 4.6,
-        reviewCount: 1256,
-        distance: 0.8,
-        deliveryFee: 3,
-        deliveryTime: '25-35',
-        minOrderAmount: 20,
-        isOnline: true,
-        tags: ['川菜', '香锅', '麻辣'],
-        address: '北京市朝阳区某某街道123号',
-        phone: '010-12345678',
-        businessHours: '10:00-22:00',
-        announcement: '店铺公告：本店提供优质服务，欢迎品尝！'
+  // 根据商家ID和菜品ID获取特定菜品详细信息
+  getDishById: (merchantId, dishId) => {
+    return api.get(`/api/merchants/${merchantId}/dishes/${dishId}`)
+  },
+
+  // 商家添加新菜品
+  addNewDish: (merchantId, dishData) => {
+    return api.post(`/api/merchants/${merchantId}/addNewDish`, dishData)
+  },
+
+  // 根据商家ID和菜品ID删除对应的菜品
+  deleteDish: (merchantId, dishId) => {
+    return api.delete(`/api/merchants/${merchantId}/${dishId}`)
+  },
+
+  // 根据商家ID获取菜品类目
+  getDishCategories: (merchantId) => {
+    return api.get(`/api/merchants/${merchantId}/dish-categories`)
+  },
+
+  // 根据商家ID和分类获取菜品
+  getDishesByCategory: (merchantId, params = {}) => {
+    const { categoryId, size, page } = params
+    return api.get(`/api/merchants/${merchantId}/dishesByCategory`, {
+      params: {
+        categoryId,
+        size,
+        page
       }
-    }
-    
-    return Promise.resolve({
-      code: 0,
-      message: '商家信息获取成功',
-      data: merchantDetails[merchantId] || null
+    })
+  }
+}
+
+// 商家统计相关API
+export const merchantStatsAPI = {
+  // 根据ID获取商家店铺数据统计信息
+  getSalesStat: (merchantId) => {
+    return api.get(`/api/merchants/${merchantId}/SalesStat`)
+  },
+
+  // 根据ID和日期获取商家特定日期的销售统计
+  getSalesStatByDate: (merchantId, statDate) => {
+    return api.get(`/api/merchants/${merchantId}/SalesStat/${statDate}`)
+  }
+}
+
+// 商家订单相关API
+export const merchantOrderAPI = {
+  // 根据商家ID获取订单列表
+  getMerchantOrders: (merchantId, params = {}) => {
+    const { page, size } = params
+    return api.get(`/api/merchants/${merchantId}/orders`, {
+      params: {
+        page,
+        size
+      }
+    })
+  },
+
+  // 根据商家ID获取退单列表
+  getMerchantRefunds: (merchantId, params = {}) => {
+    const { page, size } = params
+    return api.get(`/api/merchants/${merchantId}/refunds`, {
+      params: {
+        page,
+        size
+      }
+    })
+  }
+}
+
+// 商家申请相关API
+export const merchantApplicationAPI = {
+  // 商家提交申请
+  submitApplication: (merchantId, applicationData) => {
+    return api.post(`/api/merchants/${merchantId}/applications`, applicationData)
+  },
+
+  // 根据商家ID获取申请列表
+  getApplications: (merchantId, params = {}) => {
+    const { page, size } = params
+    return api.get(`/api/merchants/${merchantId}/applications`, {
+      params: {
+        page,
+        size
+      }
     })
   }
 }

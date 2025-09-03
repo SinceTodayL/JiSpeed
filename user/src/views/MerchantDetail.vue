@@ -224,7 +224,11 @@
               </span>
               
               <button
-                @click="addToCart(selectedDish)"
+                @click="addToCart({
+                  ...selectedDish,
+                  merchantId: merchantInfo?.merchantId || '',
+                  merchantName: merchantInfo?.merchantName || ''
+                })"
                 class="modal-quantity-btn plus"
               >
                 +
@@ -277,7 +281,7 @@
                 </button>
                 <span class="cart-quantity">{{ item.quantity }}</span>
                 <button
-                  @click.stop="addToCart({ dishId: item.dishId, dishName: item.dishName, price: item.price, coverUrl: item.coverUrl })"
+                    @click.stop="addToCart(item)"
                   class="cart-quantity-btn plus"
                 >
                   +
@@ -389,12 +393,11 @@ export default {
         if (response && response.data) {
           merchantInfo.value = response.data
         } else {
-          // 使用模拟数据
-          merchantInfo.value = generateMockMerchantInfo()
+          merchantInfo.value = null
         }
       } catch (error) {
         console.error('获取商家信息失败:', error)
-        merchantInfo.value = generateMockMerchantInfo()
+        merchantInfo.value = null
       }
     }
 
@@ -406,16 +409,13 @@ export default {
           allDishes.value = response.data
           organizeDishesIntoCategories(response.data)
         } else {
-          // 使用模拟数据
-          const mockDishes = generateMockDishes()
-          allDishes.value = mockDishes
-          organizeDishesIntoCategories(mockDishes)
+          allDishes.value = []
+          dishCategories.value = []
         }
       } catch (error) {
         console.error('获取菜品信息失败:', error)
-        const mockDishes = generateMockDishes()
-        allDishes.value = mockDishes
-        organizeDishesIntoCategories(mockDishes)
+        allDishes.value = []
+        dishCategories.value = []
       } finally {
         loading.value = false
       }
@@ -455,14 +455,24 @@ export default {
         })
       })
 
+      // 分类ID映射表（数字->字符串）
+      const categoryIdMap = {
+        '1': 'CAT001',
+        '2': 'CAT002',
+        '3': 'CAT003',
+        '4': 'CAT004',
+        '5': 'CAT005',
+        '6': 'CAT006'
+      };
       // 将菜品分配到分类中
       dishes.forEach(dish => {
-        const categoryId = dish.categoryId || 'CAT001'
+        const rawId = (dish.categoryId || '1').trim();
+        const categoryId = categoryIdMap[rawId] || 'CAT001';
         if (categoryMap.has(categoryId)) {
-          categoryMap.get(categoryId).dishes.push(dish)
-          categoryMap.get(categoryId).dishCount++
+          categoryMap.get(categoryId).dishes.push(dish);
+          categoryMap.get(categoryId).dishCount++;
         }
-      })
+      });
 
       // 过滤掉没有菜品的分类
       categories.value = Array.from(categoryMap.values()).filter(cat => cat.dishCount > 0)
@@ -470,48 +480,6 @@ export default {
       if (categories.value.length > 0) {
         activeCategory.value = categories.value[0].categoryId
       }
-    }
-
-    const generateMockMerchantInfo = () => {
-      return {
-        merchantId: route.params.id,
-        merchantName: `美味餐厅${route.params.id}`,
-        logo: 'https://picsum.photos/80/80?random=100',
-        rating: 4.8,
-        reviewCount: 1523,
-        deliveryTime: 28,
-        deliveryFee: 3.5,
-        minOrderAmount: 25,
-        location: '美食街88号',
-        status: 1
-      }
-    }
-
-    const generateMockDishes = () => {
-      const categories = ['CAT001', 'CAT002', 'CAT003', 'CAT004', 'CAT005', 'CAT006']
-      const dishes = []
-      
-      categories.forEach((categoryId, catIndex) => {
-        for (let i = 1; i <= 6; i++) {
-          const dishId = `DISH${catIndex + 1}${String(i).padStart(2, '0')}`
-          dishes.push({
-            dishId,
-            categoryId,
-            dishName: `美味菜品${catIndex + 1}-${i}`,
-            description: `精心制作的美味菜品，口感丰富，营养均衡。`,
-            price: (Math.random() * 30 + 10).toFixed(1),
-            originPrice: (Math.random() * 10 + 35).toFixed(1),
-            coverUrl: `https://picsum.photos/120/120?random=${catIndex * 10 + i}`,
-            monthlySales: Math.floor(Math.random() * 200) + 50,
-            rating: Math.floor(Math.random() * 20) + 80,
-            onSale: 1,
-            merchantId: route.params.id,
-            quantity: Math.floor(Math.random() * 50) + 10
-          })
-        }
-      })
-      
-      return dishes
     }
 
     const scrollToCategory = (categoryId) => {
@@ -543,16 +511,31 @@ export default {
     }
 
     const addToCart = async (dish) => {
+      console.log('addToCart 传入参数:', dish);
+      // 修正 categoryId 格式
+      const categoryIdMap = {
+        '1': { id: 'CAT001', name: '热菜' },
+        '2': { id: 'CAT002', name: '凉菜' },
+        '3': { id: 'CAT003', name: '汤类' },
+        '4': { id: 'CAT004', name: '主食' },
+        '5': { id: 'CAT005', name: '饮品' },
+        '6': { id: 'CAT006', name: '甜品' }
+      };
+      const rawCategoryId = (dish.categoryId || '1').trim();
+      const fixedCategory = categoryIdMap[rawCategoryId] || { id: rawCategoryId, name: dish.categoryName || '' };
       const dishData = {
         dishId: dish.dishId,
         dishName: dish.dishName,
         price: parseFloat(dish.price),
         coverUrl: dish.coverUrl,
+        categoryId: fixedCategory.id,
+        categoryName: fixedCategory.name,
         merchantId: route.params.id,
         merchantName: merchantInfo.value?.merchantName || '餐厅'
-      }
-
-      const result = await cart.addToCart(dishData)
+      };
+      console.log('addToCart 最终参数:', dishData);
+      const result = await cart.addToCart(dishData);
+      console.log('addToCart 返回结果:', result);
       if (result.success) {
         // 可以显示成功提示
         console.log(result.message)

@@ -287,26 +287,6 @@ export default {
       }
     }
     
-    // 模拟用户数据
-    const getMockUserInfo = () => {
-      return {
-        id: 'test_user_001',
-        userId: 'test_user_001',
-        nickName: '测试用户',
-        nickname: '测试用户', // 兼容模板中的字段名
-        account: 'testuser@example.com',
-        avatarUrl: '/default-avatar.jpg',
-        level: 3,
-        stats: {
-          totalOrders: 15,
-          favoriteCount: 8,
-          cartItemCount: 3,
-          availableCouponCount: 5,
-          addressCount: 2
-        }
-      }
-    }
-    
     // 导航方法
     const editProfile = () => {
       router.push('/profile/edit')

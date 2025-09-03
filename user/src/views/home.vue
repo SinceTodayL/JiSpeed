@@ -126,7 +126,7 @@
 <script>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { merchantAPI, mockMerchantAPI } from '@/api/merchant.js'
+import { merchantAPI } from '@/api/merchant.js'
 
 export default {
   name: 'Home',
@@ -163,16 +163,11 @@ export default {
           keyword: searchKeyword.value || undefined
         }
         
-        // 先尝试真实API，失败则使用模拟数据
-        let response
-        try {
-          response = await merchantAPI.getMerchantList(params)
-        } catch (error) {
-          console.warn('真实API调用失败，使用模拟数据:', error)
-          response = await mockMerchantAPI.generateMockMerchantList(params)
-        }
-          if (response.code === 0) {
+        // 调用真实API
+        const response = await merchantAPI.getMerchantList(params)
         console.log('获取商家列表成功:', response.data)
+          if (response.code === 0) {
+
           if (reset) {
             merchants.value = response.data || []
             currentPage.value = 1
@@ -192,25 +187,6 @@ export default {
         }
       } catch (error) {
         console.error('获取商家列表失败:', error)
-        if (reset || merchants.value.length === 0) {
-          // 使用硬编码的降级数据
-          merchants.value = [
-            {
-              merchantId: 'M001',
-              name: '麻辣香锅店',
-              description: '正宗四川口味，香辣过瘾',
-              imageUrl: '/images/merchant1.jpg',
-              rating: 4.6,
-              reviewCount: 1256,
-              distance: 0.8,
-              deliveryFee: 3,
-              deliveryTime: '25-35',
-              minOrderAmount: 20,
-              isOnline: true,
-              tags: ['川菜', '香锅', '麻辣']
-            }
-          ]
-        }
       } finally {
         loading.value = false
       }
