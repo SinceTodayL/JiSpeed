@@ -1,32 +1,35 @@
 declare namespace Api {
-  export namespace Rider {
-    /* GET */
-    // 1.根据id获取骑手信息
-    // Path参数
-    export interface Request {
-      /**
-       * 骑手ID
-       */
+  namespace Rider {
+    /** 获取骑手信息请求参数 */
+    export interface GetRiderInfoRequest {
+      /** 骑手ID */
       riderId: string;
-      [property: string]: any;
     }
 
-    // 返回响应
-    export interface InfoResponse {
+    /** 获取骑手信息响应 */
+    export interface GetRiderInfoResponse {
+      /** 状态码 */
       code: number;
-      data: InfoData;
+      /** 响应数据 */
+      data: RiderInfoData;
+      /** 响应消息 */
       message: string;
+      /** 时间戳 */
       timestamp: number;
-      [property: string]: any;
     }
 
-    export interface InfoData {
-      applicationUserId: string;
-      name: string;
-      phoneNumber: string;
+    /** 骑手信息数据 */
+    export interface RiderInfoData {
+      /** 骑手ID */
       riderId: string;
+      /** 骑手姓名 */
+      name: string;
+      /** 手机号码 */
+      phoneNumber: string;
+      /** 车辆号码 */
       vehicleNumber: string;
-      [property: string]: any;
+      /** 应用用户ID */
+      applicationUserId: string;
     }
 
     // 骑手详细信息（包含绩效）
@@ -53,53 +56,83 @@ declare namespace Api {
       [property: string]: any;
     }
 
-    // 2.根据id获取骑手订单列表
-    // Path参数：Request
-    // Query参数
-    export interface OrderListRequest {
-      /**
-       * 接单状态（0:未处理, 1:已接单, 2:已拒单, 3:已完成）
-       */
-      status?: number;
-      [property: string]: any;
+    /** 获取骑手订单列表请求参数 */
+    export interface GetRiderOrderListRequest {
+      /** 接单状态（0:未处理, 1:已接单, 2:已拒单, 3:已完成） */
+      status?: 0 | 1 | 2 | 3;
     }
 
-    // 返回响应
-    export interface OrderListResponse {
+    /** 获取骑手订单列表响应 */
+    export interface GetRiderOrderListResponse {
+      /** 状态码 */
       code: number;
-      data: Datum[];
+      /** 响应数据 */
+      data: OrderAssignmentData[];
+      /** 响应消息 */
       message: string;
+      /** 时间戳 */
       timestamp: number;
-      [property: string]: any;
     }
 
-    export interface Datum {
-      acceptedAt?: string;
-      acceptedStatus?: number;
-      assignedAt?: string;
-      assignId?: string;
-      order?: Order;
-      riderId?: string;
-      timeOut?: number;
-      [property: string]: any;
+    /** 订单分配数据 */
+    export interface OrderAssignmentData {
+      /** 分配ID */
+      assignId: string;
+      /** 骑手ID */
+      riderId: string;
+      /** 分配时间 */
+      assignedAt: string;
+      /** 接单状态（0:未处理, 1:已接单, 2:已拒单, 3:已完成） */
+      acceptedStatus: number;
+      /** 接单时间 */
+      acceptedAt: string | null;
+      /** 超时时间（分钟） */
+      timeOut: number | null;
+      /** 订单信息 */
+      order: OrderInfo;
     }
 
-    export interface Order {
-      address: Address;
-      createAt: string;
-      orderAmount: number;
+    /** 订单信息 */
+    export interface OrderInfo {
+      /** 订单ID */
       orderId: string;
+      /** 订单金额 */
+      orderAmount: number;
+      /** 创建时间 */
+      createAt: string;
+      /** 订单状态 */
       orderStatus: number;
-      [property: string]: any;
+      /** 收货地址信息 */
+      address: OrderAddress;
     }
 
-    export interface Address {
+    /** 订单收货地址 */
+    export interface OrderAddress {
+      /** 地址ID */
       addressId: string;
+      /** 详细地址 */
       detailedAddress: string;
+      /** 收货人姓名 */
       receiverName: string;
+      /** 收货人电话 */
       receiverPhone: string;
-      [property: string]: any;
     }
+
+    // 兼容性：保留旧的接口名称
+    /** @deprecated 请使用 GetRiderOrderListRequest */
+    export type OrderListRequest = GetRiderOrderListRequest;
+
+    /** @deprecated 请使用 GetRiderOrderListResponse */
+    export type OrderListResponse = GetRiderOrderListResponse;
+
+    /** @deprecated 请使用 OrderAssignmentData */
+    export type Datum = OrderAssignmentData;
+
+    /** @deprecated 请使用 OrderInfo */
+    export type Order = OrderInfo;
+
+    /** @deprecated 请使用 OrderAddress */
+    export type Address = OrderAddress;
 
     // 3.根据id和时间获取骑手特定月份的绩效详情
     // Path参数
@@ -550,15 +583,14 @@ declare namespace Api {
       [property: string]: any;
     }
 
-    /* PATCH */
-    // 1.更新骑手信息
-    // Path参数：Request
-    // Body参数
+    /** 更新骑手信息 */
     export interface UpdateInfoRequest {
-      name?: string;
-      phoneNumber?: string;
-      vehicleNumber?: string;
-      [property: string]: any;
+      /** 骑手姓名 */
+      name: string;
+      /** 手机号码 */
+      phoneNumber: string;
+      /** 车辆号码 */
+      vehicleNumber: string;
     }
 
     // 返回响应
