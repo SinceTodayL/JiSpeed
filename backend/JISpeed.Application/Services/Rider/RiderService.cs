@@ -6,6 +6,7 @@ using JISpeed.Core.Entities.Rider;
 using JISpeed.Core.Interfaces.IRepositories.Rider;
 using JISpeed.Core.Entities.Common;
 using JISpeed.Core.Interfaces.IRepositories;
+using JISpeed.Core.Interfaces.IRepositories.Order;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Core.Exceptions;
 using JISpeed.Core.Constants;
@@ -17,15 +18,18 @@ namespace JISpeed.Application.Services.Rider
     {
         private readonly IRiderRepository _riderRepository;
         private readonly IAssignmentRepository _assignmentRepository;
+        private readonly IOrderRepository _orderRepository;
         private readonly ILogger<RiderService> _logger;
 
         public RiderService(
             IRiderRepository riderRepository,
             IAssignmentRepository assignmentRepository,
+            IOrderRepository orderRepository,
             ILogger<RiderService> logger)
         {
             _riderRepository = riderRepository;
             _assignmentRepository = assignmentRepository;
+            _orderRepository = orderRepository;
             _logger = logger;
         }
 
@@ -309,10 +313,10 @@ namespace JISpeed.Application.Services.Rider
             }
         }
 
-        // 更新订单分配状态（接单/拒单）
+        // 更新订单分配状态（接单/拒单/确认送达）
         // <param name="riderId">骑手ID</param>
         // <param name="assignId">分配ID</param>
-        // <param name="acceptedStatus">接单状态</param>
+        // <param name="acceptedStatus">接单状态：0=待接单, 1=已接单, 2=已拒绝, 3=已完成</param>
         // <returns>更新后的订单分配</returns>
         public async Task<Assignment> UpdateAssignmentStatusAsync(string riderId, string assignId, int acceptedStatus)
         {
@@ -340,7 +344,7 @@ namespace JISpeed.Application.Services.Rider
                     throw RiderExceptions.RiderNotFound(riderId);
                 }
 
-                // 获取订单分配
+                // 获取订单分配（包含关联的订单信息）
                 var assignment = await _assignmentRepository.GetByIdAsync(assignId);
                 if (assignment == null)
                 {
@@ -357,17 +361,46 @@ namespace JISpeed.Application.Services.Rider
                 }
 
                 // 验证订单状态是否允许操作
-                if (assignment.AcceptedStatus != 0) // 假设0表示未处理
+                if (acceptedStatus == 3) // 确认送达
                 {
-                    _logger.LogWarning("订单分配状态不允许操作, AssignId: {AssignId}, CurrentStatus: {CurrentStatus}",
-                        assignId, assignment.AcceptedStatus);
-                    throw OrderExceptions.OrderStatusError(assignId, assignment.AcceptedStatus, 0);
+                    if (assignment.AcceptedStatus != 1) // 只允许从已接单状态确认送达
+                    {
+                        _logger.LogWarning("只能从已接单状态确认送达, AssignId: {AssignId}, CurrentStatus: {CurrentStatus}",
+                            assignId, assignment.AcceptedStatus);
+                        throw OrderExceptions.OrderStatusError(assignId, assignment.AcceptedStatus, 1);
+                    }
+                }
+                else // 其他状态更新（接单、拒单）
+                {
+                    if (assignment.AcceptedStatus != 0) // 只允许从待接单状态操作
+                    {
+                        _logger.LogWarning("订单分配状态不允许操作, AssignId: {AssignId}, CurrentStatus: {CurrentStatus}",
+                            assignId, assignment.AcceptedStatus);
+                        throw OrderExceptions.OrderStatusError(assignId, assignment.AcceptedStatus, 0);
+                    }
                 }
 
                 // 更新订单分配状态
                 assignment.AcceptedStatus = acceptedStatus;
                 assignment.AcceptedAt = DateTime.Now;
                 await _assignmentRepository.UpdateAsync(assignment);
+
+                // 如果是确认送达，需要同时更新订单状态
+                if (acceptedStatus == 3)
+                {
+                    // 获取关联的订单并更新状态为已确认收货
+                    if (assignment.Order != null)
+                    {
+                        assignment.Order.OrderStatus = (int)OrderStatus.Confirmed; // 2 = 确认收货
+                        await _orderRepository.SaveChangesAsync(); // 保存订单状态更新
+
+                        _logger.LogInformation("订单状态已更新为确认收货, OrderId: {OrderId}", assignment.Order.OrderId);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("未找到关联的订单信息, AssignId: {AssignId}", assignId);
+                    }
+                }
 
                 _logger.LogInformation("订单分配状态更新成功, AssignId: {AssignId}, Status: {Status}",
                     assignId, acceptedStatus);
