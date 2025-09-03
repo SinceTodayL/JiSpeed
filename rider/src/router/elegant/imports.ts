@@ -17,9 +17,9 @@ export const layouts: Record<RouteLayout, RouteComponent | (() => Promise<RouteC
 export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<RouteComponent>)> = {
   404: () => import("@/views/_builtin/404/index.vue"),
   "iframe-page": () => import("@/views/_builtin/iframe-page/[url].vue"),
+  login: () => import("@/views/_builtin/login/index.vue"),
   attendance: () => import("@/views/attendance/index.vue"),
   delivery: () => import("@/views/delivery/index.vue"),
   home: () => import("@/views/home/index.vue"),
-  login: () => import("@/views/login/index.vue"),
   profile: () => import("@/views/profile/index.vue"),
 };

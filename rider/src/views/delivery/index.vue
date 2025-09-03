@@ -4,10 +4,12 @@ import { NButton, NCard, NDataTable, NDescriptions, NDescriptionsItem, NForm, NF
 import { getRiderOrderList, updateAssignStatus } from '@/service/api/rider';
 import { getOnlineRidersLocation, getRiderLatestLocation } from '@/service/api/rider-location';
 import { useAuthStore } from '@/store/modules/auth';
+import { useRiderStore } from '@/store/modules/rider';
 import { handleCommonError, handleOrderError } from '@/utils/rider-error-handler';
 import AmapMap from '@/components/delivery/amap-map.vue';
 
 const authStore = useAuthStore();
+const riderStore = useRiderStore();
 
 // 定义通用订单数据类型
 interface OrderData {
@@ -30,8 +32,8 @@ interface OrderData {
   };
 }
 
-// 骑手ID - 使用登录用户的ID
-const riderId = computed(() => authStore.userInfo.userId);
+// 骑手ID - 使用统一的 riderStore 获取
+const riderId = computed(() => riderStore.riderId || authStore.userInfo.userId);
 
 // 订单列表
 const orders = ref<OrderData[]>([]);

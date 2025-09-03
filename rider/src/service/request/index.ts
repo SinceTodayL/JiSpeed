@@ -36,13 +36,16 @@ export const request = createFlatRequest<App.Service.Response, RequestInstanceSt
 
       function handleLogout() {
         authStore.resetStore();
+        // 跳转到指定的登录页面
+        window.location.href = 'http://121.4.90.75/login';
       }
 
       function logoutAndCleanup() {
-        handleLogout();
+        authStore.resetStore();
         window.removeEventListener('beforeunload', handleLogout);
-
         request.state.errMsgStack = request.state.errMsgStack.filter(msg => msg !== response.data.msg);
+        // 跳转到指定的登录页面
+        window.location.href = 'http://121.4.90.75/login';
       }
 
       // when the backend response code is in `logoutCodes`, it means the user will be logged out and redirected to login page

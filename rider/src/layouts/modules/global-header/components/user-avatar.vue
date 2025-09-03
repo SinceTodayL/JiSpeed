@@ -15,8 +15,8 @@ const { routerPushByKey } = useRouterPush();
 const { SvgIconVNode } = useSvgIcon();
 
 function loginOrRegister() {
-  // 跳转到根目录的登录页面，而不是rider模块内的登录页面
-  window.location.href = 'http://localhost:9527/';
+  // 跳转到指定的登录页面
+  window.location.href = 'http://121.4.90.75/login';
 }
 
 type DropdownKey = 'user-center' | 'logout';
@@ -62,6 +62,8 @@ function logout() {
     onPositiveClick: () => {
       // 调用store的reset方法，它会清理所有认证相关存储
       authStore.resetStore();
+      // 跳转到指定的登录页面
+      window.location.href = 'http://121.4.90.75/login';
     }
   });
 }

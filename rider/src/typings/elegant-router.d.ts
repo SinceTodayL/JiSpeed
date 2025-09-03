@@ -110,7 +110,6 @@ declare module "@elegant-router/types" {
     | "attendance"
     | "delivery"
     | "home"
-    | "login"
     | "profile"
   >;
 

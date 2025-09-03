@@ -6,7 +6,7 @@ import { localStg } from '@/utils/storage';
 import { SetupStoreId } from '@/enum';
 import { useRouteStore } from '../route';
 import { useTabStore } from '../tab';
-import { clearAuthStorage, getToken } from './shared';
+import { clearAuthStorage, getToken, getUserId, setAuthStorage } from './shared';
 
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const routeStore = useRouteStore();
@@ -52,25 +52,22 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     localStg.set('lastLoginUserId', userInfo.userId);
   }
 
-
-
   /**
-   * 初始化用户信息（从URL参数或本地存储获取）
+   * 初始化用户信息（从本地存储获取）
    */
   async function initUserInfo() {
-    // 从URL参数获取用户信息
-    const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get('id');
-    const userToken = urlParams.get('token');
+    const hasToken = getToken();
+    const hasUserId = getUserId();
 
-    if (userId && userToken) {
-      // 存储认证信息
-      localStg.set('token', userToken);
-      token.value = userToken;
-
+    if (hasToken && hasUserId) {
+      // 从本地存储获取用户ID并设置到 userInfo
+      const userIdString = String(hasUserId);
+      userInfo.userId = userIdString;
+      token.value = String(hasToken);
+      
       // 先创建基础骑手用户信息
       const riderUserInfo: Api.Auth.UserInfo = {
-        userId,
+        userId: userIdString,
         userName: '骑手', // 临时显示"骑手"，后续从API获取真实姓名
         roles: ['rider'],
         buttons: []
@@ -83,7 +80,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
       // 尝试从API获取骑手的真实姓名
       try {
-        const { data } = await getRiderInfo({ riderId: userId });
+        const { data } = await getRiderInfo({ riderId: userIdString });
         if (data && data.name) {
           // 更新用户名为真实姓名
           userInfo.userName = data.name;

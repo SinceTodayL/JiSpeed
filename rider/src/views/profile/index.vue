@@ -4,11 +4,13 @@ import type { FormInst, FormRules } from 'naive-ui';
 import { Icon } from '@iconify/vue';
 import { getRiderInfo, updateRiderInfo } from '@/service/api/rider';
 import { useAuthStore } from '../../store/modules/auth';
+import { useRiderStore } from '../../store/modules/rider';
 
 const authStore = useAuthStore();
+const riderStore = useRiderStore();
 
-// 骑手ID - 使用登录用户的ID
-const riderId = computed(() => authStore.userInfo.userId);
+// 骑手ID - 使用统一的 riderStore 获取
+const riderId = computed(() => riderStore.riderId || authStore.userInfo.userId);
 
 const formRef = ref<FormInst | null>(null);
 const loading = ref(false);

@@ -9,11 +9,13 @@ import {
 } from '@/service/api/rider-performance';
 import { useEcharts } from '@/hooks/common/echarts';
 import { useAuthStore } from '../../store/modules/auth';
+import { useRiderStore } from '../../store/modules/rider';
 
 const authStore = useAuthStore();
+const riderStore = useRiderStore();
 
-// 骑手ID - 使用登录用户的ID
-const riderId = computed(() => authStore.userInfo.userId);
+// 骑手ID - 使用统一的 riderStore 获取
+const riderId = computed(() => riderStore.riderId || authStore.userInfo.userId);
 
 // 数据状态
 const loading = ref(false);
