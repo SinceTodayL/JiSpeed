@@ -39,109 +39,74 @@ api.interceptors.response.use(
   }
 )
 
-// 商家信息相关API（已有接口）
+// 商家信息相关API
 export const merchantAPI = {
   // 根据ID获取商家信息
   getMerchantById: (merchantId) => {
-    return api.get(`/merchant/${merchantId}`)
+    return api.get(`/api/merchants/${merchantId}`)
   },
 
   // 根据商家ID获取所有菜品信息
-  getAllDishes: (merchantId) => {
-    return api.get(`/merchant/${merchantId}/getAllDishes`)
+  getAllDishes: (merchantId, params = {}) => {
+    const { page, size } = params
+    return api.get(`/api/merchants/${merchantId}/dishes`, {
+      params: {
+        page,
+        size
+      }
+    })
   },
 
   // 根据ID获取商家店铺数据统计信息
   getSalesStat: (merchantId) => {
-    return api.get(`/merchant/${merchantId}/SalesStat`)
+    return api.get(`/api/merchants/${merchantId}/SalesStat`)
   },
 
-  // ===== 以下为缺失接口，需要后端实现 =====
-  
-  // 获取所有商家列表（分页）- 缺失接口
+  // 自定义筛选条件获取商家列表
   getAllMerchants: (params = {}) => {
-    const { page = 1, limit = 20, keyword = '', sortBy = 'rating' } = params
-    return api.get('/merchants', {
+    const { merchantName, location, size, page, status } = params
+    return api.get('/api/merchants', {
       params: {
+        merchantName,
+        location,
+        size,
         page,
-        limit,
-        keyword,
-        sortBy
+        status
       }
     })
   },
 
-  // 搜索商家 - 缺失接口
-  searchMerchants: (keyword, page = 1, limit = 20) => {
-    return api.get('/merchants/search', {
+  // 模糊搜索，智能匹配
+  searchMerchants: (prefix, limit) => {
+    return api.get('/api/merchants/autocomplete', {
       params: {
-        keyword,
-        page,
+        prefix,
         limit
       }
     })
-  }
-}
-
-// 商家优惠券相关API（已有接口）
-export const merchantCouponAPI = {
-  // 根据商家ID获取所有优惠券
-  getAllCoupons: (merchantId) => {
-    return api.get(`/merchant/${merchantId}/coupon`)
-  },
-
-  // 根据商家ID和优惠券ID获取优惠券信息
-  getCouponById: (merchantId, couponId) => {
-    return api.get(`/merchant/${merchantId}/coupon/${couponId}`)
   }
 }
 
 // 菜品相关API
 export const dishAPI = {
-  // ===== 以下为缺失接口，需要后端实现 =====
-  
-  // 获取菜品分类列表 - 缺失接口
-  getCategories: () => {
-    return api.get('/categories')
+  // 根据商家ID和菜品ID获取特定菜品详细信息
+  getDishDetail: (merchantId, dishId) => {
+    return api.get(`/api/merchants/${merchantId}/dishes/${dishId}`)
   },
 
-  // 根据分类获取商家菜品 - 缺失接口
-  getDishesByCategory: (merchantId, categoryId) => {
-    return api.get(`/merchant/${merchantId}/dishes/category/${categoryId}`)
+  // 根据商家ID获取菜品类目
+  getCategories: (merchantId) => {
+    return api.get(`/api/merchants/${merchantId}/dish-categories`)
   },
 
-  // 获取菜品详情 - 缺失接口
-  getDishDetail: (dishId) => {
-    return api.get(`/dishes/${dishId}`)
-  },
-
-  // 获取推荐菜品 - 缺失接口
-  getRecommendedDishes: (limit = 10) => {
-    return api.get('/dishes/recommended', {
-      params: { limit }
-    })
-  },
-
-  // 获取商家热门菜品 - 缺失接口
-  getPopularDishes: (merchantId, limit = 5) => {
-    return api.get(`/merchant/${merchantId}/dishes/popular`, {
-      params: { limit }
-    })
-  }
-}
-
-// 搜索相关API
-export const searchAPI = {
-  // ===== 以下为缺失接口，需要后端实现 =====
-  
-  // 综合搜索 - 缺失接口
-  search: (keyword, type = 'all', page = 1, limit = 20) => {
-    return api.get('/search', {
+  // 根据商家ID和分类获取菜品
+  getDishesByCategory: (merchantId, params = {}) => {
+    const { categoryId, size, page } = params
+    return api.get(`/api/merchants/${merchantId}/dishesByCategory`, {
       params: {
-        keyword,
-        type,
-        page,
-        limit
+        categoryId,
+        size,
+        page
       }
     })
   }

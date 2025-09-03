@@ -379,15 +379,7 @@ export default {
             if (response && response.data) {
               merchantInfo.value = response.data
             } else {
-              // 模拟商家数据
-              merchantInfo.value = {
-                merchantId,
-                merchantName: merchantName || '美味餐厅',
-                logo: '/api/placeholder/40/40',
-                deliveryTime: 30,
-                deliveryFee: 3.5,
-                minOrderAmount: 20
-              }
+              merchantInfo.value = null
             }
           }
         }
@@ -414,34 +406,12 @@ export default {
           if (defaultAddress && !selectedAddress.value) {
             selectedAddress.value = defaultAddress
           }
+        } else {
+          addresses.value = []
         }
       } catch (error) {
         console.error('加载地址失败:', error)
-        // 使用模拟数据作为后备
-        addresses.value = [
-          {
-            addressId: 'ADDR001',
-            receiverName: '张三',
-            receiverPhone: '13800138000',
-            detailedAddress: '北京市朝阳区xxx小区1号楼101室',
-            isDefault: 1,
-            label: '家'
-          },
-          {
-            addressId: 'ADDR002',
-            receiverName: '李四',
-            receiverPhone: '13900139000',
-            detailedAddress: '北京市海淀区yyy大厦5层502室',
-            isDefault: 0,
-            label: '公司'
-          }
-        ]
-        
-        // 选择默认地址
-        const defaultAddress = addresses.value.find(addr => addr.isDefault === 1)
-        if (defaultAddress && !selectedAddress.value) {
-          selectedAddress.value = defaultAddress
-        }
+        addresses.value = []
       }
     }
 
@@ -460,30 +430,12 @@ export default {
             couponType: coupon.couponType,
             expireTime: coupon.expireTime
           }))
+        } else {
+          availableCoupons.value = []
         }
       } catch (error) {
         console.error('加载优惠券失败:', error)
-        // 使用模拟数据作为后备
-        availableCoupons.value = [
-          {
-            couponId: 'COUPON001',
-            description: '满50减10元',
-            faceValue: 10,
-            threshold: 50,
-            couponName: '满减优惠券',
-            couponType: 'DISCOUNT',
-            expireTime: '2025-07-31T23:59:59'
-          },
-          {
-            couponId: 'COUPON002',
-            description: '满100减20元',
-            faceValue: 20,
-            threshold: 100,
-            couponName: '满减优惠券',
-            couponType: 'DISCOUNT',
-            expireTime: '2025-07-31T23:59:59'
-          }
-        ]
+        availableCoupons.value = []
       }
     }
 

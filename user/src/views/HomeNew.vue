@@ -126,7 +126,7 @@
 <script>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { merchantAPI, mockMerchantAPI } from '@/api/merchant.js'
+import { merchantAPI } from '@/api/merchant.js'
 
 export default {
   name: 'Home',
@@ -163,14 +163,8 @@ export default {
           keyword: searchKeyword.value || undefined
         }
         
-        // 先尝试真实API，失败则使用模拟数据
-        let response
-        try {
-          response = await merchantAPI.getMerchantList(params)
-        } catch (error) {
-          console.warn('真实API调用失败，使用模拟数据:', error)
-          response = await mockMerchantAPI.generateMockMerchantList(params)
-        }
+        // 调用真实API
+        const response = await merchantAPI.getMerchantList(params)
           if (response.code === 0) {
         console.log('获取商家列表成功:', response.data)
           if (reset) {

@@ -229,64 +229,18 @@ export default {
           total.value = response.data.total || 0
           totalPages.value = Math.ceil(total.value / pageSize.value)
         } else {
-          // 如果接口未实现，使用模拟数据
-          merchants.value = generateMockMerchants()
-          total.value = 50
-          totalPages.value = Math.ceil(total.value / pageSize.value)
+          merchants.value = []
+          total.value = 0
+          totalPages.value = 1
         }
       } catch (error) {
         console.error('获取商家列表失败:', error)
-        // 接口失败时使用模拟数据
-        merchants.value = generateMockMerchants()
-        total.value = 50
-        totalPages.value = Math.ceil(total.value / pageSize.value)
+        merchants.value = []
+        total.value = 0
+        totalPages.value = 1
       } finally {
         loading.value = false
       }
-    }
-
-    // 生成模拟商家数据
-    const generateMockMerchants = () => {
-      const mockMerchants = []
-      for (let i = 1; i <= pageSize.value; i++) {
-        const merchantId = `MER${String(i + (currentPage.value - 1) * pageSize.value).padStart(3, '0')}`
-        mockMerchants.push({
-          merchantId,
-          merchantName: `美味${i}号店`,
-          coverImage: `https://picsum.photos/400/200?random=${i}`,
-          logo: `https://picsum.photos/80/80?random=${i + 100}`,
-          rating: (4.0 + Math.random() * 1).toFixed(1),
-          monthlySales: Math.floor(Math.random() * 1000) + 100,
-          deliveryTime: Math.floor(Math.random() * 30) + 20,
-          deliveryFee: (Math.random() * 5 + 2).toFixed(1),
-          minOrderAmount: Math.floor(Math.random() * 20) + 15,
-          distance: (Math.random() * 3 + 0.5).toFixed(1),
-          status: Math.random() > 0.2 ? 1 : 0,
-          location: `美食街${i}号`,
-          tags: ['川菜', '家常菜', '热销'].slice(0, Math.floor(Math.random() * 3) + 1),
-          featuredDishes: [
-            {
-              dishId: `DISH${merchantId}001`,
-              dishName: '招牌菜A',
-              coverUrl: `https://picsum.photos/60/60?random=${i + 200}`,
-              price: (Math.random() * 30 + 15).toFixed(1)
-            },
-            {
-              dishId: `DISH${merchantId}002`,
-              dishName: '特色菜B',
-              coverUrl: `https://picsum.photos/60/60?random=${i + 300}`,
-              price: (Math.random() * 25 + 10).toFixed(1)
-            },
-            {
-              dishId: `DISH${merchantId}003`,
-              dishName: '热门菜C',
-              coverUrl: `https://picsum.photos/60/60?random=${i + 400}`,
-              price: (Math.random() * 20 + 8).toFixed(1)
-            }
-          ]
-        })
-      }
-      return mockMerchants
     }
 
     const handleSearch = async () => {

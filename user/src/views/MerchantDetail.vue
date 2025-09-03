@@ -389,12 +389,11 @@ export default {
         if (response && response.data) {
           merchantInfo.value = response.data
         } else {
-          // 使用模拟数据
-          merchantInfo.value = generateMockMerchantInfo()
+          merchantInfo.value = null
         }
       } catch (error) {
         console.error('获取商家信息失败:', error)
-        merchantInfo.value = generateMockMerchantInfo()
+        merchantInfo.value = null
       }
     }
 
@@ -406,16 +405,13 @@ export default {
           allDishes.value = response.data
           organizeDishesIntoCategories(response.data)
         } else {
-          // 使用模拟数据
-          const mockDishes = generateMockDishes()
-          allDishes.value = mockDishes
-          organizeDishesIntoCategories(mockDishes)
+          allDishes.value = []
+          dishCategories.value = []
         }
       } catch (error) {
         console.error('获取菜品信息失败:', error)
-        const mockDishes = generateMockDishes()
-        allDishes.value = mockDishes
-        organizeDishesIntoCategories(mockDishes)
+        allDishes.value = []
+        dishCategories.value = []
       } finally {
         loading.value = false
       }
@@ -470,48 +466,6 @@ export default {
       if (categories.value.length > 0) {
         activeCategory.value = categories.value[0].categoryId
       }
-    }
-
-    const generateMockMerchantInfo = () => {
-      return {
-        merchantId: route.params.id,
-        merchantName: `美味餐厅${route.params.id}`,
-        logo: 'https://picsum.photos/80/80?random=100',
-        rating: 4.8,
-        reviewCount: 1523,
-        deliveryTime: 28,
-        deliveryFee: 3.5,
-        minOrderAmount: 25,
-        location: '美食街88号',
-        status: 1
-      }
-    }
-
-    const generateMockDishes = () => {
-      const categories = ['CAT001', 'CAT002', 'CAT003', 'CAT004', 'CAT005', 'CAT006']
-      const dishes = []
-      
-      categories.forEach((categoryId, catIndex) => {
-        for (let i = 1; i <= 6; i++) {
-          const dishId = `DISH${catIndex + 1}${String(i).padStart(2, '0')}`
-          dishes.push({
-            dishId,
-            categoryId,
-            dishName: `美味菜品${catIndex + 1}-${i}`,
-            description: `精心制作的美味菜品，口感丰富，营养均衡。`,
-            price: (Math.random() * 30 + 10).toFixed(1),
-            originPrice: (Math.random() * 10 + 35).toFixed(1),
-            coverUrl: `https://picsum.photos/120/120?random=${catIndex * 10 + i}`,
-            monthlySales: Math.floor(Math.random() * 200) + 50,
-            rating: Math.floor(Math.random() * 20) + 80,
-            onSale: 1,
-            merchantId: route.params.id,
-            quantity: Math.floor(Math.random() * 50) + 10
-          })
-        }
-      })
-      
-      return dishes
     }
 
     const scrollToCategory = (categoryId) => {

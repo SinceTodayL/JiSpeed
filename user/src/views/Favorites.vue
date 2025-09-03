@@ -151,55 +151,6 @@ export default {
     const deleteModalMessage = ref('')
     const pendingDeleteAction = ref(null)
     
-    // 模拟收藏数据
-    const mockFavorites = ref([
-      {
-        id: 'fav_001',
-        dishId: 'dish_001',
-        dishName: '宫保鸡丁',
-        description: '经典川菜，鸡肉嫩滑，花生香脆',
-        image: null,
-        price: 28.0,
-        originalPrice: 32.0,
-        rating: 4.8,
-        monthlySales: 856,
-        merchantId: 'merchant_001',
-        merchantName: '川菜餐厅',
-        favoriteTime: '2024-08-15T14:30:00',
-        selected: false
-      },
-      {
-        id: 'fav_002',
-        dishId: 'dish_002',
-        dishName: '红烧肉',
-        description: '肥而不腻，入口即化的经典家常菜',
-        image: null,
-        price: 35.0,
-        originalPrice: null,
-        rating: 4.6,
-        monthlySales: 432,
-        merchantId: 'merchant_002',
-        merchantName: '家常菜馆',
-        favoriteTime: '2024-08-14T11:20:00',
-        selected: false
-      },
-      {
-        id: 'fav_003',
-        dishId: 'dish_003',
-        dishName: '麻婆豆腐',
-        description: '香辣下饭，豆腐嫩滑',
-        image: null,
-        price: 22.0,
-        originalPrice: 25.0,
-        rating: 4.7,
-        monthlySales: 621,
-        merchantId: 'merchant_001',
-        merchantName: '川菜餐厅',
-        favoriteTime: '2024-08-13T19:45:00',
-        selected: false
-      }
-    ])
-    
     // 计算属性
     const selectedItems = computed(() => {
       return favorites.value.filter(item => item.selected)
@@ -222,24 +173,18 @@ export default {
       try {
         const userId = localStorage.getItem('userId') || 'test_user_001'
         
-        // 尝试调用真实API，失败则使用模拟数据
-        try {
-          const response = await favoriteAPI.getUserFavorites(userId)
-          if (response.code === 200) {
-            favorites.value = response.data.map(item => ({
-              ...item,
-              selected: false
-            }))
-          } else {
-            throw new Error('API返回错误')
-          }
-        } catch (error) {
-          console.warn('使用模拟收藏数据:', error)
-          favorites.value = mockFavorites.value
+        const response = await favoriteAPI.getUserFavorites(userId)
+        if (response.code === 200) {
+          favorites.value = response.data.map(item => ({
+            ...item,
+            selected: false
+          }))
+        } else {
+          favorites.value = []
         }
       } catch (error) {
         console.error('获取收藏列表失败:', error)
-        favorites.value = mockFavorites.value
+        favorites.value = []
       } finally {
         loading.value = false
       }

@@ -339,7 +339,7 @@ export default {
       
       try {
         const newQuantity = item.quantity + 1
-        await mockCartAPI.updateCartItem(currentUserId.value, item.cartItemId, newQuantity)
+        await cartAPI.updateCartItem(currentUserId.value, item.cartItemId, newQuantity)
         
         item.quantity = newQuantity
         item.subtotal = item.price * item.quantity
@@ -353,7 +353,7 @@ export default {
       
       try {
         const newQuantity = item.quantity - 1
-        await mockCartAPI.updateCartItem(currentUserId.value, item.cartItemId, newQuantity)
+        await cartAPI.updateCartItem(currentUserId.value, item.cartItemId, newQuantity)
         
         item.quantity = newQuantity
         item.subtotal = item.price * item.quantity
@@ -378,7 +378,7 @@ export default {
 
     const deleteCartItem = async (cartItemId) => {
       try {
-        await mockCartAPI.removeFromCart(currentUserId.value, cartItemId)
+        await cartAPI.removeFromCart(currentUserId.value, cartItemId)
         
         const index = cartItems.value.findIndex(item => item.cartItemId === cartItemId)
         if (index > -1) {
@@ -394,7 +394,7 @@ export default {
         const itemsToDelete = selectedItems.value
         
         for (const item of itemsToDelete) {
-          await mockCartAPI.removeFromCart(currentUserId.value, item.cartItemId)
+          await cartAPI.removeFromCart(currentUserId.value, item.cartItemId)
           const index = cartItems.value.findIndex(cartItem => cartItem.cartItemId === item.cartItemId)
           if (index > -1) {
             cartItems.value.splice(index, 1)
