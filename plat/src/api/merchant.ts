@@ -1,4 +1,4 @@
-import { get, patch } from '../utils/request.js';
+import { get, patch } from '../utils/request';
 
 /**
  * 自定义筛选条件获取商家列表 - 使用真实Apifox接口
@@ -10,19 +10,19 @@ export function fetchMerchantList(params = {}) {
 }
 
 /** Get merchant info by merchant ID */
-export function fetchMerchantInfo(merchantId) {
+export function fetchMerchantInfo(merchantId: string) {
   console.log(`获取商家信息: ${merchantId}`);
   return get(`/api/merchants/${merchantId}`);
 }
 
 /** Get merchant sales statistics by merchant ID */
-export function fetchMerchantSalesStats(merchantId) {
+export function fetchMerchantSalesStats(merchantId: string) {
   console.log(`获取商家销售统计: ${merchantId}`);
   return get(`/api/merchants/${merchantId}/sales-stats`);
 }
 
 /** Get dish reviews by merchant ID and dish ID */
-export function fetchDishReviews(merchantId, dishId) {
+export function fetchDishReviews(merchantId: string, dishId: string) {
   console.log(`获取菜品评价: ${merchantId}/${dishId}`);
   return get(`/api/merchants/${merchantId}/dishes/${dishId}/reviews`);
 }
@@ -32,7 +32,7 @@ export function fetchDishReviews(merchantId, dishId) {
  * @param merchantId - 商家ID
  * @param updateData - 更新数据 {MerchantName, Status, ContactInfo, Location, Description}
  */
-export function updateMerchantInfo(merchantId, updateData) {
+export function updateMerchantInfo(merchantId: string, updateData: any) {
   console.log(`更新商家信息，ID: ${merchantId}`, updateData);
   return patch(`/api/merchants/${merchantId}`, updateData);
 }
@@ -42,7 +42,7 @@ export function updateMerchantInfo(merchantId, updateData) {
  * @param merchantId - 商家ID
  * @param reason - 封禁原因
  */
-export function banMerchant(merchantId, reason = '') {
+export function banMerchant(merchantId: string, reason = '') {
   console.log(`封禁商家，ID: ${merchantId}，原因: ${reason}`);
   return updateMerchantInfo(merchantId, {
     Status: 0, // 0表示停用/封禁
@@ -54,7 +54,7 @@ export function banMerchant(merchantId, reason = '') {
  * 解封商家
  * @param merchantId - 商家ID
  */
-export function unbanMerchant(merchantId) {
+export function unbanMerchant(merchantId: string) {
   console.log(`解封商家，ID: ${merchantId}`);
   return updateMerchantInfo(merchantId, {
     Status: 1, // 1表示正常
@@ -67,7 +67,7 @@ export function unbanMerchant(merchantId) {
  * @param merchantId - 商家ID
  * @param status - 状态 (0: 停用, 1: 启用)
  */
-export function updateMerchantStatus(merchantId, status) {
+export function updateMerchantStatus(merchantId: string, status: number) {
   console.log(`更新商家状态: ${merchantId} -> ${status}`);
   return updateMerchantInfo(merchantId, { Status: status });
 }
@@ -77,14 +77,14 @@ export function updateMerchantStatus(merchantId, status) {
  * @param merchantId - 商家ID
  * @param params - 查询参数（时间范围等）
  */
-export function fetchMerchantDetailStats(merchantId, params = {}) {
+export function fetchMerchantDetailStats(merchantId: string, params = {}) {
   console.log(`获取商家详细统计: ${merchantId}`, params);
   // 这个接口可能需要后端提供
   return get(`/api/merchants/${merchantId}/detail-stats`, params);
 }
 
 // 工具: 格式化商家状态
-export function formatMerchantStatus(status) {
+export function formatMerchantStatus(status: number) {
   switch (status) {
     case 1:
       return '正常';
@@ -122,7 +122,7 @@ function getCurrentUserIdFromUrl() {
  * 根据申请ID获取申请状态
  * @param applicationId - 申请ID
  */
-export function fetchApplicationStatus(applicationId) {
+export function fetchApplicationStatus(applicationId: string) {
   console.log(`获取申请状态，ID: ${applicationId}`);
   return get(`/api/applications/${applicationId}`);
 }
@@ -133,7 +133,7 @@ export function fetchApplicationStatus(applicationId) {
  * @param applyId - 申请ID
  * @param auditData - 审核数据 {decision: 'approve'|'reject', reason?: string}
  */
-export function auditApplication(adminId = null, applyId, auditData) {
+export function auditApplication(adminId: string | null = null, applyId: string, auditData: { decision: 'approve' | 'reject'; reason?: string }) {
   // 如果没有提供adminId，从localStorage或URL获取当前用户ID
   const currentAdminId = adminId || localStorage.getItem('userId') || getCurrentUserIdFromUrl();
   console.log(`审核申请，管理员ID: ${currentAdminId}, 申请ID: ${applyId}`, auditData);
@@ -141,7 +141,7 @@ export function auditApplication(adminId = null, applyId, auditData) {
 }
 
 // 工具: 获取状态对应的标签类型
-export function getMerchantStatusType(status) {
+export function getMerchantStatusType(status: number) {
   switch (status) {
     case 1:
       return 'success'; // 正常 - 绿色
@@ -155,8 +155,8 @@ export function getMerchantStatusType(status) {
 }
 
 // 工具: 格式化申请状态
-export function formatApplicationStatus(status) {
-  const statusMap = {
+export function formatApplicationStatus(status: number | string) {
+  const statusMap: Record<string | number, string> = {
     0: '待审核',
     1: '已同意',
     2: '已拒绝',
@@ -168,7 +168,7 @@ export function formatApplicationStatus(status) {
 }
 
 // 工具: 获取申请状态标签类型
-export function getApplicationStatusType(status) {
+export function getApplicationStatusType(status: number | string) {
   switch (status) {
     case 0:
     case 'pending':
