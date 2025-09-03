@@ -25,8 +25,6 @@ Base URLs:
 
 # Authentication
 
-- HTTP Authentication, scheme: bearer
-
 # users/Get
 
 ## GET 获取用户信息列表
@@ -2948,32 +2946,17 @@ PATCH /PATCH /api/riderlocations/{riderId}/status
 |» data|object|true|none||none|
 |» timestamp|integer|true|none||none|
 
-# 登录注册
+# merchant
 
-## POST 登录
+## GET 根据商家 ID 获取商家所有订单
 
-POST /api/auth/login
-
-登录请求（username/email 2选1）
-
-> Body 请求参数
-
-```json
-{
-  "Password": "4URBDFyKts37uRo",
-  "Email": "tbfv9r_g9z@qq.com"
-}
-```
+GET /merchant/{merchantID}/orders
 
 ### 请求参数
 
 |名称|位置|类型|必选|中文名|说明|
 |---|---|---|---|---|---|
-|userType|query|integer| 是 ||none|
-|body|body|object| 否 ||none|
-|» Password|body|string| 是 ||密码长度不能少于6位|
-|» Email|body|string| 否 ||后端会进行邮箱的格式校验，前端看情况也可以再审核一遍|
-|» UserName|body|string| 否 ||只允许数字和字母|
+|merchantID|path|string| 是 ||none|
 
 > 返回示例
 
@@ -2982,96 +2965,31 @@ POST /api/auth/login
 ```json
 {
   "code": 0,
-  "message": "string",
-  "data": "string",
-  "timestamp": 0
-}
-```
-
-> 403 Response
-
-```json
-{
-  "code": 2002,
-  "message": "用户被封禁",
-  "data": null,
-  "timestamp": 1754276287920
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-|401|[Unauthorized](https://tools.ietf.org/html/rfc7235#section-3.1)|none|Inline|
-|403|[Forbidden](https://tools.ietf.org/html/rfc7231#section-6.5.3)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|string|true|none||none|
-|» timestamp|integer|true|none||none|
-
-状态码 **401**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|null|true|none||none|
-|» timestamp|integer|true|none||none|
-
-状态码 **403**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|null|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## POST 预注册（发送验证邮件）
-
-POST /api/auth/register
-
-> Body 请求参数
-
-```json
-{
-  "UserName": "闽磊",
-  "PassWord": "dizI6fIabdJtWmr",
-  "Email": "lm1sds_man@vip.qq.com",
-  "PhoneNumber": "08731135405"
-}
-```
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|userType|query|integer| 是 ||用户类型（1-普通用户, 2-商家, 3-骑手, 4-管理员）|
-|body|body|object| 否 ||none|
-|» UserName|body|string| 是 ||只允许数字或字母|
-|» PassWord|body|string| 是 ||前端可以加密码的格式要求|
-|» Email|body|string| 是 ||后端会进行邮箱的格式校验，前端看情况也可以再审核一遍|
-|» PhoneNumber|body|string| 否 ||做不到发验证码，手机号为选填|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "string",
-  "data": null,
-  "timestamp": 0
+  "message": "操作成功",
+  "data": [
+    {
+      "orderId": "ORDER001",
+      "userId": "USER001",
+      "addressId": "ADDR001",
+      "orderAmount": 199.99,
+      "createAt": "2025-07-23T10:00:00Z",
+      "orderStatus": 1,
+      "reconId": "RECON001",
+      "couponId": "COUPON001",
+      "assignid": "ASSIGN001"
+    },
+    {
+      "orderId": "ORDER002",
+      "userId": "USER002",
+      "addressId": "ADDR002",
+      "orderAmount": 88.5,
+      "createAt": "2025-07-22T14:30:00Z",
+      "orderStatus": 2,
+      "reconId": "RECON002",
+      "couponId": "COUPON002",
+      "assignid": "ASSIGN002"
+    }
+  ]
 }
 ```
 
@@ -3087,67 +3005,24 @@ POST /api/auth/register
 
 |名称|类型|必选|约束|中文名|说明|
 |---|---|---|---|---|---|
-|» code|integer|true|none||none|
+|» code|integer(int32)|true|none||none|
 |» message|string|true|none||none|
-|» data|null|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## GET 正式注册（验证邮箱）
-
-GET /api/auth/verify-email
-
-链接1小时内有效
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|userId|query|string| 否 ||none|
-|token|query|string| 否 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "string",
-  "data": null,
-  "timestamp": 0
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|null|true|none||none|
-|» timestamp|integer|true|none||none|
+|» data|[object]|true|none||none|
+|»» orderId|string|true|none||none|
+|»» userId|string|true|none||none|
+|»» addressId|string|true|none||none|
+|»» orderAmount|number|true|none||none|
+|»» createAt|string|true|none||none|
+|»» orderStatus|integer|true|none||none|
+|»» reconId|string|true|none||none|
+|»» couponId|string|true|none||none|
+|»» assignid|string|true|none||none|
 
 # merchant/merchant
 
 ## GET 根据 ID 获取商家信息
 
 GET /api/merchants/{merchantId}
-
-public enum MerchantStatus
-{
-InReview = 0, // 审核中
-Open = 1, // 正常营业
-Close = 2, // 休息中
-Baned =3 // 封禁中
-}
 
 ### 请求参数
 
@@ -3202,16 +3077,14 @@ Baned =3 // 封禁中
 
 |名称|类型|必选|约束|中文名|说明|
 |---|---|---|---|---|---|
-|» code|integer|true|none||none|
+|» code|integer(int32)|true|none||none|
 |» message|string|true|none||none|
 |» data|object|true|none||none|
 |»» merchantId|string|true|none||none|
-|»» merchantName|string|true|none||none|
+|»» merchantName|string(hostname)|true|none||none|
 |»» status|integer|true|none||none|
-|»» contactInfo|string|true|none||none|
+|»» contactInfo|string(email)|true|none||none|
 |»» location|string|true|none||none|
-|»» description|string|true|none||none|
-|» timestamp|integer|true|none||none|
 
 状态码 **404**
 
@@ -3230,23 +3103,14 @@ Baned =3 // 封禁中
 
 PATCH /api/merchants/{merchantId}
 
-   public enum MerchantStatus
-    { 
-        InReview = 0,            // 审核中
-        Open = 1,                // 正常营业
-        Close = 2,               // 休息中
-        Baned =3                 // 封禁中
-    }
-
 > Body 请求参数
 
 ```json
 {
   "merchantName": "string",
-  "status": 1,
+  "status": 0,
   "contactInfo": "string",
-  "location": "string",
-  "description": "string"
+  "location": "string"
 }
 ```
 
@@ -3260,16 +3124,6 @@ PATCH /api/merchants/{merchantId}
 |» status|body|integer| 否 ||none|
 |» contactInfo|body|string| 否 ||none|
 |» location|body|string| 否 ||none|
-|» description|body|string| 否 ||none|
-
-#### 枚举值
-
-|属性|值|
-|---|---|
-|» status|1|
-|» status|2|
-|» status|3|
-|» status|0|
 
 > 返回示例
 
@@ -3322,15 +3176,74 @@ PATCH /api/merchants/{merchantId}
 |» data|null|true|none||none|
 |» timestamp|integer|true|none||none|
 
+## GET 根据商家 ID 和菜品 ID 获取该菜品所有评论
+
+GET /merchant/{merchantID}/{dishID}
+
+### 请求参数
+
+|名称|位置|类型|必选|中文名|说明|
+|---|---|---|---|---|---|
+|merchantID|path|string| 是 ||none|
+|dishID|path|string| 是 ||none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "code": 0,
+  "message": "操作成功",
+  "data": [
+    {
+      "reviewId": "REVIEW001",
+      "orderId": "ORDER001",
+      "user": "USER001",
+      "rating": 5,
+      "content": "菜品很棒，配送也很快！",
+      "isAnonymous": 1,
+      "reviewAt": "2025-07-22T18:30:00Z"
+    },
+    {
+      "reviewId": "REVIEW002",
+      "orderId": "ORDER002",
+      "user": "USER002",
+      "rating": 3,
+      "content": "味道一般，包装不太好。",
+      "isAnonymous": 2,
+      "reviewAt": "2025-07-21T15:45:00Z"
+    }
+  ]
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» code|integer|true|none||none|
+|» message|string|true|none||none|
+|» data|[object]|true|none||none|
+|»» reviewId|string|true|none||none|
+|»» orderId|string|true|none||none|
+|»» user|string|true|none||none|
+|»» rating|integer(int32)|true|none||none|
+|»» content|string|true|none||none|
+|»» isAnonymous|integer|true|none||none|
+|»» reviewAt|string(date-time)|true|none||none|
+
 ## GET 自定义筛选条件获取商家列表
 
 GET /api/merchants
-
-目前支持4种筛选方式：
-1. 模糊名字搜索（merchanName）
-2. 模糊地址搜索（location）
-3. 状态搜索（status）
-4. 不限制
 
 ### 请求参数
 
@@ -3340,16 +3253,6 @@ GET /api/merchants
 |location|query|string| 否 ||none|
 |size|query|integer| 否 ||none|
 |page|query|integer| 否 ||none|
-|status|query|integer| 否 ||none|
-
-#### 枚举值
-
-|属性|值|
-|---|---|
-|status|0|
-|status|1|
-|status|2|
-|status|3|
 
 > 返回示例
 
@@ -3362,7 +3265,7 @@ GET /api/merchants
   "data": [
     {
       "merchantId": "66f63f6d40bf483cb371648b239a610d",
-      "merchantName": "Today",
+      "merchantName": "SinceToday",
       "status": 1,
       "contactInfo": "LiuZhen_1226@163.com",
       "location": ""
@@ -3406,7 +3309,6 @@ GET /api/merchants
 |»» status|integer|true|none||none|
 |»» contactInfo|string|true|none||none|
 |»» location|string|true|none||none|
-|»» description|string|true|none||none|
 |» timestamp|integer|true|none||none|
 
 ## GET 模糊搜索，不太智能的智能匹配
@@ -3503,39 +3405,105 @@ GET /api/merchants/{merchantId}/dishes
   "message": "商家菜品信息获取成功",
   "data": [
     {
-      "dishId": "5fa45665bc39407b9e9883889fb8c5cb",
-      "categoryId": "2                               ",
-      "dishName": "猪肉佐荔枝酱",
-      "price": 185.64,
-      "originPrice": 250.19,
-      "coverUrl": "https://picsum.photos/seed/QX5hjq/3890/3023",
-      "monthlySales": 0,
-      "rating": 0,
-      "onSale": 0,
+      "dishId": "2                               ",
+      "categoryId": "1                               ",
+      "dishName": "123",
+      "price": 123,
+      "originPrice": 1233,
+      "coverUrl": "1",
+      "monthlySales": 1,
+      "rating": 1,
+      "onSale": 1,
       "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
-      "reviewQuantity": 0,
-      "categoryName": "CAT002",
-      "description": "这是一道好吃的菜",
-      "stockQuantity": 0
+      "reviewQuantity": 1,
+      "categoryName": "1"
     },
     {
-      "dishId": "f97ca0a13ad3481bb548cfbce1b570c7",
-      "categoryId": "2                               ",
-      "dishName": "臭豆腐风味沙拉",
-      "price": 570.89,
-      "originPrice": 340.3,
-      "coverUrl": "https://picsum.photos/seed/E3dEyZ0r9/2073/1857",
+      "dishId": "8459aac761424fa0a71cc5e521e01f8f",
+      "categoryId": "1                               ",
+      "dishName": "孜然羊肉",
+      "price": 230.75,
+      "originPrice": 979.55,
+      "coverUrl": "https://picsum.photos/seed/rtaNJJ2yuq/3617/3889",
       "monthlySales": 0,
       "rating": 0,
       "onSale": 0,
       "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
       "reviewQuantity": 0,
-      "categoryName": "CAT002",
-      "description": "经过32天熟成的兔肉牛排，可选3款配菜。",
-      "stockQuantity": 6
+      "categoryName": "1"
+    },
+    {
+      "dishId": "698d2ef64b9f42f0b74ba6c414a82425",
+      "categoryId": "1                               ",
+      "dishName": "爽口的的田鸡配芦笋",
+      "price": 406.49,
+      "originPrice": 381.19,
+      "coverUrl": "https://loremflickr.com/1592/1434?lock=3572024428382264",
+      "monthlySales": 0,
+      "rating": 0,
+      "onSale": 0,
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "reviewQuantity": 0,
+      "categoryName": "1"
+    },
+    {
+      "dishId": "6a08300d6e3e42b3b99e9a336f6214c7",
+      "categoryId": "1                               ",
+      "dishName": "白萝卜沙拉",
+      "price": 830.05,
+      "originPrice": 273.7,
+      "coverUrl": null,
+      "monthlySales": 0,
+      "rating": 0,
+      "onSale": 0,
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "reviewQuantity": 0,
+      "categoryName": "1"
+    },
+    {
+      "dishId": "95252778c4af4e18a70dd1fcdc9041fc",
+      "categoryId": "1                               ",
+      "dishName": "茄子炒肉",
+      "price": 769.49,
+      "originPrice": 47.8,
+      "coverUrl": "https://picsum.photos/seed/dUo59nj/3278/2989",
+      "monthlySales": 0,
+      "rating": 0,
+      "onSale": 0,
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "reviewQuantity": 0,
+      "categoryName": "1"
+    },
+    {
+      "dishId": "fa5873ecd2cf4beda2bda45a2a52a04b",
+      "categoryId": "1                               ",
+      "dishName": "葡萄派",
+      "price": 536.99,
+      "originPrice": 25.89,
+      "coverUrl": "https://picsum.photos/seed/rDChR1Vi94/3830/2327",
+      "monthlySales": 0,
+      "rating": 0,
+      "onSale": 0,
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "reviewQuantity": 0,
+      "categoryName": "1"
+    },
+    {
+      "dishId": "ecbff19ad0ee4f3cbe1c8cdaea4a99e4",
+      "categoryId": "1                               ",
+      "dishName": "醋溜土豆丝",
+      "price": 835,
+      "originPrice": 718,
+      "coverUrl": "https://picsum.photos/seed/bWXCED/2249/1977",
+      "monthlySales": 0,
+      "rating": 0,
+      "onSale": 2,
+      "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+      "reviewQuantity": 0,
+      "categoryName": "1"
     }
   ],
-  "timestamp": 1755161247226
+  "timestamp": 1754381634197
 }
 ```
 
@@ -3569,17 +3537,15 @@ GET /api/merchants/{merchantId}/dishes
 |»» dishId|string|true|none||none|
 |»» categoryId|string|true|none||none|
 |»» dishName|string|true|none||none|
-|»» price|number|true|none||none|
-|»» originPrice|number|true|none||none|
-|»» coverUrl|string|true|none||none|
+|»» price|integer|true|none||none|
+|»» originPrice|integer|true|none||none|
+|»» coverUrl|string¦null|true|none||none|
 |»» monthlySales|integer|true|none||none|
 |»» rating|integer|true|none||none|
 |»» onSale|integer|true|none||none|
 |»» merchantId|string|true|none||none|
 |»» reviewQuantity|integer|true|none||none|
 |»» categoryName|string|true|none||none|
-|»» description|string|true|none||none|
-|»» stockQuantity|integer|true|none||none|
 |» timestamp|integer|true|none||none|
 
 状态码 **404**
@@ -3593,7 +3559,7 @@ GET /api/merchants/{merchantId}/dishes
 
 ## GET 根据主键获取菜品
 
-GET /api/merchants/{merchantId}/dishes/{dishId}
+GET /api/merchants/{merchantId}/getDish/{dishId}
 
 ### 请求参数
 
@@ -3611,22 +3577,20 @@ GET /api/merchants/{merchantId}/dishes/{dishId}
   "code": 0,
   "message": "商家菜品信息获取成功",
   "data": {
-    "dishId": "f97ca0a13ad3481bb548cfbce1b570c7",
-    "categoryId": "2                               ",
-    "dishName": "臭豆腐风味沙拉",
-    "price": 570.89,
-    "originPrice": 340.3,
-    "coverUrl": "https://picsum.photos/seed/E3dEyZ0r9/2073/1857",
+    "dishId": "ecbff19ad0ee4f3cbe1c8cdaea4a99e4",
+    "categoryId": "1                               ",
+    "dishName": "醋溜土豆丝",
+    "price": 835,
+    "originPrice": 718,
+    "coverUrl": "https://picsum.photos/seed/bWXCED/2249/1977",
     "monthlySales": 0,
     "rating": 0,
-    "onSale": 0,
+    "onSale": 2,
     "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
     "reviewQuantity": 0,
-    "categoryName": "CAT002",
-    "description": "经过32天熟成的兔肉牛排，可选3款配菜。",
-    "stockQuantity": 6
+    "categoryName": "1"
   },
-  "timestamp": 1755161445088
+  "timestamp": 1754378945307
 }
 ```
 
@@ -3660,8 +3624,8 @@ GET /api/merchants/{merchantId}/dishes/{dishId}
 |»» dishId|string|true|none||none|
 |»» categoryId|string|true|none||none|
 |»» dishName|string|true|none||none|
-|»» price|number|true|none||none|
-|»» originPrice|number|true|none||none|
+|»» price|integer|true|none||none|
+|»» originPrice|integer|true|none||none|
 |»» coverUrl|string|true|none||none|
 |»» monthlySales|integer|true|none||none|
 |»» rating|integer|true|none||none|
@@ -3669,8 +3633,6 @@ GET /api/merchants/{merchantId}/dishes/{dishId}
 |»» merchantId|string|true|none||none|
 |»» reviewQuantity|integer|true|none||none|
 |»» categoryName|string|true|none||none|
-|»» description|string|true|none||none|
-|»» stockQuantity|integer|true|none||none|
 |» timestamp|integer|true|none||none|
 
 状态码 **404**
@@ -3694,9 +3656,7 @@ POST /api/merchants/{merchantId}/addNewDish
   "dishName": "string",
   "price": 0,
   "originPrice": 0,
-  "coverUrl": "string",
-  "description": "string",
-  "stockQuantity": 0
+  "coverUrl": "string"
 }
 ```
 
@@ -3711,8 +3671,6 @@ POST /api/merchants/{merchantId}/addNewDish
 |» price|body|number| 否 | 现价|none|
 |» originPrice|body|number| 是 | 原价|none|
 |» coverUrl|body|string| 否 | 封面链接|none|
-|» description|body|string| 否 | 描述|none|
-|» stockQuantity|body|integer| 否 ||none|
 
 > 返回示例
 
@@ -3823,8 +3781,6 @@ PATCH /api/merchants/{merchantId}/{dishId}
 |» originPrice|body|number| 否 ||none|
 |» coverUrl|body|string| 否 ||none|
 |» onSale|body|integer| 否 ||暂定0-2，由前端决定|
-|» description|body|string| 是 ||none|
-|» stockQuantity|body|integer| 是 ||none|
 
 > 返回示例
 
@@ -3859,8 +3815,6 @@ PATCH /api/merchants/{merchantId}/{dishId}
 ## GET 根据商家ID获取所有菜品分类
 
 GET /api/merchants/{merchantId}/dish-categories
-
-菜品分类是由平台预先定义，商家拥有其子集
 
 ### 请求参数
 
@@ -3951,6 +3905,20 @@ GET /api/merchants/{merchantId}/dishesByCategory
       "categoryName": "CAT001",
       "dishes": [
         {
+          "dishId": "2                               ",
+          "categoryId": "1                               ",
+          "dishName": "123",
+          "price": 123,
+          "originPrice": 1233,
+          "coverUrl": "1",
+          "monthlySales": 1,
+          "rating": 1,
+          "onSale": 1,
+          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+          "reviewQuantity": 1,
+          "categoryName": null
+        },
+        {
           "dishId": "8459aac761424fa0a71cc5e521e01f8f",
           "categoryId": "1                               ",
           "dishName": "孜然羊肉",
@@ -3962,9 +3930,7 @@ GET /api/merchants/{merchantId}/dishesByCategory
           "onSale": 0,
           "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
           "reviewQuantity": 0,
-          "categoryName": null,
-          "description": null,
-          "stockQuantity": null
+          "categoryName": null
         },
         {
           "dishId": "698d2ef64b9f42f0b74ba6c414a82425",
@@ -3978,9 +3944,21 @@ GET /api/merchants/{merchantId}/dishesByCategory
           "onSale": 0,
           "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
           "reviewQuantity": 0,
-          "categoryName": null,
-          "description": null,
-          "stockQuantity": null
+          "categoryName": null
+        },
+        {
+          "dishId": "6a08300d6e3e42b3b99e9a336f6214c7",
+          "categoryId": "1                               ",
+          "dishName": "白萝卜沙拉",
+          "price": 830.05,
+          "originPrice": 273.7,
+          "coverUrl": null,
+          "monthlySales": 0,
+          "rating": 0,
+          "onSale": 0,
+          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+          "reviewQuantity": 0,
+          "categoryName": null
         },
         {
           "dishId": "95252778c4af4e18a70dd1fcdc9041fc",
@@ -3994,9 +3972,7 @@ GET /api/merchants/{merchantId}/dishesByCategory
           "onSale": 0,
           "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
           "reviewQuantity": 0,
-          "categoryName": null,
-          "description": null,
-          "stockQuantity": null
+          "categoryName": null
         },
         {
           "dishId": "fa5873ecd2cf4beda2bda45a2a52a04b",
@@ -4010,9 +3986,21 @@ GET /api/merchants/{merchantId}/dishesByCategory
           "onSale": 0,
           "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
           "reviewQuantity": 0,
-          "categoryName": null,
-          "description": null,
-          "stockQuantity": null
+          "categoryName": null
+        },
+        {
+          "dishId": "ecbff19ad0ee4f3cbe1c8cdaea4a99e4",
+          "categoryId": "1                               ",
+          "dishName": "醋溜土豆丝",
+          "price": 835,
+          "originPrice": 718,
+          "coverUrl": "https://picsum.photos/seed/bWXCED/2249/1977",
+          "monthlySales": 0,
+          "rating": 0,
+          "onSale": 2,
+          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
+          "reviewQuantity": 0,
+          "categoryName": null
         }
       ]
     },
@@ -4032,9 +4020,7 @@ GET /api/merchants/{merchantId}/dishesByCategory
           "onSale": 0,
           "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
           "reviewQuantity": 0,
-          "categoryName": null,
-          "description": null,
-          "stockQuantity": null
+          "categoryName": null
         },
         {
           "dishId": "2560ca5cff9f452fb5ad88e308eda2f0",
@@ -4048,41 +4034,7 @@ GET /api/merchants/{merchantId}/dishesByCategory
           "onSale": 0,
           "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
           "reviewQuantity": 0,
-          "categoryName": null,
-          "description": null,
-          "stockQuantity": null
-        },
-        {
-          "dishId": "5fa45665bc39407b9e9883889fb8c5cb",
-          "categoryId": "2                               ",
-          "dishName": "猪肉佐荔枝酱",
-          "price": 185.64,
-          "originPrice": 250.19,
-          "coverUrl": "https://picsum.photos/seed/QX5hjq/3890/3023",
-          "monthlySales": 0,
-          "rating": 0,
-          "onSale": 0,
-          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
-          "reviewQuantity": 0,
-          "categoryName": null,
-          "description": null,
-          "stockQuantity": null
-        },
-        {
-          "dishId": "f97ca0a13ad3481bb548cfbce1b570c7",
-          "categoryId": "2                               ",
-          "dishName": "臭豆腐风味沙拉",
-          "price": 570.89,
-          "originPrice": 340.3,
-          "coverUrl": "https://picsum.photos/seed/E3dEyZ0r9/2073/1857",
-          "monthlySales": 0,
-          "rating": 0,
-          "onSale": 0,
-          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
-          "reviewQuantity": 0,
-          "categoryName": null,
-          "description": null,
-          "stockQuantity": null
+          "categoryName": null
         }
       ]
     },
@@ -4102,25 +4054,7 @@ GET /api/merchants/{merchantId}/dishesByCategory
           "onSale": 0,
           "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
           "reviewQuantity": 0,
-          "categoryName": null,
-          "description": null,
-          "stockQuantity": null
-        },
-        {
-          "dishId": "ecbff19ad0ee4f3cbe1c8cdaea4a99e4",
-          "categoryId": "3                               ",
-          "dishName": "蔓越莓香煎驴肉",
-          "price": 29,
-          "originPrice": 96,
-          "coverUrl": "https://loremflickr.com/1613/1066?lock=7246958666000966",
-          "monthlySales": 0,
-          "rating": 0,
-          "onSale": 2,
-          "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
-          "reviewQuantity": 0,
-          "categoryName": null,
-          "description": null,
-          "stockQuantity": null
+          "categoryName": null
         },
         {
           "dishId": "3e3cb76445e44a6b8339a6320505ca11",
@@ -4134,9 +4068,7 @@ GET /api/merchants/{merchantId}/dishesByCategory
           "onSale": 0,
           "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
           "reviewQuantity": 0,
-          "categoryName": null,
-          "description": null,
-          "stockQuantity": null
+          "categoryName": null
         }
       ]
     },
@@ -4156,9 +4088,7 @@ GET /api/merchants/{merchantId}/dishesByCategory
           "onSale": 0,
           "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
           "reviewQuantity": 0,
-          "categoryName": null,
-          "description": null,
-          "stockQuantity": null
+          "categoryName": null
         },
         {
           "dishId": "36cc5526bf244c8f9fa605ccfac49a51",
@@ -4172,14 +4102,12 @@ GET /api/merchants/{merchantId}/dishesByCategory
           "onSale": 0,
           "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
           "reviewQuantity": 0,
-          "categoryName": null,
-          "description": null,
-          "stockQuantity": null
+          "categoryName": null
         }
       ]
     }
   ],
-  "timestamp": 1755161803105
+  "timestamp": 1754382919556
 }
 ```
 
@@ -4204,17 +4132,15 @@ GET /api/merchants/{merchantId}/dishesByCategory
 |»»» dishId|string|true|none||none|
 |»»» categoryId|string|true|none||none|
 |»»» dishName|string|true|none||none|
-|»»» price|number|true|none||none|
-|»»» originPrice|number|true|none||none|
-|»»» coverUrl|string|true|none||none|
+|»»» price|integer|true|none||none|
+|»»» originPrice|integer|true|none||none|
+|»»» coverUrl|string¦null|true|none||none|
 |»»» monthlySales|integer|true|none||none|
 |»»» rating|integer|true|none||none|
 |»»» onSale|integer|true|none||none|
 |»»» merchantId|string|true|none||none|
 |»»» reviewQuantity|integer|true|none||none|
 |»»» categoryName|null|true|none||none|
-|»»» description|null|true|none||none|
-|»»» stockQuantity|null|true|none||none|
 |» timestamp|integer|true|none||none|
 
 # merchant/Application
@@ -4223,14 +4149,11 @@ GET /api/merchants/{merchantId}/dishesByCategory
 
 POST /api/merchants/{merchantId}/applications
 
-返回参数由bool改为生成的applyID
-
 > Body 请求参数
 
 ```json
 {
-  "CompanyName": "string",
-  "ApplicationMaterials": "string"
+  "CompanyName": "string"
 }
 ```
 
@@ -4241,7 +4164,6 @@ POST /api/merchants/{merchantId}/applications
 |merchantId|path|string| 是 ||none|
 |body|body|object| 否 ||none|
 |» CompanyName|body|string| 是 ||none|
-|» ApplicationMaterials|body|string| 是 ||none|
 
 > 返回示例
 
@@ -4251,8 +4173,8 @@ POST /api/merchants/{merchantId}/applications
 {
   "code": 0,
   "message": "操作成功",
-  "data": "f6969f49ab374483acc4011e273e3696",
-  "timestamp": 1755480055984
+  "data": true,
+  "timestamp": 1753773997377
 }
 ```
 
@@ -4282,7 +4204,7 @@ POST /api/merchants/{merchantId}/applications
 |---|---|---|---|---|---|
 |» code|integer|true|none||none|
 |» message|string|true|none||none|
-|» data|string|true|none||none|
+|» data|boolean|true|none||none|
 |» timestamp|integer|true|none||none|
 
 状态码 **404**
@@ -4461,9 +4383,6 @@ GET /api/merchants/{merchantId}/applications
 
 PATCH /api/admin/{adminId}/audit/{applyId}
 
-AuditStatus = 1：同意申请
-AuditStatus = 2 ：拒绝申请
-
 > Body 请求参数
 
 ```json
@@ -4553,17 +4472,16 @@ GET /api/applications/{applicationId}
   "code": 0,
   "message": "操作成功",
   "data": {
-    "applyId": "f6969f49ab374483acc4011e273e3696",
-    "companyName": "贵州省天磊旅游发展无限责任公司",
-    "submittedAt": "2025/8/18 09:20:55",
+    "applyId": "d467d98455f345358f83d3744e669d40",
+    "companyName": "库悦",
+    "submittedAt": "2025/7/29 14:17:19",
     "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
-    "auditStatus": "1",
-    "auditAt": "2025/8/18 01:25:01",
+    "auditStatus": "0",
+    "auditAt": null,
     "rejectReason": null,
-    "adminId": "6f7af74d972c481c91f19596e07aae3a",
-    "applicationMaterials": "重新调整的基于情境框架"
+    "adminId": null
   },
-  "timestamp": 1755480309571
+  "timestamp": 1753774178315
 }
 ```
 
@@ -4598,11 +4516,10 @@ GET /api/applications/{applicationId}
 |»» companyName|string|true|none||none|
 |»» submittedAt|string|true|none||none|
 |»» merchantId|string|true|none||none|
-|»» auditStatus|string¦null|true|none||none|
-|»» auditAt|string¦null|true|none||none|
-|»» rejectReason|string¦null|true|none||none|
-|»» adminId|string¦null|true|none||none|
-|»» applicationMaterials|string|true|none||none|
+|»» auditStatus|string|true|none||none|
+|»» auditAt|null|true|none||none|
+|»» rejectReason|null|true|none||none|
+|»» adminId|null|true|none||none|
 |» timestamp|integer|true|none||none|
 
 状态码 **404**
@@ -4832,7 +4749,7 @@ GET /api/merchants/{merchantId}/SalesStat/{statDate}
 
 ## GET 根据商家ID和自定义筛选条件获取统计信息
 
-GET /api/merchants/{merchantId}/SalesStat
+GET /api/merchants/{merchantId}/SalesStat/
 
 ### 请求参数
 
@@ -4888,518 +4805,20 @@ GET /api/merchants/{merchantId}/SalesStat
 |»» salesAmount|integer|false|none||none|
 |» timestamp|integer|true|none||none|
 
-# merchant/order
+# 登录注册
 
-## GET 根据商家 ID 和自定义筛选获取商家所有订单
+## POST 登录
 
-GET /api/merchants/{merchantId}/orders
+POST /api/auth/login
 
-目前3种筛选方法（可增加筛选方法，可更改排序优先级）：
-
-1.获取目标时间内的订单（startDate，endDate）:可以都填，也可以只填一个
-
-2.获取目标状态的订单（orderStatus）
-
-3.不做筛选，获取该商家所有的订单（）
-
-  public enum OrderStatus
-    {
-        Unpaid = 0,    // 未支付（初始状态）
-        Paid = 1,      // 已支付
-        Confirmed = 2, // 确认收货
-        Reviewed =3,   // 已经评价
-        Aftersales = 4,// 售后中
-        Cancelled = 5, // 订单关闭(超时/主动取消)
-    }
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|merchantId|path|string| 是 ||none|
-|startDate|query|string| 否 ||none|
-|endDate|query|string| 否 ||none|
-|size|query|integer| 否 ||none|
-|page|query|integer| 否 ||none|
-|orderStatus|query|integer| 否 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "商家订单信息获取成功",
-  "data": [
-    "04d86dd0b06340f7b0f8787b332c692c",
-    "c0e1c12ea45d4d86aa2021b5266141f5"
-  ],
-  "timestamp": 1755242758676
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|[string]|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## GET 根据OrderId获取订单详情
-
-GET /api/orders/{orderId}
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|orderId|path|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "商家菜品信息获取成功",
-  "data": {
-    "orderId": "e9adee7215e34d7eadd25992c6529553",
-    "userId": "1d804350373d47b2b66feb88f8403e7d",
-    "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
-    "addressId": "ADDR20240601001                 ",
-    "orderAmount": 885.85,
-    "createAt": "2025-08-15T14:25:40.636722",
-    "orderStatus": 0,
-    "reconId": null,
-    "couponId": null,
-    "assignId": null,
-    "orderDishes": [
-      {
-        "quantity": 38,
-        "dishId": "698d2ef64b9f42f0b74ba6c414a82425"
-      },
-      {
-        "quantity": 66,
-        "dishId": "8459aac761424fa0a71cc5e521e01f8f"
-      },
-      {
-        "quantity": 51,
-        "dishId": "95252778c4af4e18a70dd1fcdc9041fc"
-      }
-    ],
-    "orderLogIds": [
-      "30770f113ca24fb087ef28bfb9a14543"
-    ],
-    "paymentIds": [],
-    "refundIds": [],
-    "complaintIds": [],
-    "reviewIds": []
-  },
-  "timestamp": 1755246277722
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|object|true|none||none|
-|»» orderId|string|true|none||none|
-|»» userId|string|true|none||none|
-|»» merchantId|string|true|none||none|
-|»» addressId|string|true|none||none|
-|»» orderAmount|number|true|none||none|
-|»» createAt|string|true|none||none|
-|»» orderStatus|integer|true|none||none|
-|»» reconId|string¦null|true|none||none|
-|»» couponId|string¦null|true|none||none|
-|»» assignId|string¦null|true|none||none|
-|»» orderDishes|[object]|true|none||none|
-|»»» quantity|integer|true|none||none|
-|»»» dishId|string|true|none||none|
-|»» orderLogIds|[string]|true|none||none|
-|»» paymentIds|[string]|true|none||none|
-|»» refundIds|[string]|true|none||none|
-|»» complaintIds|[string]|true|none||none|
-|»» reviewIds|[string]|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## GET 根据用户ID获取用户所有订单
-
-GET /api/users/{userId}/orders
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|userId|path|string| 是 ||none|
-|orderStatus|query|integer| 是 ||none|
-|size|query|integer| 是 ||none|
-|page|query|integer| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "用户订单信息获取成功",
-  "data": [
-    "e9adee7215e34d7eadd25992c6529553",
-    "04d86dd0b06340f7b0f8787b332c692c",
-    "c0e1c12ea45d4d86aa2021b5266141f5"
-  ],
-  "timestamp": 1755244757352
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|[string]|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## POST 发起支付请求，创建待支付实体
-
-POST /api/orders/{orderId}/createPayment
-
-    public enum PayStatus
-    {
-        Unpaid = 0,    // 未支付（初始状态）
-        Paid = 1,      // 已支付
-        Cancelled = 2  // 已取消
-    }
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|orderId|path|string| 是 ||none|
-|channel|query|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "用户订单信息获取成功",
-  "data": {
-    "payId": "3636ea755a9744cb8c67317f871730c2",
-    "orderId": "04d86dd0b06340f7b0f8787b332c692c",
-    "channel": "weixin",
-    "payAmount": 50
-  },
-  "timestamp": 1754639088593
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|object|true|none||none|
-|»» payId|string|true|none||none|
-|»» orderId|string|true|none||none|
-|»» channel|string|true|none||none|
-|»» payAmount|integer|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## PATCH 取消支付
-
-PATCH /api/payments/{payid}/cancel
-
-修改payment对应的payStatus为Cancelled
-同步创建orderLog
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|payid|path|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "用户取消订单成功",
-  "data": true,
-  "timestamp": 1754639112263
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|boolean|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## PATCH 确认支付
-
-PATCH /api/payments/{payid}/pay
-
-修改payment对应的payStatus为Paid，同步修改Order对应的orderStatus为Paid
-只有orderStatus为UnPaid时才可以确认支付，否则就是重复支付，返回异常，
-同步创建orderLog
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|payid|path|string| 是 ||none|
-|payAmount|query|number| 否 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "用户支付订单成功",
-  "data": true,
-  "timestamp": 1754639319003
-}
-```
-
-> 400 Response
-
-```json
-{
-  "code": 60006,
-  "message": "重复支付！",
-  "data": null,
-  "timestamp": 1754642923869
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|boolean|true|none||none|
-|» timestamp|integer|true|none||none|
-
-状态码 **400**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|null|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## PATCH 确认收货
-
-PATCH /api/orders/{orderId}/confirm
-
-无法重复设置为相同的order状态，
-order状态有
-        Unpaid = 0,    // 未支付（初始状态）
-        Paid = 1,      // 已支付
-        Confirmed = 2, // 确认收货
-        Reviewed =3,   // 已经评价
-        Aftersales = 4,// 售后中
-        Cancelled = 5, // 订单关闭(超时/主动取消)
-
-同步创建orderLog
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|orderId|path|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "用户确认收货成功",
-  "data": true,
-  "timestamp": 1754640179536
-}
-```
-
-> 500 Response
-
-```json
-{
-  "code": 1000,
-  "message": "无法重复操作！",
-  "data": null,
-  "timestamp": 1754643336882
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|boolean|true|none||none|
-|» timestamp|integer|true|none||none|
-
-状态码 **500**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|null|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## PATCH 取消订单
-
-PATCH /api/orders/{orderId}/cancel
-
-同步创建orderLog
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|orderId|path|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "用户取消订单成功",
-  "data": true,
-  "timestamp": 1754643740805
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|boolean|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## POST 用户创建订单
-
-POST /api/users/{userId}/createOrder
-
-用户创建订单，同步创建对应的ordrLog和orderDish，创建成功返回对应的orderLogId
+登录请求（username/email 2选1）
 
 > Body 请求参数
 
 ```json
 {
-  "orderAmount": 885.85,
-  "addressId": "ADDR20240601001",
-  "merchantId": "e71a686e033f4db5b3b3bf77f0437ffa",
-  "dishQuantities": [
-    {
-      "dishId": "698d2ef64b9f42f0b74ba6c414a82425",
-      "quantity": 38
-    },
-    {
-      "dishId": "8459aac761424fa0a71cc5e521e01f8f",
-      "quantity": 66
-    },
-    {
-      "dishId": "95252778c4af4e18a70dd1fcdc9041fc",
-      "quantity": 51
-    }
-  ]
+  "Password": "4URBDFyKts37uRo",
+  "Email": "tbfv9r_g9z@qq.com"
 }
 ```
 
@@ -5407,15 +4826,11 @@ POST /api/users/{userId}/createOrder
 
 |名称|位置|类型|必选|中文名|说明|
 |---|---|---|---|---|---|
-|userId|path|string| 是 ||none|
+|userType|query|integer| 是 ||none|
 |body|body|object| 否 ||none|
-|» orderAmount|body|number| 是 ||none|
-|» couponId|body|string| 否 ||none|
-|» addressId|body|string| 是 ||none|
-|» merchantId|body|string| 是 ||none|
-|» dishQuantities|body|[object]| 是 ||none|
-|»» dishId|body|string| 是 ||none|
-|»» quantity|body|integer| 是 ||none|
+|» Password|body|string| 是 ||密码长度不能少于6位|
+|» Email|body|string| 否 ||后端会进行邮箱的格式校验，前端看情况也可以再审核一遍|
+|» UserName|body|string| 否 ||只允许数字和字母|
 
 > 返回示例
 
@@ -5424,9 +4839,20 @@ POST /api/users/{userId}/createOrder
 ```json
 {
   "code": 0,
-  "message": "用户创建订单的请求成功",
-  "data": "3a39e65def6d424b992dee4163e46475",
-  "timestamp": 1755223883134
+  "message": "string",
+  "data": "string",
+  "timestamp": 0
+}
+```
+
+> 403 Response
+
+```json
+{
+  "code": 2002,
+  "message": "用户被封禁",
+  "data": null,
+  "timestamp": 1754276287920
 }
 ```
 
@@ -5435,6 +4861,8 @@ POST /api/users/{userId}/createOrder
 |状态码|状态码含义|说明|数据模型|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+|401|[Unauthorized](https://tools.ietf.org/html/rfc7235#section-3.1)|none|Inline|
+|403|[Forbidden](https://tools.ietf.org/html/rfc7231#section-6.5.3)|none|Inline|
 
 ### 返回数据结构
 
@@ -5447,671 +4875,7 @@ POST /api/users/{userId}/createOrder
 |» data|string|true|none||none|
 |» timestamp|integer|true|none||none|
 
-## GET 根据Logid获取OrderLog的详情
-
-GET /api/orderLogs/{logId}
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|logId|path|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "订单日志详细信息获取成功",
-  "data": {
-    "logId": "30770f113ca24fb087ef28bfb9a14543",
-    "statusCode": 0,
-    "loggedAt": "2025-08-15T14:25:40.934645",
-    "actor": "user",
-    "remark": "用户创建订单",
-    "orderId": "e9adee7215e34d7eadd25992c6529553"
-  },
-  "timestamp": 1755246991512
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|object|true|none||none|
-|»» logId|string|true|none||none|
-|»» statusCode|integer|true|none||none|
-|»» loggedAt|string|true|none||none|
-|»» actor|string|true|none||none|
-|»» remark|string|true|none||none|
-|»» orderId|string|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## GET 根据PayId获取Payment的详情
-
-GET /api/payments/{payId}
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|payId|path|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "订单日志详细信息获取成功",
-  "data": {
-    "payId": "9a8d3b17cff141dfb08d9dd2e4c15f4c",
-    "orderId": "c0e1c12ea45d4d86aa2021b5266141f5",
-    "channel": "weixin",
-    "payAmount": 60,
-    "payStatus": 1,
-    "payTime": "2025-08-08T16:46:59.047624"
-  },
-  "timestamp": 1755247564464
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|object|true|none||none|
-|»» payId|string|true|none||none|
-|»» orderId|string|true|none||none|
-|»» channel|string|true|none||none|
-|»» payAmount|integer|true|none||none|
-|»» payStatus|integer|true|none||none|
-|»» payTime|string|true|none||none|
-|» timestamp|integer|true|none||none|
-
-# merchant/order/refund
-
-## POST 用户向商家发起退款请求，创建退款实体
-
-POST /api/users/{userId}/orders/{orderId}/refunds
-
-同步更新order状态为：售后中
-
-> Body 请求参数
-
-```json
-{
-  "reason": "string",
-  "refundAmount": 0
-}
-```
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|userId|path|string| 是 ||none|
-|orderId|path|string| 是 ||none|
-|body|body|object| 否 ||none|
-|» reason|body|string| 是 ||none|
-|» refundAmount|body|number| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "用户创建订单退款的请求成功",
-  "data": "977c4d62ff264a37b7a9cdd1657d935a",
-  "timestamp": 1755486233870
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|string|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## PATCH 商家同意退款申请
-
-PATCH /api/merchants/{merchantId}/refunds/{refundId}/approve
-
-> Body 请求参数
-
-```json
-{}
-```
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|merchantId|path|string| 是 ||none|
-|refundId|path|string| 是 ||none|
-|body|body|object| 否 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "商家退款成功",
-  "data": true,
-  "timestamp": 1755487765650
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|boolean|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## PATCH 商家拒绝退款申请
-
-PATCH /api/merchants/{merchantId}/refunds/{refundId}/reject
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|merchantId|path|string| 是 ||none|
-|refundId|path|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "商家拒绝退款成功",
-  "data": true,
-  "timestamp": 1755488114626
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|boolean|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## PATCH 管理员处理退款请求
-
-PATCH /api/admins/{adminId}/refunds/{refundId}/audit
-
-> Body 请求参数
-
-```json
-{
-  "RefundStatus": 4
-}
-```
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|adminId|path|string| 是 ||none|
-|refundId|path|string| 是 ||none|
-|body|body|object| 否 ||none|
-|» RefundStatus|body|integer| 是 ||none|
-
-#### 枚举值
-
-|属性|值|
-|---|---|
-|» RefundStatus|4|
-|» RefundStatus|5|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "管理员更新退款实体成功",
-  "data": true,
-  "timestamp": 1755503548083
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|boolean|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## GET 根据RefundId获取Refund的详情
-
-GET /api/refunds/{refundId}
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|refundId|path|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "退款详细信息获取成功",
-  "data": {
-    "refundId": "977c4d62ff264a37b7a9cdd1657d935a",
-    "orderId": "04d86dd0b06340f7b0f8787b332c692c",
-    "applicationId": "1d804350373d47b2b66feb88f8403e7d",
-    "reason": "生程马林。",
-    "refundAmount": 100,
-    "applyAt": "2025-08-18T11:03:53.663328",
-    "auditStatus": 2,
-    "finishAt": "2025-08-18T11:29:25.515251"
-  },
-  "timestamp": 1755497642797
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|object|true|none||none|
-|»» refundId|string|true|none||none|
-|»» orderId|string|true|none||none|
-|»» applicationId|string|true|none||none|
-|»» reason|string¦null|true|none||none|
-|»» refundAmount|integer|true|none||none|
-|»» applyAt|string|true|none||none|
-|»» auditStatus|integer|true|none||none|
-|»» finishAt|string¦null|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## GET 获取用户的退款申请历史
-
-GET /api/users/{userId}/refunds
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|userId|path|string| 是 ||none|
-|size|query|integer| 否 ||none|
-|page|query|integer| 否 ||none|
-|auditStatus|query|integer| 否 ||none|
-
-#### 枚举值
-
-|属性|值|
-|---|---|
-|auditStatus|1|
-|auditStatus|2|
-|auditStatus|3|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "用户退款记录获取成功",
-  "data": [
-    "e91eb9822ba249228e8c6f3ec4d2df95",
-    "977c4d62ff264a37b7a9cdd1657d935a"
-  ],
-  "timestamp": 1755500634309
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|[string]|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## GET 获取商家拥有的退款申请
-
-GET /api/merchants/{merchantId}/refunds
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|merchantId|path|string| 是 ||none|
-|size|query|integer| 否 ||none|
-|page|query|integer| 否 ||none|
-|auditStatus|query|integer| 否 ||none|
-
-#### 枚举值
-
-|属性|值|
-|---|---|
-|auditStatus|1|
-|auditStatus|2|
-|auditStatus|3|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "商家关联退款记录获取成功",
-  "data": [
-    "e91eb9822ba249228e8c6f3ec4d2df95",
-    "977c4d62ff264a37b7a9cdd1657d935a"
-  ],
-  "timestamp": 1755501124558
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|[string]|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## GET 管理员获取对应状态的退款申请
-
-GET /api/admins/{adminId}/refunds
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|adminId|path|string| 是 ||none|
-|size|query|integer| 否 ||none|
-|page|query|integer| 否 ||none|
-|auditStatus|query|integer| 否 ||none|
-
-#### 枚举值
-
-|属性|值|
-|---|---|
-|auditStatus|1|
-|auditStatus|2|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "管理员查看退款记录获取成功",
-  "data": [
-    "e91eb9822ba249228e8c6f3ec4d2df95"
-  ],
-  "timestamp": 1755503132483
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|[string]|true|none||none|
-|» timestamp|integer|true|none||none|
-
-# merchant/settlement
-
-## GET 用于管理员自定义筛选结算单
-
-GET /api/settlements
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|size|query|integer| 否 ||none|
-|page|query|integer| 否 ||none|
-|startDate|query|string| 否 ||none|
-|endDate|query|string| 否 ||none|
-|isSettled|query|boolean| 否 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "获取结算单详细信息成功",
-  "data": [
-    {
-      "settleId": "6e1dfb9b09b3466390f3d33660e5c153",
-      "periodStart": "2025-08-10T13:52:35",
-      "periodEnd": "2025-08-11T13:52:36",
-      "settledAt": "2025-08-11T13:52:49"
-    },
-    {
-      "settleId": "6e1dfb9b09b3466390f3d33660e5c159",
-      "periodStart": "2025-08-10T13:52:35",
-      "periodEnd": "2025-08-11T13:52:36",
-      "settledAt": "2025-08-11T13:52:49"
-    }
-  ],
-  "timestamp": 1754892063049
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|[object]|true|none||none|
-|»» settleId|string|true|none||none|
-|»» periodStart|string|true|none||none|
-|»» periodEnd|string|true|none||none|
-|»» settledAt|string|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## GET 用于商家自定义筛选结算单
-
-GET /api/settlements/merchants/{merchantId}
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|merchantId|path|string| 是 ||none|
-|size|query|integer| 否 ||none|
-|page|query|integer| 否 ||none|
-|startDate|query|string| 否 ||none|
-|endDate|query|string| 否 ||none|
-|isSettled|query|boolean| 否 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "获取结算单详细信息成功",
-  "data": [
-    {
-      "settleId": "6e1dfb9b09b3466390f3d33660e5c153",
-      "periodStart": "2025-08-10T13:52:35",
-      "periodEnd": "2025-08-11T13:52:36",
-      "settledAt": "2025-08-11T13:52:49"
-    },
-    {
-      "settleId": "6e1dfb9b09b3466390f3d33660e5c159",
-      "periodStart": "2025-08-10T13:52:35",
-      "periodEnd": "2025-08-11T13:52:36",
-      "settledAt": "2025-08-11T13:52:49"
-    }
-  ],
-  "timestamp": 1754891990512
-}
-```
-
-> 404 Response
-
-```json
-{
-  "code": 40001,
-  "message": "无相关数据，ID: e71a686e0334db5b3b3bf77f0437ffa",
-  "data": null,
-  "timestamp": 1754891963513
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|[object]|true|none||none|
-|»» settleId|string|true|none||none|
-|»» periodStart|string|true|none||none|
-|»» periodEnd|string|true|none||none|
-|»» settledAt|string|true|none||none|
-|» timestamp|integer|true|none||none|
-
-状态码 **404**
+状态码 **401**
 
 |名称|类型|必选|约束|中文名|说明|
 |---|---|---|---|---|---|
@@ -6120,74 +4884,7 @@ GET /api/settlements/merchants/{merchantId}
 |» data|null|true|none||none|
 |» timestamp|integer|true|none||none|
 
-## GET 通过settlementId获取结算单详情
-
-GET /api/settlements/{settlemmentId}
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|settlemmentId|path|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "获取结算单详细信息成功",
-  "data": {
-    "settleId": "6e1dfb9b09b3466390f3d33660e5c159",
-    "periodStart": "2025-08-10T13:52:35",
-    "periodEnd": "2025-08-11T13:52:36",
-    "grossAmount": 100,
-    "commissionFee": 100,
-    "netAmount": 100,
-    "settledAt": "2025-08-11T13:52:49"
-  },
-  "timestamp": 1754892178595
-}
-```
-
-> 404 Response
-
-```json
-{
-  "code": 1006,
-  "message": "无相关数据，ID: 6e1dfb9b09b3466390f3d33660e5c15",
-  "data": null,
-  "timestamp": 1754892207969
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|object|true|none||none|
-|»» settleId|string|true|none||none|
-|»» periodStart|string|true|none||none|
-|»» periodEnd|string|true|none||none|
-|»» grossAmount|integer|true|none||none|
-|»» commissionFee|integer|true|none||none|
-|»» netAmount|integer|true|none||none|
-|»» settledAt|string|true|none||none|
-|» timestamp|integer|true|none||none|
-
-状态码 **404**
+状态码 **403**
 
 |名称|类型|必选|约束|中文名|说明|
 |---|---|---|---|---|---|
@@ -6196,21 +4893,18 @@ GET /api/settlements/{settlemmentId}
 |» data|null|true|none||none|
 |» timestamp|integer|true|none||none|
 
-# merchant/announcement
+## POST 预注册（发送验证邮件）
 
-## POST 管理员发布公告
-
-POST /api/admin/{adminId}/announcements
+POST /api/auth/register
 
 > Body 请求参数
 
 ```json
 {
-  "title": "string",
-  "content": "string",
-  "targetRole": "string",
-  "startAt": "string",
-  "endAt": "string"
+  "UserName": "闽磊",
+  "PassWord": "dizI6fIabdJtWmr",
+  "Email": "lm1sds_man@vip.qq.com",
+  "PhoneNumber": "08731135405"
 }
 ```
 
@@ -6218,13 +4912,12 @@ POST /api/admin/{adminId}/announcements
 
 |名称|位置|类型|必选|中文名|说明|
 |---|---|---|---|---|---|
-|adminId|path|string| 是 ||none|
+|userType|query|integer| 是 ||用户类型（1-普通用户, 2-商家, 3-骑手, 4-管理员）|
 |body|body|object| 否 ||none|
-|» title|body|string| 是 ||none|
-|» content|body|string| 否 ||none|
-|» targetRole|body|string| 否 ||参数为Merchants,Customers,Riders,3选1，或为null|
-|» startAt|body|string| 是 ||none|
-|» endAt|body|string| 是 ||none|
+|» UserName|body|string| 是 ||只允许数字或字母|
+|» PassWord|body|string| 是 ||前端可以加密码的格式要求|
+|» Email|body|string| 是 ||后端会进行邮箱的格式校验，前端看情况也可以再审核一遍|
+|» PhoneNumber|body|string| 否 ||做不到发验证码，手机号为选填|
 
 > 返回示例
 
@@ -6233,273 +4926,6 @@ POST /api/admin/{adminId}/announcements
 ```json
 {
   "code": 0,
-  "message": "操作成功",
-  "data": true,
-  "timestamp": 1754902724669
-}
-```
-
-> 404 Response
-
-```json
-{
-  "code": 1006,
-  "message": "无相关数据，ID: 6f7af74972c481c91f19596e07aae3a",
-  "data": null,
-  "timestamp": 1754902766364
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|boolean|true|none||none|
-|» timestamp|integer|true|none||none|
-
-状态码 **404**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|null|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## GET 根据当前日期和适用范围返回可用的公告list
-
-GET /api/announcements/activate/{TargetRole}
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|TargetRole|path|string| 是 ||参数为：Merchants,Customers,Riders,All，4选1|
-|size|query|integer| 是 ||none|
-|page|query|integer| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "操作成功",
-  "data": [
-    {
-      "announceId": "9ea673c35bd342abaff1a6ab936ed299",
-      "title": "重要消息",
-      "content": "今天是感恩节",
-      "targetRole": null,
-      "startAt": "2025-08-11T00:00:00",
-      "endAt": "2025-08-14T00:00:00"
-    }
-  ],
-  "timestamp": 1754965404671
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|[object]|true|none||none|
-|»» announceId|string|false|none||none|
-|»» title|string|false|none||none|
-|»» content|string|false|none||none|
-|»» targetRole|null|false|none||none|
-|»» startAt|string|false|none||none|
-|»» endAt|string|false|none||none|
-|» timestamp|integer|true|none||none|
-
-## GET 根据适用范围获取公告list
-
-GET /api/announcements/all/{TargetRole}
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|TargetRole|path|string| 是 ||参数为：Merchants,Customers,Riders,All，4选1|
-|size|query|integer| 否 ||none|
-|page|query|integer| 否 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "操作成功",
-  "data": [
-    {
-      "announceId": "9ea673c35bd342abaff1a6ab936ed299",
-      "title": "重要消息",
-      "content": "今天是感恩节",
-      "targetRole": null,
-      "startAt": "2025-08-11T00:00:00",
-      "endAt": "2025-08-14T00:00:00"
-    },
-    {
-      "announceId": "d870b300c34147729b7b5db1f60da1e2",
-      "title": "1",
-      "content": "sit anim",
-      "targetRole": null,
-      "startAt": "2023-08-11T00:00:00",
-      "endAt": "2024-12-11T00:00:00"
-    }
-  ],
-  "timestamp": 1754966607859
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|[object]|true|none||none|
-|»» announceId|string|true|none||none|
-|»» title|string|true|none||none|
-|»» content|string|true|none||none|
-|»» targetRole|null|true|none||none|
-|»» startAt|string|true|none||none|
-|»» endAt|string|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## PATCH 根据公告id修改公告
-
-PATCH /api/announcements/{announcementId}
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|announcementId|path|string| 是 ||none|
-|title|query|string| 否 ||none|
-|content|query|string| 否 ||none|
-|targetRole|query|string| 否 ||none|
-|startAt|query|string| 否 ||none|
-|endAt|query|string| 否 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "操作成功",
-  "data": true,
-  "timestamp": 1754967324268
-}
-```
-
-> 404 Response
-
-```json
-{
-  "code": 1006,
-  "message": "无相关数据，ID: 1",
-  "data": null,
-  "timestamp": 1754967274585
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|boolean|true|none||none|
-|» timestamp|integer|true|none||none|
-
-状态码 **404**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|null|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## GET 根据公告id获取公告
-
-GET /api/announcements/{announcementId}
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|announcementId|path|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "操作成功",
-  "data": {
-    "announceId": "9ea673c35bd342abaff1a6ab936ed299",
-    "title": "重要消息",
-    "content": "今天是感恩节",
-    "targetRole": null,
-    "startAt": "2025-08-11T00:00:00",
-    "endAt": "2025-08-14T00:00:00"
-  },
-  "timestamp": 1754967891543
-}
-```
-
-> 404 Response
-
-```json
-{
-  "code": 1006,
   "message": "string",
   "data": null,
   "timestamp": 0
@@ -6511,26 +4937,10 @@ GET /api/announcements/{announcementId}
 |状态码|状态码含义|说明|数据模型|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
 
 ### 返回数据结构
 
 状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|object|true|none||none|
-|»» announceId|string|true|none||none|
-|»» title|string|true|none||none|
-|»» content|string|true|none||none|
-|»» targetRole|null|true|none||none|
-|»» startAt|string|true|none||none|
-|»» endAt|string|true|none||none|
-|» timestamp|integer|true|none||none|
-
-状态码 **404**
 
 |名称|类型|必选|约束|中文名|说明|
 |---|---|---|---|---|---|
@@ -6539,702 +4949,18 @@ GET /api/announcements/{announcementId}
 |» data|null|true|none||none|
 |» timestamp|integer|true|none||none|
 
-# merchant/Reconciliation
+## GET 正式注册（验证邮箱）
 
-## POST 新增Reconciliation实体
+GET /api/auth/verify-email
 
-POST /api/reconciliations
-
-> Body 请求参数
-
-```json
-{
-  "PeriodStart": "2025-08-11T00:00:00",
-  "PeriodEnd": "2025-08-11T00:00:00",
-  "ReconType": 3,
-  "OrderIds": [
-    "04d86dd0b06340f7b0f8787b332c692c"
-  ]
-}
-```
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|body|body|object| 否 ||none|
-|» PeriodStart|body|string| 是 ||none|
-|» PeriodEnd|body|string| 是 ||none|
-|» ReconType|body|integer| 是 ||none|
-|» OrderIds|body|[string]| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "操作成功",
-  "data": true,
-  "timestamp": 1754984889891
-}
-```
-
-> 500 Response
-
-```json
-{
-  "code": 1000,
-  "message": "至少要有一个order",
-  "data": null,
-  "timestamp": 1754985906387
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|boolean|true|none||none|
-|» timestamp|integer|true|none||none|
-
-状态码 **500**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|null|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## GET 自定义筛选Reconciliations
-
-GET /api/reconciliations
-
-目前4种筛选方法（可增加筛选方法，可更改排序方法）：
-
-1.获取已经被解决的异常（isResolved）
-
-2.获取未被解决的异常（isResolved）
-
-3.获取对应类型的异常（reconType）
-
-4.不做筛选，获取所有的异常（）
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|size|query|integer| 否 ||none|
-|page|query|integer| 否 ||none|
-|isResolved|query|boolean| 否 ||none|
-|reconType|query|integer| 否 ||（1 = 金额不匹配、2 = 订单数量不一致、3 = 重复结算等）|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "操作成功",
-  "data": [
-    {
-      "reconId": "6ff0d222c9e944989f1859b3dc8c6477",
-      "periodStart": "2025-08-11T00:00:00",
-      "periodEnd": "2025-08-11T00:00:00",
-      "reconType": 3,
-      "diffAmount": -49,
-      "affectedOrders": 2,
-      "isResolved": false,
-      "orderIdList": [
-        "04d86dd0b06340f7b0f8787b332c692c",
-        "c0e1c12ea45d4d86aa2021b5266141f5"
-      ]
-    },
-    {
-      "reconId": "ac755ccc173f4b87ab991b15cc4de879",
-      "periodStart": "2025-08-11T00:00:00",
-      "periodEnd": "2025-08-11T00:00:00",
-      "reconType": 3,
-      "diffAmount": 0,
-      "affectedOrders": 1,
-      "isResolved": false,
-      "orderIdList": []
-    },
-    {
-      "reconId": "adce4d923b2e4c20aa47a2ba729d372d",
-      "periodStart": "2025-08-11T00:00:00",
-      "periodEnd": "2025-08-11T00:00:00",
-      "reconType": 3,
-      "diffAmount": -49,
-      "affectedOrders": 1,
-      "isResolved": false,
-      "orderIdList": []
-    }
-  ],
-  "timestamp": 1755052134806
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|[object]|true|none||none|
-|»» reconId|string|true|none||none|
-|»» periodStart|string|true|none||none|
-|»» periodEnd|string|true|none||none|
-|»» reconType|integer|true|none||none|
-|»» diffAmount|integer|true|none||none|
-|»» affectedOrders|integer|true|none||none|
-|»» isResolved|boolean|true|none||none|
-|»» orderIdList|[string]|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## GET 根据reconId获取其实体和关联的orderID
-
-GET /api/reconciliations/{reconId}
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|reconId|path|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "操作成功",
-  "data": {
-    "reconId": "6ff0d222c9e944989f1859b3dc8c6477",
-    "periodStart": "2025-08-11T00:00:00",
-    "periodEnd": "2025-08-11T00:00:00",
-    "reconType": 3,
-    "diffAmount": -49,
-    "affectedOrders": 2,
-    "isResolved": false,
-    "orderIdList": [
-      "04d86dd0b06340f7b0f8787b332c692c",
-      "c0e1c12ea45d4d86aa2021b5266141f5"
-    ]
-  },
-  "timestamp": 1754988847207
-}
-```
-
-> 404 Response
-
-```json
-{
-  "code": 1006,
-  "message": "获取对账异常主体失败,对象不存在",
-  "data": null,
-  "timestamp": 1755053060257
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|object|true|none||none|
-|»» reconId|string|true|none||none|
-|»» periodStart|string|true|none||none|
-|»» periodEnd|string|true|none||none|
-|»» reconType|integer|true|none||none|
-|»» diffAmount|integer|true|none||none|
-|»» affectedOrders|integer|true|none||none|
-|»» isResolved|boolean|true|none||none|
-|»» orderIdList|[string]|true|none||none|
-|» timestamp|integer|true|none||none|
-
-状态码 **404**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|null|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## PATCH 管理员解决目标异常
-
-PATCH /api/reconciliations/{reconId}/resolve
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|reconId|path|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "操作成功",
-  "data": true,
-  "timestamp": 1755052722386
-}
-```
-
-> 404 Response
-
-```json
-{
-  "code": 1006,
-  "message": "获取对账异常主体列表失败",
-  "data": null,
-  "timestamp": 1755052889609
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|boolean|true|none||none|
-|» timestamp|integer|true|none||none|
-
-状态码 **404**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|null|true|none||none|
-|» timestamp|integer|true|none||none|
-
-# merchant/cupon
-
-## GET 返回user的couponId列表
-
-GET /api/users/{userId}/coupons
-
-目前4种筛选方法（可增加筛选方法，可更改排序优先级）：
-
-1.获取目前可用的优惠券（isActive）
-
-2.获取目前过期的优惠券（isActive）
-
-3.获取满足满减要求的可用优惠券（amount）
-
-4.不做筛选，获取该用户所有的优惠券（）
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|userId|path|string| 是 ||none|
-|isActive|query|boolean| 否 ||是否在有效期内|
-|amount|query|number| 否 ||优惠前金额|
-|size|query|integer| 否 ||none|
-|page|query|integer| 否 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "顾客优惠券信息获取成功",
-  "data": [
-    "69876272f4b3486a86cd23597825199d",
-    "69876272f4b3486a86cd23597825188d"
-  ],
-  "timestamp": 1755139914950
-}
-```
-
-> 404 Response
-
-```json
-{
-  "code": 50001,
-  "message": "无该用户",
-  "data": null,
-  "timestamp": 1755140052963
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|[string]|true|none||none|
-|» timestamp|integer|true|none||none|
-
-状态码 **404**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|null|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## GET 根据主键获取coupon详情
-
-GET /api/coupons/{couponId}
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|couponId|path|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "优惠券信息获取成功",
-  "data": {
-    "couponId": "69876272f4b3486a86cd23597825199d",
-    "userId": "1d804350373d47b2b66feb88f8403e7d",
-    "faceValue": 10,
-    "threshold": 10,
-    "startTime": "2025-08-12T10:25:10",
-    "endTime": "2025-08-28T10:25:24"
-  },
-  "timestamp": 1755140806636
-}
-```
-
-> 404 Response
-
-```json
-{
-  "code": 1006,
-  "message": "无该优惠券",
-  "data": null,
-  "timestamp": 1755140842933
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-|404|[Not Found](https://tools.ietf.org/html/rfc7231#section-6.5.4)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|object|true|none||none|
-|»» couponId|string|true|none||none|
-|»» userId|string|true|none||none|
-|»» faceValue|integer|true|none||none|
-|»» threshold|integer|true|none||none|
-|»» startTime|string|true|none||none|
-|»» endTime|string|true|none||none|
-|» timestamp|integer|true|none||none|
-
-状态码 **404**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|null|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## POST 管理员发放优惠券
-
-POST /api/admin/{adminId}/coupons
-
-有3种发放方法
-（默认发放给全体用户，可以指定userId来指定用户补偿优惠券。同理，可以增加为特定用户发放，如：根据等级/订单量/地址）：
-1.只指定起止时间，面额和门槛完全随机（随机范围目前是面额（5～15），门槛（面额+5～15），下同）
-2.指定起止时间，面额固定，门槛随机
-3.指定起止时间，面额和门槛
-
-> Body 请求参数
-
-```json
-{
-  "startTime": "string",
-  "endTime": "string",
-  "faceValue": 0,
-  "threshold": 0,
-  "userId": "string"
-}
-```
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|adminId|path|string| 是 ||none|
-|body|body|object| 否 ||none|
-|» startTime|body|string| 是 ||none|
-|» endTime|body|string| 是 ||none|
-|» faceValue|body|number| 否 | 面额|none|
-|» threshold|body|number| 否 | 门槛|none|
-|» userId|body|string| 否 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "优惠券发放成功",
-  "data": true,
-  "timestamp": 1755151283368
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|boolean|true|none||none|
-|» timestamp|integer|true|none||none|
-
-# merchant/Complaint
-
-## GET 根据ComplaintId获取Complaint详情
-
-GET /api/complaints/{complaintId}
-
-//投诉主体当前状态
- public enum ComplaintStatus
-        Default  = 0,         // 处理中
-        Resolved = 1,         // 已解决
-        Cancelled = 2,        // 关闭  
-
-//投诉对象
-public enum Role
-        User = 0,
-        Merchant = 1,
-        Rider = 2,
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|complaintId|path|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "查看投诉详情成功",
-  "data": {
-    "complaintId": "2044bf5a6540490c89f8a4ee6c9515af",
-    "orderId": "04d86dd0b06340f7b0f8787b332c692c",
-    "complainantId": "1d804350373d47b2b66feb88f8403e7d",
-    "cmplRole": 1,
-    "cmplDescription": "二也口点器。市类决办料反。",
-    "cmplStatus": 0,
-    "createdAt": "2025-08-19T05:05:03.397683"
-  },
-  "timestamp": 1755579977398
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|object|true|none||none|
-|»» complaintId|string|true|none||none|
-|»» orderId|string|true|none||none|
-|»» complainantId|string|true|none||none|
-|»» cmplRole|integer|true|none||none|
-|»» cmplDescription|string|true|none||none|
-|»» cmplStatus|integer|true|none||none|
-|»» createdAt|string|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## POST 用户创建投诉实体
-
-POST /api/complaints
-
-返回投诉主体ID
-
-> Body 请求参数
-
-```json
-{
-  "orderId": "62",
-  "complainantId": "87",
-  "cmplRole": 2,
-  "cmplDescription": "出物厂局值部。王置写真当京。并格研经半很公结。何收众石市增品包只开。然存关地他育书多论。求许但学率程件受。"
-}
-```
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|body|body|object| 否 ||none|
-|» orderId|body|string| 是 ||none|
-|» complainantId|body|string| 是 | 用户ID|none|
-|» cmplRole|body|integer| 是 | 投诉对象|none|
-|» cmplDescription|body|string| 否 ||none|
-
-#### 枚举值
-
-|属性|值|
-|---|---|
-|» cmplRole|1|
-|» cmplRole|2|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "查看投诉详情成功",
-  "data": "2044bf5a6540490c89f8a4ee6c9515af",
-  "timestamp": 1755579903616
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|string|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## GET 自定义筛选complaints
-
-GET /api/complaints
-
-目前支持4种筛选方式(status可以为null，表示获取所有状态)
-1. 获取目标商家目标状态的投诉单（merchantId，status）
-2. 获取目标用户目标状态的投诉单（userId，status）
-3. 管理员获取目标状态投诉单（adminId，status）
-4. 不限制
+链接1小时内有效
 
 ### 请求参数
 
 |名称|位置|类型|必选|中文名|说明|
 |---|---|---|---|---|---|
 |userId|query|string| 否 ||none|
-|merchantId|query|string| 否 ||none|
-|status|query|integer| 否 ||none|
-|adminId|query|string| 否 ||none|
-|size|query|integer| 否 ||none|
-|page|query|integer| 否 ||none|
-
-#### 枚举值
-
-|属性|值|
-|---|---|
-|status|0|
-|status|1|
-|status|2|
+|token|query|string| 否 ||none|
 
 > 返回示例
 
@@ -7243,11 +4969,9 @@ GET /api/complaints
 ```json
 {
   "code": 0,
-  "message": "获取列表成功",
-  "data": [
-    "2044bf5a6540490c89f8a4ee6c9515af"
-  ],
-  "timestamp": 1755580641450
+  "message": "string",
+  "data": null,
+  "timestamp": 0
 }
 ```
 
@@ -7265,150 +4989,7 @@ GET /api/complaints
 |---|---|---|---|---|---|
 |» code|integer|true|none||none|
 |» message|string|true|none||none|
-|» data|[string]|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## PATCH 管理员审批投诉申请
-
-PATCH /api/admin/{adminId}complaints/{complaintId}/audit
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|adminId|path|string| 是 ||none|
-|complaintId|path|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "更新投诉详情成功",
-  "data": true,
-  "timestamp": 1755580227778
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|boolean|true|none||none|
-|» timestamp|integer|true|none||none|
-
-## PATCH 用户取消投诉申请
-
-PATCH /api/users/{userId}complaints/{complaintId}/cancel
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|userId|path|string| 是 ||none|
-|complaintId|path|string| 是 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "关闭投诉详情成功",
-  "data": true,
-  "timestamp": 1755580312317
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|boolean|true|none||none|
-|» timestamp|integer|true|none||none|
-
-# merchant/复合路由
-
-## GET 根据时间范围获取营业数据
-
-GET /api/operations/recent
-
-支持3种筛选方式
-1. 设置起止时间（start，end）
-2. 不设置起止时间（）
-3. 设置起或止时间（start/end）
-
-### 请求参数
-
-|名称|位置|类型|必选|中文名|说明|
-|---|---|---|---|---|---|
-|start|query|string| 否 ||none|
-|end|query|string| 否 ||none|
-
-> 返回示例
-
-> 200 Response
-
-```json
-{
-  "code": 0,
-  "message": "查看平台运营数据成功",
-  "data": {
-    "orderQuantity": 3,
-    "cancelledOrderQuantity": 0,
-    "aftersalesCompletedOrderQuantity": 1,
-    "userQuantity": 4,
-    "merchantQuantity": 6,
-    "riderQuantity": 1
-  },
-  "timestamp": 1755659466545
-}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
-
-### 返回数据结构
-
-状态码 **200**
-
-|名称|类型|必选|约束|中文名|说明|
-|---|---|---|---|---|---|
-|» code|integer|true|none||none|
-|» message|string|true|none||none|
-|» data|object|true|none||none|
-|»» orderQuantity|integer|true|none|订单总数|none|
-|»» cancelledOrderQuantity|integer|true|none|取消的订单总数|none|
-|»» aftersalesCompletedOrderQuantity|integer|true|none|售后的订单|none|
-|»» userQuantity|integer|true|none|用户数量|none|
-|»» merchantQuantity|integer|true|none|商家数量|none|
-|»» riderQuantity|integer|true|none|骑手数量|none|
+|» data|null|true|none||none|
 |» timestamp|integer|true|none||none|
 
 # 数据模型
