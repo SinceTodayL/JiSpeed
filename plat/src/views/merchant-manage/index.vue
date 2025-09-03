@@ -190,13 +190,7 @@ const applicationColumns: DataTableColumns = [
       tooltip: true
     }
   },
-  {
-    key: 'applicantName',
-    title: '申请人',
-    align: 'center',
-    width: 120,
-    render: (row) => row.applicantName || row.merchantName || '-'
-  },
+
   {
     key: 'businessName',
     title: '商家名称',
@@ -204,13 +198,7 @@ const applicationColumns: DataTableColumns = [
     width: 150,
     render: (row) => row.businessName || row.name || '-'
   },
-  {
-    key: 'contactInfo',
-    title: '联系方式',
-    align: 'center',
-    width: 120,
-    render: (row) => row.contactInfo || row.phone || '-'
-  },
+
   {
     key: 'status',
     title: '状态',
@@ -222,27 +210,25 @@ const applicationColumns: DataTableColumns = [
       return <n-tag type={statusType}>{statusText}</n-tag>;
     }
   },
-  {
-    key: 'createdAt',
-    title: '申请时间',
-    align: 'center',
-    width: 150,
-    render: (row) => {
-      if (!row.createdAt) return '-';
-      try {
-        return new Date(row.createdAt).toLocaleString('zh-CN');
-      } catch {
-        return row.createdAt;
-      }
-    }
-  },
+
   {
     key: 'actions',
     title: '操作',
     align: 'center',
     width: 120,
     render: (row) => {
-      if (row.status === 0 || row.status === 'pending') {
+      console.log('🔍 申请状态检查:', { 
+        id: row.id, 
+        status: row.status, 
+        type: typeof row.status,
+        formatStatus: formatApplicationStatus(row.status)
+      });
+      
+      // 根据格式化后的状态文本判断是否可审核
+      const statusText = formatApplicationStatus(row.status);
+      const isPending = statusText === '待审核';
+      
+      if (isPending) {
         return (
           <n-button type="primary" size="small" onClick={() => handleAuditApplication(row)}>
             审核
@@ -469,6 +455,7 @@ async function getApplicationList() {
         businessName: item.businessName || item.companyName || item.merchantName || item.shopName || item.name,
         contactInfo: item.contactInfo || item.phone || item.mobile || item.contactPhone || item.contact || item.tel,
         status: item.status ?? item.applyStatus ?? item.auditStatus ?? item.state ?? 'pending',
+        _rawStatus: item.status,  // 保留原始状态用于调试
         createdAt: item.createdAt || item.createdTime || item.applyTime || item.createTime
       }));
       console.log('申请列表:', applicationData.value);
@@ -1018,10 +1005,7 @@ onMounted(() => {
               <span class="text-gray-600 text-sm">申请类型</span>
               <p class="text-gray-800 font-medium">{{ currentApplication.type || '商家入驻' }}</p>
             </div>
-            <div class="col-span-2">
-              <span class="text-gray-600 text-sm">申请时间</span>
-              <p class="text-gray-800 font-medium">{{ currentApplication.createdAt || '-' }}</p>
-            </div>
+
           </div>
         </div>
 

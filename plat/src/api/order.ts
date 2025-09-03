@@ -8,7 +8,7 @@ import { get, post, put } from '../utils/request.js';
  * 获取所有商家列表
  * @param params - 查询参数
  */
-export function getAllMerchants(params = {}) {
+export function getAllMerchants(params: any = {}) {
   console.log('获取所有商家列表', params);
   return get('/api/merchants', params);
 }
@@ -18,7 +18,7 @@ export function getAllMerchants(params = {}) {
  * @param merchantId - 商家ID
  * @param params - 查询参数
  */
-export function getMerchantOrders(merchantId, params = {}) {
+export function getMerchantOrders(merchantId: string, params: any = {}) {
   console.log(`获取商家 ${merchantId} 的订单列表`, params);
   return get(`/api/merchants/${merchantId}/orders`, params);
 }
@@ -27,7 +27,7 @@ export function getMerchantOrders(merchantId, params = {}) {
  * 获取待派单的订单列表
  * @param params - 查询参数 {page, pageSize}
  */
-export async function getPendingOrders(params = {}) {
+export async function getPendingOrders(params: any = {}) {
   console.log('获取待派单订单列表', params);
   const { page = 1, pageSize = 50 } = params;
   
@@ -127,10 +127,32 @@ export function updateOrderStatus(statusData: {orderId: string, newStatus: numbe
 }
 
 /**
+ * 获取所有进行中的订单状态（用于实时监控）
+ * @param params - 查询参数
+ */
+export async function getAllActiveOrders(params: any = {}) {
+  console.log('获取所有进行中的订单状态', params);
+  try {
+    // 获取所有活跃状态的订单 (状态 3-6: 已接单到已完成)
+    const response = await get('/api/orders', {
+      status: [3, 4, 5, 6].join(','), // 多状态查询
+      pageSize: 100, // 获取更多数据
+      ...params
+    });
+    
+    console.log('获取活跃订单响应:', response);
+    return response;
+  } catch (error) {
+    console.error('获取活跃订单失败:', error);
+    throw error;
+  }
+}
+
+/**
  * 获取订单列表（支持多种状态筛选）
  * @param params - 查询参数 {status, page, pageSize, searchTerm}
  */
-export function getOrderList(params = {}) {
+export function getOrderList(params: any = {}) {
   console.log('获取订单列表', params);
   return get('/api/orders', params);
 }
@@ -210,4 +232,68 @@ export const OrderStatusColor = {
   [OrderStatus.Completed]: 'success',
   [OrderStatus.Cancelled]: 'error',
   [OrderStatus.Refunded]: 'error'
+};
+
+/**
+ * 获取骑手当前配送订单状态
+ * @param riderId - 骑手ID
+ */
+export function getRiderDeliveryStatus(riderId: string) {
+  console.log(`获取骑手配送状态，骑手ID: ${riderId}`);
+  return get(`/api/orders/rider/${riderId}/delivery-status`);
+}
+
+/**
+ * 获取骑手配送订单列表（包含详细状态）
+ * @param riderId - 骑手ID
+ * @param params - 查询参数 {status, page, pageSize}
+ */
+export function getRiderDeliveryOrders(riderId: string, params = {}) {
+  console.log(`获取骑手配送订单列表，骑手ID: ${riderId}`, params);
+  return get(`/api/orders/rider/${riderId}/delivery-orders`, params);
+}
+
+/**
+ * 获取骑手实时配送统计
+ * @param riderId - 骑手ID
+ */
+export function getRiderDeliveryStats(riderId: string) {
+  console.log(`获取骑手配送统计，骑手ID: ${riderId}`);
+  return get(`/api/orders/rider/${riderId}/delivery-stats`);
+}
+
+/**
+ * 批量获取多个骑手的配送状态
+ * @param riderIds - 骑手ID列表
+ */
+export function getBatchRiderDeliveryStatus(riderIds: string[]) {
+  console.log(`批量获取骑手配送状态，骑手数量: ${riderIds.length}`);
+  return post('/api/orders/riders/batch-delivery-status', { riderIds });
+}
+
+// 配送状态枚举（针对骑手的状态）
+export enum DeliveryStatus {
+  NoOrders = 0,        // 无订单
+  WaitingPickup = 1,   // 等待取餐
+  OnTheWay = 2,        // 配送途中
+  Delivered = 3,       // 已送达
+  Multiple = 4         // 多单配送
+}
+
+// 配送状态显示文本
+export const DeliveryStatusText = {
+  [DeliveryStatus.NoOrders]: '无订单',
+  [DeliveryStatus.WaitingPickup]: '等待取餐',
+  [DeliveryStatus.OnTheWay]: '配送途中',
+  [DeliveryStatus.Delivered]: '已送达',
+  [DeliveryStatus.Multiple]: '多单配送'
+};
+
+// 配送状态颜色
+export const DeliveryStatusColor = {
+  [DeliveryStatus.NoOrders]: 'default',
+  [DeliveryStatus.WaitingPickup]: 'warning',
+  [DeliveryStatus.OnTheWay]: 'processing',
+  [DeliveryStatus.Delivered]: 'success',
+  [DeliveryStatus.Multiple]: 'purple'
 };

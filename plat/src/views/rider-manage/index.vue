@@ -33,15 +33,10 @@ import {
   TrophyOutline,
   StatsChartOutline,
   EyeOutline,
-  FlashOutline,
-  TimeOutline,
-  StarOutline,
-  WalletOutline,
-  CheckmarkCircleOutline,
-  CloseCircleOutline,
-  PauseCircleOutline
+  WalletOutline
 } from '@vicons/ionicons5';
 import { fetchRidersList, fetchRiderInfo, fetchRiderPerformanceRanking } from '@/api/rider';
+
 
 defineOptions({
   name: 'RiderManage'
@@ -50,6 +45,7 @@ defineOptions({
 const message = useMessage();
 const loading = ref(false);
 const tableData = ref<any[]>([]);
+
 const pagination = ref({
   page: 1,
   pageSize: 20,
@@ -60,18 +56,11 @@ const pagination = ref({
 // 搜索条件
 const searchParams = ref({
   searchTerm: '',
-  status: null,
   page: 1,
   pageSize: 20
 });
 
-// 状态选项
-const statusOptions = [
-  { label: '全部状态', value: null },
-  { label: '在线配送', value: 1 },
-  { label: '离线休息', value: 0 },
-  { label: '忙碌配送', value: 2 }
-];
+
 
 // 骑手统计数据
 const riderStats = computed(() => {
@@ -102,9 +91,7 @@ const filteredTableData = computed(() => {
         return false;
       }
     }
-    if (searchParams.value.status !== null && rider.status !== searchParams.value.status) {
-      return false;
-    }
+
     return true;
   });
 });
@@ -119,6 +106,10 @@ const riderRanking = ref<any>({});
 const currentDate = new Date();
 const currentYear = currentDate.getFullYear();
 const currentMonth = currentDate.getMonth() + 1;
+
+
+
+
 
 // 获取骑手列表数据
 async function getRidersList() {
@@ -135,9 +126,7 @@ async function getRidersList() {
       params.searchTerm = searchParams.value.searchTerm;
     }
     
-    if (searchParams.value.status !== null) {
-      params.status = searchParams.value.status;
-    }
+
     
     console.log('🚀 开始请求骑手列表，参数:', params);
     const response = await fetchRidersList(params);
@@ -230,8 +219,11 @@ function handleReset() {
 
 // 刷新数据
 function handleRefresh() {
+  message.info('正在刷新骑手数据...');
   getRidersList();
 }
+
+
 
 // 分页变化
 function handlePageChange(page: number) {
@@ -302,32 +294,6 @@ const columns: DataTableColumns = [
         <n-text style="font-size: 12px;">{row.vehicleNumber || '未登记'}</n-text>
       </div>
     )
-  },
-  {
-    key: 'status',
-    title: '配送状态',
-    align: 'center',
-    width: 120,
-    render: (row) => {
-      const statusConfig = {
-        1: { type: 'warning', icon: FlashOutline, color: '#fa8c16', text: '在线配送' },
-        0: { type: 'default', icon: PauseCircleOutline, color: '#d9d9d9', text: '离线休息' },
-        2: { type: 'error', icon: TimeOutline, color: '#ff4d4f', text: '忙碌配送' }
-      };
-      const config = statusConfig[row.status] || statusConfig[0];
-      return (
-        <div class="flex items-center justify-center gap-4px">
-          <n-icon color={config.color} size="16">
-            <config.icon />
-          </n-icon>
-          <n-badge 
-            value={config.text} 
-            type={config.type} 
-            style="--n-color: transparent; --n-text-color: inherit;"
-          />
-        </div>
-      );
-    }
   },
   {
     key: 'userAccount',
@@ -438,6 +404,28 @@ function getRankingBadgeType(rank: number) {
   return 'info';                    // 其他 - 蓝色
 }
 
+
+
+// 格式化时间显示
+function formatTime(timeStr: string) {
+  if (!timeStr) return '未知时间';
+  
+  try {
+    const date = new Date(timeStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    
+    if (diffMins < 1) return '刚刚';
+    if (diffMins < 60) return `${diffMins}分钟前`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}小时前`;
+    
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString().slice(0, 5);
+  } catch {
+    return '时间格式错误';
+  }
+}
+
 // 组件挂载时获取数据
 onMounted(() => {
   getRidersList();
@@ -454,7 +442,7 @@ onMounted(() => {
         </n-icon>
         骑手管理中心
       </h1>
-      <p class="text-gray-600">管理骑手信息、配送状态和绩效排名</p>
+      <p class="text-gray-600">管理骑手信息和绩效排名</p>
     </div>
 
     <!-- 统计卡片区域 -->
@@ -569,16 +557,6 @@ onMounted(() => {
             placeholder="请输入骑手姓名或手机号"
             clearable
             style="width: 250px"
-          />
-        </n-form-item>
-        
-        <n-form-item label="配送状态">
-          <n-select
-            v-model:value="searchParams.status"
-            :options="statusOptions"
-            placeholder="选择状态"
-            clearable
-            style="width: 150px"
           />
         </n-form-item>
       </n-form>
@@ -1021,26 +999,7 @@ onMounted(() => {
   animation: fadeInUp 0.6s ease-out;
 }
 
-/* 配送状态动画 */
-.delivery-status {
-  position: relative;
-  overflow: hidden;
-}
 
-.delivery-status::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  transition: left 0.6s;
-}
-
-.delivery-status:hover::after {
-  left: 100%;
-}
 
 /* 绩效卡片特效 */
 .performance-card {
