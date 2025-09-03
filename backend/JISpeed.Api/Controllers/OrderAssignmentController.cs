@@ -1,6 +1,5 @@
 ﻿using JISpeed.Api.DTOs;
 using JISpeed.Core.Interfaces.IServices;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace JISpeed.Api.Controllers
