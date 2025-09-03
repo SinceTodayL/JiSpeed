@@ -287,8 +287,9 @@ export default {
       try {
         // 使用改进的购物车API
         const response = await cartAPI.getUserCart(currentUserId.value)
-        
+        console.log('购物车接口原始返回:', response);
         if (response.code === 200) {
+          console.log('购物车接口返回data:', response.data);
           cartItems.value = response.data.map(item => ({
             id: item.id,
             dishId: item.dishId,
@@ -303,7 +304,7 @@ export default {
             subtotal: item.price * item.quantity
           }
           ))
-          console.log('获取购物车数据成功:', response.data)
+          console.log('购物车映射后数据:', cartItems.value);
         } else {
           console.error('获取购物车失败:', response.message)
           // 使用空数组作为降级

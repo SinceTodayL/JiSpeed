@@ -147,7 +147,7 @@
                       </span>
                       
                       <button
-                        @click.stop="addToCart(dish)"
+                        @click.stop="showDishDetail(dish)"
                         class="quantity-btn plus"
                       >
                         +
@@ -225,9 +225,8 @@
               
               <button
                 @click="addToCart({
-                  ...selectedDish,
-                  merchantId: merchantInfo?.merchantId || '',
-                  merchantName: merchantInfo?.merchantName || ''
+                  dishId: selectedDish.dishId,
+                  userId: localStorage.getItem('userId') || 'test_user_001'
                 })"
                 class="modal-quantity-btn plus"
               >
@@ -534,15 +533,19 @@ export default {
         merchantName: merchantInfo.value?.merchantName || '餐厅'
       };
       console.log('addToCart 最终参数:', dishData);
-      const result = await cart.addToCart(dishData);
-      console.log('addToCart 返回结果:', result);
-      if (result.success) {
-        // 可以显示成功提示
-        console.log(result.message)
-      } else {
-        console.error(result.message)
-        alert(result.message)
+    const result = await cart.addToCart(dishData);
+    console.log('addToCart 返回结果:', result);
+    if (result.success) {
+      // 加入成功后刷新购物车数据
+      if (typeof cart.fetchCartData === 'function') {
+        await cart.fetchCartData();
       }
+      // 可以显示成功提示
+      console.log(result.message)
+    } else {
+      console.error(result.message)
+      alert(result.message)
+    }
     }
 
     const removeFromCart = async (dish) => {
