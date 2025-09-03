@@ -23,8 +23,6 @@ async function handleRefreshToken() {
   }
 
   resetStore();
-  // 跳转到指定的登录页面
-  window.location.href = 'http://121.4.90.75/login';
 
   return false;
 }

@@ -25,10 +25,10 @@ export const request = createFlatRequest<App.Service.Response, RequestInstanceSt
       return config;
     },
     isBackendSuccess(response) {
-      // 适配后端ApiResponse格式：code为number类型，message字段
-      // 后端成功码为0
-      const backendCode = Number(response.data.code);
-      const successCode = 0; // 后端ApiResponse成功码固定为0
+      // when the backend response code is "0", it means the request is success
+      // use Number() to convert to avoid type mismatch and hidden characters
+      const backendCode = Number(String(response.data.code).trim());
+      const successCode = Number(String(import.meta.env.VITE_SERVICE_SUCCESS_CODE).trim());
 
       return backendCode === successCode;
     },
@@ -58,14 +58,13 @@ export const request = createFlatRequest<App.Service.Response, RequestInstanceSt
         return null;
       }
 
-      // other backend error - 适配后端ApiResponse的message字段
-      showErrorMsg(request.state, response.data.message);
+      // other backend error
+      showErrorMsg(request.state, response.data.msg);
 
       return null;
     },
     transformBackendResponse(response) {
-      // 后端返回ApiResponse格式，直接解包data字段给前端使用
-      return response.data.data;
+      return response.data;
     },
     onError(error) {
       // when the request is fail, you can show error message
@@ -80,6 +79,7 @@ export const request = createFlatRequest<App.Service.Response, RequestInstanceSt
       }
 
       // 简化错误处理，不依赖环境变量配置
+
       showErrorMsg(request.state, message);
     }
   }

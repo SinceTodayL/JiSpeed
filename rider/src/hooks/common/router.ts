@@ -50,8 +50,7 @@ export function useRouterPush(inSetup = true) {
   }
 
   async function toHome() {
-    // 骑手模块：跳转到骑手首页，而不是root
-    return routerPushByKey('home');
+    return routerPushByKey('root');
   }
 
   /**

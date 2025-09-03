@@ -1,99 +1,49 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { watch } from 'vue';
+import { useAppStore } from '@/store/modules/app';
 import { useEcharts } from '@/hooks/common/echarts';
-import { getOrderTrends } from '@/api/rider';
+import { $t } from '@/locales';
 
 defineOptions({
-  name: 'OrderTrendChart'
+  name: 'LineChart'
 });
 
-const loading = ref(true);
+const appStore = useAppStore();
 
 const { domRef, updateOptions } = useEcharts(() => ({
   tooltip: {
     trigger: 'axis',
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderColor: '#e4e7ed',
-    borderWidth: 1,
-    textStyle: {
-      color: '#606266'
-    },
-    formatter: function(params: any) {
-      const data = params[0];
-      return `
-        <div style="padding: 8px;">
-          <div style="font-weight: bold; margin-bottom: 4px;">${data.name}</div>
-          <div style="color: #409eff;">
-            <span style="display: inline-block; width: 10px; height: 10px; background: #409eff; border-radius: 50%; margin-right: 6px;"></span>
-            订单量: ${data.value.toLocaleString()} 单
-          </div>
-        </div>
-      `;
+    axisPointer: {
+      type: 'cross',
+      label: {
+        backgroundColor: '#6a7985'
+      }
     }
+  },
+  legend: {
+    data: [$t('page.home.downloadCount'), $t('page.home.registerCount')]
   },
   grid: {
     left: '3%',
     right: '4%',
-    bottom: '10%',
-    top: '10%',
+    bottom: '3%',
     containLabel: true
   },
   xAxis: {
     type: 'category',
     boundaryGap: false,
-    data: [] as string[],
-    axisLine: {
-      lineStyle: {
-        color: '#e4e7ed'
-      }
-    },
-    axisLabel: {
-      color: '#606266',
-      fontSize: 12
-    }
+    data: [] as string[]
   },
   yAxis: {
-    type: 'value',
-    axisLine: {
-      show: false
-    },
-    axisTick: {
-      show: false
-    },
-    axisLabel: {
-      color: '#606266',
-      fontSize: 12,
-      formatter: '{value}'
-    },
-    splitLine: {
-      lineStyle: {
-        color: '#f5f7fa',
-        type: 'dashed'
-      }
-    }
+    type: 'value'
   },
   series: [
     {
-      name: '订单量',
-      data: [] as number[],
+      color: '#8e9dff',
+      name: $t('page.home.downloadCount'),
       type: 'line',
       smooth: true,
-      symbol: 'circle',
-      symbolSize: 6,
-      lineStyle: {
-        width: 3,
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 1,
-          y2: 0,
-          colorStops: [
-            { offset: 0, color: '#409eff' },
-            { offset: 1, color: '#67c23a' }
-          ]
-        }
-      },
+      stack: 'Total',
       areaStyle: {
         color: {
           type: 'linear',
@@ -102,56 +52,100 @@ const { domRef, updateOptions } = useEcharts(() => ({
           x2: 0,
           y2: 1,
           colorStops: [
-            { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
-            { offset: 1, color: 'rgba(64, 158, 255, 0.05)' }
+            {
+              offset: 0.25,
+              color: '#8e9dff'
+            },
+            {
+              offset: 1,
+              color: '#fff'
+            }
           ]
         }
       },
-      itemStyle: {
-        color: '#409eff',
-        borderColor: '#fff',
-        borderWidth: 2
-      }
+      emphasis: {
+        focus: 'series'
+      },
+      data: [] as number[]
+    },
+    {
+      color: '#26deca',
+      name: $t('page.home.registerCount'),
+      type: 'line',
+      smooth: true,
+      stack: 'Total',
+      areaStyle: {
+        color: {
+          type: 'linear',
+          x: 0,
+          y: 0,
+          x2: 0,
+          y2: 1,
+          colorStops: [
+            {
+              offset: 0.25,
+              color: '#26deca'
+            },
+            {
+              offset: 1,
+              color: '#fff'
+            }
+          ]
+        }
+      },
+      emphasis: {
+        focus: 'series'
+      },
+      data: []
     }
   ]
 }));
 
-async function initChart() {
-  loading.value = true;
-  try {
-    const { data: trends } = await getOrderTrends(6);
-    
-    const months = trends.map((item: any) => item.month);
-    const orders = trends.map((item: any) => item.orders);
-    
-    updateOptions(opts => {
-      opts.xAxis.data = months;
-      opts.series[0].data = orders;
-      return opts;
-    });
-  } catch (error) {
-    console.error('Failed to load order trends:', error);
-    // 删除静态默认数据
-    opts.xAxis.data = [];
-    opts.series[0].data = [];
+async function mockData() {
+  await new Promise(resolve => {
+    setTimeout(resolve, 1000);
+  });
+
+  updateOptions(opts => {
+    opts.xAxis.data = ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00', '24:00'];
+    opts.series[0].data = [4623, 6145, 6268, 6411, 1890, 4251, 2978, 3880, 3606, 4311];
+    opts.series[1].data = [2208, 2016, 2916, 4512, 8281, 2008, 1963, 2367, 2956, 678];
+
     return opts;
-  } finally {
-    loading.value = false;
-  }
+  });
 }
 
-onMounted(() => {
-  initChart();
-});
+function updateLocale() {
+  updateOptions((opts, factory) => {
+    const originOpts = factory();
+
+    opts.legend.data = originOpts.legend.data;
+    opts.series[0].name = originOpts.series[0].name;
+    opts.series[1].name = originOpts.series[1].name;
+
+    return opts;
+  });
+}
+
+async function init() {
+  mockData();
+}
+
+watch(
+  () => appStore.locale,
+  () => {
+    updateLocale();
+  }
+);
+
+// init
+init();
 </script>
 
 <template>
-  <div class="relative">
-    <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-lg">
-      <NSpin size="medium" />
-    </div>
+  <NCard :bordered="false" class="card-wrapper">
     <div ref="domRef" class="h-360px overflow-hidden"></div>
-  </div>
+  </NCard>
 </template>
 
 <style scoped></style>

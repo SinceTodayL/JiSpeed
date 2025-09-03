@@ -7,17 +7,17 @@ import { request } from '../request';
  * @param password Password
  */
 export function fetchLogin(userName: string, password: string) {
-  return request<Api.Auth.LoginResponse>({
-    url: '/api/Auth/login?userType=3', // 骑手登录，userType=3
+  return request({
+    url: '/api/auth/login',
     method: 'post',
-    data: { UserName: userName, PassWord: password } // 使用正确的字段名
+    data: { userName, password }
   });
 }
 
 /** Get user info */
 export function fetchGetUserInfo() {
   return request({
-    url: '/api/Auth/getUserInfo', // 使用正确的API路径
+    url: '/api/auth/getUserInfo',
     method: 'get'
   });
 }
@@ -29,7 +29,7 @@ export function fetchGetUserInfo() {
  */
 export function fetchRefreshToken(refreshToken: string) {
   return request<Api.Auth.LoginToken>({
-    url: '/api/Auth/refreshToken', // 使用正确的API路径
+    url: '/api/auth/refreshToken',
     method: 'post',
     data: {
       refreshToken

@@ -10,12 +10,11 @@ export default defineConfig(configEnv => {
   // 设置默认环境变量，如果viteEnv中没有对应值则使用默认值
   const defaultEnv = {
     // VITE_SERVICE_BASE_URL: 'https://m1.apifoxmock.com/m1/6776921-6489236-default',
-    VITE_SERVICE_BASE_URL: 'http://121.4.90.75',
+    VITE_SERVICE_BASE_URL: 'https://localhost:5091',
     VITE_OTHER_SERVICE_BASE_URL: '{}',
     VITE_SERVICE_SUCCESS_CODE: '0',
     VITE_HTTP_PROXY: 'N',
-    VITE_PROXY_LOG: 'N',
-    VITE_LOGIN_URL: 'http://121.4.90.75/login'
+    VITE_PROXY_LOG: 'N'
   };
   
   const customEnv = Object.assign({}, defaultEnv, viteEnv) as Env.ImportMeta;
@@ -47,8 +46,7 @@ export default defineConfig(configEnv => {
       'import.meta.env.VITE_SERVICE_BASE_URL': JSON.stringify(customEnv.VITE_SERVICE_BASE_URL),
       'import.meta.env.VITE_SERVICE_SUCCESS_CODE': JSON.stringify(customEnv.VITE_SERVICE_SUCCESS_CODE),
       'import.meta.env.VITE_OTHER_SERVICE_BASE_URL': JSON.stringify(customEnv.VITE_OTHER_SERVICE_BASE_URL),
-      'import.meta.env.VITE_HTTP_PROXY': JSON.stringify(customEnv.VITE_HTTP_PROXY),
-      'import.meta.env.VITE_LOGIN_URL': JSON.stringify(customEnv.VITE_LOGIN_URL)
+      'import.meta.env.VITE_HTTP_PROXY': JSON.stringify(customEnv.VITE_HTTP_PROXY)
     },
 
     server: {

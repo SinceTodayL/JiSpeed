@@ -45,9 +45,7 @@ export const generatedRoutes: GeneratedRoute[] = [
     component: 'layout.base$view.complaint-handle',
     meta: {
       title: 'complaint-handle',
-      i18nKey: 'route.complaint-handle',
-      icon: 'mdi:message-alert',
-      order: 5
+      i18nKey: 'route.complaint-handle'
     }
   },
   {
@@ -92,9 +90,7 @@ export const generatedRoutes: GeneratedRoute[] = [
     component: 'layout.base$view.merchant-manage',
     meta: {
       title: 'merchant-manage',
-      i18nKey: 'route.merchant-manage',
-      icon: 'mdi:store',
-      order: 3
+      i18nKey: 'route.merchant-manage'
     }
   },
   {
@@ -103,20 +99,7 @@ export const generatedRoutes: GeneratedRoute[] = [
     component: 'layout.base$view.rider-manage',
     meta: {
       title: 'rider-manage',
-      i18nKey: 'route.rider-manage',
-      icon: 'mdi:motorbike',
-      order: 4
-    }
-  },
-  {
-    name: 'settlement-manage',
-    path: '/settlement-manage',
-    component: 'layout.base$view.settlement-manage',
-    meta: {
-      title: 'settlement-manage',
-      i18nKey: 'route.settlement-manage',
-      icon: 'mdi:wallet',
-      order: 6
+      i18nKey: 'route.rider-manage'
     }
   },
   {
@@ -125,9 +108,7 @@ export const generatedRoutes: GeneratedRoute[] = [
     component: 'layout.base$view.user-manage',
     meta: {
       title: 'user-manage',
-      i18nKey: 'route.user-manage',
-      icon: 'mdi:account-group',
-      order: 2
+      i18nKey: 'route.user-manage'
     }
   }
 ];

@@ -41,7 +41,7 @@ export function fetchGetAllDishes(
  */
 export function fetchDishDetail(merchantId: string, dishId: string) {
   return request<Api.Goods.DishItem>({
-    url: `/api/merchants/${merchantId}/dishes/${dishId}`,
+    url: `/api/merchants/${merchantId}/dish/${dishId}`,
     method: 'get'
   });
 }

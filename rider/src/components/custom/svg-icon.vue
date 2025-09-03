@@ -27,8 +27,8 @@ const bindAttrs = computed<{ class: string; style: string }>(() => ({
 }));
 
 const symbolId = computed(() => {
-  // 提供默认值，避免环境变量未定义的问题
-  const prefix = import.meta.env.VITE_ICON_LOCAL_PREFIX || 'icon-local';
+  const { VITE_ICON_LOCAL_PREFIX: prefix } = import.meta.env;
+
   const defaultLocalIcon = 'no-icon';
 
   const icon = props.localIcon || defaultLocalIcon;

@@ -14,10 +14,6 @@ declare namespace StorageType {
     lang: App.I18n.LangType;
     /** The token */
     token: string;
-    /** The user ID */
-    userId: string;
-    /** The user type */
-    userType: number;
     /** Fixed sider with mix-menu */
     mixSiderFixed: CommonType.YesOrNo;
     /** The refresh token */

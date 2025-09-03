@@ -55,15 +55,15 @@ const statisticData = computed<StatisticData[]>(() => {
 
 // 商家问候语
 const merchantGreeting = computed(() => {
-  const merchantName = merchantStore.merchantInfo?.merchantName || '商家';
+  const merchantName = merchantStore.merchantInfo?.data.merchantName || '商家';
   return `你好，${merchantName} !`;
 });
 
 // 商家状态
 const merchantStatusDesc = computed(() => {
-  const status = merchantStore.merchantInfo?.status;
-  const location = merchantStore.merchantInfo?.location || '';
-  const contactInfo = merchantStore.merchantInfo?.contactInfo || '';
+  const status = merchantStore.merchantInfo?.data.status;
+  const location = '🏢' + merchantStore.merchantInfo?.data.location || '';
+  const contactInfo = '📞' + merchantStore.merchantInfo?.data.contactInfo || '';
   
   let statusText = '🟢 营业中'; // 默认显示营业中
   
@@ -73,10 +73,7 @@ const merchantStatusDesc = computed(() => {
     statusText = '🟢 营业中';
   }
   
-  const locationText = location ? `🏢${location}` : '';
-  const contactText = contactInfo ? `📞${contactInfo}` : '';
-  
-  return [statusText, locationText, contactText].filter(Boolean).join(' | ');
+  return `${statusText} | ${location} | ${contactInfo}`;
 });
 
 // 获取商家数据
@@ -91,36 +88,14 @@ const loadMerchantData = async () => {
   try {
     const result = await fetchMerchantInfo(merchantId);
     console.log("fetchMerchantInfo result", result);
-    
-    // 检查不同的数据结构可能性
-    let merchantData = null;
-    const resultAny = result as any; // 使用 any 类型来处理不同的数据结构
-    
-    if (resultAny?.data?.data) {
-      // 嵌套结构: { data: { data: {...} } }
-      merchantData = resultAny.data.data;
-      console.log('使用嵌套数据结构 result.data.data:', merchantData);
-    } else if (resultAny?.data) {
-      // 直接结构: { data: {...} }
-      merchantData = resultAny.data;
-      console.log('使用直接数据结构 result.data:', merchantData);
-    } else if (result && typeof result === 'object') {
-      // API直接返回数据
-      merchantData = result;
-      console.log('使用原始返回数据:', merchantData);
-    }
-    
-    if (merchantData && typeof merchantData === 'object') {
-      merchantStore.setMerchantInfo(merchantData);
-      console.log("merchantStore.merchantInfo", merchantStore.merchantInfo);
-    } else {
-      console.error('未找到有效的商家数据');
-      console.log('完整API响应:', result);
-      window.$message?.warning('获取到的商家信息格式不正确');
+    // Unpack the real data from the wrapper object before setting it to the store.
+    if (result && result.data) {
+      merchantStore.setMerchantInfo(result.data);
+      console.log("merchantStore.merchantInfo", merchantStore.merchantInfo?.data);
     }
   } catch (error) {
     console.error('加载商家基本信息失败:', error);
-    window.$message?.warning('暂时无法获取商家信息，请稍后刷新页面');
+    window.$message?.error('获取商家基本信息失败');
   }
 
   try {
@@ -166,6 +141,7 @@ onMounted(() => {
             </h3>
             <p class="text-#999 leading-30px">{{ merchantStatusDesc }}</p>
             <p v-if="merchantStore.merchantInfo?.contactInfo" class="text-#666 text-12px mt-1">
+              📞 {{ merchantStore.merchantInfo.contactInfo }}
             </p>
           </div>
         </div>

@@ -10,7 +10,9 @@ export function setupElegantRouter() {
     },
     customRoutes: {
       names: [
-        // 骑手模块：移除不存在的异常页面路由名称
+        'exception_403',
+        'exception_404',
+        'exception_500',
         'document_project',
         'document_project-link',
         'document_video',
@@ -20,8 +22,7 @@ export function setupElegantRouter() {
         'document_naive',
         'document_pro-naive',
         'document_antd',
-        'document_alova',
-        'no-permission'
+        'document_alova'
       ]
     },
     routePathTransformer(routeName, routePath) {
@@ -40,8 +41,7 @@ export function setupElegantRouter() {
     onRouteMetaGen(routeName) {
       const key = routeName as RouteKey;
 
-      // 骑手模块：只保留实际存在的常量路由
-      const constantRoutes: RouteKey[] = ['login', '404'];
+      const constantRoutes: RouteKey[] = ['login', '403', '404', '500'];
 
       const meta: Partial<RouteMeta> = {
         title: key,

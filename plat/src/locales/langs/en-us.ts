@@ -166,12 +166,7 @@ const local: App.I18n.Schema = {
     404: 'Page Not Found',
     500: 'Server Error',
     'iframe-page': 'Iframe',
-    home: 'Dashboard',
-    'user-manage': 'User Management',
-    'merchant-manage': 'Merchant Management',
-    'rider-manage': 'Rider Management',
-    'settlement-manage': 'Settlement Management',
-    'complaint-handle': 'Complaint Handle',
+    home: 'Home',
     'order-manage': 'Order Management',
     'goods-management': 'Goods Maganement'
   },

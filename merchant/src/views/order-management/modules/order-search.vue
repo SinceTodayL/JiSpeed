@@ -11,6 +11,7 @@ defineOptions({
 interface Props {
   model: {
     orderId: string | null;
+    userId: string | null;
     orderStatus: number | null;
   };
 }
@@ -30,19 +31,18 @@ const model = defineModel<Props['model']>('model', {
   required: true
 });
 
-// 订单状态选项 - 只显示1-4的状态
+// 订单状态选项
 const orderStatusOptions = computed(() => {
-  return Object.entries(ORDER_STATUS_MAP)
-    .filter(([value]) => [1, 2, 3, 4].includes(Number(value)))
-    .map(([value, label]) => ({
-      label,
-      value: Number(value)
-    }));
+  return Object.entries(ORDER_STATUS_MAP).map(([value, label]) => ({
+    label,
+    value: Number(value)
+  }));
 });
 
 function reset() {
   // 清空搜索表单
   model.value.orderId = null;
+  model.value.userId = null;
   model.value.orderStatus = null;
   emit('reset');
 }
@@ -60,6 +60,9 @@ function search() {
           <NGrid responsive="screen" item-responsive>
             <NFormItemGi span="24 s:12 m:6" label="订单ID" path="orderId" class="pr-24px">
               <NInput v-model:value="model.orderId" placeholder="请输入订单ID" />
+            </NFormItemGi>
+            <NFormItemGi span="24 s:12 m:6" label="用户ID" path="userId" class="pr-24px">
+              <NInput v-model:value="model.userId" placeholder="请输入用户ID" />
             </NFormItemGi>
             <NFormItemGi span="24 s:12 m:6" label="订单状态" path="orderStatus" class="pr-24px">
               <NSelect

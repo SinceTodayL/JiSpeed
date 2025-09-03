@@ -251,211 +251,6 @@ declare namespace Api {
       [property: string]: any;
     }
 
-    // 7.获取骑手最新位置
-    export interface LocationLatestResponse {
-      code: number;
-      data: LocationData;
-      message: string;
-      timestamp: number;
-      [property: string]: any;
-    }
-
-    // 8.获取骑手历史轨迹
-    export interface LocationHistoryRequest {
-      riderId: string;
-      startTime?: string;
-      endTime?: string;
-      pageIndex?: number;
-      pageSize?: number;
-      [property: string]: any;
-    }
-
-    export interface LocationHistoryResponse {
-      code: number;
-      data: LocationData[];
-      message: string;
-      timestamp: number;
-      [property: string]: any;
-    }
-
-    // 9.获取指定区域内的骑手
-    export interface LocationAreaRequest {
-      minLongitude: number;
-      maxLongitude: number;
-      minLatitude: number;
-      maxLatitude: number;
-      status?: number;
-      [property: string]: any;
-    }
-
-    export interface LocationAreaResponse {
-      code: number;
-      data: LocationData[];
-      message: string;
-      timestamp: number;
-      [property: string]: any;
-    }
-
-    // 10.获取所有在线骑手位置
-    export interface LocationOnlineRequest {
-      pageIndex?: number;
-      pageSize?: number;
-      [property: string]: any;
-    }
-
-    export interface LocationOnlineResponse {
-      code: number;
-      data: LocationData[];
-      message: string;
-      timestamp: number;
-      [property: string]: any;
-    }
-
-    // 11.计算骑手到指定点的距离
-    export interface LocationDistanceRequest {
-      riderId: string;
-      targetLongitude: number;
-      targetLatitude: number;
-      [property: string]: any;
-    }
-
-    export interface LocationDistanceResponse {
-      code: number;
-      data: DistanceData;
-      message: string;
-      timestamp: number;
-      [property: string]: any;
-    }
-
-    export interface DistanceData {
-      riderId: string;
-      targetLongitude: number;
-      targetLatitude: number;
-      distance: number;
-      [property: string]: any;
-    }
-
-    // 12.获取骑手当前位置的地址信息
-    export interface LocationAddressResponse {
-      code: number;
-      data: AddressData;
-      message: string;
-      timestamp: number;
-      [property: string]: any;
-    }
-
-    export interface AddressData {
-      riderId: string;
-      address: string;
-      [property: string]: any;
-    }
-
-    // 13.获取骑手绩效趋势
-    export interface PerformanceTrendRequest {
-      riderId: string;
-      months?: number;
-      [property: string]: any;
-    }
-
-    export interface PerformanceTrendResponse {
-      code: number;
-      data: PerformanceTrendData[];
-      message: string;
-      timestamp: number;
-      [property: string]: any;
-    }
-
-    export interface PerformanceTrendData {
-      statsMonth: string;
-      totalOrders: number;
-      onTimeRate: number;
-      goodReviewRate: number;
-      badReviewRate: number;
-      income: number;
-      [property: string]: any;
-    }
-
-    // 14.获取骑手绩效排名
-    export interface PerformanceRankingRequest {
-      riderId: string;
-      year: number;
-      month: number;
-      [property: string]: any;
-    }
-
-    export interface PerformanceRankingResponse {
-      code: number;
-      data: RankingData;
-      message: string;
-      timestamp: number;
-      [property: string]: any;
-    }
-
-    export interface RankingData {
-      totalOrdersRank: number;
-      onTimeRateRank: number;
-      goodReviewRateRank: number;
-      incomeRank: number;
-      overallRank: number;
-      [property: string]: any;
-    }
-
-    // 15.获取绩效优秀骑手排行榜
-    export interface PerformanceTopRequest {
-      year: number;
-      month: number;
-      topCount?: number;
-      [property: string]: any;
-    }
-
-    export interface PerformanceTopResponse {
-      code: number;
-      data: PerformanceTrendData[];
-      message: string;
-      timestamp: number;
-      [property: string]: any;
-    }
-
-    // 16.获取月度绩效概览
-    export interface PerformanceOverviewRequest {
-      year: number;
-      month: number;
-      [property: string]: any;
-    }
-
-    export interface PerformanceOverviewResponse {
-      code: number;
-      data: OverviewData;
-      message: string;
-      timestamp: number;
-      [property: string]: any;
-    }
-
-    export interface OverviewData {
-      TotalRiders: number;
-      TotalOrders: number;
-      AverageOnTimeRate: number;
-      AverageGoodReviewRate: number;
-      TotalIncome: number;
-      AverageIncome: number;
-      [property: string]: any;
-    }
-
-    // 位置数据通用接口
-    export interface LocationData {
-      locationId: string;
-      riderId: string;
-      longitude: number;
-      latitude: number;
-      locationTime: string;
-      accuracy: number;
-      speed: number;
-      direction: number;
-      locationType: string;
-      status: number;
-      [property: string]: any;
-    }
-
     /* POST */
     // 1.骑手注册
     // Body参数
@@ -514,50 +309,14 @@ declare namespace Api {
       [property: string]: any;
     }
 
-    // 3.更新骑手位置
-    export interface LocationUpdateRequest {
-      riderId: string;
-      longitude: number;
-      latitude: number;
-      accuracy?: number;
-      speed?: number;
-      direction?: number;
-      locationType?: string;
-      [property: string]: any;
-    }
-
-    export interface LocationUpdateResponse {
-      code: number;
-      data: LocationData;
-      message: string;
-      timestamp: number;
-      [property: string]: any;
-    }
-
-    // 4.生成骑手月度绩效
-    export interface PerformanceGenerateRequest {
-      riderId: string;
-      year: number;
-      month: number;
-      [property: string]: any;
-    }
-
-    export interface PerformanceGenerateResponse {
-      code: number;
-      data: PerformanceData;
-      message: string;
-      timestamp: number;
-      [property: string]: any;
-    }
-
     /* PATCH */
     // 1.更新骑手信息
     // Path参数：Request
     // Body参数
     export interface UpdateInfoRequest {
-      name?: string;
-      phoneNumber?: string;
-      vehicleNumber?: string;
+      name: string;
+      phoneNumber: string;
+      vehicleNumber: string;
       [property: string]: any;
     }
 
@@ -641,20 +400,6 @@ declare namespace Api {
       isAbsent: number;
       isLate: number;
       riderId: string;
-      [property: string]: any;
-    }
-
-    // 4.更新骑手在线状态
-    export interface LocationStatusRequest {
-      status: number;
-      [property: string]: any;
-    }
-
-    export interface LocationStatusResponse {
-      code: number;
-      data: Record<string, never>;
-      message: string;
-      timestamp: number;
       [property: string]: any;
     }
   }

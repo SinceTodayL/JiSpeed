@@ -1,4 +1,5 @@
 import type {
+  LocationQueryRaw,
   NavigationGuardNext,
   RouteLocationNormalized,
   RouteLocationRaw,
@@ -8,6 +9,7 @@ import type { RouteKey, RoutePath } from '@elegant-router/types';
 import { useAuthStore } from '@/store/modules/auth';
 import { useRouteStore } from '@/store/modules/route';
 import { localStg } from '@/utils/storage';
+import { getRouteName } from '@/router/elegant/transform';
 
 /**
  * create route guard
@@ -25,6 +27,8 @@ export function createRouteGuard(router: Router) {
 
     const authStore = useAuthStore();
 
+    const rootRoute: RouteKey = 'root';
+    const loginRoute: RouteKey = 'login';
     const noAuthorizationRoute: RouteKey = '403';
 
     const isLogin = Boolean(localStg.get('token'));
@@ -161,4 +165,21 @@ function handleRouteSwitch(to: RouteLocationNormalized, from: RouteLocationNorma
   }
 
   next();
+}
+
+function getRouteQueryOfLoginRoute(to: RouteLocationNormalized, routeHome: RouteKey) {
+  const loginRoute: RouteKey = 'login';
+  const redirect = to.fullPath;
+  const [redirectPath, redirectQuery] = redirect.split('?');
+  const redirectName = getRouteName(redirectPath as RoutePath);
+
+  const isRedirectHome = routeHome === redirectName;
+
+  const query: LocationQueryRaw = to.name !== loginRoute && !isRedirectHome ? { redirect } : {};
+
+  if (isRedirectHome && redirectQuery) {
+    query.redirect = `/?${redirectQuery}`;
+  }
+
+  return query;
 }

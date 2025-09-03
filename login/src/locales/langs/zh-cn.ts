@@ -1,6 +1,6 @@
 const local: App.I18n.Schema = {
   system: {
-    title: 'JiSpeed 济时达外卖平台',
+    title: 'JiSpeed 商家后台管理系统',
     loginTitle: '济时达外卖',
     updateTitle: '系统版本更新通知',
     updateContent: '检测到系统有新版本发布，是否立即刷新页面？',

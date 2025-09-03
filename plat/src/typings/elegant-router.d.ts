@@ -26,7 +26,6 @@ declare module "@elegant-router/types" {
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
     "merchant-manage": "/merchant-manage";
     "rider-manage": "/rider-manage";
-    "settlement-manage": "/settlement-manage";
     "user-manage": "/user-manage";
   };
 
@@ -68,7 +67,6 @@ declare module "@elegant-router/types" {
     | "login"
     | "merchant-manage"
     | "rider-manage"
-    | "settlement-manage"
     | "user-manage"
   >;
 
@@ -95,7 +93,6 @@ declare module "@elegant-router/types" {
     | "home"
     | "merchant-manage"
     | "rider-manage"
-    | "settlement-manage"
     | "user-manage"
   >;
 

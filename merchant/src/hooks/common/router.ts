@@ -54,15 +54,27 @@ export function useRouterPush(inSetup = true) {
   }
 
   /**
-   * Navigate to login page (external)
+   * Navigate to login page
    *
    * @param loginModule The login module
    * @param redirectUrl The redirect url, if not specified, it will be the current route fullPath
    */
   async function toLogin(loginModule?: UnionKey.LoginModule, redirectUrl?: string) {
-    // 跳转到外部登录页面 - 使用环境变量配置
-    const loginUrl = import.meta.env.VITE_LOGIN_URL;
-    window.location.href = loginUrl;
+    const module = loginModule || 'pwd-login';
+
+    const options: App.Global.RouterPushOptions = {
+      params: {
+        module
+      }
+    };
+
+    const redirect = redirectUrl || route.value.fullPath;
+
+    options.query = {
+      redirect
+    };
+
+    return routerPushByKey('login', options);
   }
 
   /**

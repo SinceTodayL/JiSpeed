@@ -31,21 +31,6 @@ const model: FormModel = reactive({
   password: '123456'
 });
 
-// 不同角色的默认登录信息
-const roleDefaults = {
-  user: { userName: 'Soybean', password: '123456' },
-  // rider: { userName: 'rider_demo', password: '123456' },
-  merchant: { userName: 'test_1226', password: '123456' },
-  // admin: { userName: 'admin', password: '123456' }
-};
-
-// 监听登录角色变化，更新默认值
-watch(loginRole, (newRole) => {
-  const defaults = roleDefaults[newRole];
-  model.userName = defaults.userName;
-  model.password = defaults.password;
-}, { immediate: true });
-
 const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
   const { formRules } = useFormRules();
 

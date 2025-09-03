@@ -20,9 +20,9 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   500: () => import("@/views/_builtin/500/index.vue"),
   "iframe-page": () => import("@/views/_builtin/iframe-page/[url].vue"),
   login: () => import("@/views/_builtin/login/index.vue"),
+  "coupon-management": () => import("@/views/coupon-management/index.vue"),
   "goods-management": () => import("@/views/goods-management/index.vue"),
   home: () => import("@/views/home/index.vue"),
   "order-management": () => import("@/views/order-management/index.vue"),
   profile: () => import("@/views/profile/index.vue"),
-  "refund-management": () => import("@/views/refund-management/index.vue"),
 };

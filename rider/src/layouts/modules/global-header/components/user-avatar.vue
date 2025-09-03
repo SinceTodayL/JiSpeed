@@ -11,12 +11,11 @@ defineOptions({
 });
 
 const authStore = useAuthStore();
-const { routerPushByKey } = useRouterPush();
+const { routerPushByKey, toLogin } = useRouterPush();
 const { SvgIconVNode } = useSvgIcon();
 
 function loginOrRegister() {
-  // 跳转到指定的登录页面
-  window.location.href = 'http://121.4.90.75/login';
+  toLogin();
 }
 
 type DropdownKey = 'user-center' | 'logout';
@@ -60,10 +59,7 @@ function logout() {
     positiveText: $t('common.confirm'),
     negativeText: $t('common.cancel'),
     onPositiveClick: () => {
-      // 调用store的reset方法，它会清理所有认证相关存储
       authStore.resetStore();
-      // 跳转到指定的登录页面
-      window.location.href = 'http://121.4.90.75/login';
     }
   });
 }
@@ -71,9 +67,9 @@ function logout() {
 function handleDropdown(key: DropdownKey) {
   if (key === 'logout') {
     logout();
-  } else if (key === 'user-center') {
-    // 用户中心功能，暂时跳转到个人信息页面
-    routerPushByKey('profile');
+  } else {
+    // If your other options are jumps from other routes, they will be directly supported here
+    routerPushByKey(key);
   }
 }
 </script>

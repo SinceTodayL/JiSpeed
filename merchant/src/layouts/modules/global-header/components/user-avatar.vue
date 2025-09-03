@@ -50,64 +50,8 @@ function logout() {
     content: $t('common.logoutConfirm'),
     positiveText: $t('common.confirm'),
     negativeText: $t('common.cancel'),
-    onPositiveClick: async () => {
-      try {
-        // 重置认证状态
-        await authStore.resetStore();
-        
-        // 清除所有本地存储
-        localStorage.clear();
-        sessionStorage.clear();
-        
-        // 清除所有Cookie（包括不同路径的）
-        const cookies = document.cookie.split(";");
-        cookies.forEach((cookie) => {
-          const eqPos = cookie.indexOf("=");
-          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-          
-          // 清除不同路径的cookie
-          const paths = ["/", "/merchant", "/login"];
-          paths.forEach(path => {
-            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=${path}`;
-            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=${path};domain=${window.location.hostname}`;
-          });
-        });
-        
-        // 清除IndexedDB数据（如果有的话）
-        if ('indexedDB' in window) {
-          try {
-            const databases = await indexedDB.databases?.() || [];
-            await Promise.all(
-              databases.map(db => {
-                if (db.name) {
-                  return new Promise((resolve) => {
-                    const deleteReq = indexedDB.deleteDatabase(db.name);
-                    deleteReq.onsuccess = () => resolve(true);
-                    deleteReq.onerror = () => resolve(false);
-                  });
-                }
-                return Promise.resolve();
-              })
-            );
-          } catch (error) {
-            console.warn('清除IndexedDB失败:', error);
-          }
-        }
-        
-        
-        
-        // 显示注销成功消息
-        window.$message?.success('注销成功，正在跳转...');
-        
-        // 短暂延迟后跳转，让用户看到成功消息
-        setTimeout(() => {
-          toLogin();
-        }, 1000);
-        
-      } catch (error) {
-        console.error('注销过程中发生错误:', error);
-        window.$message?.error('注销失败，请重试');
-      }
+    onPositiveClick: () => {
+      authStore.resetStore();
     }
   });
 }

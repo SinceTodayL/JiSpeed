@@ -52,21 +52,21 @@ const fetchNews = async () => {
       // Case 2: response is axios response object
       if (response.data && response.data.data && Array.isArray(response.data.data)) {
         actualData = response.data.data;
-        //console.log('Extracted data from response.data.data:', actualData);
+        console.log('Extracted data from response.data.data:', actualData);
       } else if (response.data && Array.isArray(response.data)) {
         actualData = response.data;
-        //console.log('Extracted data from response.data:', actualData);
+        console.log('Extracted data from response.data:', actualData);
       } else {
-        //console.log('Could not find announcements array in response:', response);
+        console.log('Could not find announcements array in response:', response);
       }
     }
 
     // Transform backend data to match component interface
     if (actualData && Array.isArray(actualData) && actualData.length > 0) {
-      //console.log('Processing announcements:', actualData.length);
+      console.log('Processing announcements:', actualData.length);
       
       newses.value = actualData.map((announcement: any, index: number) => {
-        //console.log(`Announcement ${index}:`, announcement);
+        console.log(`Announcement ${index}:`, announcement);
         
         // Handle both C# PascalCase and JavaScript camelCase
         const id = announcement.announceId || announcement.AnnounceId || `temp-${index}`;
@@ -75,7 +75,7 @@ const fetchNews = async () => {
         const startAt = announcement.startAt || announcement.StartAt;
         const targetRole = announcement.targetRole || announcement.TargetRole;
         
-        //console.log(`Processing: ID=${id}, Title=${title}, TargetRole=${targetRole}, StartAt=${startAt}`);
+        console.log(`Processing: ID=${id}, Title=${title}, TargetRole=${targetRole}, StartAt=${startAt}`);
         
         return {
           id,
@@ -93,14 +93,14 @@ const fetchNews = async () => {
         };
       });
       
-      //console.log('Successfully processed announcements:', newses.value);
+      console.log('Successfully processed announcements:', newses.value);
     } else {
-      //console.log('No announcements found or invalid data structure:', actualData);
+      console.log('No announcements found or invalid data structure:', actualData);
       newses.value = [];
     }
   } catch (err) {
     error.value = '加载公告失败';
-    //console.error('Error fetching announcements:', err);
+    console.error('Error fetching announcements:', err);
     
     // Fallback to empty array if API fails
     newses.value = [];

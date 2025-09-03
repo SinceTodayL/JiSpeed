@@ -24,6 +24,5 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   home: () => import("@/views/home/index.vue"),
   "merchant-manage": () => import("@/views/merchant-manage/index.vue"),
   "rider-manage": () => import("@/views/rider-manage/index.vue"),
-  "settlement-manage": () => import("@/views/settlement-manage/index.vue"),
   "user-manage": () => import("@/views/user-manage/index.vue"),
 };
