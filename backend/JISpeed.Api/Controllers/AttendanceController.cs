@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Core.Entities.Rider;
@@ -11,6 +12,7 @@ namespace JISpeed.Api.Controllers
     // 考勤管理控制器
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class AttendanceController : ControllerBase
     {
         private readonly IAttendanceService _attendanceService;

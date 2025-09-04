@@ -1,5 +1,6 @@
 ﻿using JISpeed.Api.DTOs;
 using JISpeed.Core.Interfaces.IServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace JISpeed.Api.Controllers
@@ -7,6 +8,7 @@ namespace JISpeed.Api.Controllers
     // 订单分配控制器 - 处理订单分配、骑手接单等业务逻辑
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class OrderAssignmentController : ControllerBase
     {
         private readonly IOrderAssignmentService _orderAssignmentService;

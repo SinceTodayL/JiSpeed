@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using JISpeed.Application.Services.Navigation;
 using JISpeed.Core.DTOs;
@@ -7,6 +8,7 @@ namespace JISpeed.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class NavigationController : ControllerBase
     {
         private readonly INavigationService _navigationService;
