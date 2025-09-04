@@ -48,6 +48,7 @@ namespace JISpeed.Api.Controllers
             _userManager = userManager;
         }
 
+        #region 获取信息相关
 
         /// 根据ID获取用户信息
 
@@ -232,6 +233,87 @@ namespace JISpeed.Api.Controllers
             }
         }
 
+        /// 根据ID获取用户提交的所有投诉
+
+        /// <param name="userId">用户ID</param>
+        /// <returns>投诉列表</returns>
+        [HttpGet("{userId}/complaints")]
+        public async Task<ApiResponse<List<UserComplaintDto>>> GetUserComplaints(string userId,
+        [FromQuery] int? size, [FromQuery] int? page)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                var complaints = await _complaintRepository.GetByUserIdAsync(userId);
+                var paginatedComplaints = complaints
+                    .Skip(((page ?? 1) - 1) * (size ?? 10))
+                    .Take(size ?? 10)
+                    .ToList();
+                var complaintDtos = UserMapper.ToUserComplaintDtoList(paginatedComplaints);
+
+                return ApiResponse<List<UserComplaintDto>>.Success(complaintDtos);
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取用户投诉时发生异常，UserId: {UserId}", userId);
+                throw new BusinessException("获取用户投诉失败");
+            }
+        }
+
+        #endregion
+
+        #region 修改信息相关
+
+        /// 修改用户信息
+        /// <param name="userId">用户ID</param>
+        /// <param name="request">用户信息请求</param>
+        /// <returns>更新后的用户信息</returns>
+        [HttpPatch("{userId}")]
+        public async Task<ApiResponse<UserDetailDto>> UpdateUser(string userId, [FromBody] UpdateUserRequest request)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                // 更新用户信息
+                if (!string.IsNullOrEmpty(request.Nickname))
+                {
+                    user.Nickname = request.Nickname;
+                }
+                if (request.Birthday.HasValue)
+                {
+                    user.Birthday = request.Birthday;
+                }
+                if (request.Gender.HasValue)
+                {
+                    user.Gender = request.Gender.Value;
+                }
+                var updatedUser = await _userService.UpdateUserAsync(user);
+                var stats = await GetUserStatsAsync(userId);
+                var userDto = UserMapper.ToUserDetailDto(updatedUser, stats);
+
+                return ApiResponse<UserDetailDto>.Success(userDto, "用户信息更新成功");
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                 _logger.LogError(ex, "更新用户信息时发生异常，UserId: {UserId}", userId);
+                throw new BusinessException("更新用户信息失败");
+            }
+        }
+
+        #endregion
+
+        #region 评论/投诉相关
+
         /// 用户发表评论
         /// <param name="userId">用户ID</param>
         /// <param name="request">评论请求</param>
@@ -268,13 +350,12 @@ namespace JISpeed.Api.Controllers
             }
         }
 
-        /// 根据ID获取用户提交的所有投诉
-
+        /// 删除评论
         /// <param name="userId">用户ID</param>
-        /// <returns>投诉列表</returns>
-        [HttpGet("{userId}/complaints")]
-        public async Task<ApiResponse<List<UserComplaintDto>>> GetUserComplaints(string userId,
-        [FromQuery] int? size, [FromQuery] int? page)
+        /// <param name="reviewId">评论ID</param>
+        /// <returns>操作结果</returns>
+        [HttpDelete("{userId}/reviews/{reviewId}")]
+        public async Task<ApiResponse<object>> RemoveReview(string userId, string reviewId)
         {
             try
             {
@@ -284,22 +365,62 @@ namespace JISpeed.Api.Controllers
                     throw UserExceptions.UserNotFound(userId);
                 }
 
-                var complaints = await _complaintRepository.GetByUserIdAsync(userId);
-                var paginatedComplaints = complaints
-                    .Skip(((page ?? 1) - 1) * (size ?? 10))
-                    .Take(size ?? 10)
-                    .ToList();
-                var complaintDtos = UserMapper.ToUserComplaintDtoList(paginatedComplaints);
+                // 删除评论
+                var success = await _userService.DeleteReviewAsync(userId, reviewId);
+                if (!success)
+                {
+                    throw new BusinessException("删除评论失败");
+                }
 
-                return ApiResponse<List<UserComplaintDto>>.Success(complaintDtos);
+                return ApiResponse<object>.Success(new { }, "删除评论成功");
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
             {
-                _logger.LogError(ex, "获取用户投诉时发生异常，UserId: {UserId}", userId);
-                throw new BusinessException("获取用户投诉失败");
+                _logger.LogError(ex, "删除评论时发生异常，UserId: {UserId}, ReviewId: {ReviewId}", userId, reviewId);
+                throw new BusinessException("删除评论失败");
             }
         }
 
+        /// 用户提交投诉
+        /// <param name="userId">用户ID</param>
+        /// <param name="request">投诉请求</param>
+        /// <returns>操作结果</returns>
+        [HttpPost("{userId}/complaints")]
+        public async Task<ApiResponse<object>> AddComplaint(string userId, [FromBody] AddComplaintRequest request)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                //提交投诉
+                var complaintId = await _userService.AddComplaintAsync(
+                    userId,
+                    request.OrderId,
+                    request.Role,
+                    request.Status,
+                    request.Description);
+
+                if (complaintId == null)
+                {
+                    throw new BusinessException("提交投诉失败");
+                }
+
+                return ApiResponse<object>.Success(new { ComplaintId = complaintId }, "提交投诉成功");
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "提交投诉时发生异常，UserId: {UserId}", userId);
+                throw new BusinessException("提交投诉失败");
+            }
+        }
+
+        #endregion
+
+        #region 收藏相关
 
         /// 用户添加收藏夹
 
@@ -378,6 +499,9 @@ namespace JISpeed.Api.Controllers
             }
         }
 
+        #endregion
+
+        #region 地址相关
 
         /// 添加地址
 
@@ -394,13 +518,6 @@ namespace JISpeed.Api.Controllers
                 {
                     throw UserExceptions.UserNotFound(userId);
                 }
-
-                if (string.IsNullOrEmpty(request.ReceiverName))
-                    throw new ValidationException("收货人姓名不能为空");
-                if (string.IsNullOrEmpty(request.ReceiverPhone))
-                    throw new ValidationException("收货人手机号不能为空");
-                if (string.IsNullOrEmpty(request.DetailedAddress))
-                    throw new ValidationException("详细地址不能为空");
 
                 // 创建地址
                 var addressId = await _userService.CreateAddressAsync(
@@ -517,6 +634,9 @@ namespace JISpeed.Api.Controllers
             }
         }
 
+        #endregion
+
+        #region 购物车相关
 
         /// 添加到购物车
 
@@ -547,7 +667,7 @@ namespace JISpeed.Api.Controllers
                 }
 
                 // 添加到购物车
-                var cartItemId = await _userService.AddToCartAsync(userId, request.DishId);
+                var cartItemId = await _userService.AddToCartAsync(userId, request.DishId, request.MerchantId);
                 if (cartItemId == null)
                 {
                     throw new BusinessException("添加到购物车失败");
@@ -594,6 +714,8 @@ namespace JISpeed.Api.Controllers
                 throw new BusinessException("从购物车删除失败");
             }
         }
+
+        #endregion
 
         private async Task<UserStatsDto> GetUserStatsAsync(string userId)
         {

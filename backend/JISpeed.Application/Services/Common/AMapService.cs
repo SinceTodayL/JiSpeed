@@ -48,10 +48,12 @@ namespace JISpeed.Application.Services.Common
                         decimal.TryParse(parts[0], out var longitude) &&
                         decimal.TryParse(parts[1], out var latitude))
                     {
+                        _logger.LogInformation("地理编码成功, Address: {Address}, Longitude: {Longitude}, Latitude: {Latitude}",
+                            address, longitude, latitude);
                         return (longitude, latitude);
                     }
                 }
-
+                _logger.LogWarning("地理编码未找到结果, Address: {Address}", address);
                 return null;
             }
             catch (Exception ex)

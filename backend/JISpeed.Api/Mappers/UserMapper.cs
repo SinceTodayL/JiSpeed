@@ -86,7 +86,8 @@ namespace JISpeed.Api.Mappers
                 DishId = cartItem.DishId,
                 CartId = cartItem.CartItemId,
                 AddedAt = cartItem.AddedAt.ToString("yyyy-MM-dd HH:mm:ss"),
-                UserId = cartItem.UserId
+                UserId = cartItem.UserId,
+                MerchantId = cartItem.MerchantId
             };
         }
 

@@ -18,6 +18,8 @@ namespace JISpeed.Application.Services.Customer
 {
     public class UserService : IUserService
     {
+        
+        private readonly IMapService _mapService;
         private readonly IUserRepository _userRepository;
         private readonly IAddressRepository _addressRepository;
         private readonly OracleDbContext _context;
@@ -27,12 +29,14 @@ namespace JISpeed.Application.Services.Customer
             IUserRepository userRepository,
             IAddressRepository addressRepository,
             OracleDbContext context,
-            ILogger<UserService> logger)
+            ILogger<UserService> logger,
+            IMapService mapService)
         {
             _userRepository = userRepository;
             _addressRepository = addressRepository;
             _context = context;
             _logger = logger;
+            _mapService = mapService;
         }
 
 
@@ -244,7 +248,7 @@ namespace JISpeed.Application.Services.Customer
 
                 // 使用原生 SQL 插入，因为 Favorite 实体构造函数受限
                 var sql = @"
-                    INSERT INTO FAVORITE (UserId, DishId, FavorAt) 
+                    INSERT INTO FAVORITE (""UserId"", ""DishId"", ""FavorAt"") 
                     VALUES (:userId, :dishId, :favorAt)";
 
                 var parameters = new[]
@@ -313,7 +317,7 @@ namespace JISpeed.Application.Services.Customer
 
                 var sql = @"
                     DELETE FROM FAVORITE 
-                    WHERE UserId = :userId AND DishId = :dishId";
+                    WHERE ""UserId"" = :userId AND ""DishId"" = :dishId";
 
                 var parameters = new[]
                 {
@@ -388,7 +392,7 @@ namespace JISpeed.Application.Services.Customer
         /// <param name="userId">用户ID</param>
         /// <param name="dishId">菜品ID</param>
         /// <returns>购物车项ID</returns>
-        public async Task<string?> AddToCartAsync(string userId, string dishId)
+        public async Task<string?> AddToCartAsync(string userId, string dishId, string merchantId)
         {
             try
             {
@@ -414,15 +418,16 @@ namespace JISpeed.Application.Services.Customer
 
                 // 使用原生 SQL 插入
                 var sql = @"
-                    INSERT INTO CARTITEM (CartItemId, UserId, DishId, AddedAt) 
-                    VALUES (:cartItemId, :userId, :dishId, :addedAt)";
+                    INSERT INTO CARTITEM (""CartItemId"", ""UserId"", ""DishId"", ""AddedAt"", ""MerchantId"") 
+                    VALUES (:cartItemId, :userId, :dishId, :addedAt, :merchantId)";
 
                 var parameters = new[]
                 {
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":cartItemId", cartItemId),
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":userId", userId),
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":dishId", dishId),
-                    new Oracle.ManagedDataAccess.Client.OracleParameter(":addedAt", DateTime.UtcNow)
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":addedAt", DateTime.UtcNow),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":merchantId", merchantId)
                 };
 
                 var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters);
@@ -455,7 +460,7 @@ namespace JISpeed.Application.Services.Customer
             {
                 var sql = @"
                     DELETE FROM CARTITEM 
-                    WHERE CartItemId = :cartItemId AND UserId = :userId";
+                    WHERE ""CartItemId"" = :cartItemId AND ""UserId"" = :userId";
 
                 var parameters = new[]
                 {
@@ -547,13 +552,29 @@ namespace JISpeed.Application.Services.Customer
 
                 var addressId = Guid.NewGuid().ToString("N");
 
+                var geocode = await _mapService.GeocodeAsync(detailedAddress);
+                decimal latitude = 0;
+                decimal longitude = 0;
+                if (geocode != null || geocode.HasValue)
+                {
+                    latitude = geocode.Value.latitude;
+                    longitude = geocode.Value.longitude;
+                }
+                else
+                {
+                    _logger.LogWarning("地址解析失败，无法获取经纬度，DetailedAddress: {DetailedAddress}", detailedAddress);
+                    throw new BusinessException("地址解析失败，无法获取经纬度");
+                }
+
+                _logger.LogInformation("经纬度为：{Latitude}, {Longitude}", latitude, longitude);
+
                 // 如果设置为默认地址，先取消其他默认地址
                 if (isDefault == 1)
                 {
                     var updateDefaultSql = @"
                         UPDATE ADDRESS 
-                        SET IsDefault = 0 
-                        WHERE UserId = :userId AND IsDefault = 1";
+                        SET ""IsDefault"" = 0 
+                        WHERE ""UserId"" = :userId AND ""IsDefault"" = 1";
 
                     var updateParams = new[]
                     {
@@ -563,10 +584,12 @@ namespace JISpeed.Application.Services.Customer
                     await _context.Database.ExecuteSqlRawAsync(updateDefaultSql, updateParams);
                 }
 
+                //TODO: 经纬度
                 // 插入新地址
                 var sql = @"
-                    INSERT INTO ADDRESS (AddressId, UserId, ReceiverName, ReceiverPhone, DetailedAddress, IsDefault) 
-                    VALUES (:addressId, :userId, :receiverName, :receiverPhone, :detailedAddress, :isDefault)";
+                    INSERT INTO ADDRESS (""AddressId"", ""UserId"", ""ReceiverName"", 
+                    ""ReceiverPhone"", ""DetailedAddress"", ""IsDefault"", ""Latitude"", ""Longitude"") 
+                    VALUES (:addressId, :userId, :receiverName, :receiverPhone, :detailedAddress, :isDefault, :latitude, :longitude)";
 
                 var parameters = new[]
                 {
@@ -575,7 +598,9 @@ namespace JISpeed.Application.Services.Customer
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":receiverName", receiverName),
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":receiverPhone", receiverPhone),
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":detailedAddress", detailedAddress),
-                    new Oracle.ManagedDataAccess.Client.OracleParameter(":isDefault", isDefault)
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":isDefault", isDefault),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":latitude", latitude),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":longitude", longitude)
                 };
 
                 var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters);
@@ -755,7 +780,7 @@ namespace JISpeed.Application.Services.Customer
             {
                 var reviewId = Guid.NewGuid().ToString("N");
                 var reviewAt = DateTime.UtcNow;
-                
+
                 // 1. 使用原生 SQL 插入 REVIEW 表
                 var insertReviewSql = @"
                 INSERT INTO REVIEW (""ReviewId"", ""OrderId"", ""UserId"", ""Rating"", ""Content"", ""IsAnonymous"", ""ReviewAt"") 
@@ -771,7 +796,7 @@ namespace JISpeed.Application.Services.Customer
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":isAnonymous", isAnonymous),
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":reviewAt", reviewAt)
                 };
-                
+
                 await _context.Database.ExecuteSqlRawAsync(insertReviewSql, reviewParams);
 
                 // 2. 遍历订单中的所有菜品，使用原生 SQL 更新 Dish 表和插入 Dish_Review 联结表
@@ -813,7 +838,7 @@ namespace JISpeed.Application.Services.Customer
                         await _context.Database.ExecuteSqlRawAsync(insertDishReviewSql, dishReviewParams);
                     }
                 }
-                
+
                 await transaction.CommitAsync();
 
                 _logger.LogInformation("添加评论成功，UserId: {UserId}, OrderId: {OrderId}, ReviewId: {ReviewId}",
@@ -826,6 +851,78 @@ namespace JISpeed.Application.Services.Customer
                 await transaction.RollbackAsync();
                 _logger.LogError(ex, "添加评论失败，UserId: {UserId}, OrderId: {OrderId}", userId, orderId);
                 return false;
+            }
+        }
+
+        /// 删除评论
+        /// <param name="userId">用户ID</param>
+        /// <param name="reviewId">评论ID</param>
+        /// <returns>删除是否成功</returns>
+        public async Task<bool> DeleteReviewAsync(string userId, string reviewId)
+        {
+            try
+            {
+                var sql = @"
+                    DELETE FROM REVIEW
+                    WHERE ""ReviewId"" = :reviewId AND ""UserId"" = :userId";
+
+                var parameters = new[]
+                {
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":reviewId", reviewId),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":userId", userId)
+                };
+
+                var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters);
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "删除评论失败，UserId: {UserId}, ReviewId: {ReviewId}", userId, reviewId);
+                return false;
+            }
+        }
+
+        #endregion
+
+        #region 投诉相关方法
+
+        public async Task<string> AddComplaintAsync(string UserId, string OrderId, int Role, int Status, string Description)
+        {
+            try
+            {
+                var complaintId = Guid.NewGuid().ToString("N");
+                var createdAt = DateTime.UtcNow;
+
+                var sql = @"
+                    INSERT INTO COMPLAINT (""ComplaintId"", ""ComplainantId"", ""OrderId"", ""CmplRole"", ""CmplStatus"", ""CmplDescription"", ""CreatedAt"") 
+                    VALUES (:complaintId, :userId, :orderId, :role, :status, :description, :createdAt)";
+
+                var parameters = new[]
+                {
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":complaintId", complaintId),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":userId", UserId),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":orderId", OrderId),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":role", Role),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":status", Status),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":description", Description),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":createdAt", createdAt)
+                };
+
+                var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters);
+
+                if (result > 0)
+                {
+                    _logger.LogInformation("创建投诉成功，UserId: {UserId}, ComplaintId: {ComplaintId}", UserId, complaintId);
+                    return complaintId;
+                }
+
+                _logger.LogWarning("创建投诉失败，UserId: {UserId}", UserId);
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "创建投诉失败，UserId: {UserId}", UserId);
+                return string.Empty;
             }
         }
 

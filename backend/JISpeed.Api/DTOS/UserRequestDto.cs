@@ -29,6 +29,9 @@ namespace JISpeed.Api.DTOS
     {
         [Required(ErrorMessage = "菜品ID不能为空")]
         public string DishId { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "商家ID不能为空")]
+        public string MerchantId { get; set; } = string.Empty;
     }
 
     public class AddReviewRequest
@@ -43,5 +46,27 @@ namespace JISpeed.Api.DTOS
         public string Content { get; set; } = string.Empty;
 
         public int IsAnonymous { get; set; } = 2;
+    }
+
+    public class AddComplaintRequest
+    {
+        [Required(ErrorMessage = "订单ID不能为空")]
+        public string OrderId { get; set; } = string.Empty;
+
+        public int Role { get; set; } = 1; // 1: 用户, 2: 商家, 3: 骑手
+
+        public int Status { get; set; } = 1;
+
+        [Required(ErrorMessage = "描述不能为空")]
+        public string Description { get; set; } = string.Empty;
+    }
+
+    public class UpdateUserRequest
+    {
+        public string? Nickname { get; set; }
+        
+        public int? Gender { get; set; }
+        
+        public DateTime? Birthday { get; set; }
     }
 }

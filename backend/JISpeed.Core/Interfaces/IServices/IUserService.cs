@@ -86,7 +86,7 @@ namespace JISpeed.Core.Interfaces.IServices
         /// <param name="userId">用户ID</param>
         /// <param name="dishId">菜品ID</param>
         /// <returns>购物车项ID</returns>
-        Task<string?> AddToCartAsync(string userId, string dishId);
+        Task<string?> AddToCartAsync(string userId, string dishId, string merchantId);
 
 
         /// 从购物车移除
@@ -153,5 +153,11 @@ namespace JISpeed.Core.Interfaces.IServices
 
         /// 评论相关
         Task<bool> AddReviewAsync(string userId, string orderId, int rating, string? content = null, int isAnonymous = 2);
+
+        /// 删除评论
+        Task<bool> DeleteReviewAsync(string userId, string reviewId);
+
+        /// 提交投诉
+        Task<string> AddComplaintAsync(string UserId, string OrderId, int Role, int Status, string Description);
     }
 }
