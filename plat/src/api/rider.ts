@@ -77,6 +77,8 @@ export function formatPercentage(value) {
   return `${(value * 100).toFixed(2)}%`;
 }
 
+// fetchAllRidersOrderOverview 已移除，请使用 order.ts 中的 getOrderAssignmentOverview
+
 // 工具: 格式化收入，保留两位小数并加千分位
 export function formatIncome(value) {
   if (typeof value !== 'number') return '-';

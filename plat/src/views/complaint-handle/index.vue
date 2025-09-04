@@ -57,7 +57,6 @@ const searchForm = ref({
   userId: '',
   merchantId: '',
   status: null,
-  adminId: '',
   size: null, // 不设置默认分页，获取所有数据
   page: null
 });
@@ -119,9 +118,6 @@ const filteredTableData = computed(() => {
     if (searchForm.value.status !== null && complaint.cmplStatus !== searchForm.value.status) {
       return false;
     }
-    if (searchForm.value.adminId && !complaint.adminId?.includes(searchForm.value.adminId)) {
-      return false;
-    }
     return true;
   });
 });
@@ -136,7 +132,6 @@ async function getComplaintList() {
     if (searchForm.value.userId && searchForm.value.userId.trim()) params.userId = searchForm.value.userId.trim();
     if (searchForm.value.merchantId && searchForm.value.merchantId.trim()) params.merchantId = searchForm.value.merchantId.trim();
     if (searchForm.value.status !== null && searchForm.value.status !== undefined) params.status = searchForm.value.status;
-    if (searchForm.value.adminId && searchForm.value.adminId.trim()) params.adminId = searchForm.value.adminId.trim();
     if (searchForm.value.size && searchForm.value.size > 0) params.size = searchForm.value.size;
     if (searchForm.value.page && searchForm.value.page > 0) params.page = searchForm.value.page;
     
@@ -403,7 +398,6 @@ function handleReset() {
     userId: '',
     merchantId: '',
     status: null,
-    adminId: '',
     size: null,
     page: null
   };
@@ -617,14 +611,6 @@ onMounted(() => {
             style="width: 120px"
           />
         </n-form-item>
-        <n-form-item label="管理员ID">
-          <n-input 
-            v-model:value="searchForm.adminId" 
-            placeholder="输入管理员ID"
-            clearable
-            style="width: 150px"
-          />
-        </n-form-item>
       </n-form>
     </n-card>
 
@@ -680,8 +666,8 @@ onMounted(() => {
     <NModal 
       v-model:show="showModal" 
       preset="card" 
-      style="width: 800px; max-height: 80vh;" 
-      class="rounded-2xl"
+      style="width: 800px; max-height: 80vh; background-color: #ffffff;" 
+      class="rounded-2xl complaint-modal"
       :mask-closable="false"
     >
       <template #header>
@@ -709,7 +695,7 @@ onMounted(() => {
 
       <div class="space-y-6">
         <!-- 投诉详情概览 -->
-        <div class="bg-gradient-to-r from-red-50 to-pink-50 p-4 rounded-lg">
+        <div class="bg-white p-4 rounded-lg border border-red-200 shadow-sm">
           <h4 class="text-gray-800 font-medium mb-4 flex items-center gap-2">
             <n-icon color="#ff4d4f">
               <DocumentTextOutline />
@@ -719,27 +705,27 @@ onMounted(() => {
           
           <n-grid :cols="3" :x-gap="20" :y-gap="12">
             <n-gi>
-              <div class="text-center">
-                <div class="text-lg font-bold text-purple-600">
+              <div class="text-center p-3 bg-purple-50 rounded-lg border border-purple-200">
+                <div class="text-lg font-bold text-purple-700">
                   {{ getCmplStatusText(currentItem.cmplStatus) }}
                 </div>
-                <div class="text-sm text-gray-600">当前状态</div>
+                <div class="text-sm text-gray-700 font-medium">当前状态</div>
               </div>
             </n-gi>
             <n-gi>
-              <div class="text-center">
-                <div class="text-lg font-bold text-blue-600">
+              <div class="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div class="text-lg font-bold text-blue-700">
                   {{ getCmplRoleText(currentItem.cmplRole) }}
                 </div>
-                <div class="text-sm text-gray-600">投诉类型</div>
+                <div class="text-sm text-gray-700 font-medium">投诉类型</div>
               </div>
             </n-gi>
             <n-gi>
-              <div class="text-center">
-                <div class="text-lg font-bold text-green-600">
+              <div class="text-center p-3 bg-green-50 rounded-lg border border-green-200">
+                <div class="text-lg font-bold text-green-700">
                   {{ formatDateTime(currentItem.createdAt).split(' ')[0] }}
                 </div>
-                <div class="text-sm text-gray-600">投诉时间</div>
+                <div class="text-sm text-gray-700 font-medium">投诉时间</div>
               </div>
             </n-gi>
           </n-grid>
@@ -760,29 +746,29 @@ onMounted(() => {
               
               <div class="space-y-4">
                 <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span class="text-gray-600 font-medium">投诉ID</span>
-                  <n-text code style="word-break: break-all; max-width: 200px;">
+                  <span class="text-gray-700 font-medium">投诉ID</span>
+                  <n-text code style="word-break: break-all; max-width: 200px; background-color: #f7fafc; color: #2d3748; padding: 2px 6px; border-radius: 4px;">
                     {{ currentItem.complaintId || '-' }}
                   </n-text>
                 </div>
                 
                 <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span class="text-gray-600 font-medium">订单ID</span>
-                  <n-text code style="word-break: break-all; max-width: 200px;">
+                  <span class="text-gray-700 font-medium">订单ID</span>
+                  <n-text code style="word-break: break-all; max-width: 200px; background-color: #f7fafc; color: #2d3748; padding: 2px 6px; border-radius: 4px;">
                     {{ currentItem.orderId || '-' }}
                   </n-text>
                 </div>
                 
                 <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span class="text-gray-600 font-medium">投诉人ID</span>
-                  <n-text code style="word-break: break-all; max-width: 200px;">
+                  <span class="text-gray-700 font-medium">投诉人ID</span>
+                  <n-text code style="word-break: break-all; max-width: 200px; background-color: #f7fafc; color: #2d3748; padding: 2px 6px; border-radius: 4px;">
                     {{ currentItem.complainantId || '-' }}
                   </n-text>
                 </div>
                 
                 <div class="flex justify-between items-center py-2">
-                  <span class="text-gray-600 font-medium">投诉时间</span>
-                  <n-text>{{ formatDateTime(currentItem.createdAt) || '-' }}</n-text>
+                  <span class="text-gray-700 font-medium">投诉时间</span>
+                  <n-text style="color: #2d3748; font-weight: 500;">{{ formatDateTime(currentItem.createdAt) || '-' }}</n-text>
                 </div>
               </div>
             </n-card>
@@ -797,8 +783,8 @@ onMounted(() => {
                 </n-icon>
               </template>
               
-              <div class="p-4 bg-gray-50 rounded-lg min-h-32">
-                <n-text>
+              <div class="p-4 bg-white rounded-lg min-h-32 border border-gray-200 shadow-sm">
+                <n-text style="color: #2d3748; font-weight: 500; line-height: 1.6;">
                   {{ currentItem.cmplDescription || '无详细投诉描述' }}
                 </n-text>
               </div>
@@ -1036,6 +1022,38 @@ onMounted(() => {
 :deep(.n-modal) {
   border-radius: 16px;
   overflow: hidden;
+}
+
+/* 投诉详情模态框样式增强 */
+:deep(.complaint-modal .n-card) {
+  background-color: #ffffff !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1) !important;
+}
+
+:deep(.complaint-modal .n-card-header) {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 20px 24px !important;
+}
+
+:deep(.complaint-modal .n-card__content) {
+  background-color: #ffffff !important;
+  padding: 24px !important;
+}
+
+/* 确保所有文字都有足够的对比度 */
+:deep(.complaint-modal .n-text) {
+  color: #2d3748 !important;
+}
+
+:deep(.complaint-modal .n-card .n-card-header__main) {
+  color: #1a202c !important;
+  font-weight: 600 !important;
+}
+
+:deep(.complaint-modal .n-form-item-label__text) {
+  color: #4a5568 !important;
+  font-weight: 500 !important;
 }
 
 /* 加载动画优化 */
