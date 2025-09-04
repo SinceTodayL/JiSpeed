@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using JISpeed.Core.Entities.User;
 using JISpeed.Core.Entities.Common;
+using JISpeed.Core.Entities.Order;
+using JISpeed.Core.Entities.Junctions;
 using JISpeed.Core.Interfaces.IRepositories.User;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Core.Exceptions;
@@ -711,6 +713,119 @@ namespace JISpeed.Application.Services.Customer
             {
                 _logger.LogError(ex, "获取地址数量失败，UserId: {UserId}", userId);
                 return 0;
+            }
+        }
+
+        #endregion
+
+        #region 评论相关方法
+
+        /// <summary>
+        /// 用户对订单进行评论，并同步更新订单下所有菜品的评分和评论数。
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="orderId">订单ID</param>
+        /// <param name="rating">订单总评分</param>
+        /// <param name="content">评论内容 (可选)</param>
+        /// <param name="isAnonymous">是否匿名 (1: 是, 2: 否)</param>
+        /// <returns>操作是否成功</returns>
+        public async Task<bool> AddReviewAsync(string userId, string orderId, int rating, string? content = null, int isAnonymous = 2)
+        {
+            // 数据验证：确保订单存在且属于该用户
+            // 这一步最好仍然使用 EF Core 的查询，以利用其对象映射能力
+            var order = await _context.Orders
+                .Include(o => o.OrderDishes)
+                .FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId);
+
+            if (order == null)
+            {
+                _logger.LogWarning("添加评论失败：订单 {OrderId} 不存在或不属于用户 {UserId}", orderId, userId);
+                return false;
+            }
+
+            if (rating < 1 || rating > 5)
+            {
+                _logger.LogWarning("添加评论失败：评分 {Rating} 超出有效范围 (1-5)", rating);
+                return false;
+            }
+
+            // 使用数据库事务保证所有操作的原子性
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var reviewId = Guid.NewGuid().ToString("N");
+                var reviewAt = DateTime.UtcNow;
+                
+                // 1. 使用原生 SQL 插入 REVIEW 表
+                var insertReviewSql = @"
+                INSERT INTO REVIEW (""ReviewId"", ""OrderId"", ""UserId"", ""Rating"", ""Content"", ""IsAnonymous"", ""ReviewAt"") 
+                VALUES (:reviewId, :orderId, :userId, :rating, :content, :isAnonymous, :reviewAt)";
+
+                var reviewParams = new[]
+                {
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":reviewId", reviewId),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":orderId", orderId),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":userId", userId),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":rating", rating),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":content", content ?? (object)DBNull.Value),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":isAnonymous", isAnonymous),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":reviewAt", reviewAt)
+                };
+                
+                await _context.Database.ExecuteSqlRawAsync(insertReviewSql, reviewParams);
+
+                // 2. 遍历订单中的所有菜品，使用原生 SQL 更新 Dish 表和插入 Dish_Review 联结表
+                foreach (var orderDish in order.OrderDishes)
+                {
+                    // 获取当前菜品的评论数和评分
+                    var dish = await _context.Dishes.AsNoTracking().FirstOrDefaultAsync(d => d.DishId == orderDish.DishId);
+
+                    if (dish != null)
+                    {
+                        // 计算新的评论数量和评分
+                        var newReviewQuantity = dish.ReviewQuantity + 1;
+                        var newRating = ((dish.Rating * dish.ReviewQuantity) + rating) / newReviewQuantity;
+
+                        // 使用原生 SQL 更新 DISH 表
+                        var updateDishSql = @"
+                            UPDATE ""DISH""
+                            SET ""Rating"" = :newRating, ""ReviewQuantity"" = :newReviewQuantity
+                            WHERE ""DishId"" = :dishId";
+
+                        var dishParams = new[]
+                        {
+                            new Oracle.ManagedDataAccess.Client.OracleParameter(":newRating", newRating),
+                            new Oracle.ManagedDataAccess.Client.OracleParameter(":newReviewQuantity", newReviewQuantity),
+                            new Oracle.ManagedDataAccess.Client.OracleParameter(":dishId", dish.DishId)
+                        };
+                        await _context.Database.ExecuteSqlRawAsync(updateDishSql, dishParams);
+
+                        // 使用原生 SQL 插入 DISH_REVIEW 联结表
+                        var insertDishReviewSql = @"
+                        INSERT INTO ""DISH_REVIEW"" (""DishId"", ""ReviewId"")
+                        VALUES (:dishId, :reviewId)";
+
+                        var dishReviewParams = new[]
+                        {
+                            new Oracle.ManagedDataAccess.Client.OracleParameter(":dishId", dish.DishId),
+                            new Oracle.ManagedDataAccess.Client.OracleParameter(":reviewId", reviewId)
+                        };
+                        await _context.Database.ExecuteSqlRawAsync(insertDishReviewSql, dishReviewParams);
+                    }
+                }
+                
+                await transaction.CommitAsync();
+
+                _logger.LogInformation("添加评论成功，UserId: {UserId}, OrderId: {OrderId}, ReviewId: {ReviewId}",
+                    userId, orderId, reviewId);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "添加评论失败，UserId: {UserId}, OrderId: {OrderId}", userId, orderId);
+                return false;
             }
         }
 

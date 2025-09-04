@@ -149,5 +149,9 @@ namespace JISpeed.Core.Interfaces.IServices
         /// <param name="userId">用户ID</param>
         /// <returns>地址数量</returns>
         Task<int> GetAddressCountAsync(string userId);
+
+
+        /// 评论相关
+        Task<bool> AddReviewAsync(string userId, string orderId, int rating, string? content = null, int isAnonymous = 2);
     }
 }

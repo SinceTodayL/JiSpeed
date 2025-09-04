@@ -30,4 +30,18 @@ namespace JISpeed.Api.DTOS
         [Required(ErrorMessage = "菜品ID不能为空")]
         public string DishId { get; set; } = string.Empty;
     }
+
+    public class AddReviewRequest
+    {
+        [Required(ErrorMessage = "订单ID不能为空")]
+        public string OrderId { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "评分不能为空")]
+        [Range(1, 5, ErrorMessage = "评分必须在1到5之间")]
+        public int Rating { get; set; }
+
+        public string Content { get; set; } = string.Empty;
+
+        public int IsAnonymous { get; set; } = 2;
+    }
 }

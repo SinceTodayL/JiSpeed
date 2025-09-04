@@ -2,10 +2,14 @@ using JISpeed.Core.Entities.Merchant;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Core.Constants;
 using JISpeed.Core.Entities.Dish;
+using JISpeed.Core.Entities.Order;
+using JISpeed.Core.Entities.User;
 using JISpeed.Core.Exceptions;
 using JISpeed.Core.Interfaces.IRepositories.Dish;
 using JISpeed.Core.Interfaces.IRepositories.Merchant;
 using Microsoft.Extensions.Logging;
+using JISpeed.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using MerchantEntity = JISpeed.Core.Entities.Merchant.Merchant;
 
 namespace JISpeed.Application.Services.Merchant
@@ -17,17 +21,21 @@ namespace JISpeed.Application.Services.Merchant
         private readonly ICategoryRepository _categoryRepository;
         private readonly ILogger<DishService> _logger;
 
+        private readonly OracleDbContext _context;
+
         public DishService(
             IMerchantRepository merchantRepository,
             ICategoryRepository categoryRepository,
             IDishRepository dishRepository,
-            ILogger<DishService> logger
+            ILogger<DishService> logger,
+            OracleDbContext context
             )
         {
             _merchantRepository = merchantRepository;
             _categoryRepository = categoryRepository;
             _dishRepository = dishRepository;
             _logger = logger;
+            _context = context;
         }
         
         // 使用MerchantId和DIsh实体新增菜品
@@ -271,6 +279,21 @@ namespace JISpeed.Application.Services.Merchant
             }
         }
 
+        public async Task<List<(Review Review, User User)>> GetReviewsByDishIdAsync(string dishId)
+        {
+            try
+            {
+                var reviewsWithUsers = await _context.DishReviews
+                    .Where(dr => dr.DishId == dishId)
+                    .Select(dr => new { Review = dr.Review, User = dr.Review.User })
+                    .ToListAsync();
+                return reviewsWithUsers.Select(x => (x.Review, x.User)).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "查询dish评论失败: {DishId}", dishId);
+                return new List<(Review Review, User User)>();
+            }
+        }
     }
-
 }

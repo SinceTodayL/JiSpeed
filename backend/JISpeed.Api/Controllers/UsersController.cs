@@ -232,6 +232,42 @@ namespace JISpeed.Api.Controllers
             }
         }
 
+        /// 用户发表评论
+        /// <param name="userId">用户ID</param>
+        /// <param name="request">评论请求</param>
+        /// <returns>操作结果</returns>
+        [HttpPost("{userId}/review")]
+        public async Task<ApiResponse<object>> AddReview(string userId, [FromBody] AddReviewRequest request)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                //添加评论
+                var success = await _userService.AddReviewAsync(
+                    userId,
+                    request.OrderId,
+                    request.Rating,
+                    request.Content,
+                    request.IsAnonymous);
+                if (!success)
+                {
+                    throw new BusinessException("添加评论失败");
+                }
+
+                return ApiResponse<object>.Success(new { }, "添加评论成功");
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "添加评论时发生异常，UserId: {UserId}", userId);
+                throw new BusinessException("添加评论失败");
+            }
+        }
+
         /// 根据ID获取用户提交的所有投诉
 
         /// <param name="userId">用户ID</param>
