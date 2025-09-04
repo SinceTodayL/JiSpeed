@@ -31,27 +31,31 @@ namespace JISpeed.Core.Entities.User
         [Column(TypeName = "CHAR(32)")]
         public required string DishId { get; set; } //菜品ID fk->Dish(dishId)
 
+        public required int Quantity { get; set; } = 1;//数量
+
         public required DateTime AddedAt { get; set; } //加入时间
 
         //导航属性
         [ForeignKey("UserId")]
-        public virtual required User User { get; set; }
+        public virtual User? User { get; set; }
 
         [ForeignKey("MerchantId")]
-        public virtual required Merchant Merchant { get; set; }
+        public virtual Merchant? Merchant { get; set; }
 
         [ForeignKey("DishId")]
-        public virtual required Dish Dish { get; set; }
+        public virtual Dish? Dish { get; set; }
 
-        public CartItem(string userId, string merchantId, string dishId)
+        public CartItem(string cartItemId, string userId, string merchantId, string dishId, int quantity = 1)
         {
+            CartItemId = cartItemId == null ? Guid.NewGuid().ToString("N") : cartItemId;
             UserId = userId;
             MerchantId = merchantId;
             DishId = dishId;
-            CartItemId = Guid.NewGuid().ToString("N"); //生成唯一的CartItemId
-            AddedAt = DateTime.Now; //使用 UTC 时间
+            Quantity = quantity;
+            AddedAt = DateTime.Now;
         }
 
-        private CartItem(){ }
+        public CartItem() { }
+
     }
 }

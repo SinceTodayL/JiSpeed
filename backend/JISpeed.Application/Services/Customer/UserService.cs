@@ -392,7 +392,7 @@ namespace JISpeed.Application.Services.Customer
         /// <param name="userId">用户ID</param>
         /// <param name="dishId">菜品ID</param>
         /// <returns>购物车项ID</returns>
-        public async Task<string?> AddToCartAsync(string userId, string dishId, string merchantId)
+        public async Task<CartItem?> AddToCartAsync(string userId, string dishId, string merchantId)
         {
             try
             {
@@ -410,16 +410,18 @@ namespace JISpeed.Application.Services.Customer
 
                 if (existing != null)
                 {
-                    _logger.LogInformation("菜品已在购物车中，UserId: {UserId}, DishId: {DishId}", userId, dishId);
-                    return null; // 已经在购物车中了
+                    ++existing.Quantity;
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("菜品已在购物车中，增加数量，UserId: {UserId}, DishId: {DishId}, New Quantity: {Quantity}", userId, dishId, existing.Quantity);
+                    return existing;
                 }
 
                 var cartItemId = Guid.NewGuid().ToString("N");
 
                 // 使用原生 SQL 插入
                 var sql = @"
-                    INSERT INTO CARTITEM (""CartItemId"", ""UserId"", ""DishId"", ""AddedAt"", ""MerchantId"") 
-                    VALUES (:cartItemId, :userId, :dishId, :addedAt, :merchantId)";
+                    INSERT INTO CARTITEM (""CartItemId"", ""UserId"", ""DishId"", ""AddedAt"", ""MerchantId"", ""Quantity"") 
+                    VALUES (:cartItemId, :userId, :dishId, :addedAt, :merchantId, :quantity)";
 
                 var parameters = new[]
                 {
@@ -427,7 +429,8 @@ namespace JISpeed.Application.Services.Customer
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":userId", userId),
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":dishId", dishId),
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":addedAt", DateTime.Now),
-                    new Oracle.ManagedDataAccess.Client.OracleParameter(":merchantId", merchantId)
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":merchantId", merchantId),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":quantity", 1)
                 };
 
                 var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters);
@@ -436,7 +439,15 @@ namespace JISpeed.Application.Services.Customer
                 {
                     _logger.LogInformation("添加到购物车成功，UserId: {UserId}, DishId: {DishId}, CartItemId: {CartItemId}",
                         userId, dishId, cartItemId);
-                    return cartItemId;
+                    return new CartItem
+                    {
+                        CartItemId = cartItemId,
+                        UserId = userId,
+                        DishId = dishId,
+                        MerchantId = merchantId,
+                        Quantity = 1,
+                        AddedAt = DateTime.Now
+                    };
                 }
 
                 return null;
@@ -448,6 +459,42 @@ namespace JISpeed.Application.Services.Customer
             }
         }
 
+
+        /// 修改购物车商品数量
+        public async Task<CartItem?> UpdateCartItemQuantityAsync(string userId, string cartId, int quantity)
+        {
+            try
+            {
+                var cartItem = await _context.CartItems
+                    .FirstOrDefaultAsync(c => c.UserId == userId && c.CartItemId == cartId);
+
+                if (cartItem == null)
+                {
+                    _logger.LogWarning("购物车项不存在，UserId: {UserId}, CartItemId: {CartItemId}", userId, cartId);
+                    return null;
+                }
+
+                if(cartItem.Quantity < quantity)
+                {
+                    return null;
+                }
+                _logger.LogInformation("当前购物车项数量，UserId: {UserId}, CartItemId: {CartItemId}, CurrentQuantity: {CurrentQuantity}",
+                    userId, cartId, cartItem.Quantity);
+                cartItem.Quantity -= quantity;
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("购物车项数量更新成功，UserId: {UserId}, CartItemId: {CartItemId}, NewQuantity: {NewQuantity}",
+                    userId, cartId, quantity);
+
+                return cartItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "更新购物车项数量失败，UserId: {UserId}, CartItemId: {CartItemId}, NewQuantity: {NewQuantity}",
+                    userId, cartId, quantity);
+                return null;
+            }
+        }
 
         /// 从购物车移除
 

@@ -34,6 +34,17 @@ namespace JISpeed.Api.DTOS
         public string MerchantId { get; set; } = string.Empty;
     }
 
+    public class UpdateCartRequest
+    {
+        [Required(ErrorMessage = "菜品ID不能为空")]
+        public string DishId { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "商家ID不能为空")]
+        public string MerchantId { get; set; } = string.Empty;
+
+        public int Quantity;
+    }
+
     public class AddReviewRequest
     {
         [Required(ErrorMessage = "订单ID不能为空")]

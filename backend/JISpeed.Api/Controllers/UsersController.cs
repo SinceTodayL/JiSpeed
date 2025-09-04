@@ -644,7 +644,7 @@ namespace JISpeed.Api.Controllers
         /// <param name="request">购物车请求</param>
         /// <returns>操作结果</returns>
         [HttpPost("{userId}/cart")]
-        public async Task<ApiResponse<object>> AddToCart(string userId, [FromBody] AddToCartRequest request)
+        public async Task<ApiResponse<UserCartItemDto>> AddToCart(string userId, [FromBody] AddToCartRequest request)
         {
             try
             {
@@ -659,26 +659,52 @@ namespace JISpeed.Api.Controllers
                     throw new ValidationException("菜品ID不能为空");
                 }
 
-                // 检查购物车中是否已有该商品
-                var isInCart = await _userService.IsInCartAsync(userId, request.DishId);
-                if (isInCart)
-                {
-                    throw new BusinessException("该菜品已在购物车中");
-                }
-
                 // 添加到购物车
-                var cartItemId = await _userService.AddToCartAsync(userId, request.DishId, request.MerchantId);
-                if (cartItemId == null)
+                var cartItem = await _userService.AddToCartAsync(userId, request.DishId, request.MerchantId);
+                if (cartItem == null)
                 {
                     throw new BusinessException("添加到购物车失败");
                 }
 
-                return ApiResponse<object>.Success(new { CartItemId = cartItemId }, "添加到购物车成功");
+                return ApiResponse<UserCartItemDto>.Success(UserMapper.ToUserCartItemDto(cartItem), "添加到购物车成功");
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
             {
                 _logger.LogError(ex, "添加到购物车时发生异常，UserId: {UserId}, DishId: {DishId}", userId, request.DishId);
                 throw new BusinessException("添加到购物车失败");
+            }
+        }
+
+        /// 减少购物车商品数量
+        [HttpPatch("{userId}/cart/{cartId}")]
+        public async Task<ApiResponse<UserCartItemDto>> UpdateCartItemQuantity(string userId, string cartId, [FromQuery] int quantity = 1)
+        {
+            try
+            {
+                if (quantity <= 0)
+                {
+                    throw new ValidationException("减少商品数量必须大于0");
+                }
+
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                // 更新购物车商品数量
+                var updatedCartItem = await _userService.UpdateCartItemQuantityAsync(userId, cartId, quantity);
+                if (updatedCartItem == null)
+                {
+                    throw new BusinessException("更新购物车商品数量失败");
+                }
+
+                return ApiResponse<UserCartItemDto>.Success(UserMapper.ToUserCartItemDto(updatedCartItem), "更新购物车商品数量成功");
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "更新购物车商品数量时发生异常，UserId: {UserId}, CartId: {CartId}", userId, cartId);
+                throw new BusinessException("更新购物车商品数量失败");
             }
         }
 

@@ -74,6 +74,8 @@ namespace JISpeed.Api.DTOs
         public string AddedAt { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
         public string MerchantId { get; set; } = string.Empty;
+
+        public int Quantity { get; set; } = 1;
     }
 
 
