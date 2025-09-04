@@ -180,7 +180,7 @@ export default {
           : ''
         const response = await addressAPI.getUserAddresses(userId)
         
-        if (response.code === 200) {
+        if (response.code === 0) {
           addresses.value = response.data
         } else {
           console.error('获取地址列表失败:', response.message)
@@ -246,7 +246,22 @@ export default {
         const userId = (typeof localStorage !== 'undefined' && localStorage.getItem && localStorage.getItem('userId'))
           ? localStorage.getItem('userId')
           : ''
-        await addressAPI.updateAddress(userId, addressId, { isDefault: true })
+        
+        // 先找到当前地址对象，获取完整信息
+        const currentAddress = addresses.value.find(addr => addr.id === addressId)
+        if (!currentAddress) {
+          console.error('未找到对应的地址信息')
+          return
+        }
+        
+        // 更新地址，传递所有必需参数
+        await addressAPI.updateAddress(userId, addressId, {
+          receiverName: currentAddress.receiverName,
+          receiverPhone: currentAddress.receiverPhone,
+          detailedAddress: currentAddress.detailedAddress,
+          isDefault: true
+        })
+        
         console.log('设置默认地址成功')
         fetchAddresses()
       } catch (error) {

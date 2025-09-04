@@ -44,7 +44,7 @@
     <div class="merchant-section">
       <div class="merchant-info">
         <img 
-          :src="merchantInfo.logo || '/api/placeholder/40/40'" 
+          :src="merchantInfo.logo || '/assets/placeholder.png'" 
           :alt="merchantInfo.merchantName"
           class="merchant-logo"
         />
@@ -72,7 +72,7 @@
           class="item-card"
         >
           <img 
-            :src="item.coverUrl || '/api/placeholder/60/60'"
+            :src="item.coverUrl || '/assets/placeholder.png'"
             :alt="item.dishName"
             class="item-image"
           />
@@ -332,6 +332,15 @@ export default {
 
     const initializeOrder = async () => {
       try {
+        // 检查用户是否登录
+        const userId = localStorage.getItem('userId')
+        if (!userId) {
+          console.error('未找到用户ID，无法初始化订单')
+          alert('请先登录')
+          router.push('/login')
+          return
+        }
+        
         let orderData = null
         
         // 优先从路由query参数获取数据
@@ -350,7 +359,7 @@ export default {
           merchantInfo.value = {
             merchantId: orderData.merchantId,
             merchantName: orderData.merchantName,
-            logo: '/api/placeholder/40/40',
+            logo: '/assets/placeholder.png',
             deliveryTime: 30,
             deliveryFee: orderData.deliveryFee || 3.5,
             minOrderAmount: 20
@@ -397,7 +406,14 @@ export default {
 
     const loadAddresses = async () => {
       try {
-        const response = await addressAPI.getUserAddresses('USER123')
+        const userId = localStorage.getItem('userId')
+        if (!userId) {
+          console.error('未找到用户ID，无法加载地址')
+          addresses.value = []
+          return
+        }
+        
+        const response = await addressAPI.getUserAddresses(userId)
         if (response && response.code === 200) {
           addresses.value = response.data.addresses
           
@@ -417,8 +433,15 @@ export default {
 
     const loadCoupons = async () => {
       try {
+        const userId = localStorage.getItem('userId')
+        if (!userId) {
+          console.error('未找到用户ID，无法加载优惠券')
+          coupons.value = []
+          return
+        }
+        
         const totalAmount = subtotal.value
-        const response = await couponAPI.getAvailableCoupons('USER123', totalAmount)
+        const response = await couponAPI.getAvailableCoupons(userId, totalAmount)
         
         if (response && response.code === 200) {
           availableCoupons.value = response.data.coupons.map(coupon => ({
@@ -484,8 +507,13 @@ export default {
       submitting.value = true
       
       try {
+        const userId = localStorage.getItem('userId')
+        if (!userId) {
+          throw new Error('未找到用户ID，无法提交订单')
+        }
+        
         const orderData = {
-          userId: localStorage.getItem('userId') || 'USER123',
+          userId: userId,
           merchantId: merchantInfo.value.merchantId,
           addressId: selectedAddress.value.addressId,
           orderItems: orderItems.value.map(item => ({
@@ -571,7 +599,7 @@ export default {
 .order-confirm {
   min-height: 100vh;
   background: #f8f9fa;
-  padding-bottom: 80px;
+  padding-bottom: 120px; /* 增加底部padding，确保内容不被导航栏遮挡 */
 }
 
 /* 顶部导航 */
@@ -947,10 +975,8 @@ export default {
 
 /* 提交区域 */
 .submit-section {
-  position: fixed;
+  position: sticky;
   bottom: 0;
-  left: 0;
-  right: 0;
   background: white;
   padding: 16px;
   border-top: 1px solid #e9ecef;
@@ -958,6 +984,8 @@ export default {
   align-items: center;
   gap: 16px;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 60px; /* 为底部导航留出空间 */
+  z-index: 10;
 }
 
 .total-info {
@@ -986,6 +1014,8 @@ export default {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 15; /* 确保按钮在最上层 */
 }
 
 .submit-btn:hover:not(:disabled) {
@@ -1194,13 +1224,14 @@ export default {
 /* 响应式设计 */
 @media (max-width: 768px) {
   .order-confirm {
-    padding-bottom: 100px;
+    padding-bottom: 140px; /* 在移动设备上增加更多底部空间 */
   }
   
   .submit-section {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
+    margin-bottom: 70px; /* 为底部导航留出更多空间 */
   }
   
   .total-info {
@@ -1209,6 +1240,27 @@ export default {
   
   .submit-btn {
     width: 100%;
+  }
+}
+
+/* 适配iPhone底部安全区域 */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .order-confirm {
+    padding-bottom: calc(120px + env(safe-area-inset-bottom));
+  }
+  
+  .submit-section {
+    margin-bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+  
+  @media (max-width: 768px) {
+    .order-confirm {
+      padding-bottom: calc(140px + env(safe-area-inset-bottom));
+    }
+    
+    .submit-section {
+      margin-bottom: calc(70px + env(safe-area-inset-bottom));
+    }
   }
 }
 </style>

@@ -603,7 +603,14 @@ export default {
       }
 
       // 准备订单数据
+      const userId = localStorage.getItem('userId')
+      if (!userId) {
+        alert('请先登录')
+        return
+      }
+      
       const orderData = {
+        userId: userId,
         merchantId: route.params.id,
         merchantName: merchantInfo.value?.merchantName,
         items: currentMerchantItems.map(item => ({
@@ -623,6 +630,10 @@ export default {
       localStorage.setItem('cartItems', JSON.stringify(orderData.items))
       localStorage.setItem('currentMerchantId', route.params.id)
       localStorage.setItem('currentMerchantName', merchantInfo.value?.merchantName || '餐厅')
+      // 确保已保存userId
+      if (userId) {
+        localStorage.setItem('userId', userId)
+      }
 
       // 跳转到结算页面
       router.push({

@@ -1,6 +1,7 @@
 // 购物车状态管理组合式函数
 import { ref, computed, watch } from 'vue'
 import { cartAPI } from '@/api/cart.js'
+import { dishAPI, merchantAPI } from '@/api/browse.js'
 
 // 全局购物车状态
 const cartItems = ref([])
@@ -35,21 +36,80 @@ export function useCart() {
     loading.value = true
     try {
       const response = await cartAPI.getUserCart(userId)
+      console.log('获取购物车原始数据:', response)
+      
       // 后端返回结构严格处理
-      if (response.code === 200 && Array.isArray(response.data)) {
-        cartItems.value = response.data.map(item => ({
-          cartItemId: item.id,
-          dishId: item.dishId,
-          dishName: item.dishName,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.image,
-          merchantName: item.merchantName,
-          merchantId: item.merchantId,
-          isAvailable: true,
-          selected: true,
-          subtotal: item.price * item.quantity
-        }))
+      if ((response.code === 0 || response.code === 200) && Array.isArray(response.data)) {
+        // 清空当前购物车
+        cartItems.value = []
+        
+        // 创建一个存放获取菜品详情Promise的数组
+        const dishPromises = []
+        
+        // 遍历购物车项目，为每个项目获取菜品详情
+        for (const item of response.data) {
+          // 创建一个基本的购物车项目对象
+          const cartItem = {
+            cartItemId: item.cartId,
+            dishId: item.dishId,
+            merchantId: item.merchantId,
+            userId: item.userId,
+            addedAt: item.addedAt,
+            // 默认值
+            dishName: '加载中...',
+            price: 0,
+            quantity: 1, // 默认数量为1
+            image: '',
+            coverUrl: '',
+            merchantName: '加载中...',
+            isAvailable: true,
+            selected: true,
+            subtotal: 0
+          }
+          
+          // 添加到购物车
+          cartItems.value.push(cartItem)
+          
+          // 创建获取菜品详情的Promise
+          const dishPromise = async () => {
+            try {
+              // 获取菜品详情
+              const dishResponse = await dishAPI.getDishDetail(item.merchantId, item.dishId)
+              if (dishResponse && dishResponse.code === 0 && dishResponse.data) {
+                const dishData = dishResponse.data
+                // 更新购物车项
+                const index = cartItems.value.findIndex(i => i.cartItemId === item.cartId)
+                if (index !== -1) {
+                  cartItems.value[index].dishName = dishData.dishName || '未知菜品'
+                  cartItems.value[index].price = parseFloat(dishData.price) || 0
+                  cartItems.value[index].coverUrl = dishData.coverUrl || ''
+                  cartItems.value[index].image = dishData.coverUrl || ''
+                  cartItems.value[index].subtotal = parseFloat(dishData.price) || 0
+                }
+              }
+              
+              // 获取商家信息
+              const merchantResponse = await merchantAPI.getMerchantById(item.merchantId)
+              if (merchantResponse && (merchantResponse.code === 0 || merchantResponse.code === 200) && merchantResponse.data) {
+                const merchantData = merchantResponse.data
+                // 更新购物车项
+                const index = cartItems.value.findIndex(i => i.cartItemId === item.cartId)
+                if (index !== -1) {
+                  cartItems.value[index].merchantName = merchantData.merchantName || '未知商家'
+                }
+              }
+            } catch (error) {
+              console.error('获取菜品或商家详情失败:', error)
+            }
+          }
+          
+          dishPromises.push(dishPromise())
+        }
+        
+        // 等待所有菜品详情获取完成
+        await Promise.all(dishPromises)
+        
+        console.log('处理后的购物车数据:', cartItems.value)
       } else {
         cartItems.value = []
         console.error('获取购物车失败:', response.message)
@@ -70,13 +130,15 @@ export function useCart() {
     }
     try {
       const response = await cartAPI.addToCart(userId, dishId, merchantId)
-      if (response.code === 200) {
+      if (response.code === 0 || response.code === 200) {
+        // 添加成功后刷新购物车数据
         await fetchCartData(userId)
         return { success: true, message: '已添加到购物车' }
       } else {
         return { success: false, message: response.message || '添加失败' }
       }
     } catch (error) {
+      console.error('添加到购物车失败:', error)
       return { success: false, message: '添加失败，请重试' }
     }
   }
@@ -93,13 +155,14 @@ export function useCart() {
     if (!userId || !cartId) return { success: false, message: '参数错误' }
     try {
       const response = await cartAPI.removeFromCart(userId, cartId)
-      if (response.code === 200) {
+      if (response.code === 0 || response.code === 200) {
         await fetchCartData(userId)
         return { success: true, message: '已从购物车删除' }
       } else {
-        return { success: false, message: response.message }
+        return { success: false, message: response.message || '删除失败' }
       }
     } catch (error) {
+      console.error('从购物车删除失败:', error)
       return { success: false, message: '删除失败，请重试' }
     }
   }
