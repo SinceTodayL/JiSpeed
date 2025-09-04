@@ -1,33 +1,3 @@
-<template>
-  <div class="amap-container">
-    <!-- 地图容器 -->
-    <div ref="mapContainer" class="map-container"></div>
-
-    <!-- 地图控制面板 -->
-    <div class="map-controls">
-      <NButton type="primary" size="small" @click="refreshMap" :loading="loading">
-        <template #icon>
-          <span class="text-lg">🔄</span>
-        </template>
-        刷新地图
-      </NButton>
-
-      <NButton type="info" size="small" @click="locateMe" :loading="locating">
-        <template #icon>
-          <span class="text-lg">📍</span>
-        </template>
-        定位我
-      </NButton>
-
-      <NButton type="success" size="small" @click="showRidersAction" :loading="loading">
-        显示骑手 ({{ riders.length }})
-      </NButton>
-    </div>
-
-
-  </div>
-</template>
-
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { NButton } from 'naive-ui';
@@ -316,6 +286,36 @@ onUnmounted(() => {
   markers.value.forEach(marker => marker.remove());
 });
 </script>
+
+<template>
+  <div class="amap-container">
+    <!-- 地图容器 -->
+    <div ref="mapContainer" class="map-container"></div>
+
+    <!-- 地图控制面板 -->
+    <div class="map-controls">
+      <NButton type="primary" size="small" @click="refreshMap" :loading="loading">
+        <template #icon>
+          <span class="text-lg">🔄</span>
+        </template>
+        刷新地图
+      </NButton>
+
+      <NButton type="info" size="small" @click="locateMe" :loading="locating">
+        <template #icon>
+          <span class="text-lg">📍</span>
+        </template>
+        定位我
+      </NButton>
+
+      <NButton type="success" size="small" @click="showRidersAction" :loading="loading">
+        显示骑手 ({{ riders.length }})
+      </NButton>
+    </div>
+
+
+  </div>
+</template>
 
 <style scoped>
 .amap-container {

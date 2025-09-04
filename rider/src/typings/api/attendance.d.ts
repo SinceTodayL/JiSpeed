@@ -32,12 +32,6 @@ declare namespace Api {
       isLate: number;
       /** 是否缺勤 */
       isAbsent: number;
-      /** 工作时长（分钟） */
-      workHours?: number;
-      /** 创建时间 */
-      createdAt: string;
-      /** 更新时间 */
-      updatedAt: string;
     }
 
     /** 考勤详情数据 */
@@ -222,14 +216,10 @@ declare namespace Api {
       checkDate: string;
       /** 签到时间 */
       checkInAt: string;
-      /** 位置信息 */
-      location?: {
-        longitude: number;
-        latitude: number;
-        address?: string;
-      };
-      /** 备注 */
-      remarks?: string;
+      /** 是否迟到 */
+      isLate: number;
+      /** 是否缺勤 */
+      isAbsent: number;
     }
 
     /** 签退请求 */

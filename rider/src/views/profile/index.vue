@@ -71,22 +71,54 @@ const rules: FormRules = {
 
 async function fetchRiderInfo() {
   try {
-    const { data } = await getRiderInfo(currentRiderId.value);
-    console.log('data', data);
+    const response = await getRiderInfo(currentRiderId.value);
+    // 根据实际API响应结构调整数据提取
+    let data;
+    if (response.data && typeof response.data === 'object' && 'code' in response.data) {
+      // 标准API响应结构
+      data = (response.data as any).data;
+    } else {
+      // 直接返回数据的结构
+      data = response.data;
+    }
     if (data) {
-      Object.assign(formModel, data);
+      // 使用逐个赋值确保响应式更新
+      formModel.applicationUserId = data.applicationUserId || '';
+      formModel.name = data.name || '';
+      formModel.phoneNumber = data.phoneNumber || '';
+      formModel.riderId = data.riderId || '';
+      formModel.vehicleNumber = data.vehicleNumber || '';
+
+      // 同步更新原始数据，确保刷新后数据一致
+      originalData.value.applicationUserId = data.applicationUserId || '';
+      originalData.value.name = data.name || '';
+      originalData.value.phoneNumber = data.phoneNumber || '';
+      originalData.value.riderId = data.riderId || '';
+      originalData.value.vehicleNumber = data.vehicleNumber || '';
     }
   } catch (error) {
     console.error('获取骑手信息失败', error);
     window.$message?.error('获取骑手信息失败，请检查网络连接');
     // 当API调用失败时，使用模拟数据
-    Object.assign(formModel, {
+    const mockData = {
       applicationUserId: 'mock_user_001',
       name: '测试骑手',
       phoneNumber: '13800138000',
       riderId: currentRiderId.value,
       vehicleNumber: '宁A12345'
-    });
+    };
+    // 使用逐个赋值确保响应式更新
+    formModel.applicationUserId = mockData.applicationUserId;
+    formModel.name = mockData.name;
+    formModel.phoneNumber = mockData.phoneNumber;
+    formModel.riderId = mockData.riderId;
+    formModel.vehicleNumber = mockData.vehicleNumber;
+
+    originalData.value.applicationUserId = mockData.applicationUserId;
+    originalData.value.name = mockData.name;
+    originalData.value.phoneNumber = mockData.phoneNumber;
+    originalData.value.riderId = mockData.riderId;
+    originalData.value.vehicleNumber = mockData.vehicleNumber;
   }
 }
 
@@ -104,20 +136,62 @@ async function handleUpdate() {
     const { name, phoneNumber, vehicleNumber } = formModel;
 
     try {
-      const { data: updatedData } = await updateRiderInfo(formModel.riderId, {
+      console.log('发送更新请求:', {
+        riderId: formModel.riderId,
+        data: { name, phoneNumber, vehicleNumber }
+      });
+
+      const response = await updateRiderInfo(formModel.riderId, {
         name,
         phoneNumber,
         vehicleNumber
       });
 
+      console.log('更新API响应:', response);
+
+      // 根据实际API响应结构调整数据提取
+      // 如果API返回的是包装结构 {code, data, message, timestamp}
+      let updatedData;
+      if (response.data && typeof response.data === 'object' && 'code' in response.data) {
+        // 标准API响应结构
+        updatedData = (response.data as any).data;
+      } else {
+        // 直接返回数据的结构
+        updatedData = response.data;
+      }
+
       if (updatedData) {
         window.$message?.success('个人信息更新成功！');
-        Object.assign(formModel, updatedData);
+
+        // 使用逐个赋值确保响应式更新
+        formModel.applicationUserId = updatedData.applicationUserId || formModel.applicationUserId;
+        formModel.name = updatedData.name || formModel.name;
+        formModel.phoneNumber = updatedData.phoneNumber || formModel.phoneNumber;
+        formModel.riderId = updatedData.riderId || formModel.riderId;
+        formModel.vehicleNumber = updatedData.vehicleNumber || formModel.vehicleNumber;
+
+        // 同步更新原始数据，确保数据一致性
+        originalData.value.applicationUserId = updatedData.applicationUserId || originalData.value.applicationUserId;
+        originalData.value.name = updatedData.name || originalData.value.name;
+        originalData.value.phoneNumber = updatedData.phoneNumber || originalData.value.phoneNumber;
+        originalData.value.riderId = updatedData.riderId || originalData.value.riderId;
+        originalData.value.vehicleNumber = updatedData.vehicleNumber || originalData.value.vehicleNumber;
+
         console.log('updatedData', updatedData);
         console.log('formModel', formModel);
+        console.log('originalData', originalData.value);
+      } else {
+        console.warn('更新API返回数据为空');
+        window.$message?.warning('更新成功，但未返回最新数据');
       }
     } catch (error: any) {
       console.error('更新骑手信息失败', error);
+      console.error('错误详情:', {
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        data: error?.response?.data,
+        message: error?.message
+      });
       const errorMessage = error?.response?.data?.message || '更新失败，请稍后重试';
       window.$message?.error(errorMessage);
     } finally {
@@ -128,7 +202,12 @@ async function handleUpdate() {
 
 // 取消编辑，恢复原始数据
 const handleCancel = () => {
-  Object.assign(formModel, originalData.value);
+  // 使用逐个赋值确保响应式更新
+  formModel.applicationUserId = originalData.value.applicationUserId;
+  formModel.name = originalData.value.name;
+  formModel.phoneNumber = originalData.value.phoneNumber;
+  formModel.riderId = originalData.value.riderId;
+  formModel.vehicleNumber = originalData.value.vehicleNumber;
 };
 </script>
 

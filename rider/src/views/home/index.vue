@@ -535,15 +535,18 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full p-24px">
+  <div class="min-h-full p-24px bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
     <!-- 欢迎横幅 -->
-    <NCard :bordered="false" class="mb-24px">
-      <div class="flex items-center justify-between">
+    <NCard :bordered="false" class="mb-24px bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+          <SvgIcon :local-icon="'home'" class="text-2xl text-white" />
+        </div>
         <div class="flex-1">
           <h1 class="text-2xl text-gray-800 font-bold dark:text-gray-200">
             欢迎回来，{{ riderDetail?.name || '骑手' }}！
           </h1>
-          <p class="mt-8px text-gray-600 dark:text-gray-400">
+          <p class="mt-2px text-gray-600 dark:text-gray-400">
             今天是 {{ new Date().toLocaleDateString('zh-CN') }}，祝您工作顺利！
           </p>
         </div>
@@ -564,7 +567,7 @@ onMounted(async () => {
     </NCard>
 
     <!-- 统计卡片 -->
-    <NCard :bordered="false" size="small" class="mb-24px">
+    <NCard :bordered="false" size="small" class="mb-24px bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-16px shadow-lg">
       <NGrid cols="s:1 m:2 l:4" responsive="screen" :x-gap="16" :y-gap="16">
         <NGi v-for="item in cardData" :key="item.key">
           <div
@@ -588,7 +591,7 @@ onMounted(async () => {
     <!-- 图表区域 -->
     <NGrid :cols="24" :x-gap="16" :y-gap="16" class="mb-24px">
       <NGi :span="16">
-        <NCard :bordered="false">
+        <NCard :bordered="false" class="rounded-16px shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
           <template #header>
             <div class="flex items-center justify-between">
               <span>本月绩效趋势</span>
@@ -604,7 +607,7 @@ onMounted(async () => {
         </NCard>
       </NGi>
       <NGi :span="8">
-        <NCard title="订单类型分布" :bordered="false">
+        <NCard title="订单类型分布" :bordered="false" class="rounded-16px shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
           <div ref="pieChartRef" class="h-360px overflow-hidden"></div>
         </NCard>
       </NGi>
@@ -614,7 +617,7 @@ onMounted(async () => {
     <NGrid :cols="24" :x-gap="16" :y-gap="16" class="mb-24px">
       <!-- 考勤状态 -->
       <NGi :span="8">
-        <NCard title="今日考勤" :bordered="false">
+        <NCard title="今日考勤" :bordered="false" class="rounded-16px shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
           <div class="text-center">
             <NTag :type="attendanceStatusColor" size="large" class="mb-16px">
               {{ attendanceStatus }}
@@ -649,7 +652,7 @@ onMounted(async () => {
 
       <!-- 绩效指标 -->
       <NGi :span="8">
-        <NCard title="绩效指标" :bordered="false">
+        <NCard title="绩效指标" :bordered="false" class="rounded-16px shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
           <NSpace vertical :size="16">
             <div class="flex items-center justify-between">
               <span>准时率</span>
@@ -673,7 +676,7 @@ onMounted(async () => {
 
       <!-- 优秀骑手排行榜 -->
       <NGi :span="8">
-        <NCard title="优秀骑手排行榜" :bordered="false">
+        <NCard title="优秀骑手排行榜" :bordered="false" class="rounded-16px shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
           <div v-if="topPerformersLoading" class="text-center py-16px">
             <NSpin size="small" />
             <div class="mt-8px text-sm text-gray-500">加载中...</div>
@@ -760,6 +763,16 @@ onMounted(async () => {
             </div>
           </div>
         </div>
+
+        <div class="flex items-center rounded-lg bg-purple-50 p-12px dark:bg-purple-900/20">
+          <SvgIcon icon="mdi:chart-line" class="mr-12px text-purple-500" />
+          <div>
+            <div class="text-purple-800 font-medium dark:text-purple-200">月度概览</div>
+            <div class="text-sm text-purple-600 dark:text-purple-300">
+              本月共有 {{ monthlyOverview?.totalRiders || 0 }} 名骑手，平均完成率 {{ Math.round((monthlyOverview?.averageCompletionRate || 0) * 100) }}%
+            </div>
+          </div>
+        </div>
       </div>
     </NCard>
   </div>
@@ -787,12 +800,103 @@ onMounted(async () => {
   transform: translateY(-1px);
 }
 
+/* 页面整体动画 */
+.min-h-full {
+  animation: fadeIn 0.6s ease-out;
+  min-height: 180vh;
+  overflow-y: auto;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 卡片样式增强 */
+.n-card {
+  background-color: var(--n-color);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.n-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* 统计卡片动画 */
+.grid > div,
+.n-grid .n-gi > div {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.grid > div:hover,
+.n-grid .n-gi > div:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 按钮样式增强 */
+.n-button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 12px;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+}
+
+.n-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.n-button:hover::before {
+  left: 100%;
+}
+
+.n-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.n-button:active {
+  transform: translateY(0);
+}
+
+/* 渐变按钮特殊样式 */
+.n-button.bg-gradient-to-r {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+}
+
+.n-button.bg-gradient-to-r:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+}
+
 /* 确保按钮内容居中 */
 .n-button .n-button__content {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   width: 100% !important;
+  gap: 8px;
 }
 
 /* 更具体的按钮样式覆盖 */
@@ -805,6 +909,44 @@ onMounted(async () => {
 /* 确保图标和文字都居中 */
 .n-button .n-button__content .n-button__icon {
   margin-right: 4px !important;
+}
+
+/* 进度条动画 */
+.n-progress .n-progress-line-fill {
+  transition: width 0.8s ease-in-out;
+}
+
+/* 标签动画 */
+.n-tag {
+  transition: all 0.3s ease;
+  border-radius: 20px;
+  font-weight: 500;
+  padding: 4px 12px;
+}
+
+.n-tag:hover {
+  transform: scale(1.05);
+}
+
+/* 图表容器动画 */
+.h-360px {
+  transition: all 0.3s ease;
+}
+
+.h-360px:hover {
+  transform: scale(1.02);
+}
+
+/* 排行榜项目动画 */
+.space-y-8px > div {
+  transition: all 0.3s ease;
+  border-radius: 8px;
+}
+
+.space-y-8px > div:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background-color: rgba(59, 130, 246, 0.05);
 }
 
 /* 提醒卡片样式 */
@@ -822,8 +964,131 @@ onMounted(async () => {
   border-radius: 8px;
 }
 
+/* 渐变背景特殊效果 */
+.bg-gradient-to-br {
+  position: relative;
+  overflow: hidden;
+}
+
+.bg-gradient-to-br::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+}
+
+/* 暗色模式滚动条 */
+.dark ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #4c51bf 0%, #553c9a 100%);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #434190 0%, #4c1d95 100%);
+}
+
+/* 数字动画 */
+.text-28px,
+.text-20px {
+  transition: all 0.3s ease;
+}
+
+.text-28px:hover,
+.text-20px:hover {
+  transform: scale(1.1);
+  color: #3b82f6;
+}
+
+/* 图标动画 */
+.svg-icon {
+  transition: all 0.3s ease;
+}
+
+.svg-icon:hover {
+  transform: rotate(10deg) scale(1.1);
+}
+
+/* 天气信息动画 */
+.text-center > div {
+  transition: all 0.3s ease;
+}
+
+.text-center > div:hover {
+  transform: translateY(-2px);
+  color: #3b82f6;
+}
+
+/* 加载状态动画 */
+.n-button[loading] {
+  position: relative;
+}
+
+.n-button[loading]::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
+  .n-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .n-gi {
+    grid-column: span 24 !important;
+  }
+
+  .flex.gap-24px {
+    flex-direction: column;
+    gap: 16px;
+  }
+
   .text-30px {
     font-size: 24px;
   }

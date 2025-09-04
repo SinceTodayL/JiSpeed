@@ -50,11 +50,16 @@ declare namespace Api {
       phoneNumber: string;
       riderId: string;
       vehicleNumber: string;
-      [property: string]: any;
     }
 
     /** 更新骑手信息响应 */
-    export type UpdateInfoResponse = ApiResponse<UpdateInfoData>;
+    export interface UpdateInfoResponse {
+      code: number;
+      data: UpdateInfoData;
+      message: string;
+      timestamp: number;
+      [property: string]: any;
+    }
 
     /** 骑手注册请求 */
     export interface RegisterRequest {

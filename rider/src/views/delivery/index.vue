@@ -16,6 +16,7 @@ import {
   NTabs,
   NTabPane
 } from 'naive-ui';
+import { Icon } from '@iconify/vue';
 import { getRiderOrderList, updateAssignStatus } from '@/service/api/rider';
 import { getOnlineRidersLocation, getRiderLatestLocation } from '@/service/api/rider-location';
 import { useAuthStore } from '@/store/modules/auth';
@@ -356,19 +357,22 @@ const paginatedOrders = computed(() => {
 </script>
 
 <template>
-  <div class="h-full p-24px">
+  <div class="min-h-full p-24px bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
     <!-- 页面标题区域 -->
-    <NCard :bordered="false" class="mb-24px">
-      <div class="flex items-center justify-between">
-        <div class="flex-1">
+    <NCard :bordered="false" class="mb-24px bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+          <Icon icon="mdi:truck-delivery" class="text-2xl text-white" />
+        </div>
+        <div>
           <h1 class="text-2xl text-gray-800 font-bold dark:text-gray-200">配送订单管理</h1>
-          <p class="mt-8px text-gray-600 dark:text-gray-400">查看和管理您的配送订单，及时处理订单状态。</p>
+          <p class="mt-2px text-gray-600 dark:text-gray-400">查看和管理您的配送订单，及时处理订单状态</p>
         </div>
       </div>
     </NCard>
 
     <!-- 搜索和筛选表单 -->
-    <NCard :bordered="false" class="mb-24px">
+    <NCard :bordered="false" class="mb-24px bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-16px shadow-lg">
       <NForm :model="searchForm" inline>
         <NFormItem label="订单号">
           <NInput v-model:value="searchForm.orderId" placeholder="请输入订单号" style="width: 200px" />
@@ -395,7 +399,7 @@ const paginatedOrders = computed(() => {
     <!-- 使用标签页分离地图和订单列表 -->
     <NTabs type="line" animated>
       <NTabPane name="orders" tab="订单列表">
-        <NCard :bordered="false" class="rounded-16px shadow-sm">
+        <NCard :bordered="false" class="rounded-16px shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
           <NDataTable
             :columns="[
               {
@@ -489,7 +493,7 @@ const paginatedOrders = computed(() => {
       </NTabPane>
 
       <NTabPane name="map" tab="配送地图">
-        <NCard :bordered="false" class="rounded-16px shadow-sm">
+        <NCard :bordered="false" class="rounded-16px shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
           <div class="mb-16px flex items-center justify-between">
             <div>
               <h3 class="text-lg font-semibold mb-8px">实时配送地图</h3>
@@ -609,25 +613,85 @@ const paginatedOrders = computed(() => {
 </template>
 
 <style scoped>
+/* 页面整体动画 */
+.min-h-full {
+  animation: fadeIn 0.6s ease-out;
+  min-height: 125vh;
+  overflow-y: auto;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 卡片样式增强 */
 .n-card {
   background-color: var(--n-color);
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .n-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
-.n-button {
+/* 输入框样式增强 */
+.n-input {
   transition: all 0.3s ease;
+  border-radius: 12px;
+}
+
+.n-input:hover {
+  border-color: var(--n-primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.n-input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* 按钮样式增强 */
+.n-button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  border-radius: 12px;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+}
+
+.n-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.n-button:hover::before {
+  left: 100%;
 }
 
 .n-button:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.n-button:active {
+  transform: translateY(0);
 }
 
 /* 确保按钮内容居中 */
@@ -636,6 +700,7 @@ const paginatedOrders = computed(() => {
   align-items: center !important;
   justify-content: center !important;
   width: 100% !important;
+  gap: 8px;
 }
 
 /* 更具体的按钮样式覆盖 */
@@ -648,5 +713,145 @@ const paginatedOrders = computed(() => {
 /* 确保图标和文字都居中 */
 .n-button .n-button__content .n-button__icon {
   margin-right: 4px !important;
+}
+
+/* 表格行悬停效果 */
+.n-data-table .n-data-table-tbody .n-data-table-tr:hover {
+  background-color: rgba(59, 130, 246, 0.05);
+  transform: scale(1.01);
+  transition: all 0.2s ease;
+}
+
+/* 标签页动画 */
+.n-tabs .n-tabs-tab {
+  transition: all 0.3s ease;
+  border-radius: 8px;
+}
+
+.n-tabs .n-tabs-tab:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
+}
+
+/* 地图信息卡片动画 */
+.grid > div {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.grid > div:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 渐变背景特殊效果 */
+.bg-gradient-to-br {
+  position: relative;
+  overflow: hidden;
+}
+
+.bg-gradient-to-br::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+}
+
+/* 暗色模式滚动条 */
+.dark ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #4c51bf 0%, #553c9a 100%);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #434190 0%, #4c1d95 100%);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .n-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .n-gi {
+    grid-column: span 24 !important;
+  }
+
+  .flex.gap-24px {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+/* 加载状态动画 */
+.n-button[loading] {
+  position: relative;
+}
+
+.n-button[loading]::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 模态框动画增强 */
+.n-modal .n-card {
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 </style>
