@@ -40,7 +40,7 @@ namespace JISpeed.Application.Services.Common
                     $"/v3/geocode/geo?key={_apiKey}&address={Uri.EscapeDataString(address)}");
 
                 if (response.GetProperty("status").GetString() == "1" &&
-                    response.GetProperty("count").GetInt32() > 0)
+                    int.TryParse(response.GetProperty("count").GetString(), out var count) && count > 0)
                 {
                     var location = response.GetProperty("geocodes")[0].GetProperty("location").GetString();
                     var parts = location!.Split(',');

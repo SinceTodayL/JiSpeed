@@ -698,7 +698,7 @@ namespace JISpeed.Application.Services.Customer
             {
                 var sql = @"
                     DELETE FROM ADDRESS 
-                    WHERE AddressId = :addressId AND UserId = :userId";
+                    WHERE ""AddressId"" = :addressId AND ""UserId"" = :userId";
 
                 var parameters = new[]
                 {
