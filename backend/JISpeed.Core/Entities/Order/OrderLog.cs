@@ -41,7 +41,7 @@ namespace JISpeed.Core.Entities.Order
             Actor = actor;
             OrderId = orderId;
             Remark = remark;
-            LoggedAt = DateTime.UtcNow; //使用 UTC 时间
+            LoggedAt = DateTime.Now; //使用 UTC 时间
         }
 
         public OrderLog() { }

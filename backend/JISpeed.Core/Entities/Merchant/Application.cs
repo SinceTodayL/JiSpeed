@@ -51,7 +51,7 @@ namespace JISpeed.Core.Entities.Merchant
             ApplyId = Guid.NewGuid().ToString("N"); //生成唯一的申请ID
             CompanyName = companyName;
             MerchantId = merchantId;
-            SubmittedAt = DateTime.UtcNow; //设置提交时间为当前时间
+            SubmittedAt = DateTime.Now; //设置提交时间为当前时间
             AuditStatus = 0; //默认审核状态为0（待审核）
         }
 

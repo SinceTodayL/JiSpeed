@@ -105,7 +105,7 @@ namespace JISpeed.Application.Services.Merchant
                     throw new NotFoundException(ErrorCodes.ResourceNotFound, $"申请不存在，ID: {applyId}");
                 }
 
-                data.AuditAt = DateTime.UtcNow;
+                data.AuditAt = DateTime.Now;
                 data.AuditStatus = 1;
                 data.AdminId = adminId;
                 await _applicationRepository.SaveChangesAsync();
@@ -139,7 +139,7 @@ namespace JISpeed.Application.Services.Merchant
                     throw new NotFoundException(ErrorCodes.ResourceNotFound, $"申请不存在，ID: {applyId}");
                 }
 
-                data.AuditAt = DateTime.UtcNow;
+                data.AuditAt = DateTime.Now;
                 data.AuditStatus = 2;
                 data.AdminId = adminId;
                 data.RejectReason = reason;

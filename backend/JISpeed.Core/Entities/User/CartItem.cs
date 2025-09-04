@@ -49,7 +49,7 @@ namespace JISpeed.Core.Entities.User
             MerchantId = merchantId;
             DishId = dishId;
             CartItemId = Guid.NewGuid().ToString("N"); //生成唯一的CartItemId
-            AddedAt = DateTime.UtcNow; //使用 UTC 时间
+            AddedAt = DateTime.Now; //使用 UTC 时间
         }
 
         private CartItem(){ }

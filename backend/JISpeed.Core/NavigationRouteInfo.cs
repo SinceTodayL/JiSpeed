@@ -42,7 +42,7 @@ namespace JISpeed.Core.DTOs
         public int RemainingTime { get; set; } // 剩余时间（秒）
         public double RemainingDistance { get; set; } // 剩余距离（米）
         public string NextInstruction { get; set; } = string.Empty; // 下一个导航指令
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public DateTime Timestamp { get; set; } = DateTime.Now;
     }
 
     // 开始导航请求
@@ -60,7 +60,7 @@ namespace JISpeed.Core.DTOs
         public string SessionId { get; set; } = string.Empty;
         public string RouteId { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
-        public DateTime StartTime { get; set; } = DateTime.UtcNow;
+        public DateTime StartTime { get; set; } = DateTime.Now;
         public string Status { get; set; } = "active"; // active, paused, completed, cancelled
         public NavigationRouteInfo RouteInfo { get; set; } = new NavigationRouteInfo();
     }

@@ -138,7 +138,7 @@ namespace JISpeed.Api.Mappers
                 Status = applicationUser.Status,
                 CreatedAt = applicationUser.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
                 DeletedAt = null,
-                LastLoginAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+                LastLoginAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                 LastLoginIp = lastLoginIp,
                 NickName = user.Nickname,
                 AvatarUrl = user.AvatarUrl,

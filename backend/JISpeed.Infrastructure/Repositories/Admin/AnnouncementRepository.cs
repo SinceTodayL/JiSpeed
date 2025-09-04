@@ -39,7 +39,7 @@ namespace JISpeed.Infrastructure.Repositories.Admin
         // <returns>有效公告列表</returns>
         public async Task<List<Announcement>> GetActiveByTargetRoleAsync(string? targetRole)
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             return await _context.Announcements
                 .Where(a => a.StartAt <= now && a.EndAt >= now &&
                            (a.TargetRole == null || a.TargetRole == targetRole))
@@ -75,7 +75,7 @@ namespace JISpeed.Infrastructure.Repositories.Admin
         // <returns>公告列表</returns>
         public async Task<List<Announcement>> GetByStatusAsync(int status)
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             return status switch
             {
                 1 => await _context.Announcements.Where(a => a.StartAt <= now && a.EndAt >= now).ToListAsync(), // 有效
@@ -114,7 +114,7 @@ namespace JISpeed.Infrastructure.Repositories.Admin
         {
             int pageSize = size ?? 20;
             int currentPage = page ?? 1;
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             return await _context.Announcements
                 .Where(a => a.StartAt <= now && a.EndAt >= now && (a.TargetRole == targetRole ||a.TargetRole == null))
                 .OrderByDescending(a => a.StartAt)
@@ -127,7 +127,7 @@ namespace JISpeed.Infrastructure.Repositories.Admin
         {
             int pageSize = size ?? 20;
             int currentPage = page ?? 1;
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             return await _context.Announcements
                 .Where(a => a.StartAt <= now && a.EndAt >= now)
                 .OrderByDescending(a => a.StartAt)

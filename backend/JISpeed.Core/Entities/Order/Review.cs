@@ -53,7 +53,7 @@ namespace JISpeed.Core.Entities.Order
             Rating = rating;
             Content = content;
             IsAnonymous = isAnonymous;
-            ReviewAt = DateTime.UtcNow; //默认评价时间为当前时间
+            ReviewAt = DateTime.Now; //默认评价时间为当前时间
         }
 
         private Review() { }

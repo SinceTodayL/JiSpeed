@@ -255,7 +255,7 @@ namespace JISpeed.Application.Services.Customer
                 {
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":userId", userId),
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":dishId", dishId),
-                    new Oracle.ManagedDataAccess.Client.OracleParameter(":favorAt", DateTime.UtcNow)
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":favorAt", DateTime.Now)
                 };
 
                 var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters);
@@ -426,7 +426,7 @@ namespace JISpeed.Application.Services.Customer
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":cartItemId", cartItemId),
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":userId", userId),
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":dishId", dishId),
-                    new Oracle.ManagedDataAccess.Client.OracleParameter(":addedAt", DateTime.UtcNow),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":addedAt", DateTime.Now),
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":merchantId", merchantId)
                 };
 
@@ -779,7 +779,7 @@ namespace JISpeed.Application.Services.Customer
             try
             {
                 var reviewId = Guid.NewGuid().ToString("N");
-                var reviewAt = DateTime.UtcNow;
+                var reviewAt = DateTime.Now;
 
                 // 1. 使用原生 SQL 插入 REVIEW 表
                 var insertReviewSql = @"
@@ -891,7 +891,7 @@ namespace JISpeed.Application.Services.Customer
             try
             {
                 var complaintId = Guid.NewGuid().ToString("N");
-                var createdAt = DateTime.UtcNow;
+                var createdAt = DateTime.Now;
 
                 var sql = @"
                     INSERT INTO COMPLAINT (""ComplaintId"", ""ComplainantId"", ""OrderId"", ""CmplRole"", ""CmplStatus"", ""CmplDescription"", ""CreatedAt"") 

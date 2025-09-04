@@ -60,7 +60,7 @@ namespace JISpeed.Application.Services.Common
                 {
                     orderId,
                     orderInfo,
-                    timestamp = DateTime.UtcNow,
+                    timestamp = DateTime.Now,
                     messageType = "ORDER_ASSIGNED"
                 };
 
@@ -86,7 +86,7 @@ namespace JISpeed.Application.Services.Common
                     riderId,
                     status,
                     message,
-                    timestamp = DateTime.UtcNow,
+                    timestamp = DateTime.Now,
                     messageType = "STATUS_CHANGE"
                 };
 
@@ -112,7 +112,7 @@ namespace JISpeed.Application.Services.Common
                     orderId,
                     eventType,
                     data,
-                    timestamp = DateTime.UtcNow
+                    timestamp = DateTime.Now
                 };
 
                 await _hubContext.Clients.Group($"order_{orderId}")
@@ -137,7 +137,7 @@ namespace JISpeed.Application.Services.Common
                     areaCode,
                     eventType,
                     data,
-                    timestamp = DateTime.UtcNow
+                    timestamp = DateTime.Now
                 };
 
                 await _hubContext.Clients.Group($"area_{areaCode}")
@@ -161,7 +161,7 @@ namespace JISpeed.Application.Services.Common
                 {
                     messageType,
                     content,
-                    timestamp = DateTime.UtcNow
+                    timestamp = DateTime.Now
                 };
 
                 await _hubContext.Clients.Group($"rider_{riderId}")

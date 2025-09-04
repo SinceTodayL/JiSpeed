@@ -482,13 +482,13 @@ namespace JISpeed.Api.Controllers
                     riderId,
                     116.397428m,
                     39.90923m,
-                    DateTime.UtcNow)
+                    DateTime.Now)
                 {
                     LocationId = Guid.NewGuid().ToString("N"),
                     RiderId = riderId,
                     Longitude = 116.397428m,
                     Latitude = 39.90923m,
-                    LocationTime = DateTime.UtcNow,
+                    LocationTime = DateTime.Now,
                     Accuracy = 10.0m,
                     Speed = 15.5m,
                     Direction = 90m,

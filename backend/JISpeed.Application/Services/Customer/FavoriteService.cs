@@ -59,7 +59,7 @@ namespace JISpeed.Application.Services.Customer
                 {
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":userId", userId),
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":dishId", dishId),
-                    new Oracle.ManagedDataAccess.Client.OracleParameter(":favorAt", DateTime.UtcNow)
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":favorAt", DateTime.Now)
                 };
 
                 var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters);

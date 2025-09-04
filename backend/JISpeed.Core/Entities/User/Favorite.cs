@@ -35,7 +35,7 @@ namespace JISpeed.Core.Entities.User
         {
             UserId = userId;
             DishId = dishId;
-            FavorAt = DateTime.UtcNow; //使用 UTC 时间
+            FavorAt = DateTime.Now; //使用 UTC 时间
         }
 
         private Favorite() { } 

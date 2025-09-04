@@ -86,7 +86,7 @@ namespace JISpeed.Infrastructure.Repositories.Common
         // <returns>优惠券列表</returns>
         public async Task<List<Coupon>> GetByStatusAsync(int status)
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             return status switch
             {
                 1 => await _context.Coupons // 有效
@@ -120,7 +120,7 @@ namespace JISpeed.Infrastructure.Repositories.Common
         // <returns>有效优惠券列表</returns>
         public async Task<List<Coupon>> GetValidCouponsAsync()
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             return await _context.Coupons
                 .Where(c => c.StartTime <= now &&
                            c.EndTime >= now &&
@@ -138,7 +138,7 @@ namespace JISpeed.Infrastructure.Repositories.Common
         {
             int pageSize = size??20;
             int currentPage = page ?? 1;
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             return await _context.Coupons
                 .Where(c => c.UserId == userId &&
                            c.StartTime <= now &&
@@ -158,7 +158,7 @@ namespace JISpeed.Infrastructure.Repositories.Common
         {
             int pageSize = size??20;
             int currentPage = page ?? 1;
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             return await _context.Coupons
                 .Where(c => c.EndTime < now)
                 .OrderByDescending(c => c.EndTime)
@@ -172,7 +172,7 @@ namespace JISpeed.Infrastructure.Repositories.Common
         // <returns>优惠券是否有效</returns>
         public async Task<bool> IsValidAsync(string couponId)
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             return await _context.Coupons
                 .AnyAsync(c => c.CouponId == couponId &&
                               c.StartTime <= now &&
@@ -187,7 +187,7 @@ namespace JISpeed.Infrastructure.Repositories.Common
         {
             int pageSize = size??20;
             int currentPage = page ?? 1;
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             return await _context.Coupons
                 .Where(c => c.UserId == userId &&
                             c.StartTime <= now &&

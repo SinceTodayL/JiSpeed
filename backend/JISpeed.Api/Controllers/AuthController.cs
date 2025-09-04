@@ -156,7 +156,7 @@ namespace JISpeed.Api.Controllers
                     userName: request.UserName,
                     userType: userType,
                     email: request.Email,
-                    createdAt: DateTime.UtcNow,
+                    createdAt: DateTime.Now,
                     phoneNumber: request.PhoneNumber);
                 // 4. 生成密码哈希（在控制器层处理，避免服务层接触明文）
                 string passwordHash = _userManager.PasswordHasher.HashPassword(newUser, request.PassWord);

@@ -154,7 +154,7 @@ namespace JISpeed.Application.Services.Navigation
                     RemainingDistance = remainingInfo.RemainingDistance,
                     RemainingTime = remainingInfo.RemainingTime,
                     NextInstruction = remainingInfo.NextInstruction,
-                    Timestamp = DateTime.UtcNow
+                    Timestamp = DateTime.Now
                 };
 
                 return updateInfo;

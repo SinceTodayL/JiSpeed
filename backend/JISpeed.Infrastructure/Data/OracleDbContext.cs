@@ -516,7 +516,7 @@ namespace JISpeed.Infrastructure.Data
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             // 在保存前处理审计信息等
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             
             // 遍历所有被添加或修改的实体
             // 如果需要自动添加审计信息，可以在这里处理
