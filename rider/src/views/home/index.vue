@@ -2,12 +2,15 @@
 import { computed, nextTick, onMounted, ref } from 'vue';
 import { getRiderInfo } from '@/service/api/rider';
 import {
+  generateRiderPerformance,
   getMonthlyPerformanceOverview,
   getRiderPerformance,
   getRiderPerformanceRanking,
-  getRiderPerformanceTrend
+  getRiderPerformanceTrend,
+  getTopPerformers
 } from '@/service/api/rider-performance';
 import { useEcharts } from '@/hooks/common/echarts';
+import SvgIcon from '@/components/custom/svg-icon.vue';
 import { useAuthStore } from '../../store/modules/auth';
 import { useRiderStore } from '../../store/modules/rider';
 
@@ -19,13 +22,17 @@ const riderId = computed(() => riderStore.riderId || authStore.userInfo.userId);
 
 // 数据状态
 const loading = ref(false);
-const riderDetail = ref<Api.Rider.InfoData | null>(null);
+const riderDetail = ref<Api.Rider.RiderInfoData | null>(null);
 
 // 绩效数据
-const performanceData = ref<Api.Rider.TimeResponse | null>(null);
-const performanceTrend = ref<Api.Rider.PerformanceTrendResponse | null>(null);
-const performanceRanking = ref<Api.Rider.PerformanceRankingResponse | null>(null);
-const monthlyOverview = ref<Api.Rider.PerformanceOverviewResponse | null>(null);
+const performanceData = ref<Api.Rider.TimeData | null>(null);
+const performanceTrend = ref<Api.Rider.PerformanceTrendData[] | null>(null);
+const performanceRanking = ref<Api.Rider.RankingData | null>(null);
+const monthlyOverview = ref<Api.Rider.OverviewData | null>(null);
+
+// 优秀骑手排行榜数据
+const topPerformers = ref<Api.Rider.PerformanceTrendData[]>([]);
+const topPerformersLoading = ref(false);
 
 // 考勤状态
 const attendanceStatus = ref<'未签到' | '已签到' | '已签退'>('未签到');
@@ -68,7 +75,7 @@ const { domRef: lineChartRef, updateOptions: updateLineChart } = useEcharts(() =
   xAxis: {
     type: 'category',
     boundaryGap: false,
-    data: performanceTrend.value?.trendData?.map((item: any) => item.date) || []
+    data: performanceTrend.value?.map((item: any) => item.statsMonth) || []
   },
   yAxis: [
     {
@@ -107,7 +114,7 @@ const { domRef: lineChartRef, updateOptions: updateLineChart } = useEcharts(() =
         }
       },
       emphasis: { focus: 'series' },
-      data: performanceTrend.value?.trendData?.map((item: any) => item.completedOrders) || []
+      data: performanceTrend.value?.map((item: any) => item.totalOrders) || []
     },
     {
       color: '#26deca',
@@ -129,7 +136,7 @@ const { domRef: lineChartRef, updateOptions: updateLineChart } = useEcharts(() =
         }
       },
       emphasis: { focus: 'series' },
-      data: performanceTrend.value?.trendData?.map((item: any) => Math.round(item.onTimeRate * 100)) || []
+      data: performanceTrend.value?.map((item: any) => Math.round(item.onTimeRate * 100)) || []
     },
     {
       color: '#fedc69',
@@ -151,7 +158,7 @@ const { domRef: lineChartRef, updateOptions: updateLineChart } = useEcharts(() =
         }
       },
       emphasis: { focus: 'series' },
-      data: performanceTrend.value?.trendData?.map((item: any) => Math.round(item.goodReviewRate * 100)) || []
+      data: performanceTrend.value?.map((item: any) => Math.round(item.goodReviewRate * 100)) || []
     }
   ]
 }));
@@ -191,10 +198,22 @@ const { domRef: pieChartRef, updateOptions: updatePieChart } = useEcharts(() => 
       },
       labelLine: { show: false },
       data: [
-        { name: '外卖配送', value: performanceData.value?.deliveryOrders || 0, color: '#5da8ff' },
-        { name: '同城快递', value: performanceData.value?.expressOrders || 0, color: '#8e9dff' },
-        { name: '生鲜配送', value: performanceData.value?.freshOrders || 0, color: '#fedc69' },
-        { name: '其他', value: performanceData.value?.otherOrders || 0, color: '#26deca' }
+        { name: '已完成订单', value: performanceData.value?.totalOrders || 0, color: '#5da8ff' },
+        {
+          name: '准时订单',
+          value: Math.round((performanceData.value?.totalOrders || 0) * (performanceData.value?.onTimeRate || 0)),
+          color: '#8e9dff'
+        },
+        {
+          name: '好评订单',
+          value: Math.round((performanceData.value?.totalOrders || 0) * (performanceData.value?.goodReviewRate || 0)),
+          color: '#fedc69'
+        },
+        {
+          name: '其他',
+          value: Math.round((performanceData.value?.totalOrders || 0) * (performanceData.value?.badReviewRate || 0)),
+          color: '#26deca'
+        }
       ]
     }
   ]
@@ -204,7 +223,8 @@ const { domRef: pieChartRef, updateOptions: updatePieChart } = useEcharts(() => 
 const completionRate = computed(() => {
   if (!performanceData.value) return 0;
   const total = performanceData.value.totalOrders || 0;
-  const completed = performanceData.value.completedOrders || 0;
+  // 由于API中没有completedOrders字段，我们使用onTimeRate作为完成率指标
+  const completed = Math.round(total * (performanceData.value.onTimeRate || 0));
   return total > 0 ? Math.round((completed / total) * 100) : 0;
 });
 
@@ -213,9 +233,7 @@ const onTimeRatePercent = computed(() => {
 });
 
 const goodReviewRatePercent = computed(() => {
-  return performanceData.value?.goodReviewRate
-    ? Math.round(performanceData.value.goodReviewRate * 100)
-    : 0;
+  return performanceData.value?.goodReviewRate ? Math.round(performanceData.value.goodReviewRate * 100) : 0;
 });
 
 const attendanceStatusColor = computed(() => {
@@ -235,7 +253,7 @@ const cardData = computed(() => {
     {
       key: 'completedOrders',
       title: '本月完成订单',
-      value: performanceData.value?.completedOrders || 0,
+      value: Math.round((performanceData.value?.totalOrders || 0) * (performanceData.value?.onTimeRate || 0)),
       unit: '单',
       color: { start: '#ec4786', end: '#b955a4' },
       icon: 'mdi:truck-delivery'
@@ -270,7 +288,7 @@ const cardData = computed(() => {
 // 获取骑手详细信息
 async function fetchRiderDetail() {
   try {
-    const { data } = await getRiderInfo({ riderId: riderId.value });
+    const { data } = await getRiderInfo(riderId.value);
     if (data) {
       riderDetail.value = data;
     }
@@ -290,7 +308,7 @@ async function fetchRiderPerformance() {
 
     const { data } = await getRiderPerformance(params);
     if (data) {
-      performanceData.value = data;
+      performanceData.value = data.data;
     }
   } catch (error) {
     console.error('获取骑手绩效数据失败', error);
@@ -302,14 +320,12 @@ async function fetchPerformanceTrend() {
   try {
     const params = {
       riderId: riderId.value,
-      year: currentYear,
-      month: currentMonth,
-      days: 7 // 获取最近7天的趋势
+      months: 7 // 获取最近7个月的趋势
     };
 
     const { data } = await getRiderPerformanceTrend(params);
     if (data) {
-      performanceTrend.value = data;
+      performanceTrend.value = data.data;
       // 更新图表
       nextTick(() => {
         updateLineChart();
@@ -331,7 +347,7 @@ async function fetchPerformanceRanking() {
 
     const { data } = await getRiderPerformanceRanking(params);
     if (data) {
-      performanceRanking.value = data;
+      performanceRanking.value = data.data;
     }
   } catch (error) {
     console.error('获取绩效排名失败', error);
@@ -348,10 +364,54 @@ async function fetchMonthlyOverview() {
 
     const { data } = await getMonthlyPerformanceOverview(params);
     if (data) {
-      monthlyOverview.value = data;
+      monthlyOverview.value = data.data;
     }
   } catch (error) {
     console.error('获取月度概览失败', error);
+  }
+}
+
+// 获取优秀骑手排行榜
+async function fetchTopPerformers() {
+  topPerformersLoading.value = true;
+  try {
+    const params = {
+      year: currentYear,
+      month: currentMonth,
+      topCount: 10
+    };
+
+    const { data } = await getTopPerformers(params);
+    if (data) {
+      topPerformers.value = data.data || [];
+    }
+  } catch (error) {
+    console.error('获取优秀骑手排行榜失败', error);
+    topPerformers.value = [];
+  } finally {
+    topPerformersLoading.value = false;
+  }
+}
+
+// 生成骑手月度绩效
+async function generatePerformance() {
+  try {
+    const params = {
+      riderId: riderId.value,
+      year: currentYear,
+      month: currentMonth
+    };
+
+    const { data } = await generateRiderPerformance(params);
+    if (data) {
+      window.$message?.success('绩效生成成功！');
+      // 重新获取绩效数据
+      await fetchRiderPerformance();
+      await fetchPerformanceRanking();
+    }
+  } catch (error) {
+    console.error('生成绩效失败', error);
+    window.$message?.error('生成绩效失败，请稍后重试');
   }
 }
 
@@ -458,6 +518,7 @@ onMounted(async () => {
       fetchPerformanceTrend(),
       fetchPerformanceRanking(),
       fetchMonthlyOverview(),
+      fetchTopPerformers(),
       fetchAttendanceStatus(),
       fetchWeatherInfo()
     ]);
@@ -512,7 +573,7 @@ onMounted(async () => {
           >
             <h3 class="text-20px font-semibold">{{ item.title }}</h3>
             <div class="flex justify-between pt-12px">
-              <Icon :name="item.icon" class="text-32px" />
+              <SvgIcon :icon="item.icon" class="text-32px" />
               <div class="text-28px text-white dark:text-dark">
                 <span v-if="item.unit === '¥'">{{ item.unit }}</span>
                 {{ item.value }}
@@ -527,7 +588,18 @@ onMounted(async () => {
     <!-- 图表区域 -->
     <NGrid :cols="24" :x-gap="16" :y-gap="16" class="mb-24px">
       <NGi :span="16">
-        <NCard title="本月绩效趋势" :bordered="false">
+        <NCard :bordered="false">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <span>本月绩效趋势</span>
+              <NButton size="small" type="primary" @click="generatePerformance">
+                <template #icon>
+                  <SvgIcon icon="mdi:chart-line-variant" />
+                </template>
+                生成绩效
+              </NButton>
+            </div>
+          </template>
           <div ref="lineChartRef" class="h-360px overflow-hidden"></div>
         </NCard>
       </NGi>
@@ -560,13 +632,13 @@ onMounted(async () => {
             <div class="mt-16px space-y-8px">
               <NButton v-if="attendanceStatus === '未签到'" type="success" size="small" block @click="handleCheckIn">
                 <template #icon>
-                  <Icon name="mdi:clock-check" />
+                  <SvgIcon icon="mdi:clock-check" />
                 </template>
                 签到
               </NButton>
               <NButton v-if="attendanceStatus === '已签到'" type="info" size="small" block @click="handleCheckOut">
                 <template #icon>
-                  <Icon name="mdi:clock-out" />
+                  <SvgIcon icon="mdi:clock-out" />
                 </template>
                 签退
               </NButton>
@@ -599,35 +671,57 @@ onMounted(async () => {
         </NCard>
       </NGi>
 
-      <!-- 快速操作 -->
+      <!-- 优秀骑手排行榜 -->
       <NGi :span="8">
-        <NCard title="快速操作" :bordered="false">
-          <NSpace vertical :size="12">
-            <NButton type="primary" block @click="$router.push('/delivery')">
-              <template #icon>
-                <Icon name="mdi:truck-delivery" />
-              </template>
-              查看配送订单
+        <NCard title="优秀骑手排行榜" :bordered="false">
+          <div v-if="topPerformersLoading" class="text-center py-16px">
+            <NSpin size="small" />
+            <div class="mt-8px text-sm text-gray-500">加载中...</div>
+          </div>
+          <div v-else-if="topPerformers.length > 0" class="space-y-8px">
+            <div
+              v-for="(rider, index) in topPerformers.slice(0, 5)"
+              :key="rider.riderId || index"
+              class="flex items-center justify-between p-8px rounded-lg bg-gray-50 dark:bg-gray-800"
+            >
+              <div class="flex items-center">
+                <div
+                  class="w-24px h-24px rounded-full flex items-center justify-center text-xs font-bold mr-8px"
+                  :class="{
+                    'bg-yellow-500 text-white': index === 0,
+                    'bg-gray-400 text-white': index === 1,
+                    'bg-orange-500 text-white': index === 2,
+                    'bg-blue-500 text-white': index > 2
+                  }"
+                >
+                  {{ index + 1 }}
+                </div>
+                <div>
+                  <div class="text-sm font-medium">{{ rider.riderName || `骑手${index + 1}` }}</div>
+                  <div class="text-xs text-gray-500">{{ rider.totalOrders || 0 }}单</div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-semibold text-green-600">{{ Math.round((rider.onTimeRate || 0) * 100) }}%</div>
+                <div class="text-xs text-gray-500">准时率</div>
+              </div>
+            </div>
+            <div class="text-center pt-8px">
+              <NButton size="small" type="primary" @click="fetchTopPerformers">
+                <template #icon>
+                  <SvgIcon icon="mdi:refresh" />
+                </template>
+                刷新排行榜
+              </NButton>
+            </div>
+          </div>
+          <div v-else class="text-center py-16px text-gray-500">
+            <SvgIcon icon="mdi:trophy-outline" class="text-24px mb-8px" />
+            <div class="text-sm">暂无排行榜数据</div>
+            <NButton size="small" type="primary" class="mt-8px" @click="fetchTopPerformers">
+              重新加载
             </NButton>
-            <NButton type="info" block @click="$router.push('/profile')">
-              <template #icon>
-                <Icon name="mdi:account-edit" />
-              </template>
-              编辑个人信息
-            </NButton>
-            <NButton type="success" block @click="$router.push('/attendance')">
-              <template #icon>
-                <Icon name="mdi:calendar-clock" />
-              </template>
-              考勤记录
-            </NButton>
-            <NButton type="warning" block @click="$router.push('/performance')">
-              <template #icon>
-                <Icon name="mdi:chart-line" />
-              </template>
-              绩效统计
-            </NButton>
-          </NSpace>
+          </div>
         </NCard>
       </NGi>
     </NGrid>
@@ -636,17 +730,19 @@ onMounted(async () => {
     <NCard title="今日工作提醒" :bordered="false">
       <div class="space-y-12px">
         <div class="flex items-center rounded-lg bg-blue-50 p-12px dark:bg-blue-900/20">
-          <Icon name="mdi:information" class="mr-12px text-blue-500" />
+          <SvgIcon icon="mdi:information" class="mr-12px text-blue-500" />
           <div>
             <div class="text-blue-800 font-medium dark:text-blue-200">工作提醒</div>
             <div class="text-sm text-blue-600 dark:text-blue-300">
-              本月已完成 {{ performanceData?.completedOrders || 0 }} 个订单，完成率 {{ completionRate }}%
+              本月已完成
+              {{ Math.round((performanceData?.totalOrders || 0) * (performanceData?.onTimeRate || 0)) }} 个订单，完成率
+              {{ completionRate }}%
             </div>
           </div>
         </div>
 
         <div class="flex items-center rounded-lg bg-green-50 p-12px dark:bg-green-900/20">
-          <Icon name="mdi:check-circle" class="mr-12px text-green-500" />
+          <SvgIcon icon="mdi:check-circle" class="mr-12px text-green-500" />
           <div>
             <div class="text-green-800 font-medium dark:text-green-200">完成情况</div>
             <div class="text-sm text-green-600 dark:text-green-300">
@@ -656,7 +752,7 @@ onMounted(async () => {
         </div>
 
         <div class="flex items-center rounded-lg bg-orange-50 p-12px dark:bg-orange-900/20">
-          <Icon name="mdi:weather-sunny" class="mr-12px text-orange-500" />
+          <SvgIcon icon="mdi:weather-sunny" class="mr-12px text-orange-500" />
           <div>
             <div class="text-orange-800 font-medium dark:text-orange-200">天气提醒</div>
             <div class="text-sm text-orange-600 dark:text-orange-300">

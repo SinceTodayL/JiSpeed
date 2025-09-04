@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import type { FormInst, FormRules } from 'naive-ui';
 import { Icon } from '@iconify/vue';
 import { getRiderInfo, updateRiderInfo } from '@/service/api/rider';
@@ -32,9 +32,6 @@ const originalData = ref({
   vehicleNumber: ''
 });
 
-// 表单初始化状态
-const formInitialized = ref(false);
-
 // 获取当前登录的骑手ID
 const currentRiderId = computed(() => {
   return authStore.userInfo.userId || riderStore.riderId || '';
@@ -65,181 +62,69 @@ const rules: FormRules = {
     { required: true, message: '请输入手机号', trigger: 'blur' },
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
   ],
-  vehicleNumber: [{ max: 20, message: '车辆编号长度不能超过20个字符', trigger: 'blur' }]
+  vehicleNumber: [
+    { required: true, message: '请输入车辆编号', trigger: 'blur' },
+    { max: 20, message: '车辆编号长度不能超过20个字符', trigger: 'blur' }
+  ]
 };
 
-// 获取骑手信息
-const fetchRiderInfo = async () => {
+
+async function fetchRiderInfo() {
   try {
-    loading.value = true;
-
-    // 检查用户是否已登录
-    if (!authStore.isLogin) {
-      console.error('用户未登录，请先登录');
-      window.$message?.error('请先登录后再查看个人信息');
-      return;
-    }
-
-    // 检查是否有有效的骑手ID
-    if (!currentRiderId.value) {
-      console.error('未找到有效的骑手ID，请检查登录状态');
-      window.$message?.error('未找到有效的骑手ID，请重新登录');
-      return;
-    }
-
-    const result = await getRiderInfo(currentRiderId.value);
-    const riderData = result?.data;
-
-    console.log('获取骑手信息API响应:', result);
-
-    if (riderData && typeof riderData === 'object') {
-      console.log('找到骑手数据:', riderData);
-
-      // 更新表单数据
-      const newFormData = {
-        applicationUserId: riderData.applicationUserId || '',
-        name: riderData.name || '',
-        phoneNumber: riderData.phoneNumber || '',
-        riderId: riderData.riderId || currentRiderId.value,
-        vehicleNumber: riderData.vehicleNumber || ''
-      };
-
-      console.log('🔧 准备更新表单数据:', newFormData);
-
-      // 使用 nextTick 确保DOM更新
-      await nextTick();
-
-      // 更新表单数据
-      formModel.applicationUserId = newFormData.applicationUserId;
-      formModel.name = newFormData.name;
-      formModel.phoneNumber = newFormData.phoneNumber;
-      formModel.riderId = newFormData.riderId;
-      formModel.vehicleNumber = newFormData.vehicleNumber;
-
-      console.log('📝 表单数据已更新:', {
-        name: formModel.name,
-        phoneNumber: formModel.phoneNumber,
-        vehicleNumber: formModel.vehicleNumber
-      });
-
-      // 保存原始数据
-      originalData.value.applicationUserId = newFormData.applicationUserId;
-      originalData.value.name = newFormData.name;
-      originalData.value.phoneNumber = newFormData.phoneNumber;
-      originalData.value.riderId = newFormData.riderId;
-      originalData.value.vehicleNumber = newFormData.vehicleNumber;
-
-      // 标记表单已初始化
-      formInitialized.value = true;
-
-      // 更新store
-      riderStore.setRiderInfo(riderData);
-
-      console.log('数据加载完成，表单已填充');
-    } else {
-      console.error('未找到有效的骑手数据');
-      console.log('完整API响应:', result);
-      window.$message?.warning('获取到的骑手信息格式不正确');
+    const { data } = await getRiderInfo(currentRiderId.value);
+    console.log('data', data);
+    if (data) {
+      Object.assign(formModel, data);
     }
   } catch (error) {
-    console.error('获取骑手信息失败:', error);
+    console.error('获取骑手信息失败', error);
     window.$message?.error('获取骑手信息失败，请检查网络连接');
-
     // 当API调用失败时，使用模拟数据
-    const mockData = {
-      applicationUserId: currentRiderId.value || `rider_${Date.now()}`,
+    Object.assign(formModel, {
+      applicationUserId: 'mock_user_001',
       name: '测试骑手',
       phoneNumber: '13800138000',
-      riderId: currentRiderId.value || `rider_${Date.now()}`,
+      riderId: currentRiderId.value,
       vehicleNumber: '宁A12345'
-    };
-
-    Object.assign(formModel, mockData);
-    Object.assign(originalData.value, mockData);
-    formInitialized.value = true;
-  } finally {
-    loading.value = false;
-  }
-};
-
-onMounted(async () => {
-  // 检查用户信息是否已初始化
-  if (!authStore.userInfo.userId && authStore.token) {
-    await authStore.initUserInfo();
-  }
-
-  // 如果仍然没有用户信息，使用模拟数据
-  if (!authStore.userInfo.userId) {
-    Object.assign(authStore.userInfo, {
-      userId: `rider_${Date.now()}`,
-      userName: '测试骑手',
-      roles: ['rider'],
-      buttons: []
     });
   }
+}
 
+onMounted(() => {
   fetchRiderInfo();
 });
 
-// 保存骑手信息
-const handleUpdate = async () => {
-  try {
-    // 检查用户是否已登录
-    if (!authStore.isLogin) {
-      window.$message?.error('请先登录后再更新个人信息');
+async function handleUpdate() {
+  formRef.value?.validate(async errors => {
+    if (errors) {
       return;
     }
 
-    // 检查是否有有效的骑手ID
-    if (!currentRiderId.value) {
-      window.$message?.error('未找到有效的骑手ID，请重新登录');
-      return;
-    }
+    loading.value = true;
+    const { name, phoneNumber, vehicleNumber } = formModel;
 
-    // 表单验证
-    await formRef.value?.validate();
+    try {
+      const { data: updatedData } = await updateRiderInfo(formModel.riderId, {
+        name,
+        phoneNumber,
+        vehicleNumber
+      });
 
-    // 检查是否有变更
-    if (!hasChanges.value) {
-      window.$message?.info('没有检测到任何变更');
-      return;
-    }
-
-    submitting.value = true;
-
-    // 只发送有变更的字段
-    const updateData: Api.Rider.UpdateInfoRequest = {
-      name: formModel.name,
-      phoneNumber: formModel.phoneNumber,
-      vehicleNumber: formModel.vehicleNumber
-    };
-
-    console.log('准备更新骑手信息:', updateData);
-
-    const result = await updateRiderInfo(formModel.riderId, updateData);
-
-    if (result?.data) {
-      // 更新原始数据
-      Object.assign(originalData.value, formModel);
-
-      // 更新store中的骑手信息
-      riderStore.setRiderInfo(result.data);
-
-      window.$message?.success('个人信息更新成功！');
-
-      // 更新authStore中的用户名（如果姓名有变更）
-      if (updateData.name && authStore.userInfo.userName !== updateData.name) {
-        authStore.userInfo.userName = updateData.name;
+      if (updatedData) {
+        window.$message?.success('个人信息更新成功！');
+        Object.assign(formModel, updatedData);
+        console.log('updatedData', updatedData);
+        console.log('formModel', formModel);
       }
+    } catch (error: any) {
+      console.error('更新骑手信息失败', error);
+      const errorMessage = error?.response?.data?.message || '更新失败，请稍后重试';
+      window.$message?.error(errorMessage);
+    } finally {
+      loading.value = false;
     }
-  } catch (error: any) {
-    console.error('更新骑手信息失败:', error);
-    const errorMessage = error?.response?.data?.message || '更新失败，请稍后重试';
-    window.$message?.error(errorMessage);
-  } finally {
-    submitting.value = false;
-  }
-};
+  });
+}
 
 // 取消编辑，恢复原始数据
 const handleCancel = () => {
@@ -305,7 +190,7 @@ const handleCancel = () => {
               </div>
               <div class="flex-1">
                 <NFormItem label="手机号" path="phoneNumber">
-                  <NInput v-model:value="formModel.phoneNumber" placeholder="请输入手机号码" clearable>
+                  <NInput v-model:value="formModel.phoneNumber" placeholder="请输入手机号码（必填）" clearable>
                     <template #prefix>
                       <Icon icon="mdi:phone" class="text-gray-400" />
                     </template>

@@ -1,6 +1,21 @@
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue';
-import { NButton, NCard, NDataTable, NDescriptions, NDescriptionsItem, NForm, NFormItem, NInput, NModal, NSelect, NSpace, NTag, NTabPane, NTabs } from 'naive-ui';
+import {
+  NButton,
+  NCard,
+  NDataTable,
+  NDescriptions,
+  NDescriptionsItem,
+  NForm,
+  NFormItem,
+  NInput,
+  NModal,
+  NSelect,
+  NSpace,
+  NTag,
+  NTabs,
+  NTabPane
+} from 'naive-ui';
 import { getRiderOrderList, updateAssignStatus } from '@/service/api/rider';
 import { getOnlineRidersLocation, getRiderLatestLocation } from '@/service/api/rider-location';
 import { useAuthStore } from '@/store/modules/auth';
@@ -47,7 +62,7 @@ const pagination = ref({
 // 搜索和筛选
 const searchForm = ref({
   orderId: '',
-  status: null as number | null,
+  status: undefined as 0 | 1 | 2 | 3 | undefined,
   startDate: null as string | null,
   endDate: null as string | null
 });
@@ -100,15 +115,16 @@ const fetchOrders = async () => {
     const params = {
       page: pagination.value.page,
       pageSize: pagination.value.pageSize,
-      ...(searchForm.value.status !== null && { status: searchForm.value.status }),
+      ...(searchForm.value.status !== undefined && { status: searchForm.value.status }),
       ...(searchForm.value.startDate && { startDate: searchForm.value.startDate }),
       ...(searchForm.value.endDate && { endDate: searchForm.value.endDate })
     };
 
     const { data } = await getRiderOrderList(riderId.value, params);
+    console.log('data',data);
     if (Array.isArray(data)) {
       // 如果有搜索条件，进行本地筛选
-      let filteredOrders = data as OrderData[];
+      let filteredOrders = data as unknown as OrderData[];
 
       if (searchForm.value.orderId) {
         filteredOrders = filteredOrders.filter(order =>
@@ -133,13 +149,6 @@ const fetchOrders = async () => {
 const fetchOrderDetail = async (_assignId: string) => {
   detailLoading.value = true;
   try {
-    // 暂时注释掉API调用，直接使用基本信息
-    // const { data } = await getRiderAssignDetail({ riderId, assignId });
-    // if (data) {
-    //   orderDetail.value = data;
-    // }
-
-    // 使用已有的订单数据作为详情
     if (selectedOrder.value) {
       orderDetail.value = {
         ...selectedOrder.value,
@@ -163,10 +172,12 @@ const fetchOrderDetail = async (_assignId: string) => {
 const fetchRiderLocation = async () => {
   try {
     const { data } = await getRiderLatestLocation(riderId.value);
-    if (data && data.longitude && data.latitude) {
+    console.log('位置',data);
+    if (data) {
+      console.log('if');
       const newLocation = {
-        longitude: data.longitude,
-        latitude: data.latitude
+        longitude: (data as any).longitude,
+        latitude: (data as any).latitude
       };
       currentLocation.value = newLocation;
 
@@ -226,7 +237,7 @@ const handleSearch = () => {
 const resetSearch = () => {
   searchForm.value = {
     orderId: '',
-    status: null,
+    status: undefined,
     startDate: null,
     endDate: null
   };
