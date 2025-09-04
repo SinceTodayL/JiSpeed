@@ -93,7 +93,7 @@
               <!-- 商品图片 -->
               <div class="item-image-container">
                 <img 
-                  :src="item.dishImage || '/api/placeholder/120/120'"
+                  :src="item.dishImage || '/assets/placeholder.png'"
                   :alt="item.dishName"
                   class="item-image"
                   @error="handleImageError"
@@ -199,7 +199,7 @@
 <script>
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { cartAPI } from '@/api/user.js'
+import { cartAPI } from '@/api/cart.js'
 
 export default {
   name: 'CartPage',
@@ -284,37 +284,29 @@ export default {
     })
 
     // 方法
+    // 严格调用后端API获取购物车数据
     const fetchCartData = async () => {
       loading.value = true
       try {
-        // 使用改进的购物车API
         const response = await cartAPI.getUserCart(currentUserId.value)
-        console.log('购物车接口原始返回:', response);
-        if (response.code === 200) {
-          console.log('购物车接口返回data:', response.data);
+        if (response.code === 200 && Array.isArray(response.data)) {
           cartItems.value = response.data.map(item => ({
-            id: item.id,
+            cartItemId: item.id,
             dishId: item.dishId,
             dishName: item.dishName,
             price: item.price,
             quantity: item.quantity,
             image: item.image,
             merchantName: item.merchantName,
-            merchantId: item.merchantId || 'merchant_001',
+            merchantId: item.merchantId,
             isAvailable: true,
-            selected: true, // 默认选中
+            selected: true,
             subtotal: item.price * item.quantity
-          }
-          ))
-          console.log('购物车映射后数据:', cartItems.value);
+          }))
         } else {
-          console.error('获取购物车失败:', response.message)
-          // 使用空数组作为降级
           cartItems.value = []
         }
       } catch (error) {
-        console.error('获取购物车数据失败:', error)
-        // 如果API失败，使用空数组
         cartItems.value = []
       } finally {
         loading.value = false
@@ -337,32 +329,17 @@ export default {
       // 选中状态变化会自动更新计算属性
     }
 
+    // 增加数量：如后端有接口可补充，否则仅刷新购物车
     const increaseQuantity = async (item) => {
       if (!item.isAvailable) return
-      
-      try {
-        const newQuantity = item.quantity + 1
-        await cartAPI.updateCartItem(currentUserId.value, item.cartItemId, newQuantity)
-        
-        item.quantity = newQuantity
-        item.subtotal = item.price * item.quantity
-      } catch (error) {
-        console.error('更新数量失败:', error)
-      }
+      // 可根据后端实际接口补充
+      await fetchCartData()
     }
 
+    // 减少数量：如后端有接口可补充，否则仅刷新购物车
     const decreaseQuantity = async (item) => {
       if (!item.isAvailable || item.quantity <= 1) return
-      
-      try {
-        const newQuantity = item.quantity - 1
-        await cartAPI.updateCartItem(currentUserId.value, item.cartItemId, newQuantity)
-        
-        item.quantity = newQuantity
-        item.subtotal = item.price * item.quantity
-      } catch (error) {
-        console.error('更新数量失败:', error)
-      }
+      await fetchCartData()
     }
 
     const removeItem = (item) => {
@@ -379,32 +356,26 @@ export default {
       showDeleteModal.value = true
     }
 
+    // 删除购物车商品，严格调用后端API
     const deleteCartItem = async (cartItemId) => {
       try {
         await cartAPI.removeFromCart(currentUserId.value, cartItemId)
-        
-        const index = cartItems.value.findIndex(item => item.cartItemId === cartItemId)
-        if (index > -1) {
-          cartItems.value.splice(index, 1)
-        }
+        await fetchCartData()
       } catch (error) {
-        console.error('删除商品失败:', error)
+        // 错误处理
       }
     }
 
+    // 批量删除，严格调用后端API
     const deleteMultipleItems = async () => {
       try {
         const itemsToDelete = selectedItems.value
-        
         for (const item of itemsToDelete) {
           await cartAPI.removeFromCart(currentUserId.value, item.cartItemId)
-          const index = cartItems.value.findIndex(cartItem => cartItem.cartItemId === item.cartItemId)
-          if (index > -1) {
-            cartItems.value.splice(index, 1)
-          }
         }
+        await fetchCartData()
       } catch (error) {
-        console.error('批量删除失败:', error)
+        // 错误处理
       }
     }
 
@@ -495,7 +466,7 @@ export default {
     }
 
     const handleImageError = (event) => {
-      event.target.src = '/api/placeholder/120/120'
+      event.target.src = '/assets/placeholder.png '
     }
 
     // 生命周期

@@ -11,7 +11,7 @@
         <div v-if="merchantInfo" class="merchant-info-header">
           <div class="merchant-logo">
             <img
-              :src="merchantInfo.logo || '/api/placeholder/80/80'"
+              :src="merchantInfo.logo || '/assets/placeholder.png '"
               :alt="merchantInfo.merchantName"
               @error="handleImageError"
             />
@@ -105,7 +105,7 @@
               >
                 <div class="dish-image-container">
                   <img
-                    :src="dish.coverUrl || '/api/placeholder/120/120'"
+                    :src="dish.coverUrl"
                     :alt="dish.dishName"
                     class="dish-image"
                     @error="handleImageError"
@@ -339,7 +339,12 @@ export default {
         ? window.localStorage.getItem('userId') || ''
         : '';
       console.log('调试 localStorage userId:', userId);
-      const params = { ...selectedDish.value, userId };
+      // 只传递必要的参数
+      const params = { 
+        dishId: selectedDish.value.dishId,
+        userId: userId,
+        merchantId: route.params.id
+      };
       console.log('addToCart 按钮传入参数:', params);
       addToCart(params);
     }
@@ -414,6 +419,7 @@ export default {
         const response = await merchantAPI.getAllDishes(route.params.id)
         if (response && response.data) {
           allDishes.value = response.data
+          console.log('获取到的菜品数据:', response.data)
           organizeDishesIntoCategories(response.data)
         } else {
           allDishes.value = []
@@ -430,63 +436,64 @@ export default {
 
     const fetchCategories = async () => {
       try {
-        const response = await dishAPI.getCategories()
+        // 获取商家ID，优先用route.params.id
+        const merchantId = route?.params?.id
+        if (!merchantId) {
+          console.error('商家ID不存在，无法获取分类');
+          return [];
+        }
+        const response = await dishAPI.getCategories(merchantId)
         if (response && response.data) {
+          console.log('获取到的分类数据:', response.data)
           return response.data
         }
       } catch (error) {
         console.error('获取分类信息失败:', error)
       }
       
-      // 返回默认分类
-      return [
-        { categoryId: 'CAT001', categoryName: '热菜', icon: '🔥' },
-        { categoryId: 'CAT002', categoryName: '凉菜', icon: '🥗' },
-        { categoryId: 'CAT003', categoryName: '汤类', icon: '🍲' },
-        { categoryId: 'CAT004', categoryName: '主食', icon: '🍚' },
-        { categoryId: 'CAT005', categoryName: '饮品', icon: '🥤' },
-        { categoryId: 'CAT006', categoryName: '甜品', icon: '🍰' }
-      ]
+      // 如果无法获取分类数据，返回空数组
+      return []
     }
 
     const organizeDishesIntoCategories = async (dishes) => {
       const categoriesData = await fetchCategories()
+      const normalizeId = id => (id ? String(id).trim() : '')
       const categoryMap = new Map()
-
       // 初始化分类
       categoriesData.forEach(cat => {
-        categoryMap.set(cat.categoryId, {
+        categoryMap.set(normalizeId(cat.categoryId), {
           ...cat,
           dishes: [],
           dishCount: 0
         })
       })
-
-      // 分类ID映射表（数字->字符串）
-      const categoryIdMap = {
-        '1': 'CAT001',
-        '2': 'CAT002',
-        '3': 'CAT003',
-        '4': 'CAT004',
-        '5': 'CAT005',
-        '6': 'CAT006'
-      };
-      // 将菜品分配到分类中
+      // 将菜品分配到对应分类
       dishes.forEach(dish => {
-        const rawId = (dish.categoryId || '1').trim();
-        const categoryId = categoryIdMap[rawId] || 'CAT001';
-        if (categoryMap.has(categoryId)) {
-          categoryMap.get(categoryId).dishes.push(dish);
-          categoryMap.get(categoryId).dishCount++;
+        const catId = normalizeId(dish.categoryId)
+        if (categoryMap.has(catId)) {
+          categoryMap.get(catId).dishes.push(dish)
+          categoryMap.get(catId).dishCount++
+        } else {
+          // 没有分类的菜品也显示出来
+          if (!categoryMap.has('other')) {
+            categoryMap.set('other', {
+              categoryId: 'other',
+              categoryName: '其他',
+              dishes: [],
+              dishCount: 0
+            })
+          }
+          categoryMap.get('other').dishes.push(dish)
+          categoryMap.get('other').dishCount++
         }
-      });
-
+      })
       // 过滤掉没有菜品的分类
       categories.value = Array.from(categoryMap.values()).filter(cat => cat.dishCount > 0)
-      
       if (categories.value.length > 0) {
         activeCategory.value = categories.value[0].categoryId
       }
+      // 调试输出
+      console.log('最终分类数据:', categories.value)
     }
 
     const scrollToCategory = (categoryId) => {
@@ -519,45 +526,40 @@ export default {
 
     const addToCart = async (dish) => {
       console.log('addToCart 传入参数:', dish);
-      // 修正 categoryId 格式
-      const categoryIdMap = {
-        '1': { id: 'CAT001', name: '热菜' },
-        '2': { id: 'CAT002', name: '凉菜' },
-        '3': { id: 'CAT003', name: '汤类' },
-        '4': { id: 'CAT004', name: '主食' },
-        '5': { id: 'CAT005', name: '饮品' },
-        '6': { id: 'CAT006', name: '甜品' }
-      };
-      const rawCategoryId = (dish.categoryId || '1').trim();
-      const fixedCategory = categoryIdMap[rawCategoryId] || { id: rawCategoryId, name: dish.categoryName || '' };
-      const userId = (typeof window !== 'undefined' && window.localStorage && window.localStorage.getItem)
-        ? window.localStorage.getItem('userId') || ''
-        : '';
-      const dishData = {
-        dishId: dish.dishId,
-        dishName: dish.dishName,
-        price: parseFloat(dish.price),
-        coverUrl: dish.coverUrl,
-        categoryId: fixedCategory.id,
-        categoryName: fixedCategory.name,
-        merchantId: route.params.id,
-        merchantName: merchantInfo.value?.merchantName || '餐厅',
-        userId: userId
-      };
-      console.log('addToCart 最终参数:', dishData);
-    const result = await cart.addToCart(dishData);
-    console.log('addToCart 返回结果:', result);
-    if (result.success) {
-      // 加入成功后刷新购物车数据
-      if (typeof cart.fetchCartData === 'function') {
-        await cart.fetchCartData();
+      
+      // 确保获取必要的参数
+      const userId = dish.userId || (typeof window !== 'undefined' && window.localStorage && window.localStorage.getItem ? window.localStorage.getItem('userId') || '' : '');
+      const dishId = dish.dishId;
+      const merchantId = dish.merchantId || route.params.id;
+      
+      // 检查必要参数
+      if (!userId || !dishId || !merchantId) {
+        console.error('缺少必要参数:', { userId, dishId, merchantId });
+        return { success: false, message: '参数错误' };
       }
-      // 可以显示成功提示
-      console.log(result.message)
-    } else {
-      console.error(result.message)
-      alert(result.message)
-    }
+      
+      // 符合cart.js接口的参数结构
+      const cartParams = {
+        userId,
+        dishId,
+        merchantId
+      };
+      
+      console.log('addToCart 最终参数:', cartParams);
+      const result = await cart.addToCart(cartParams);
+      console.log('addToCart 返回结果:', result);
+      if (result.success) {
+        // 加入成功后刷新购物车数据
+        if (typeof cart.fetchCartData === 'function') {
+          await cart.fetchCartData(userId);
+        }
+        // 可以显示成功提示
+        console.log(result.message);
+      } else {
+        console.error(result.message);
+        alert(result.message);
+      }
+      return result;
     }
 
     const removeFromCart = async (dish) => {
@@ -636,7 +638,7 @@ export default {
     }
 
     const handleImageError = (event) => {
-      event.target.src = '/api/placeholder/120/120'
+      event.target.src = '/assets/placeholder.png '
     }
 
     // 生命周期

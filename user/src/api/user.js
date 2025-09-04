@@ -26,7 +26,7 @@ api.interceptors.response.use(
 export const authAPI = {
   // 用户登录
   login: (account, password) => {
-    return api.post('/users/login', {
+    return api.post('/api/users/login', {
       account,
       password
     })
@@ -34,7 +34,7 @@ export const authAPI = {
 
   // 用户注册
   register: (userData) => {
-    return api.post('/users/register', {
+    return api.post('/api/users/register', {
       account: userData.account,
       nickName: userData.nickName,
       gender: userData.gender,
@@ -45,7 +45,7 @@ export const authAPI = {
 
   // 重置密码
   resetPassword: (userId, oldPassword, newPassword) => {
-    return api.post(`/users/${userId}/password/reset`, {
+    return api.post(`/api/users/${userId}/password/reset`, {
       oldPassword,
       newPassword
     })
@@ -57,7 +57,7 @@ export const userAPI = {
   // 获取用户信息列表
   getUserList: (params = {}) => {
     const { page, size } = params
-    return api.get('/users', {
+    return api.get('/api/users', {
       params: {
         page,
         size
@@ -67,7 +67,7 @@ export const userAPI = {
 
   // 根据id获取用户信息
   getUserById: (userId) => {
-    return api.get(`/users/${userId}`)
+    return api.get(`/api/users/${userId}`)
   },
 
   // 根据id部分修改用户信息
@@ -77,7 +77,7 @@ export const userAPI = {
 
   // 根据id部分删除用户信息
   deleteUser: (userId) => {
-    return api.delete(`/users/${userId}`)
+    return api.delete(`/api/users/${userId}`)
   }
 }
 
@@ -86,7 +86,7 @@ export const favoriteAPI = {
   // 根据id获取用户收藏的商品列表
   getUserFavorites: (userId, params = {}) => {
     const { page, size } = params
-    return api.get(`/users/${userId}/favorites`, {
+    return api.get(`/api/users/${userId}/favorites`, {
       params: {
         page,
         size
@@ -96,50 +96,24 @@ export const favoriteAPI = {
 
   // 用户添加收藏夹
   addToFavorites: (userId, dishId) => {
-    return api.post(`/users/${userId}/favorites`, {
+    return api.post(`/api/users/${userId}/favorites`, {
       dishId
     })
   },
 
   // 根据id删除收藏内容
   removeFavorite: (userId, favoriteId) => {
-    return api.delete(`/users/${userId}/favorites/${favoriteId}`)
+    return api.delete(`/api/users/${userId}/favorites/${favoriteId}`)
   }
 }
 
-// 用户购物车相关API
-export const cartAPI = {
-  // 根据id获取用户的购物车内容
-  getUserCart: (userId, params = {}) => {
-    const { page, size } = params
-    return api.get(`/users/${userId}/cart`, {
-      params: {
-        page,
-        size
-      }
-    })
-  },
-
-  // 用户添加商品到购物车
-  addToCart: (userId, dishId) => {
-    return api.post(`/users/${userId}/cartitems`, {
-      dishId,
-      userId
-    })
-  },
-
-  // 根据id删除购物车内容
-  removeFromCart: (userId, cartId) => {
-    return api.delete(`/users/${userId}/carts/${cartId}`)
-  }
-}
 
 // 用户评论相关API
 export const reviewAPI = {
   // 根据id获取用户发布的所有评论
   getUserReviews: (userId, params = {}) => {
     const { page, size } = params
-    return api.get(`/users/${userId}/review`, {
+    return api.get(`/api/users/${userId}/review`, {
       params: {
         page,
         size
@@ -149,7 +123,7 @@ export const reviewAPI = {
 
   // 用户提交评论
   submitReview: (userId, reviewData) => {
-    return api.post(`/users/${userId}/comments`, {
+    return api.post(`/api/users/${userId}/comments`, {
       orderId: reviewData.orderId,
       dishId: reviewData.dishId,
       rating: reviewData.rating,
@@ -160,12 +134,12 @@ export const reviewAPI = {
 
   // 根据id修改评论
   updateReview: (userId, reviewId, reviewData) => {
-    return api.patch(`/users/${userId}/reviews/${reviewId}`, reviewData)
+    return api.patch(`/api/users/${userId}/reviews/${reviewId}`, reviewData)
   },
 
   // 根据id删除评论
   deleteReview: (userId, reviewId) => {
-    return api.delete(`/users/${userId}/reviews/${reviewId}`)
+    return api.delete(`/api/users/${userId}/reviews/${reviewId}`)
   }
 }
 
@@ -174,7 +148,7 @@ export const complaintAPI = {
   // 根据id获取用户提交的所有投诉
   getUserComplaints: (userId, params = {}) => {
     const { page, size } = params
-    return api.get(`/users/${userId}/complaints`, {
+    return api.get(`/api/users/${userId}/complaints`, {
       params: {
         page,
         size
@@ -184,7 +158,7 @@ export const complaintAPI = {
 
   // 用户添加投诉
   submitComplaint: (userId, complaintData) => {
-    return api.post(`/users/${userId}/complaints`, {
+    return api.post(`/api/users/${userId}/complaints`, {
       orderId: complaintData.orderId,
       description: complaintData.description
     })
@@ -192,12 +166,12 @@ export const complaintAPI = {
 
   // 根据id修改投诉
   updateComplaint: (userId, complaintId, description) => {
-    return api.patch(`/users/${userId}/complaints/${complaintId}`, description)
+    return api.patch(`/api/users/${userId}/complaints/${complaintId}`, description)
   },
 
   // 根据id删除投诉
   deleteComplaint: (userId, complaintId) => {
-    return api.delete(`/users/${userId}/complaints/${complaintId}`)
+    return api.delete(`/api/users/${userId}/complaints/${complaintId}`)
   }
 }
 
@@ -207,7 +181,7 @@ export const addressAPI = {
   // 获取用户地址列表
   getUserAddresses: (userId, params = {}) => {
     const { page, size } = params
-    return api.get(`/users/${userId}/addresses`, {
+    return api.get(`/api/users/${userId}/addresses`, {
       params: {
         page,
         size
@@ -217,7 +191,7 @@ export const addressAPI = {
 
   // 添加新地址
   addAddress: (userId, addressData) => {
-    return api.post(`/users/${userId}/addresses`, {
+    return api.post(`/api/users/${userId}/addresses`, {
       receiverName: addressData.receiverName,
       receiverPhone: addressData.receiverPhone,
       detailedAddress: addressData.detailedAddress,
@@ -227,7 +201,7 @@ export const addressAPI = {
 
   // 更新地址
   updateAddress: (userId, addressId, addressData) => {
-    return api.patch(`/users/${userId}/addresses/${addressId}`, {
+    return api.patch(`/api/users/${userId}/addresses/${addressId}`, {
       receiverName: addressData.receiverName,
       receiverPhone: addressData.receiverPhone,
       detailedAddress: addressData.detailedAddress,
@@ -237,7 +211,7 @@ export const addressAPI = {
 
   // 删除地址
   deleteAddress: (userId, addressId) => {
-    return api.delete(`/users/${userId}/addresses/${addressId}`)
+    return api.delete(`/api/users/${userId}/addresses/${addressId}`)
   }
 }
 
