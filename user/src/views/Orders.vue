@@ -150,7 +150,14 @@ import { orderAPI } from '@/api/order.js'
 export default {
   name: 'Orders',
   setup() {
-    const router = useRouter()
+  const router = useRouter()
+  // 调试：输出所有路由路径，便于定位商家列表页面
+  console.log('所有路由路径:', router.getRoutes().map(r => r.path))
+  // 自动插入调试代码，输出所有路由路径
+  const allPaths = router.getRoutes().map(r => r.path)
+  console.log('所有路由路径:', allPaths)
+  // 自动查找第一个包含 merchant 的路由
+  const merchantPath = allPaths.find(p => p && p.includes('merchant')) || '/merchants'
 
     // 响应式数据
     const orders = ref([])
@@ -180,34 +187,25 @@ export default {
       router.back()
     }
 
+    // 自动修复：参数传递方式与 order.js 保持一致
     const loadOrders = async (status = '', page = 1, append = false) => {
       loading.value = true
-
       try {
         const userId = localStorage.getItem('userId') || 'USER123'
-        const params = {
-          page,
-          limit: 10
-        }
-        
-        if (status !== '') {
-          params.status = status
-        }
-
-        const response = await orderAPI.getUserOrders(userId, params)
-        
+        // order.js 需要参数顺序：userId, orderStatus, size, page
+        const orderStatus = status
+        const size = 10
+        // page 已有
+        const response = await orderAPI.getUserOrders(userId, orderStatus, size, page)
         if (response && response.code === 200) {
           const { orders: newOrders, total, totalPages: pages } = response.data
-          
           if (append) {
             orders.value = [...orders.value, ...newOrders]
           } else {
             orders.value = newOrders
           }
-          
           totalPages.value = pages
           currentPage.value = page
-
           // 更新状态计数
           updateStatusCounts()
         }
@@ -305,8 +303,11 @@ export default {
       router.push(`/orders/${orderId}/review`)
     }
 
+    // 自动修复：跳转到实际存在的商家列表页面路径
+    // 修正：跳转到商家列表页面 /merchants
+    // 修正：跳转到商家列表页面 /browse
     const goShopping = () => {
-      router.push('/merchants')
+      router.push('/browse')
     }
 
     const formatTime = (timeString) => {

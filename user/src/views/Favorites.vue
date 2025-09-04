@@ -171,7 +171,9 @@ export default {
     const fetchFavorites = async () => {
       loading.value = true
       try {
-        const userId = localStorage.getItem('userId') || 'test_user_001'
+        const userId = (typeof localStorage !== 'undefined' && localStorage.getItem && localStorage.getItem('userId'))
+          ? localStorage.getItem('userId')
+          : ''
         
         const response = await favoriteAPI.getUserFavorites(userId)
         if (response.code === 200) {
@@ -200,7 +202,9 @@ export default {
     // 删除收藏项
     const deleteFavoriteItem = async (favoriteId) => {
       try {
-        const userId = localStorage.getItem('userId') || 'test_user_001'
+        const userId = (typeof localStorage !== 'undefined' && localStorage.getItem && localStorage.getItem('userId'))
+          ? localStorage.getItem('userId')
+          : ''
         await favoriteAPI.removeFavorite(userId, favoriteId)
         
         const index = favorites.value.findIndex(item => item.id === favoriteId)
@@ -225,7 +229,9 @@ export default {
     // 批量删除收藏
     const deleteBulkFavorites = async () => {
       try {
-        const userId = localStorage.getItem('userId') || 'test_user_001'
+        const userId = (typeof localStorage !== 'undefined' && localStorage.getItem && localStorage.getItem('userId'))
+          ? localStorage.getItem('userId')
+          : ''
         const itemsToDelete = selectedItems.value
         
         for (const item of itemsToDelete) {

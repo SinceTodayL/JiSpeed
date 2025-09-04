@@ -41,9 +41,16 @@ api.interceptors.response.use(
 // 订单API
 export const orderAPI = {
   // 根据用户ID获取订单列表
+  // 自动修复：订单列表接口路径改为 /api/orders，userId 作为 query 参数
   getUserOrders: (userId, orderStatus, size, page) => {
-    return api.get(`/api/users/${userId}/orders`, {
+    // 自动插入调试代码
+    console.log('订单API请求参数:', { userId, orderStatus, size, page });
+    console.log('订单API baseURL:', API_BASE_URL);
+    const fullUrl = `${API_BASE_URL}/api/orders?userId=${userId}&orderStatus=${orderStatus}&size=${size}&page=${page}`;
+    console.log('订单API完整URL:', fullUrl);
+    return api.get('/api/orders', {
       params: {
+        userId,
         orderStatus,
         size,
         page

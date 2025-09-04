@@ -214,7 +214,9 @@ export default {
     const pendingDeleteAction = ref(null)
 
     // 获取当前用户ID（从localStorage获取测试用户ID）
-    const currentUserId = ref(localStorage.getItem('userId') || 'test_user_001')
+    const currentUserId = ref((typeof localStorage !== 'undefined' && localStorage.getItem && localStorage.getItem('userId'))
+      ? localStorage.getItem('userId')
+      : '')
 
     // 计算属性
     const totalItems = computed(() => {

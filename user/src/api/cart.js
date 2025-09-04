@@ -53,12 +53,13 @@ export const cartAPI = {
   },
 
   // 用户添加商品到购物车
-  addToCart: (userId, dishId) => {
-    return api.post(`/users/${userId}/cartitems`, {
-      dishId,
-      userId
-    })
-  },
+    addToCart: (userId, dishId) => {
+      console.log('addToCart 参数:', userId, dishId)
+      return api.post(`/users/${userId}/cartitems`, {
+        dishId,
+        userId
+      })
+    },
 
   // 根据id删除购物车内容
   removeFromCart: (userId, cartId) => {

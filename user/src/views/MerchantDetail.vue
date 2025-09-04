@@ -224,10 +224,7 @@
               </span>
               
               <button
-                @click="addToCart({
-                  dishId: selectedDish.dishId,
-                  userId: localStorage.getItem('userId') || 'test_user_001'
-                })"
+                @click="handleAddToCart"
                 class="modal-quantity-btn plus"
               >
                 +
@@ -337,6 +334,17 @@ import { getCartInstance } from '@/composables/useCart.js'
 export default {
   name: 'MerchantDetail',
   setup() {
+    function handleAddToCart() {
+      const userId = (typeof window !== 'undefined' && window.localStorage && window.localStorage.getItem)
+        ? window.localStorage.getItem('userId') || ''
+        : '';
+      console.log('调试 localStorage userId:', userId);
+      const params = { ...selectedDish.value, userId };
+      console.log('addToCart 按钮传入参数:', params);
+      addToCart(params);
+    }
+  // setup 阶段调试输出
+  console.log('setup 阶段 localStorage userId:', localStorage.getItem('userId'))
     const route = useRoute()
     const router = useRouter()
     
@@ -522,6 +530,9 @@ export default {
       };
       const rawCategoryId = (dish.categoryId || '1').trim();
       const fixedCategory = categoryIdMap[rawCategoryId] || { id: rawCategoryId, name: dish.categoryName || '' };
+      const userId = (typeof window !== 'undefined' && window.localStorage && window.localStorage.getItem)
+        ? window.localStorage.getItem('userId') || ''
+        : '';
       const dishData = {
         dishId: dish.dishId,
         dishName: dish.dishName,
@@ -530,7 +541,8 @@ export default {
         categoryId: fixedCategory.id,
         categoryName: fixedCategory.name,
         merchantId: route.params.id,
-        merchantName: merchantInfo.value?.merchantName || '餐厅'
+        merchantName: merchantInfo.value?.merchantName || '餐厅',
+        userId: userId
       };
       console.log('addToCart 最终参数:', dishData);
     const result = await cart.addToCart(dishData);
@@ -629,6 +641,8 @@ export default {
 
     // 生命周期
     onMounted(async () => {
+  // onMounted 阶段调试输出
+  console.log('onMounted 阶段 localStorage userId:', localStorage.getItem('userId'))
       await fetchMerchantInfo()
       await fetchDishes()
       // 获取购物车数据
@@ -665,7 +679,8 @@ export default {
       closeCart,
       proceedToCheckout,
       goBack,
-      handleImageError
+      handleImageError,
+      handleAddToCart
     }
   }
 }

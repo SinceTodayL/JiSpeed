@@ -221,11 +221,12 @@ export default {
           keyword: searchKeyword.value,
           sortBy: activeFilter.value
         }
-        
+        console.log('商家列表请求参数:', params);
         const response = await merchantAPI.getAllMerchants(params)
-        
-        if (response && response.data) {
-          merchants.value = response.data.merchants || []
+        console.log('商家接口返回:', response);
+          if (response && response.data) {
+            // 自动修复：直接赋值为后端返回的商家数组（根据调试输出，response.data 已为商家数组）
+            merchants.value = response.data || [];
           total.value = response.data.total || 0
           totalPages.value = Math.ceil(total.value / pageSize.value)
         } else {

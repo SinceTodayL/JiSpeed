@@ -175,7 +175,9 @@ export default {
     const fetchAddresses = async () => {
       loading.value = true
       try {
-        const userId = localStorage.getItem('userId') || 'test_user_001'
+        const userId = (typeof localStorage !== 'undefined' && localStorage.getItem && localStorage.getItem('userId'))
+          ? localStorage.getItem('userId')
+          : ''
         const response = await addressAPI.getUserAddresses(userId)
         
         if (response.code === 200) {
@@ -217,7 +219,9 @@ export default {
     // 保存地址
     const saveAddress = async () => {
       try {
-        const userId = localStorage.getItem('userId') || 'test_user_001'
+        const userId = (typeof localStorage !== 'undefined' && localStorage.getItem && localStorage.getItem('userId'))
+          ? localStorage.getItem('userId')
+          : ''
         
         if (editingAddress.value) {
           // 编辑地址
@@ -239,7 +243,9 @@ export default {
     // 设为默认地址
     const setDefault = async (addressId) => {
       try {
-        const userId = localStorage.getItem('userId') || 'test_user_001'
+        const userId = (typeof localStorage !== 'undefined' && localStorage.getItem && localStorage.getItem('userId'))
+          ? localStorage.getItem('userId')
+          : ''
         await addressAPI.updateAddress(userId, addressId, { isDefault: true })
         console.log('设置默认地址成功')
         fetchAddresses()
@@ -257,7 +263,9 @@ export default {
     // 确认删除
     const confirmDelete = async () => {
       try {
-        const userId = localStorage.getItem('userId') || 'test_user_001'
+        const userId = (typeof localStorage !== 'undefined' && localStorage.getItem && localStorage.getItem('userId'))
+          ? localStorage.getItem('userId')
+          : ''
         await addressAPI.deleteAddress(userId, pendingDeleteId.value)
         console.log('地址删除成功')
         cancelDelete()
