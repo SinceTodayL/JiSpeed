@@ -8,7 +8,7 @@ import { getAuthorization, handleExpiredRequest, showErrorMsg } from './shared';
 import type { RequestInstanceState } from './type';
 
 const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === 'Y';
-const { baseURL, otherBaseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
+const { baseURL, otherBaseURL } = getServiceBaseURL(import.meta.env as Env.ImportMeta, isHttpProxy);
 
 export const request = createFlatRequest<App.Service.Response, RequestInstanceState>(
   {
@@ -28,7 +28,8 @@ export const request = createFlatRequest<App.Service.Response, RequestInstanceSt
     isBackendSuccess(response) {
       // when the backend response code is "0000"(default), it means the request is success
       // to change this logic by yourself, you can modify the `VITE_SERVICE_SUCCESS_CODE` in `.env` file
-      return String(response.data.code) === import.meta.env.VITE_SERVICE_SUCCESS_CODE;
+      const successCode = import.meta.env.VITE_SERVICE_SUCCESS_CODE || '0000';
+      return String(response.data.code) === successCode;
     },
     async onBackendFail(response, instance) {
       const authStore = useAuthStore();

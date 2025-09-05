@@ -20,11 +20,11 @@ import {
 import { Icon } from '@iconify/vue';
 import { getRiderInfo } from '@/service/api/rider';
 import {
+  createAttendanceRecord,
   getAttendanceDetail,
   getRiderAttendanceRecordsList,
   getRiderAttendanceStats,
   getTodayAttendance,
-  riderCheckInAttendance,
   riderCheckOutAttendance
 } from '@/service/api/attendance';
 import { useAuthStore } from '@/store/modules/auth';
@@ -164,14 +164,15 @@ async function fetchAttendanceStats() {
 async function handleCheckIn() {
   try {
     loading.value = true;
-    const checkInData: Api.Attendance.CheckInRequest = {
+    const checkInData: Api.Attendance.CreateAttendanceRequest = {
+      riderId: riderId.value,
       checkDate: new Date().toISOString().split('T')[0],
       checkInAt: new Date().toISOString(),
       isLate: 0,
       isAbsent: 0
     };
     console.log(checkInData);
-    const { data } = await riderCheckInAttendance(riderId.value, checkInData);
+    const { data } = await createAttendanceRecord(checkInData);
     console.log('data',data);
     if (data) {
       console.log('okok');
@@ -180,9 +181,20 @@ async function handleCheckIn() {
       await fetchTodayAttendance();
       await fetchAttendanceRecords();
     }
-  } catch {
-    // 打卡失败
-    window.$message?.error('打卡失败，请稍后重试');
+  } catch (error: any) {
+    // 处理具体的错误信息
+    console.error('打卡失败:', error);
+    if (error?.response?.data?.message) {
+      // 如果是重复考勤记录的错误，刷新今日考勤状态
+      if (error.response.data.message.includes('已有考勤记录')) {
+        await fetchTodayAttendance();
+        window.$message?.warning('今日已打卡，请勿重复操作');
+      } else {
+        window.$message?.error(error.response.data.message);
+      }
+    } else {
+      window.$message?.error('打卡失败，请稍后重试');
+    }
   } finally {
     loading.value = false;
   }
@@ -679,7 +691,7 @@ onMounted(async () => {
 /* 页面整体动画 */
 .min-h-full {
   animation: fadeIn 0.6s ease-out;
-  min-height: 100vh;
+  min-height: 150vh;
   overflow-y: auto;
 }
 

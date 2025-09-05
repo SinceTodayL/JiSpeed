@@ -51,7 +51,8 @@ export const alova = createAlovaRequest(
       // to change this logic by yourself, you can modify the `VITE_SERVICE_SUCCESS_CODE` in `.env` file
       const resp = response.clone();
       const data = await resp.json();
-      return String(data.code) === import.meta.env.VITE_SERVICE_SUCCESS_CODE;
+      const successCode = import.meta.env.VITE_SERVICE_SUCCESS_CODE || '0000';
+      return String(data.code) === successCode;
     },
     async transformBackendResponse(response) {
       return (await response.clone().json()).data;

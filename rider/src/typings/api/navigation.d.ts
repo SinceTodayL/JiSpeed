@@ -26,20 +26,18 @@ declare namespace Api {
 
     /** 路线步骤 */
     export interface RouteStep {
-      /** 步骤ID */
-      stepId: string;
       /** 步骤描述 */
-      instruction: string;
+      instruction?: string;
       /** 距离（米） */
-      distance: number;
+      distance?: number;
       /** 预计时间（秒） */
-      duration: number;
-      /** 起点坐标 */
-      startLocation: Coordinate;
-      /** 终点坐标 */
-      endLocation: Coordinate;
+      duration?: number;
       /** 道路名称 */
       roadName?: string;
+      /** 转向类型 */
+      turnType?: string;
+      /** 路线坐标点 */
+      polyline?: number[][];
     }
 
     /** 导航路线 */
@@ -49,59 +47,49 @@ declare namespace Api {
       /** 总距离（米） */
       totalDistance: number;
       /** 总预计时间（秒） */
-      totalDuration: number;
+      estimatedDuration: number;
+      /** 路线坐标点 */
+      polyline: string;
       /** 路线步骤 */
       steps: RouteStep[];
-      /** 起点 */
-      startPoint: Coordinate;
-      /** 终点 */
-      endPoint: Coordinate;
-      /** 路线类型 */
-      routeType: 'driving' | 'walking' | 'cycling';
+      /** 路线模式 */
+      mode: string;
     }
 
     /** 实时导航更新 */
     export interface RealTimeNavigationUpdate {
-      /** 更新ID */
-      updateId: string;
-      /** 当前步骤索引 */
-      currentStepIndex: number;
-      /** 当前位置 */
-      currentLocation: Coordinate;
-      /** 剩余距离（米） */
-      remainingDistance: number;
+      /** 路线ID */
+      routeId: string;
+      /** 当前经度 */
+      currentLongitude: number;
+      /** 当前纬度 */
+      currentLatitude: number;
+      /** 当前速度 */
+      currentSpeed: number;
       /** 剩余时间（秒） */
       remainingTime: number;
-      /** 下一个转弯点 */
-      nextTurn?: {
-        instruction: string;
-        distance: number;
-        location: Coordinate;
-      };
-      /** 交通状况 */
-      trafficStatus?: 'smooth' | 'slow' | 'congested';
+      /** 剩余距离（米） */
+      remainingDistance: number;
+      /** 下一个导航指令 */
+      nextInstruction: string;
+      /** 时间戳 */
+      timestamp: string;
     }
 
     /** 服务点信息 */
     export interface ServicePoint {
-      /** 服务点ID */
-      pointId: string;
       /** 服务点名称 */
-      name: string;
-      /** 服务点类型 */
-      type: 'gas_station' | 'restaurant' | 'hospital' | 'police' | 'other';
-      /** 位置坐标 */
-      location: Coordinate;
+      name?: string;
       /** 地址 */
-      address: string;
+      address?: string;
+      /** 经度 */
+      longitude?: number;
+      /** 纬度 */
+      latitude?: number;
       /** 距离（米） */
-      distance: number;
-      /** 营业状态 */
-      isOpen: boolean;
-      /** 联系电话 */
-      phone?: string;
-      /** 评分 */
-      rating?: number;
+      distance?: number;
+      /** 服务点类型 */
+      type?: string;
     }
 
     // ========== 请求类型 ==========
@@ -110,70 +98,56 @@ declare namespace Api {
     export interface GetOrderNavigationRequest {
       /** 订单ID */
       orderId: string;
-      /** 起点坐标（可选，默认使用骑手当前位置） */
-      startLocation?: Coordinate;
-      /** 路线类型 */
-      routeType?: 'driving' | 'walking' | 'cycling';
+      /** 骑手ID */
+      riderId: string;
     }
 
     /** 获取订单实时导航更新请求 */
     export interface GetRealTimeNavigationRequest {
       /** 订单ID */
       orderId: string;
-      /** 当前位置 */
-      currentLocation: Coordinate;
-      /** 路线ID */
-      routeId: string;
+      /** 骑手ID */
+      riderId: string;
     }
 
     /** 基础导航路线规划请求 */
     export interface PlanBasicRouteRequest {
-      /** 起点坐标 */
-      startLocation: Coordinate;
-      /** 终点坐标 */
-      endLocation: Coordinate;
-      /** 路线类型 */
-      routeType: 'driving' | 'walking' | 'cycling';
-      /** 途经点（可选） */
-      waypoints?: Coordinate[];
-      /** 避开区域（可选） */
-      avoidAreas?: Array<{
-        center: Coordinate;
-        radius: number;
-      }>;
+      /** 起点经度 */
+      startLongitude: number;
+      /** 起点纬度 */
+      startLatitude: number;
+      /** 终点经度 */
+      endLongitude: number;
+      /** 终点纬度 */
+      endLatitude: number;
+      /** 导航模式 */
+      mode: string;
     }
 
     /** 实时导航路径请求 */
     export interface PlanRealTimeRouteRequest {
-      /** 起点坐标 */
-      startLocation: Coordinate;
-      /** 终点坐标 */
-      endLocation: Coordinate;
-      /** 当前位置 */
-      currentLocation: Coordinate;
-      /** 路线类型 */
-      routeType: 'driving' | 'walking' | 'cycling';
-      /** 实时交通数据 */
-      trafficData?: {
-        congestionLevel: 'low' | 'medium' | 'high';
-        roadClosures?: Array<{
-          roadName: string;
-          startLocation: Coordinate;
-          endLocation: Coordinate;
-        }>;
-      };
+      /** 起点经度 */
+      startLongitude: number;
+      /** 起点纬度 */
+      startLatitude: number;
+      /** 终点经度 */
+      endLongitude: number;
+      /** 终点纬度 */
+      endLatitude: number;
+      /** 导航模式 */
+      mode: string;
     }
 
     /** 获取附近服务点请求 */
     export interface GetNearbyServicePointsRequest {
-      /** 中心点坐标 */
-      centerLocation: Coordinate;
-      /** 搜索半径（米） */
-      radius: number;
-      /** 服务点类型 */
-      types?: Array<'gas_station' | 'restaurant' | 'hospital' | 'police' | 'other'>;
-      /** 最大返回数量 */
-      limit?: number;
+      /** 经度 */
+      longitude: number;
+      /** 纬度 */
+      latitude: number;
+      /** 服务类型，默认all */
+      serviceType?: string;
+      /** 搜索半径(米)，默认2000 */
+      radius?: number;
     }
 
     // ========== 响应类型 ==========
@@ -191,9 +165,6 @@ declare namespace Api {
     export type RealTimeRouteResponse = ApiResponse<NavigationRoute>;
 
     /** 附近服务点响应 */
-    export type NearbyServicePointsResponse = ApiResponse<{
-      points: ServicePoint[];
-      total: number;
-    }>;
+    export type NearbyServicePointsResponse = ApiResponse<ServicePoint[]>;
   }
 }

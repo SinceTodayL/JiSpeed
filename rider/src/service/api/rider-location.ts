@@ -79,7 +79,7 @@ export function updateRiderOnlineStatus(riderId: string, data: Api.Rider.Locatio
  */
 export function getRiderCurrentLocationInfo(riderId: string) {
   return request<Api.Rider.CurrentLocationInfoResponse>({
-    url: `/api/Riderlocations/${riderId}/current-info`,
+    url: `/api/Riderlocations/${riderId}/address`,
     method: 'get'
   });
 }

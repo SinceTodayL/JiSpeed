@@ -22,7 +22,7 @@ export function getOrderNavigationRoute(params: Api.Navigation.GetOrderNavigatio
  */
 export function getOrderRealTimeNavigation(params: Api.Navigation.GetRealTimeNavigationRequest) {
   return request<Api.Navigation.RealTimeNavigationResponse>({
-    url: `/api/navigation/order/${params.orderId}/realtime`,
+    url: `/api/Navigation/order/${params.orderId}/rider/${params.riderId}/updates`,
     method: 'get',
     params
   });
@@ -35,7 +35,7 @@ export function getOrderRealTimeNavigation(params: Api.Navigation.GetRealTimeNav
  */
 export function planBasicRoute(data: Api.Navigation.PlanBasicRouteRequest) {
   return request<Api.Navigation.BasicRouteResponse>({
-    url: '/api/navigation/plan/basic',
+    url: '/api/Navigation/route',
     method: 'post',
     data
   });
@@ -46,7 +46,7 @@ export function planBasicRoute(data: Api.Navigation.PlanBasicRouteRequest) {
  */
 export function planRealTimeRoute(data: Api.Navigation.PlanRealTimeRouteRequest) {
   return request<Api.Navigation.RealTimeRouteResponse>({
-    url: '/api/navigation/plan/realtime',
+    url: '/api/Navigation/realtime',
     method: 'post',
     data
   });
@@ -59,7 +59,7 @@ export function planRealTimeRoute(data: Api.Navigation.PlanRealTimeRouteRequest)
  */
 export function getNearbyServicePoints(params: Api.Navigation.GetNearbyServicePointsRequest) {
   return request<Api.Navigation.NearbyServicePointsResponse>({
-    url: '/api/navigation/service-points/nearby',
+    url: '/api/Navigation/nearby',
     method: 'get',
     params
   });

@@ -12,17 +12,33 @@ import {
   NModal,
   NSelect,
   NSpace,
-  NTag,
+  NTabPane,
   NTabs,
-  NTabPane
+  NTag
 } from 'naive-ui';
 import { Icon } from '@iconify/vue';
 import { getRiderOrderList, updateAssignStatus } from '@/service/api/rider';
-import { getOnlineRidersLocation, getRiderLatestLocation } from '@/service/api/rider-location';
+import {
+  getOnlineRidersLocation,
+  getRiderCurrentAddress,
+  getRiderCurrentLocationInfo,
+  getRiderLatestLocation,
+  getRiderLocationHistory,
+  getRidersInArea,
+  updateRiderOnlineStatus
+} from '@/service/api/rider-location';
+import {
+  getNearbyServicePoints,
+  getOrderNavigationRoute,
+  getOrderRealTimeNavigation,
+  planBasicRoute
+} from '@/service/api/navigation';
+import { type InputTipsResult } from '@/service/api/amap';
 import { useAuthStore } from '@/store/modules/auth';
 import { useRiderStore } from '@/store/modules/rider';
 import { handleCommonError, handleOrderError } from '@/utils/rider-error-handler';
 import AmapMap from '@/components/delivery/amap-map.vue';
+import AddressSearch from '@/components/AddressSearch.vue';
 
 const authStore = useAuthStore();
 const riderStore = useRiderStore();
@@ -92,6 +108,16 @@ const currentLocation = ref(getInitialLocation());
 const areaRiders = ref<any[]>([]);
 const mapInstance = ref<any>(null);
 
+// 新增位置相关状态
+const locationHistory = ref<any[]>([]);
+const currentAddress = ref<string>('');
+const riderDistance = ref<number>(0);
+const isOnline = ref<boolean>(true);
+const locationInfo = ref<any>(null);
+const showLocationModal = ref(false);
+const showHistoryModal = ref(false);
+const showDistanceModal = ref(false);
+
 // 状态映射
 const statusMap = {
   0: { text: '未处理', type: 'warning' },
@@ -107,6 +133,41 @@ const statusOptions = [
   { label: '已接单', value: 1 },
   { label: '已拒单', value: 2 },
   { label: '已完成', value: 3 }
+];
+
+// 导航相关状态
+const navigationState = ref({
+  currentRoute: null as Api.Navigation.NavigationRoute | null,
+  realTimeUpdate: null as Api.Navigation.RealTimeNavigationUpdate | null,
+  nearbyServicePoints: [] as Api.Navigation.ServicePoint[],
+  isNavigating: false,
+  navigationTimer: null as NodeJS.Timeout | null
+});
+
+// 导航模态框状态
+const showNavigationModal = ref(false);
+const showRoutePlanModal = ref(false);
+const showServicePointsModal = ref(false);
+const showRealTimeNavModal = ref(false);
+
+// 路线规划表单
+const routePlanForm = ref({
+  startAddress: '',
+  endAddress: '',
+  routeType: 'driving' as 'driving' | 'walking' | 'cycling'
+});
+
+// 地址搜索相关状态
+const startLocation = ref<{ longitude: number; latitude: number } | null>(null);
+const endLocation = ref<{ longitude: number; latitude: number } | null>(null);
+const startAddressSearch = ref('');
+const endAddressSearch = ref('');
+
+// 路线类型选项
+const routeTypeOptions = [
+  { label: '驾车', value: 'driving' },
+  { label: '步行', value: 'walking' },
+  { label: '骑行', value: 'cycling' }
 ];
 
 // 获取订单数据
@@ -201,30 +262,135 @@ const fetchRiderLocation = async () => {
 // 获取区域内骑手数据
 const fetchAreaRiders = async () => {
   try {
-    // 暂时使用获取所有在线骑手API，避免后端区域查询错误
-    const { data } = await getOnlineRidersLocation({
+    // 使用区域查询API
+    const { data } = await getRidersInArea({
+      minLongitude: currentLocation.value.longitude - 0.1,
+      maxLongitude: currentLocation.value.longitude + 0.1,
+      minLatitude: currentLocation.value.latitude - 0.1,
+      maxLatitude: currentLocation.value.latitude + 0.1,
       pageIndex: 1,
       pageSize: 100
     });
 
     if (data && Array.isArray(data)) {
-      // 前端过滤：只显示距离当前位置10公里内的骑手
-      const radius = 0.1; // 约10公里
-      const filteredRiders = data.filter((rider: any) => {
-        const distance = Math.sqrt(
-          (rider.longitude - currentLocation.value.longitude) ** 2 +
-          (rider.latitude - currentLocation.value.latitude) ** 2
-        );
-        return distance <= radius;
+      areaRiders.value = data;
+    } else {
+      // 如果区域查询失败，回退到在线骑手查询
+      const { data: onlineData } = await getOnlineRidersLocation({
+        pageIndex: 1,
+        pageSize: 100
       });
 
-      areaRiders.value = filteredRiders;
-    } else {
-      areaRiders.value = [];
+      if (onlineData && Array.isArray(onlineData)) {
+        // 前端过滤：只显示距离当前位置10公里内的骑手
+        const radius = 0.1; // 约10公里
+        const filteredRiders = onlineData.filter((rider: any) => {
+          const distance = Math.sqrt(
+            (rider.longitude - currentLocation.value.longitude) ** 2 +
+            (rider.latitude - currentLocation.value.latitude) ** 2
+          );
+          return distance <= radius;
+        });
+
+        areaRiders.value = filteredRiders;
+      } else {
+        areaRiders.value = [];
+      }
     }
   } catch (error) {
-    console.error('获取在线骑手失败:', error);
+    console.error('获取区域内骑手失败:', error);
     areaRiders.value = [];
+  }
+};
+
+// 获取骑手历史轨迹
+const fetchLocationHistory = async (startDate?: string, endDate?: string) => {
+  try {
+    const params: any = {
+      riderId: riderId.value,
+      pageIndex: 1,
+      pageSize: 100
+    };
+
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+
+    const { data } = await getRiderLocationHistory(params);
+    locationHistory.value = Array.isArray(data) ? data : [];
+    showHistoryModal.value = true;
+  } catch (error) {
+    console.error('获取历史轨迹失败:', error);
+    window.$message?.error('获取历史轨迹失败');
+  }
+};
+
+// 获取骑手当前位置地址
+const fetchCurrentAddress = async () => {
+  try {
+    const { data } = await getRiderCurrentAddress(riderId.value);
+    currentAddress.value = (data as any)?.address || '地址获取失败';
+  } catch (error) {
+    console.error('获取地址失败:', error);
+    currentAddress.value = '地址获取失败';
+  }
+};
+
+// 计算到指定点的距离（示例函数，可根据需要调用）
+// const calculateDistance = async (targetLongitude: number, targetLatitude: number) => {
+//   try {
+//     const { data } = await calculateRiderDistance({
+//       riderId: riderId.value,
+//       targetLongitude,
+//       targetLatitude
+//     });
+//     riderDistance.value = (data as any)?.distance || 0;
+//     showDistanceModal.value = true;
+//   } catch (error) {
+//     console.error('计算距离失败:', error);
+//     window.$message?.error('计算距离失败');
+//   }
+// };
+
+// 更新骑手位置（示例函数，可根据需要调用）
+// const updateLocation = async (longitude: number, latitude: number) => {
+//   try {
+//     await updateRiderLocation({
+//       riderId: riderId.value,
+//       longitude,
+//       latitude,
+//       timestamp: new Date().toISOString()
+//     });
+//     window.$message?.success('位置更新成功');
+//   } catch (error) {
+//     console.error('更新位置失败:', error);
+//     window.$message?.error('更新位置失败');
+//   }
+// };
+
+// 更新在线状态
+const updateOnlineStatus = async (status: boolean) => {
+  try {
+    await updateRiderOnlineStatus(riderId.value, {
+      status: status ? 1 : 0,
+      timestamp: new Date().toISOString()
+    });
+    isOnline.value = status;
+    window.$message?.success(`已${status ? '上线' : '下线'}`);
+  } catch (error) {
+    console.error('更新状态失败:', error);
+    window.$message?.error('更新状态失败');
+  }
+};
+
+// 获取当前位置详细信息
+const fetchCurrentLocationInfo = async () => {
+  try {
+    const { data } = await getRiderCurrentLocationInfo(riderId.value);
+    locationInfo.value = data;
+    showLocationModal.value = true;
+  } catch (error) {
+    console.error('获取位置信息失败:', error);
+    window.$message?.error('获取位置信息失败');
   }
 };
 
@@ -264,6 +430,228 @@ const handleRiderClick = (rider: any) => {
   // 可以在这里添加骑手详情弹窗等逻辑
 };
 
+// ========== 导航功能 ==========
+
+// 获取订单导航路线
+const getOrderNavigation = async (order: OrderData) => {
+  try {
+    if (!order.order?.orderId) {
+      window.$message?.error('订单ID不存在');
+      return;
+    }
+
+    const { data } = await getOrderNavigationRoute({
+      orderId: order.order.orderId,
+      riderId: riderId.value
+    });
+
+    if (data) {
+      navigationState.value.currentRoute = data.data;
+      showNavigationModal.value = true;
+      window.$message?.success('导航路线获取成功');
+    }
+  } catch (error: any) {
+    console.error('获取导航路线失败:', error);
+    window.$message?.error(`获取导航路线失败: ${error.message || '未知错误'}`);
+  }
+};
+
+// 导航定时器
+const startNavigationTimer = (order: OrderData) => {
+  if (navigationState.value.navigationTimer) {
+    clearInterval(navigationState.value.navigationTimer);
+  }
+
+  navigationState.value.navigationTimer = setInterval(async () => {
+    try {
+      if (!navigationState.value.currentRoute) return;
+
+      const { data } = await getOrderRealTimeNavigation({
+        orderId: order.order!.orderId,
+        riderId: riderId.value
+      });
+
+      if (data) {
+        navigationState.value.realTimeUpdate = data.data;
+      }
+    } catch (error) {
+      console.error('获取实时导航更新失败:', error);
+    }
+  }, 5000); // 每5秒更新一次
+};
+
+// 开始实时导航
+const startRealTimeNavigation = async (order: OrderData) => {
+  try {
+    if (!navigationState.value.currentRoute) {
+      await getOrderNavigation(order);
+    }
+
+    if (navigationState.value.currentRoute) {
+      navigationState.value.isNavigating = true;
+      showRealTimeNavModal.value = true;
+
+      // 开始定时获取实时导航更新
+      startNavigationTimer(order);
+      window.$message?.success('开始实时导航');
+    }
+  } catch (error: any) {
+    console.error('开始实时导航失败:', error);
+    window.$message?.error(`开始实时导航失败: ${error.message || '未知错误'}`);
+  }
+};
+
+// 停止实时导航
+const stopRealTimeNavigation = () => {
+  navigationState.value.isNavigating = false;
+  if (navigationState.value.navigationTimer) {
+    clearInterval(navigationState.value.navigationTimer);
+    navigationState.value.navigationTimer = null;
+  }
+  showRealTimeNavModal.value = false;
+  window.$message?.info('已停止实时导航');
+};
+
+// 规划基础路线
+const planRoute = async (startLoc: { longitude: number; latitude: number }, endLoc: { longitude: number; latitude: number }) => {
+  try {
+    console.log('startloc',startLoc);
+    console.log('endloc',endLoc);
+
+    const requestData = {
+      startLongitude: startLoc.longitude,
+      startLatitude: startLoc.latitude,
+      endLongitude: endLoc.longitude,
+      endLatitude: endLoc.latitude,
+      mode: 'driving'
+    };
+    console.log('请求数据:', requestData);
+
+    const response = await planBasicRoute(requestData);
+    console.log('完整响应:', response);
+    console.log('响应数据:', response.data);
+
+    if (response.data?.data) {
+      navigationState.value.currentRoute = response.data.data;
+      showRoutePlanModal.value = true;
+      window.$message?.success('路线规划成功');
+    } else {
+      console.warn('响应数据为空');
+      window.$message?.warning('路线规划返回空数据');
+    }
+  } catch (error: any) {
+    console.error('路线规划失败:', error);
+    console.error('错误详情:', {
+      message: error.message,
+      code: error.code,
+      response: error.response?.data,
+      status: error.response?.status,
+      statusText: error.response?.statusText
+    });
+    window.$message?.error(`路线规划失败: ${error.message || '未知错误'}`);
+  }
+};
+
+// 获取附近服务点
+const getNearbyServices = async () => {
+  try {
+    const { data } = await getNearbyServicePoints({
+      longitude: currentLocation.value.longitude,
+      latitude: currentLocation.value.latitude,
+      serviceType: 'all',
+      radius: 2000 // 2公里范围内
+    });
+
+    if (data) {
+      navigationState.value.nearbyServicePoints = data.data;
+      showServicePointsModal.value = true;
+      window.$message?.success(`找到 ${data.data.length} 个附近服务点`);
+    }
+  } catch (error: any) {
+    console.error('获取附近服务点失败:', error);
+    window.$message?.error(`获取附近服务点失败: ${error.message || '未知错误'}`);
+  }
+};
+
+// 格式化距离
+const formatDistance = (distance: number) => {
+  if (distance < 1000) {
+    return `${distance}米`;
+  }
+  return `${(distance / 1000).toFixed(1)}公里`;
+};
+
+// 格式化时间
+const formatDuration = (duration: number) => {
+  const hours = Math.floor(duration / 3600);
+  const minutes = Math.floor((duration % 3600) / 60);
+
+  if (hours > 0) {
+    return `${hours}小时${minutes}分钟`;
+  }
+  return `${minutes}分钟`;
+};
+
+// 处理起点地址选择
+const handleStartAddressSelect = async (suggestion: InputTipsResult) => {
+  try {
+    const [longitude, latitude] = suggestion.location.split(',').map(Number);
+    startLocation.value = { longitude, latitude };
+    startAddressSearch.value = suggestion.name;
+    window.$message?.success(`已选择起点: ${suggestion.name}`);
+  } catch (error) {
+    console.error('处理起点地址失败:', error);
+    window.$message?.error('处理起点地址失败');
+  }
+};
+
+// 处理终点地址选择
+const handleEndAddressSelect = async (suggestion: InputTipsResult) => {
+  try {
+    const [longitude, latitude] = suggestion.location.split(',').map(Number);
+    endLocation.value = { longitude, latitude };
+    endAddressSearch.value = suggestion.name;
+    window.$message?.success(`已选择终点: ${suggestion.name}`);
+  } catch (error) {
+    console.error('处理终点地址失败:', error);
+    window.$message?.error('处理终点地址失败');
+  }
+};
+
+// 处理路线规划
+const handleRoutePlan = async () => {
+  if (!startLocation.value || !endLocation.value) {
+    window.$message?.warning('请选择起点和终点地址');
+    return;
+  }
+  try {
+    await planRoute(startLocation.value, endLocation.value);
+  } catch (error: any) {
+    console.error('路线规划失败:', error);
+    window.$message?.error(`路线规划失败: ${error.message || '未知错误'}`);
+  }
+};
+
+// 重置地址搜索状态
+const resetAddressSearch = () => {
+  startLocation.value = null;
+  endLocation.value = null;
+  startAddressSearch.value = '';
+  endAddressSearch.value = '';
+};
+
+// 获取服务点类型文本
+const getServiceTypeText = (type: string) => {
+  const typeMap: Record<string, string> = {
+    gas_station: '加油站',
+    restaurant: '餐厅',
+    hospital: '医院',
+    police: '警察局',
+    other: '其他'
+  };
+  return typeMap[type] || '未知';
+};
+
 // 首次加载时获取数据
 onMounted(async () => {
   // 检查用户信息是否已初始化
@@ -285,6 +673,8 @@ onMounted(async () => {
   // 优先获取骑手位置，确保地图显示正确位置
   await fetchRiderLocation();
   await fetchAreaRiders();
+  // 获取地址信息
+  await fetchCurrentAddress();
 });
 
 // 处理分页变化
@@ -468,8 +858,18 @@ const paginatedOrders = computed(() => {
                       )
                     );
                   } else if (currentStatus === 1) {
-                    // 已接单状态：显示完成按钮
+                    // 已接单状态：显示完成按钮和导航按钮
                     buttons.push(
+                      h(
+                        NButton,
+                        { size: 'small', type: 'info', onClick: () => getOrderNavigation(row) },
+                        { default: () => '导航' }
+                      ),
+                      h(
+                        NButton,
+                        { size: 'small', type: 'warning', onClick: () => startRealTimeNavigation(row) },
+                        { default: () => '实时导航' }
+                      ),
                       h(
                         NButton,
                         { size: 'small', type: 'success', onClick: () => handleStatusUpdate(row, 3) },
@@ -477,6 +877,15 @@ const paginatedOrders = computed(() => {
                       )
                     );
                   }
+
+                  // 所有状态都显示导航相关按钮
+                  buttons.push(
+                    h(
+                      NButton,
+                      { size: 'small', type: 'default', onClick: () => getNearbyServices() },
+                      { default: () => '附近服务' }
+                    )
+                  );
 
                   return h(NSpace, null, {
                     default: () => buttons
@@ -499,7 +908,28 @@ const paginatedOrders = computed(() => {
               <h3 class="text-lg font-semibold mb-8px">实时配送地图</h3>
               <p class="text-gray-600 text-sm">查看骑手位置和配送路线</p>
             </div>
-
+            <NSpace>
+              <NButton type="primary" @click="fetchCurrentLocationInfo">
+                <Icon icon="mdi:information" class="mr-1" />
+                位置详情
+              </NButton>
+              <NButton @click="fetchLocationHistory()">
+                <Icon icon="mdi:history" class="mr-1" />
+                历史轨迹
+              </NButton>
+              <NButton :type="isOnline ? 'success' : 'warning'" @click="updateOnlineStatus(!isOnline)">
+                <Icon :icon="isOnline ? 'mdi:account-check' : 'mdi:account-off'" class="mr-1" />
+                {{ isOnline ? '下线' : '上线' }}
+              </NButton>
+              <NButton type="info" @click="getNearbyServices()">
+                <Icon icon="mdi:map-marker-multiple" class="mr-1" />
+                附近服务
+              </NButton>
+              <NButton type="warning" @click="showRoutePlanModal = true">
+                <Icon icon="mdi:route" class="mr-1" />
+                路线规划
+              </NButton>
+            </NSpace>
           </div>
 
           <!-- 高德地图组件 -->
@@ -513,7 +943,7 @@ const paginatedOrders = computed(() => {
           />
 
           <!-- 地图信息面板 -->
-          <div class="mt-16px grid grid-cols-3 gap-16px">
+          <div class="mt-16px grid grid-cols-4 gap-16px">
             <NCard size="small" class="text-center">
               <div class="text-2xl font-bold text-blue-600">{{ currentLocation.longitude.toFixed(6) }}</div>
               <div class="text-sm text-gray-500">经度</div>
@@ -525,6 +955,21 @@ const paginatedOrders = computed(() => {
             <NCard size="small" class="text-center">
               <div class="text-2xl font-bold text-purple-600">{{ areaRiders.length }}</div>
               <div class="text-sm text-gray-500">区域内骑手</div>
+            </NCard>
+            <NCard size="small" class="text-center">
+              <div class="text-lg font-bold text-orange-600">{{ isOnline ? '在线' : '离线' }}</div>
+              <div class="text-sm text-gray-500">状态</div>
+            </NCard>
+          </div>
+
+          <!-- 地址信息 -->
+          <div class="mt-16px">
+            <NCard size="small">
+              <div class="flex items-center gap-2">
+                <Icon icon="mdi:map-marker" class="text-red-500" />
+                <span class="text-sm text-gray-600">当前位置：</span>
+                <span class="text-sm font-medium">{{ currentAddress || '获取中...' }}</span>
+              </div>
             </NCard>
           </div>
         </NCard>
@@ -607,6 +1052,182 @@ const paginatedOrders = computed(() => {
       <!-- 加载状态 -->
       <div v-else-if="detailLoading" class="text-center py-32px">
         <p class="text-gray-500">正在加载订单详情...</p>
+      </div>
+    </NModal>
+
+    <!-- 位置详情弹窗 -->
+    <NModal v-model:show="showLocationModal" preset="card" title="位置详情" class="w-[500px]">
+      <div v-if="locationInfo">
+        <NDescriptions label-placement="left" bordered :column="1">
+          <NDescriptionsItem label="经度">{{ locationInfo.longitude || '-' }}</NDescriptionsItem>
+          <NDescriptionsItem label="纬度">{{ locationInfo.latitude || '-' }}</NDescriptionsItem>
+          <NDescriptionsItem label="地址">{{ locationInfo.address || '-' }}</NDescriptionsItem>
+          <NDescriptionsItem label="更新时间">{{ locationInfo.timestamp || '-' }}</NDescriptionsItem>
+          <NDescriptionsItem label="精度">{{ locationInfo.accuracy || '-' }} 米</NDescriptionsItem>
+        </NDescriptions>
+      </div>
+      <div v-else class="text-center py-32px">
+        <p class="text-gray-500">暂无位置信息</p>
+      </div>
+    </NModal>
+
+    <!-- 历史轨迹弹窗 -->
+    <NModal v-model:show="showHistoryModal" preset="card" title="历史轨迹" class="w-[800px]">
+      <div v-if="locationHistory.length > 0">
+        <NDataTable
+          :columns="[
+            { title: '时间', key: 'timestamp', width: 180 },
+            { title: '经度', key: 'longitude', width: 120 },
+            { title: '纬度', key: 'latitude', width: 120 },
+            { title: '地址', key: 'address', width: 200 },
+            { title: '精度', key: 'accuracy', width: 80 }
+          ]"
+          :data="locationHistory"
+          :pagination="{ pageSize: 10 }"
+        />
+      </div>
+      <div v-else class="text-center py-32px">
+        <p class="text-gray-500">暂无历史轨迹数据</p>
+      </div>
+    </NModal>
+
+    <!-- 距离计算弹窗 -->
+    <NModal v-model:show="showDistanceModal" preset="card" title="距离计算" class="w-[400px]">
+      <div class="text-center py-16px">
+        <div class="text-3xl font-bold text-blue-600 mb-8px">{{ riderDistance.toFixed(2) }}</div>
+        <div class="text-lg text-gray-600">公里</div>
+      </div>
+    </NModal>
+
+    <!-- 导航路线弹窗 -->
+    <NModal v-model:show="showNavigationModal" preset="card" title="导航路线" class="w-[800px]">
+      <div v-if="navigationState.currentRoute">
+        <NDescriptions label-placement="left" bordered :column="2">
+          <NDescriptionsItem label="路线ID">{{ navigationState.currentRoute.routeId }}</NDescriptionsItem>
+          <NDescriptionsItem label="总距离">{{ formatDistance(navigationState.currentRoute.totalDistance) }}</NDescriptionsItem>
+          <NDescriptionsItem label="预计时间">{{ formatDuration(navigationState.currentRoute.estimatedDuration) }}</NDescriptionsItem>
+          <NDescriptionsItem label="路线类型">{{ navigationState.currentRoute.mode }}</NDescriptionsItem>
+        </NDescriptions>
+
+        <div class="mt-16px">
+          <h4 class="text-lg font-semibold mb-8px">路线步骤</h4>
+          <div class="max-h-300px overflow-y-auto">
+            <div v-for="(step, index) in navigationState.currentRoute.steps" :key="index"
+                 class="flex items-start mb-12px p-12px bg-gray-50 rounded-lg">
+              <div class="flex-shrink-0 w-24px h-24px bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-12px">
+                {{ index + 1 }}
+              </div>
+              <div class="flex-1">
+                <div class="font-medium">{{ step.instruction }}</div>
+                <div class="text-sm text-gray-600 mt-4px">
+                  距离: {{ formatDistance(step.distance || 0) }} | 时间: {{ formatDuration(step.duration || 0) }}
+                </div>
+                <div v-if="step.roadName" class="text-xs text-gray-500 mt-2px">
+                  道路: {{ step.roadName }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </NModal>
+
+    <!-- 实时导航弹窗 -->
+    <NModal v-model:show="showRealTimeNavModal" preset="card" title="实时导航" class="w-[600px]">
+      <div v-if="navigationState.realTimeUpdate">
+        <NDescriptions label-placement="left" bordered :column="2">
+          <NDescriptionsItem label="当前位置">
+            {{ navigationState.realTimeUpdate.currentLongitude.toFixed(6) }},
+            {{ navigationState.realTimeUpdate.currentLatitude.toFixed(6) }}
+          </NDescriptionsItem>
+          <NDescriptionsItem label="剩余距离">{{ formatDistance(navigationState.realTimeUpdate.remainingDistance) }}</NDescriptionsItem>
+          <NDescriptionsItem label="剩余时间">{{ formatDuration(navigationState.realTimeUpdate.remainingTime) }}</NDescriptionsItem>
+          <NDescriptionsItem label="当前速度">{{ navigationState.realTimeUpdate.currentSpeed }} km/h</NDescriptionsItem>
+        </NDescriptions>
+
+        <div class="mt-16px p-12px bg-blue-50 rounded-lg">
+          <h4 class="text-lg font-semibold mb-8px text-blue-700">下一个导航指令</h4>
+          <div class="text-blue-600">{{ navigationState.realTimeUpdate.nextInstruction }}</div>
+        </div>
+
+        <div class="mt-16px flex justify-end">
+          <NButton type="error" @click="stopRealTimeNavigation">停止导航</NButton>
+        </div>
+      </div>
+    </NModal>
+
+    <!-- 路线规划弹窗 -->
+    <NModal v-model:show="showRoutePlanModal" preset="card" title="路线规划" class="w-[700px]">
+      <div class="space-y-16px">
+        <NForm label-placement="left" :label-width="80">
+          <NFormItem label="起点">
+            <AddressSearch
+              v-model:model-value="startAddressSearch"
+              placeholder="请输入起点地址"
+              city="北京"
+              :location="`${currentLocation.longitude},${currentLocation.latitude}`"
+              @select="handleStartAddressSelect"
+            />
+          </NFormItem>
+          <NFormItem label="终点">
+            <AddressSearch
+              v-model:model-value="endAddressSearch"
+              placeholder="请输入终点地址"
+              city="北京"
+              :location="`${currentLocation.longitude},${currentLocation.latitude}`"
+              @select="handleEndAddressSelect"
+            />
+          </NFormItem>
+          <NFormItem label="路线类型">
+            <NSelect v-model:value="routePlanForm.routeType" :options="routeTypeOptions" />
+          </NFormItem>
+        </NForm>
+
+        <!-- 显示已选择的地址信息 -->
+        <div v-if="startLocation || endLocation" class="bg-gray-50 p-12px rounded-lg">
+          <h4 class="text-sm font-medium mb-8px text-gray-700">已选择地址：</h4>
+          <div v-if="startLocation" class="text-sm text-gray-600 mb-4px">
+            <span class="font-medium">起点：</span>{{ startAddressSearch }}
+            <span class="text-xs text-gray-500 ml-8px">
+              ({{ startLocation.longitude.toFixed(6) }}, {{ startLocation.latitude.toFixed(6) }})
+            </span>
+          </div>
+          <div v-if="endLocation" class="text-sm text-gray-600">
+            <span class="font-medium">终点：</span>{{ endAddressSearch }}
+            <span class="text-xs text-gray-500 ml-8px">
+              ({{ endLocation.longitude.toFixed(6) }}, {{ endLocation.latitude.toFixed(6) }})
+            </span>
+          </div>
+        </div>
+
+        <div class="flex justify-end space-x-8px">
+          <NButton @click="showRoutePlanModal = false; resetAddressSearch()">取消</NButton>
+          <NButton type="primary" @click="handleRoutePlan" :disabled="!startLocation || !endLocation">
+            规划路线
+          </NButton>
+        </div>
+      </div>
+    </NModal>
+
+    <!-- 附近服务点弹窗 -->
+    <NModal v-model:show="showServicePointsModal" preset="card" title="附近服务点" class="w-[800px]">
+      <div v-if="navigationState.nearbyServicePoints.length > 0">
+        <NDataTable
+          :columns="[
+            { title: '名称', key: 'name', width: 150 },
+            { title: '类型', key: 'type', width: 100, render: (row) => getServiceTypeText(row.type) },
+            { title: '地址', key: 'address', width: 200 },
+            { title: '距离', key: 'distance', width: 100, render: (row) => formatDistance(row.distance) },
+            { title: '状态', key: 'isOpen', width: 80, render: (row) => h(NTag, { type: row.isOpen ? 'success' : 'error' }, { default: () => row.isOpen ? '营业' : '休息' }) },
+            { title: '评分', key: 'rating', width: 80, render: (row) => row.rating ? `${row.rating}分` : '-' },
+            { title: '电话', key: 'phone', width: 120 }
+          ]"
+          :data="navigationState.nearbyServicePoints"
+          :pagination="{ pageSize: 10 }"
+        />
+      </div>
+      <div v-else class="text-center py-32px text-gray-500">
+        暂无附近服务点
       </div>
     </NModal>
   </div>
