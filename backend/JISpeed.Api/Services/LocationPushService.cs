@@ -3,16 +3,17 @@ using Microsoft.Extensions.Logging;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Core.Entities.Rider;
 using JISpeed.Core.Interfaces;
+using JISpeed.Api.Hubs;
 
-namespace JISpeed.Application.Services.Common
+namespace JISpeed.Api.Services
 {
     public class LocationPushService : ILocationPushService
     {
-        private readonly IHubContext<Hub> _hubContext;
+        private readonly IHubContext<LocationHub> _hubContext;
         private readonly ILogger<LocationPushService> _logger;
 
         public LocationPushService(
-            IHubContext<Hub> hubContext,
+            IHubContext<LocationHub> hubContext,
             ILogger<LocationPushService> logger)
         {
             _hubContext = hubContext;

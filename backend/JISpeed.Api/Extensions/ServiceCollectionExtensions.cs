@@ -29,6 +29,7 @@ using JISpeed.Infrastructure.Repositories.Rider;
 using JISpeed.Infrastructure.Repositories.User;
 using Microsoft.Extensions.DependencyInjection;
 using JISpeed.Application.Services.Navigation;
+using JISpeed.Api.Services;
 
 namespace JISpeed.Api.Extensions
 {
