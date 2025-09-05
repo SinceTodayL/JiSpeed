@@ -405,7 +405,11 @@ namespace JISpeed.Application.Services.Common
                                     decimal.TryParse(coords[0], out var longitude) &&
                                     decimal.TryParse(coords[1], out var latitude))
                                 {
-                                    routeStep.Polyline.Add((longitude, latitude));
+                                    routeStep.Polyline.Add(new Coordinate
+                                    {
+                                        Longitude = longitude,
+                                        Latitude = latitude
+                                    });
                                 }
                             }
                         }

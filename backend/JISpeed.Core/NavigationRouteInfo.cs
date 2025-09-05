@@ -1,5 +1,12 @@
 namespace JISpeed.Core.DTOs
 {
+    // 坐标点类
+    public class Coordinate
+    {
+        public decimal Longitude { get; set; }
+        public decimal Latitude { get; set; }
+    }
+
     // 导航路径信息
     public class NavigationRouteInfo
     {
@@ -19,7 +26,7 @@ namespace JISpeed.Core.DTOs
         public int Duration { get; set; } // 步骤时间（秒）
         public string RoadName { get; set; } = string.Empty; // 道路名称
         public string TurnType { get; set; } = string.Empty; // 转向类型
-        public List<(decimal longitude, decimal latitude)> Polyline { get; set; } = new List<(decimal longitude, decimal latitude)>();
+        public List<Coordinate> Polyline { get; set; } = new List<Coordinate>(); // 修改：使用Coordinate类替代元组
     }
 
     // 导航路线请求

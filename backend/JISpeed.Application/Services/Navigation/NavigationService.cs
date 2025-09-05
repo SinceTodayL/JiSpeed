@@ -269,7 +269,7 @@ namespace JISpeed.Application.Services.Navigation
                 Duration = 0,
                 RoadName = "商家位置",
                 TurnType = "arrive",
-                Polyline = new List<(decimal longitude, decimal latitude)> { (merchantLng, merchantLat) }
+                Polyline = new List<Coordinate> { new Coordinate { Longitude = merchantLng, Latitude = merchantLat } }
             });
 
             // 商家到用户的步骤
@@ -309,7 +309,7 @@ namespace JISpeed.Application.Services.Navigation
 
                         // 计算到商家的距离
                         var distanceToMerchant = await _mapService.CalculateDistanceAsync(
-                            currentLng, currentLat, merchantCoord.longitude, merchantCoord.latitude);
+                            currentLng, currentLat, merchantCoord.Longitude, merchantCoord.Latitude);
 
                         if (distanceToMerchant <= 100) // 100米范围内
                         {
@@ -322,7 +322,7 @@ namespace JISpeed.Application.Services.Navigation
                             {
                                 var userCoord = lastStep.Polyline.Last();
                                 var distanceToUser = await _mapService.CalculateDistanceAsync(
-                                    currentLng, currentLat, userCoord.longitude, userCoord.latitude);
+                                    currentLng, currentLat, userCoord.Longitude, userCoord.Latitude);
 
                                 remainingInfo.RemainingDistance = distanceToUser;
                                 remainingInfo.RemainingTime = (int)(distanceToUser / 15.0);
