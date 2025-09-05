@@ -262,7 +262,7 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { orderAPI } from '@/api/order.js'
+import { orderAPI, orderLogAPI } from '@/api/order.js'
 import { merchantAPI } from '@/api/browse.js'
 import { couponAPI } from '@/api/coupon.js'
 import { addressAPI } from '@/api/user.js'
@@ -518,14 +518,21 @@ export default {
       if (!canSubmit.value) return
 
       submitting.value = true
-      
       try {
         const userId = localStorage.getItem('userId')
         if (!userId) {
           throw new Error('未找到用户ID，无法提交订单')
         }
-        
+
         // 修正 createOrder 调用
+        // 打印所有关键参数
+        console.log('提交订单参数 userId:', userId)
+        console.log('提交订单参数 orderAmount:', subtotal.value + deliveryFee.value)
+        console.log('提交订单参数 couponId:', selectedCoupon.value?.couponId)
+        console.log('提交订单参数 addressId:', selectedAddress.value?.addressId)
+        console.log('提交订单参数 merchantId:', merchantInfo.value?.merchantId)
+        console.log('提交订单参数 dishQuantities:', orderItems.value.map(item => ({ dishId: item.dishId, quantity: item.quantity })))
+
         const response = await orderAPI.createOrder(userId, {
           orderAmount: subtotal.value + deliveryFee.value,
           couponId: selectedCoupon.value?.couponId,
@@ -533,20 +540,36 @@ export default {
           merchantId: merchantInfo.value.merchantId,
           dishQuantities: orderItems.value.map(item => ({ dishId: item.dishId, quantity: item.quantity })),
         })
-        
-        if (response && response.code === 200) {
+        // 打印完整 response
+        console.log('createOrder response:', response)
+        console.log('下单返回的 response.data:', response.data)
+
+        if (response && response.code === 0) {
           // 清空购物车
           localStorage.removeItem('cartItems')
-          
-          // 跳转到支付页面
-          router.push({
-            name: 'Payment',
-            params: { orderId: response.data.orderId },
-            query: { 
-              amount: finalAmount.value,
-              paymentMethod: selectedPaymentMethod.value
+
+          // 新增：通过日志ID查订单ID
+          try {
+            const logId = response.data
+            const logRes = await orderLogAPI.getOrderLogById(logId)
+            console.log('orderLogAPI.getOrderLogById 返回:', logRes)
+            if (logRes && logRes.code === 0 && logRes.data && logRes.data.orderId) {
+              // 跳转到支付页面，使用真实 orderId
+              router.push({
+                name: 'Payment',
+                params: { orderId: logRes.data.orderId },
+                query: {
+                  amount: finalAmount.value,
+                  paymentMethod: selectedPaymentMethod.value
+                }
+              })
+            } else {
+              alert('未能获取订单ID，请重试')
             }
-          })
+          } catch (err) {
+            console.error('获取订单ID失败:', err)
+            alert('未能获取订单ID，请重试')
+          }
         } else {
           alert('下单失败，请重试')
         }

@@ -43,14 +43,12 @@ export const orderAPI = {
   // 根据用户ID获取订单列表
   // 自动修复：订单列表接口路径改为  /api/orders，userId 作为 query 参数
   getUserOrders: (userId, orderStatus, size, page) => {
-    // 自动插入调试代码
+    // 修正为 RESTful 路径 /api/users/{userId}/orders
     console.log('订单API请求参数:', { userId, orderStatus, size, page });
-    console.log('订单API baseURL:', API_BASE_URL);
-  const fullUrl = `${API_BASE_URL}/api/orders?userId=${userId}&orderStatus=${orderStatus}&size=${size}&page=${page}`;
-  console.log('订单API完整URL:', fullUrl);
-  return api.get('/api/orders', {
+    const fullUrl = `${API_BASE_URL}/api/users/${userId}/orders?orderStatus=${orderStatus}&size=${size}&page=${page}`;
+    console.log('订单API完整URL:', fullUrl);
+    return api.get(`/api/users/${userId}/orders`, {
       params: {
-        userId,
         orderStatus,
         size,
         page
@@ -76,7 +74,8 @@ export const orderAPI = {
 
   // 发起支付请求，创建待支付实体
   createPayment: (orderId, paymentData) => {
-  return api.post(`/api/orders/${orderId}/createPayment`, paymentData)
+  // 支付接口只需要 query 参数 channel，无需 body
+  return api.post(`/api/orders/${orderId}/createPayment?channel=${paymentData}`)
   },
 
   // 用户创建退单申请
@@ -89,7 +88,7 @@ export const orderAPI = {
 export const orderLogAPI = {
   // 根据Logid获取OrderLog的详情
   getOrderLogById: (logId) => {
-    return api.get(`/orderLogs/${logId}`)
+    return api.get(`/api/orderLogs/${logId}`)
   }
 }
 

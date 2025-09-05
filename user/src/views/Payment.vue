@@ -116,6 +116,18 @@
       </ul>
     </div>
   </div>
+  <!-- 货到付款选择弹窗 -->
+  <div v-if="showSuccessModal" class="modal-overlay">
+    <div class="modal-content" @click.stop>
+      <div class="modal-header">
+        <h3>货到付款方式已选</h3>
+      </div>
+      <div class="modal-body">
+        <p>您已选择货到付款，请在配送员送达时支付现金。</p>
+        <button class="modal-btn" @click="showSuccessModal = false">确定</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -139,6 +151,8 @@ export default {
     const qrCodeData = ref('')
     const countdown = ref(900) // 15分钟倒计时
     const countdownTimer = ref(null)
+    // 新增：货到付款成功弹窗
+    const showSuccessModal = ref(false)
 
     // 支付方式配置
     const paymentMethods = ref([
@@ -187,12 +201,12 @@ export default {
     }
 
     const selectPaymentMethod = (method) => {
-      if (processing.value || paymentStatus.value === 'success') return
-      selectedMethod.value = method
-      
-      // 如果切换支付方式，清除之前的二维码
-      qrCodeData.value = ''
-      paymentStatus.value = ''
+  if (processing.value || paymentStatus.value === 'success') return
+  selectedMethod.value = method
+  // 如果切换支付方式，清除之前的二维码
+  qrCodeData.value = ''
+  paymentStatus.value = ''
+  // 不弹窗，弹窗逻辑移至支付成功后
     }
 
     const getPaymentMethodName = (code) => {
@@ -201,28 +215,39 @@ export default {
     }
 
     const initiatePayment = async () => {
+  // 支付前调试：打印支付参数
+  console.log('发起支付参数 orderId:', orderId.value)
+  console.log('发起支付参数 channel:', selectedMethod.value)
       if (!selectedMethod.value || processing.value) return
 
       processing.value = true
 
       try {
+        // 支付前调试：查询订单详情
+        try {
+          const orderDetail = await orderAPI.getOrderById(orderId.value)
+          console.log('支付前订单详情:', orderDetail)
+        } catch (err) {
+          console.error('支付前查询订单详情失败:', err)
+        }
+
         const paymentData = {
           paymentMethod: selectedMethod.value,
           returnUrl: window.location.origin + '/payment/success',
           notifyUrl: window.location.origin + '/api/payment/notify'
         }
 
-        const response = await orderAPI.payOrder(orderId.value, paymentData)
+    const response = await orderAPI.createPayment(orderId.value, selectedMethod.value.toLowerCase())
 
-        if (response && response.code === 200) {
-          if (selectedMethod.value === 'CASH') {
+        if (response && response.code === 0) {
+          if (selectedMethod.value.toLowerCase() === 'cash') {
             // 货到付款直接成功
             paymentStatus.value = 'success'
             stopCountdown()
+            showSuccessModal.value = true
           } else {
             // 在线支付显示二维码
             qrCodeData.value = response.data.qrCode
-            
             // 开始轮询支付状态
             startPaymentStatusPolling()
           }
@@ -231,9 +256,9 @@ export default {
           alert('支付请求失败，请重试')
         }
       } catch (error) {
-        console.error('发起支付失败:', error)
-        paymentStatus.value = 'failed'
-        alert('支付请求失败，请重试')
+  console.error('发起支付失败:', error)
+  paymentStatus.value = 'failed'
+  alert('支付请求失败，请重试')
       } finally {
         processing.value = false
       }
@@ -344,32 +369,128 @@ export default {
     })
 
     return {
-      orderId,
-      paymentAmount,
-      createTime,
-      selectedMethod,
-      processing,
-      paymentStatus,
-      qrCodeData,
-      countdown,
-      paymentMethods,
-      showQRCode,
-      goBack,
-      selectPaymentMethod,
-      getPaymentMethodName,
-      initiatePayment,
-      checkPaymentStatus,
-      cancelPayment,
-      viewOrder,
-      formatTime,
-      formatCountdown,
-      getStatusText
+  orderId,
+  paymentAmount,
+  createTime,
+  selectedMethod,
+  processing,
+  paymentStatus,
+  qrCodeData,
+  countdown,
+  paymentMethods,
+  showQRCode,
+  goBack,
+  selectPaymentMethod,
+  getPaymentMethodName,
+  initiatePayment,
+  checkPaymentStatus,
+  cancelPayment,
+  viewOrder,
+  formatTime,
+  formatCountdown,
+  getStatusText,
+  showSuccessModal // 暴露弹窗变量到模板
     }
   }
 }
 </script>
 
 <style scoped>
+/* 货到付款成功弹窗样式 */
+/* 货到付款选择弹窗样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+.modal-content {
+  background: #fff;
+  border-radius: 10px;
+  padding: 24px 18px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+  min-width: 220px;
+  max-width: 80vw;
+  text-align: center;
+}
+.modal-header h3 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #4facfe;
+}
+.modal-body p {
+  font-size: 15px;
+  color: #333;
+  margin-bottom: 18px;
+}
+.modal-btn {
+  padding: 8px 24px;
+  background: linear-gradient(135deg, #4facfe, #00d4ff);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.modal-btn:hover {
+  background: #3e95fd;
+}
+/* 货到付款成功弹窗样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px 24px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+  min-width: 280px;
+  max-width: 90vw;
+  text-align: center;
+}
+.modal-header h3 {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #007BFF;
+}
+.modal-body p {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 24px;
+}
+.modal-btn {
+  padding: 10px 32px;
+  background: linear-gradient(135deg, #007BFF, #00D4FF);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.modal-btn:hover {
+  background: #0056b3;
+}
 .payment-page {
   min-height: 100vh;
   background: #f8f9fa;

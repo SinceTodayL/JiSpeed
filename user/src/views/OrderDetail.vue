@@ -285,7 +285,7 @@ export default {
 
       try {
         const orderId = route.params.orderId
-        const response = await orderAPI.getOrderDetail(orderId)
+  const response = await orderAPI.getOrderById(orderId)
         
         if (response && response.code === 200) {
           orderDetail.value = response.data
