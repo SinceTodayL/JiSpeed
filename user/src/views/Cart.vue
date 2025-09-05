@@ -200,6 +200,7 @@
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { cartAPI } from '@/api/cart.js'
+import { dishesAPI } from '@/api/dishes.js'
 
 export default {
   name: 'CartPage',
@@ -287,22 +288,44 @@ export default {
     // 严格调用后端API获取购物车数据
     const fetchCartData = async () => {
       loading.value = true
+      console.log('当前用户ID:', currentUserId.value)
       try {
         const response = await cartAPI.getUserCart(currentUserId.value)
-        if (response.code === 200 && Array.isArray(response.data)) {
-          cartItems.value = response.data.map(item => ({
-            cartItemId: item.id,
-            dishId: item.dishId,
-            dishName: item.dishName,
-            price: item.price,
-            quantity: item.quantity,
-            image: item.image,
-            merchantName: item.merchantName,
-            merchantId: item.merchantId,
-            isAvailable: true,
-            selected: true,
-            subtotal: item.price * item.quantity
-          }))
+        console.log('购物车接口返回:', response)
+        if (Array.isArray(response.data) && response.data.length > 0) {
+          console.log('第一条商品字段:', response.data[0])
+        }
+        if (response.code === 0 && Array.isArray(response.data)) {
+          // 批量获取商品详情
+          const items = response.data
+          const detailPromises = items.map(async item => {
+            // 假设有dishesAPI.getDishDetail(merchantId, dishId)方法
+            let dishDetail = null
+            console.log('请求商品详情参数:', 'merchantId:', item.merchantId, 'dishId:', item.dishId)
+            try {
+              // 需替换为你的实际API方法
+              dishDetail = await dishesAPI.getDishDetail(item.merchantId, item.dishId)
+            } catch (e) {
+              dishDetail = null
+            }
+            // 兼容后端返回格式
+            const detailData = dishDetail && dishDetail.code === 0 && dishDetail.data ? dishDetail.data : {}
+            console.log('商品详情数据:', detailData)
+            return {
+              cartItemId: item.cartId,
+              dishId: item.dishId,
+              dishName: detailData.dishName || item.dishId,
+              price: Number(detailData.price) || 0,
+              quantity: Number(item.quantity) || 1,
+              dishImage: detailData.image || '',
+              merchantName: detailData.merchantName || item.merchantId,
+              merchantId: item.merchantId,
+              isAvailable: true,
+              selected: true,
+              subtotal: (Number(detailData.price) || 0) * (Number(item.quantity) || 1)
+            }
+          })
+          cartItems.value = await Promise.all(detailPromises)
         } else {
           cartItems.value = []
         }

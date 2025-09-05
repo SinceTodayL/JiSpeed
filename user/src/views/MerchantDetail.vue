@@ -169,11 +169,15 @@
     </div>
 
     <!-- 购物车悬浮按钮 -->
-    <div v-if="cartItems.length > 0" class="cart-float" @click="showCart">
+    <div class="cart-float" @click="showCart">
       <div class="cart-icon">🛒</div>
       <div class="cart-info">
-        <div class="cart-count">{{ cartItems.reduce((sum, item) => sum + item.quantity, 0) }}</div>
-        <div class="cart-total">¥{{ cartItems.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2) }}</div>
+        <div class="cart-count">
+          {{ cartItems.length > 0 ? cartItems.reduce((sum, item) => sum + item.quantity, 0) : 0 }}
+        </div>
+        <div class="cart-total">
+          ¥{{ cartItems.length > 0 ? cartItems.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2) : '0.00' }}
+        </div>
       </div>
     </div>
 
@@ -270,14 +274,14 @@
               
               <div class="item-controls">
                 <button 
-                  @click="removeFromCart({ dishId: item.dishId })"
+                  @click="removeFromCart({ dishId: item.dishId, merchantId: item.merchantId })"
                   class="cart-quantity-btn minus"
                 >
                   −
                 </button>
                 <span class="cart-quantity">{{ item.quantity }}</span>
                 <button
-                    @click.stop="addToCart(item)"
+                  @click.stop="addToCart({ dishId: item.dishId, userId: localStorage.getItem('userId'), merchantId: item.merchantId })"
                   class="cart-quantity-btn plus"
                 >
                   +
@@ -563,24 +567,25 @@ export default {
     }
 
     const removeFromCart = async (dish) => {
-      // 找到对应的购物车项
+      // 支持弹窗和详情页都能正确传 merchantId
+      const merchantId = dish.merchantId || route.params.id;
       const cartItem = cart.cartItems.value.find(
-        item => item.dishId === dish.dishId && item.merchantId === route.params.id
-      )
-      
+        item => item.dishId === dish.dishId && item.merchantId === merchantId
+      );
       if (cartItem) {
-        if (cartItem.quantity > 1) {
-          // 减少数量
-          await cart.updateQuantity(cartItem.cartItemId, cartItem.quantity - 1)
-        } else {
-          // 删除商品
-          await cart.removeFromCart(cartItem.cartItemId)
-        }
+        await cart.removeFromCart(cartItem.cartItemId);
       }
     }
 
-    const showCart = () => {
-      showCartModal.value = true
+    const showCart = async () => {
+      // 每次点开购物车都强制刷新当前用户购物车数据
+      const userId = localStorage.getItem('userId');
+      if (userId && typeof cart.fetchCartData === 'function') {
+        await cart.fetchCartData(userId);
+      }
+      // 打印所有购物车项（不做商家过滤）
+      console.log('全部购物车项:', cart.cartItems.value);
+      showCartModal.value = true;
     }
 
     const closeCart = () => {
