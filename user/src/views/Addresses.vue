@@ -64,12 +64,12 @@
             >
               编辑
             </button>
-            <button 
-              @click="deleteAddress(address.id)"
-              class="action-btn delete-btn"
-            >
-              删除
-            </button>
+              <button
+                @click="deleteAddress(address.addressId)"
+                class="action-btn delete-btn"
+              >
+                删除
+              </button>
           </div>
         </div>
       </div>
@@ -179,7 +179,7 @@ export default {
           ? localStorage.getItem('userId')
           : ''
         const response = await addressAPI.getUserAddresses(userId)
-        
+        console.log('地址接口返回:', response)
         if (response.code === 0) {
           addresses.value = response.data
         } else {
@@ -222,21 +222,34 @@ export default {
         const userId = (typeof localStorage !== 'undefined' && localStorage.getItem && localStorage.getItem('userId'))
           ? localStorage.getItem('userId')
           : ''
-        
+        // 构造后端要求的地址数据，isDefault 转为整数
+        // 保存前完整输出 addressForm
+        console.log('【调试】addressForm 原始数据:', addressForm)
+        // 构造后端要求的地址数据，字段名首字母大写
+        const addressData = {
+          receiverName: addressForm.receiverName,
+          receiverPhone: addressForm.receiverPhone,
+          detailedAddress: addressForm.detailedAddress,
+          isDefault: addressForm.isDefault ? 1 : 0
+        }
+        console.log('【调试】用户ID:', userId)
+        console.log('【调试】新增地址参数:', addressData)
         if (editingAddress.value) {
           // 编辑地址
-          await addressAPI.updateAddress(userId, editingAddress.value.id, addressForm)
+          await addressAPI.updateAddress(userId, editingAddress.value.id, addressData)
           console.log('地址更新成功')
         } else {
           // 新增地址
-          await addressAPI.addAddress(userId, addressForm)
+          await addressAPI.addAddress(userId, addressData)
           console.log('地址添加成功')
         }
-        
         closeModal()
         fetchAddresses()
       } catch (error) {
         console.error('保存地址失败:', error)
+        if (error && error.response && error.response.data) {
+          console.error('后端完整返回:', error.response.data)
+        }
       }
     }
     
@@ -269,18 +282,25 @@ export default {
       }
     }
     
-    // 删除地址
+    // 删除地址：设置待删除ID，弹出确认框
     const deleteAddress = (addressId) => {
+  console.log('【调试】点击删除，待删除地址ID:', addressId)
       pendingDeleteId.value = addressId
+  console.log('【调试】pendingDeleteId.value 设置为:', pendingDeleteId.value)
       showDeleteModal.value = true
     }
-    
-    // 确认删除
+
+    // 确认删除：用 pendingDeleteId.value 进行删除
     const confirmDelete = async () => {
+  console.log('【调试】确认删除，pendingDeleteId.value:', pendingDeleteId.value)
       try {
         const userId = (typeof localStorage !== 'undefined' && localStorage.getItem && localStorage.getItem('userId'))
           ? localStorage.getItem('userId')
           : ''
+        if (!pendingDeleteId.value) {
+          console.error('删除地址失败：addressId 未设置', pendingDeleteId.value)
+          return
+        }
         await addressAPI.deleteAddress(userId, pendingDeleteId.value)
         console.log('地址删除成功')
         cancelDelete()
@@ -300,6 +320,8 @@ export default {
     const selectAddress = (address) => {
       // 如果是从结算页面跳转过来的，选择地址后返回
       if (router.currentRoute.value.query.from === 'checkout') {
+        // 存储选中的地址到 localStorage
+        localStorage.setItem('selectedAddress', JSON.stringify(address))
         router.back()
       }
     }

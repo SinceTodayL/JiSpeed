@@ -45,6 +45,12 @@
         <div class="section-title">
           <i class="address-icon">📍</i>
           <span>配送地址</span>
+          <button class="choose-address-btn" @click="openAddressDialog">
+            <span style="display:flex;align-items:center;gap:4px;">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 1v14M1 8h14" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+              选择/更换地址
+            </span>
+          </button>
         </div>
         <div class="address-info">
           <div class="receiver-info">
@@ -54,6 +60,16 @@
           <div class="address-detail">{{ orderDetail.deliveryAddress.detailedAddress }}</div>
         </div>
       </div>
+
+      <!-- 地址选择弹窗 -->
+      <AddressSelectDialog
+        :visible="addressDialogVisible"
+        :userId="orderDetail.userId"
+        :selectedId="selectedAddressId"
+        @close="addressDialogVisible = false"
+        @select="handleAddressSelect"
+        v-if="orderDetail"
+      />
 
       <!-- 商家信息 -->
       <div class="merchant-section">
@@ -225,9 +241,11 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { orderAPI } from '@/api/order.js'
+import AddressSelectDialog from '@/components/AddressSelectDialog.vue'
 
 export default {
   name: 'OrderDetail',
+  components: { AddressSelectDialog },
   setup() {
     const route = useRoute()
     const router = useRouter()
@@ -236,9 +254,30 @@ export default {
     const orderDetail = ref(null)
     const loading = ref(false)
 
+    // 地址弹窗相关
+    const addressDialogVisible = ref(false)
+    const selectedAddressId = ref(null)
+
     // 方法
     const goBack = () => {
       router.back()
+    }
+
+    // 打开地址选择弹窗
+    const openAddressDialog = () => {
+      console.log('openAddressDialog 被点击，orderDetail:', orderDetail.value)
+      addressDialogVisible.value = true
+      selectedAddressId.value = orderDetail.value?.deliveryAddress?.addressId || null
+    }
+
+    // 地址选择回调
+    const handleAddressSelect = (address) => {
+      // 更新订单详情中的地址
+      if (orderDetail.value) {
+        orderDetail.value.deliveryAddress = address
+      }
+      // 可在此处调用后端接口更新订单地址
+      // await orderAPI.updateOrderAddress(orderDetail.value.orderId, address.addressId)
     }
 
     const loadOrderDetail = async () => {
@@ -361,7 +400,11 @@ export default {
       confirmOrder,
       cancelOrder,
       reviewOrder,
-      contactService
+      contactService,
+      addressDialogVisible,
+      openAddressDialog,
+      selectedAddressId,
+      handleAddressSelect
     }
   }
 }
@@ -798,6 +841,21 @@ export default {
 .action-btn.secondary:hover {
   border-color: #007BFF;
   color: #007BFF;
+}
+
+.choose-address-btn {
+  margin-left: 12px;
+  background: #007BFF;
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.choose-address-btn:hover {
+  background: #00D4FF;
 }
 
 /* 响应式设计 */

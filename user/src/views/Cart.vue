@@ -299,11 +299,11 @@ export default {
           // 批量获取商品详情
           const items = response.data
           const detailPromises = items.map(async item => {
-            // 假设有dishesAPI.getDishDetail(merchantId, dishId)方法
+        
             let dishDetail = null
             console.log('请求商品详情参数:', 'merchantId:', item.merchantId, 'dishId:', item.dishId)
             try {
-              // 需替换为你的实际API方法
+              
               dishDetail = await dishesAPI.getDishDetail(item.merchantId, item.dishId)
             } catch (e) {
               dishDetail = null

@@ -331,6 +331,8 @@ export default {
     }
 
     const initializeOrder = async () => {
+      console.log('初始化前 merchantInfo:', merchantInfo.value)
+      console.log('初始化前 merchantId:', merchantInfo.value.merchantId)
       try {
         // 检查用户是否登录
         const userId = localStorage.getItem('userId')
@@ -402,21 +404,30 @@ export default {
       } catch (error) {
         console.error('初始化订单失败:', error)
       }
+
+      // 兜底 merchantId 赋值
+      if (!merchantInfo.value.merchantId) {
+        merchantInfo.value.merchantId = route.params.merchantId || localStorage.getItem('currentMerchantId')
+        console.log('兜底赋值 merchantId:', merchantInfo.value.merchantId)
+      }
     }
 
     const loadAddresses = async () => {
       try {
         const userId = localStorage.getItem('userId')
+        // console.log('loadAddresses userId:', userId)
         if (!userId) {
-          console.error('未找到用户ID，无法加载地址')
+          // console.error('未找到用户ID，无法加载地址')
           addresses.value = []
           return
         }
-        
         const response = await addressAPI.getUserAddresses(userId)
-        if (response && response.code === 200) {
-          addresses.value = response.data.addresses
-          
+        // console.log('getUserAddresses 返回类型:', typeof response)
+        // console.log('getUserAddresses 返回内容:', response)
+        // console.log('getUserAddresses 返回所有字段:', Object.keys(response))
+        // console.log('getUserAddresses 返回 JSON:', JSON.stringify(response))
+        if (response && response.code === 0) {
+          addresses.value = response.data
           // 选择默认地址
           const defaultAddress = addresses.value.find(addr => addr.isDefault === 1)
           if (defaultAddress && !selectedAddress.value) {
@@ -426,7 +437,7 @@ export default {
           addresses.value = []
         }
       } catch (error) {
-        console.error('加载地址失败:', error)
+        // console.error('加载地址失败:', error)
         addresses.value = []
       }
     }
@@ -502,6 +513,8 @@ export default {
     }
 
     const submitOrder = async () => {
+      console.log('提交订单前 merchantInfo:', merchantInfo.value)
+      console.log('提交订单前 merchantId:', merchantInfo.value.merchantId)
       if (!canSubmit.value) return
 
       submitting.value = true
@@ -512,25 +525,14 @@ export default {
           throw new Error('未找到用户ID，无法提交订单')
         }
         
-        const orderData = {
-          userId: userId,
-          merchantId: merchantInfo.value.merchantId,
-          addressId: selectedAddress.value.addressId,
-          orderItems: orderItems.value.map(item => ({
-            dishId: item.dishId,
-            quantity: item.quantity,
-            price: item.price
-          })),
-          totalAmount: subtotal.value + deliveryFee.value,
-          deliveryFee: deliveryFee.value,
+        // 修正 createOrder 调用
+        const response = await orderAPI.createOrder(userId, {
+          orderAmount: subtotal.value + deliveryFee.value,
           couponId: selectedCoupon.value?.couponId,
-          discountAmount: discountAmount.value,
-          finalAmount: finalAmount.value,
-          remark: remark.value,
-          paymentMethod: selectedPaymentMethod.value
-        }
-
-        const response = await orderAPI.createOrder(orderData)
+          addressId: selectedAddress.value.addressId,
+          merchantId: merchantInfo.value.merchantId,
+          dishQuantities: orderItems.value.map(item => ({ dishId: item.dishId, quantity: item.quantity })),
+        })
         
         if (response && response.code === 200) {
           // 清空购物车
@@ -550,6 +552,9 @@ export default {
         }
       } catch (error) {
         console.error('提交订单失败:', error)
+        console.error('orderItems.value:', orderItems.value)
+        const dishQuantities = orderItems.value.map(item => ({ dishId: item.dishId, quantity: item.quantity }))
+        console.error('dishQuantities:', dishQuantities)
         alert('下单失败，请重试')
       } finally {
         submitting.value = false

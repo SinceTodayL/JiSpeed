@@ -46,9 +46,9 @@ export const orderAPI = {
     // 自动插入调试代码
     console.log('订单API请求参数:', { userId, orderStatus, size, page });
     console.log('订单API baseURL:', API_BASE_URL);
-    const fullUrl = `${API_BASE_URL} /api/orders?userId=${userId}&orderStatus=${orderStatus}&size=${size}&page=${page}`;
-    console.log('订单API完整URL:', fullUrl);
-    return api.get(' /api/orders', {
+  const fullUrl = `${API_BASE_URL}/api/orders?userId=${userId}&orderStatus=${orderStatus}&size=${size}&page=${page}`;
+  console.log('订单API完整URL:', fullUrl);
+  return api.get('/api/orders', {
       params: {
         userId,
         orderStatus,
@@ -60,12 +60,12 @@ export const orderAPI = {
 
   // 根据OrderId获取订单详情
   getOrderById: (orderId) => {
-    return api.get(` /api/orders/${orderId}`)
+  return api.get(`/api/orders/${orderId}`)
   },
 
   // 用户创建订单
   createOrder: (userId, orderData) => {
-    return api.post(` /api/users/${userId}/createOrder`, {
+    return api.post(`/api/users/${userId}/createOrder`, {
       orderAmount: orderData.orderAmount,
       couponId: orderData.couponId,
       addressId: orderData.addressId,
@@ -76,12 +76,12 @@ export const orderAPI = {
 
   // 发起支付请求，创建待支付实体
   createPayment: (orderId, paymentData) => {
-    return api.post(` /api/orders/${orderId}/createPayment`, paymentData)
+  return api.post(`/api/orders/${orderId}/createPayment`, paymentData)
   },
 
   // 用户创建退单申请
   createRefund: (userId, orderId, refundData) => {
-    return api.post(` /api/users/${userId}/api/orders/${orderId}/refunds`, refundData)
+  return api.post(`/api/users/${userId}/api/orders/${orderId}/refunds`, refundData)
   }
 }
 
@@ -89,7 +89,7 @@ export const orderAPI = {
 export const orderLogAPI = {
   // 根据Logid获取OrderLog的详情
   getOrderLogById: (logId) => {
-    return api.get(` /orderLogs/${logId}`)
+    return api.get(`/orderLogs/${logId}`)
   }
 }
 
