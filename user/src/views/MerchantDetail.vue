@@ -11,7 +11,7 @@
         <div v-if="merchantInfo" class="merchant-info-header">
           <div class="merchant-logo">
             <img
-              :src="merchantInfo.logo || '/assets/placeholder.png '"
+              :src="merchantInfo.logo || '/src/assets/placeholder.png'"
               :alt="merchantInfo.merchantName"
               @error="handleImageError"
             />
@@ -136,7 +136,7 @@
                     <div class="quantity-controls">
                       <button
                         v-if="getCartQuantity(dish.dishId) > 0"
-                        @click.stop="removeFromCart(dish)"
+                        @click.stop="decreaseQuantity(dish)"
                         class="quantity-btn minus"
                       >
                         −
@@ -217,7 +217,7 @@
             <div class="modal-quantity-controls">
               <button
                 v-if="getCartQuantity(selectedDish.dishId) > 0"
-                @click="removeFromCart(selectedDish)"
+                @click="decreaseQuantity(selectedDish)"
                 class="modal-quantity-btn minus"
               >
                 −
@@ -274,14 +274,14 @@
               
               <div class="item-controls">
                 <button 
-                  @click="removeFromCart({ dishId: item.dishId, merchantId: item.merchantId })"
+                  @click="decreaseQuantity({ dishId: item.dishId, merchantId: item.merchantId })"
                   class="cart-quantity-btn minus"
                 >
                   −
                 </button>
                 <span class="cart-quantity">{{ item.quantity }}</span>
                 <button
-                  @click.stop="addToCart({ dishId: item.dishId, userId: localStorage.getItem('userId'), merchantId: item.merchantId })"
+                  @click.stop="increaseQuantity({ dishId: item.dishId, merchantId: item.merchantId })"
                   class="cart-quantity-btn plus"
                 >
                   +
@@ -343,14 +343,21 @@ export default {
         ? window.localStorage.getItem('userId') || ''
         : '';
       console.log('调试 localStorage userId:', userId);
-      // 只传递必要的参数
-      const params = { 
-        dishId: selectedDish.value.dishId,
-        userId: userId,
-        merchantId: route.params.id
-      };
-      console.log('addToCart 按钮传入参数:', params);
-      addToCart(params);
+      
+      // 检查是否已在购物车中
+      if (getCartQuantity(selectedDish.value.dishId) > 0) {
+        // 如果已经在购物车中，增加数量
+        increaseQuantity(selectedDish.value);
+      } else {
+        // 如果不在购物车中，添加到购物车
+        const params = { 
+          dishId: selectedDish.value.dishId,
+          userId: userId,
+          merchantId: route.params.id
+        };
+        console.log('addToCart 按钮传入参数:', params);
+        addToCart(params);
+      }
     }
   // setup 阶段调试输出
   console.log('setup 阶段 localStorage userId:', localStorage.getItem('userId'))
@@ -406,9 +413,19 @@ export default {
     const fetchMerchantInfo = async () => {
       try {
         const response = await merchantAPI.getMerchantById(route.params.id)
-        if (response && response.data) {
+        console.log('商家信息响应:', response)
+        
+        // 检查 response 是否已经是对象（已经被 axios 拦截器处理）
+        if (response && typeof response === 'object' && !response.code) {
+          merchantInfo.value = response
+          console.log('处理后的商家信息(直接对象):', merchantInfo.value)
+        }
+        // 如果 response 包含 data 字段，说明 axios 拦截器没有处理它
+        else if (response && response.data) {
           merchantInfo.value = response.data
+          console.log('处理后的商家信息(从 response.data):', merchantInfo.value)
         } else {
+          console.error('获取商家信息格式不正确:', response)
           merchantInfo.value = null
         }
       } catch (error) {
@@ -420,12 +437,24 @@ export default {
     const fetchDishes = async () => {
       loading.value = true
       try {
+        console.log('开始获取商家菜品，商家ID:', route.params.id)
+        // 添加网络请求调试
         const response = await merchantAPI.getAllDishes(route.params.id)
-        if (response && response.data) {
+        console.log('获取菜品接口响应:', response)
+        
+        // 检查 response 是否是数组（已经被 axios 拦截器处理）
+        if (Array.isArray(response)) {
+          allDishes.value = response
+          console.log('获取到的菜品数据:', response)
+          organizeDishesIntoCategories(response)
+        } 
+        // 如果 response 包含 data 字段，说明 axios 拦截器没有处理它
+        else if (response && response.data) {
           allDishes.value = response.data
-          console.log('获取到的菜品数据:', response.data)
+          console.log('获取到的菜品数据 (从 response.data):', response.data)
           organizeDishesIntoCategories(response.data)
         } else {
+          console.error('获取菜品数据格式不正确:', response)
           allDishes.value = []
           dishCategories.value = []
         }
@@ -447,9 +476,20 @@ export default {
           return [];
         }
         const response = await dishAPI.getCategories(merchantId)
-        if (response && response.data) {
-          console.log('获取到的分类数据:', response.data)
+        console.log('获取分类接口响应:', response)
+        
+        // 检查 response 是否是数组（已经被 axios 拦截器处理）
+        if (Array.isArray(response)) {
+          console.log('获取到的分类数据 (数组):', response)
+          return response
+        }
+        // 如果 response 包含 data 字段，说明 axios 拦截器没有处理它
+        else if (response && response.data) {
+          console.log('获取到的分类数据 (从 response.data):', response.data)
           return response.data
+        } else {
+          console.error('获取分类数据格式不正确:', response)
+          return []
         }
       } catch (error) {
         console.error('获取分类信息失败:', error)
@@ -461,12 +501,25 @@ export default {
 
     const organizeDishesIntoCategories = async (dishes) => {
       const categoriesData = await fetchCategories()
-      const normalizeId = id => (id ? String(id).trim() : '')
+      // 修改normalizeId函数，更严格地处理categoryId
+      const normalizeId = id => {
+        if (!id) return '';
+        // 将id转为字符串，去除所有空白，只保留数字部分
+        return String(id).trim().replace(/\s+/g, '');
+      }
       const categoryMap = new Map()
+      
+      // 调试输出
+      console.log('原始菜品数据示例:', dishes.slice(0, 2));
+      console.log('原始分类数据:', categoriesData);
+      
       // 初始化分类
       categoriesData.forEach(cat => {
-        categoryMap.set(normalizeId(cat.categoryId), {
+        const normalizedCatId = normalizeId(cat.categoryId);
+        console.log(`分类ID处理: 原始=${cat.categoryId}, 处理后=${normalizedCatId}`);
+        categoryMap.set(normalizedCatId, {
           ...cat,
+          categoryId: normalizedCatId, // 使用处理后的ID
           dishes: [],
           dishCount: 0
         })
@@ -576,6 +629,69 @@ export default {
         await cart.removeFromCart(cartItem.cartItemId);
       }
     }
+    
+    // 减少购物车数量
+    const decreaseQuantity = async (dish) => {
+      // 获取必要参数
+      const userId = localStorage.getItem('userId');
+      const merchantId = dish.merchantId || route.params.id;
+      
+      // 查找购物车中的项目
+      const cartItem = cart.cartItems.value.find(
+        item => item.dishId === dish.dishId && item.merchantId === merchantId
+      );
+      
+      if (!cartItem) {
+        console.error('商品不在购物车中');
+        return;
+      }
+      
+      // 如果数量为1，则直接删除
+      if (cartItem.quantity <= 1) {
+        await removeFromCart(dish);
+        return;
+      }
+      
+      // 减少数量
+      const newQuantity = cartItem.quantity - 1;
+      console.log(`减少商品数量: dishId=${dish.dishId}, cartId=${cartItem.cartItemId}, 新数量=${newQuantity}`);
+      
+      try {
+        // 使用购物车实例的更新数量方法
+        await cart.updateQuantity(userId, cartItem.cartItemId, newQuantity);
+      } catch (error) {
+        console.error('减少商品数量失败:', error);
+      }
+    }
+    
+    // 增加购物车数量
+    const increaseQuantity = async (dish) => {
+      // 获取必要参数
+      const userId = localStorage.getItem('userId');
+      const merchantId = dish.merchantId || route.params.id;
+      
+      // 查找购物车中的项目
+      let cartItem = cart.cartItems.value.find(
+        item => item.dishId === dish.dishId && item.merchantId === merchantId
+      );
+      
+      // 如果不在购物车中，先添加
+      if (!cartItem) {
+        await addToCart(dish);
+        return;
+      }
+      
+      // 增加数量
+      const newQuantity = cartItem.quantity + 1;
+      console.log(`增加商品数量: dishId=${dish.dishId}, cartId=${cartItem.cartItemId}, 新数量=${newQuantity}`);
+      
+      try {
+        // 使用购物车实例的更新数量方法
+        await cart.updateQuantity(userId, cartItem.cartItemId, newQuantity);
+      } catch (error) {
+        console.error('增加商品数量失败:', error);
+      }
+    }
 
     const showCart = async () => {
       // 每次点开购物车都强制刷新当前用户购物车数据
@@ -654,7 +770,7 @@ export default {
     }
 
     const handleImageError = (event) => {
-      event.target.src = '/assets/placeholder.png '
+      event.target.src = '/src/assets/placeholder.png'
     }
 
     // 生命周期
@@ -693,6 +809,8 @@ export default {
       getCartQuantity,
       addToCart,
       removeFromCart,
+      increaseQuantity,
+      decreaseQuantity,
       showCart,
       closeCart,
       proceedToCheckout,

@@ -1,43 +1,5 @@
 // 购物车相关API
-import axios from 'axios'
-
-// 从环境变量获取基础URL
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-
-// 创建axios实例
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-})
-
-// 请求拦截器
-api.interceptors.request.use(
-  (config) => {
-    // 在这里可以添加token等认证信息
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  }
-)
-
-// 响应拦截器
-api.interceptors.response.use(
-  (response) => {
-    return response.data
-  },
-  (error) => {
-    console.error('购物车API请求错误:', error)
-    return Promise.reject(error)
-  }
-)
+import api from '@/utils/request.js'
 
 // 购物车API接口
 export const cartAPI = {
@@ -53,17 +15,27 @@ export const cartAPI = {
   },
 
   // 用户添加商品到购物车
-    addToCart: (userId, dishId,merchantId) => {
-      console.log('addToCart 参数:', userId, dishId,merchantId)
-      return api.post(`/api/users/${userId}/cart`, {
-        dishId,
-        merchantId
-      })
-    },
+  addToCart: (userId, dishId, merchantId) => {
+    console.log('addToCart 参数:', userId, dishId, merchantId)
+    return api.post(`/api/users/${userId}/cart`, {
+      dishId,
+      merchantId
+    })
+  },
 
   // 根据id删除购物车内容
   removeFromCart: (userId, cartId) => {
     return api.delete(`/api/users/${userId}/cart/${cartId}`)
+  },
+  
+  // 修改购物车商品数量
+  updateCartItemQuantity: (userId, cartId, quantity) => {
+    console.log('updateCartItemQuantity 参数:', userId, cartId, quantity)
+    return api.patch(`/api/users/${userId}/cart/${cartId}`, null, {
+      params: {
+        quantity
+      }
+    })
   }
 }
 

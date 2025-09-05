@@ -44,7 +44,7 @@
     <div class="merchant-section">
       <div class="merchant-info">
         <img 
-          :src="merchantInfo.logo || '/assets/placeholder.png'" 
+          :src="merchantInfo.logo || '/src/assets/placeholder.png'" 
           :alt="merchantInfo.merchantName"
           class="merchant-logo"
         />
@@ -72,7 +72,7 @@
           class="item-card"
         >
           <img 
-            :src="item.coverUrl || '/assets/placeholder.png'"
+            :src="item.coverUrl || '/src/assets/placeholder.png'"
             :alt="item.dishName"
             class="item-image"
           />
@@ -361,7 +361,7 @@ export default {
           merchantInfo.value = {
             merchantId: orderData.merchantId,
             merchantName: orderData.merchantName,
-            logo: '/assets/placeholder.png',
+            logo: '/src/assets/placeholder.png',
             deliveryTime: 30,
             deliveryFee: orderData.deliveryFee || 3.5,
             minOrderAmount: 20

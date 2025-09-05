@@ -93,7 +93,7 @@
               <!-- 商品图片 -->
               <div class="item-image-container">
                 <img 
-                  :src="item.dishImage || '/assets/placeholder.png'"
+                  :src="item.image || item.coverUrl || '/src/assets/placeholder.png'"
                   :alt="item.dishName"
                   class="item-image"
                   @error="handleImageError"
@@ -123,7 +123,7 @@
                 >
                   −
                 </button>
-                <span class="quantity">{{ item.quantity }}</span>
+                <span class="quantity">{{ Number(item.quantity) }}</span>
                 <button 
                   @click="increaseQuantity(item)"
                   :disabled="!item.isAvailable"
@@ -135,7 +135,7 @@
 
               <!-- 小计 -->
               <div class="item-subtotal">
-                <span class="subtotal-amount">¥{{ item.subtotal.toFixed(2) }}</span>
+                <span class="subtotal-amount">¥{{ (Number(item.price) * Number(item.quantity)).toFixed(2) }}</span>
               </div>
 
               <!-- 删除按钮 -->
@@ -175,7 +175,7 @@
           :disabled="selectedItems.length === 0"
           class="checkout-btn"
         >
-          去结算 ({{ selectedItems.length }})
+          去结算 ({{ selectedItems.reduce((total, item) => total + Number(item.quantity), 0) }})
         </button>
       </div>
     </div>
@@ -199,13 +199,15 @@
 <script>
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { cartAPI } from '@/api/cart.js'
-import { dishesAPI } from '@/api/dishes.js'
+import { getCartInstance } from '@/composables/useCart.js'
 
 export default {
   name: 'CartPage',
   setup() {
     const router = useRouter()
+    
+    // 使用购物车组合式函数
+    const cart = getCartInstance()
     
     // 响应式数据
     const loading = ref(false)
@@ -221,7 +223,7 @@ export default {
 
     // 计算属性
     const totalItems = computed(() => {
-      return cartItems.value.reduce((total, item) => total + item.quantity, 0)
+      return cartItems.value.reduce((total, item) => total + Number(item.quantity), 0)
     })
 
     const selectedItems = computed(() => {
@@ -285,51 +287,19 @@ export default {
     })
 
     // 方法
-    // 严格调用后端API获取购物车数据
+    // 使用 useCart.js 中的方法获取购物车数据
     const fetchCartData = async () => {
       loading.value = true
       console.log('当前用户ID:', currentUserId.value)
       try {
-        const response = await cartAPI.getUserCart(currentUserId.value)
-        console.log('购物车接口返回:', response)
-        if (Array.isArray(response.data) && response.data.length > 0) {
-          console.log('第一条商品字段:', response.data[0])
-        }
-        if (response.code === 0 && Array.isArray(response.data)) {
-          // 批量获取商品详情
-          const items = response.data
-          const detailPromises = items.map(async item => {
+        // 使用 cart 实例的 fetchCartData 方法
+        await cart.fetchCartData(currentUserId.value)
         
-            let dishDetail = null
-            console.log('请求商品详情参数:', 'merchantId:', item.merchantId, 'dishId:', item.dishId)
-            try {
-              
-              dishDetail = await dishesAPI.getDishDetail(item.merchantId, item.dishId)
-            } catch (e) {
-              dishDetail = null
-            }
-            // 兼容后端返回格式
-            const detailData = dishDetail && dishDetail.code === 0 && dishDetail.data ? dishDetail.data : {}
-            console.log('商品详情数据:', detailData)
-            return {
-              cartItemId: item.cartId,
-              dishId: item.dishId,
-              dishName: detailData.dishName || item.dishId,
-              price: Number(detailData.price) || 0,
-              quantity: Number(item.quantity) || 1,
-              dishImage: detailData.image || '',
-              merchantName: detailData.merchantName || item.merchantId,
-              merchantId: item.merchantId,
-              isAvailable: true,
-              selected: true,
-              subtotal: (Number(detailData.price) || 0) * (Number(item.quantity) || 1)
-            }
-          })
-          cartItems.value = await Promise.all(detailPromises)
-        } else {
-          cartItems.value = []
-        }
+        // 从 cart 实例获取购物车数据
+        cartItems.value = cart.cartItems.value
+        console.log('购物车数据:', cartItems.value)
       } catch (error) {
+        console.error('获取购物车数据失败:', error)
         cartItems.value = []
       } finally {
         loading.value = false
@@ -352,22 +322,45 @@ export default {
       // 选中状态变化会自动更新计算属性
     }
 
-    // 增加数量：如后端有接口可补充，否则仅刷新购物车
+    // 增加数量
     const increaseQuantity = async (item) => {
       if (!item.isAvailable) return
-      // 可根据后端实际接口补充
-      await fetchCartData()
+      
+      try {
+        console.log(`增加商品数量: cartId=${item.cartItemId}, 新数量=${item.quantity + 1}`)
+        await cart.updateQuantity(currentUserId.value, item.cartItemId, item.quantity + 1)
+        // 更新本地购物车数据
+        await fetchCartData()
+      } catch (error) {
+        console.error('增加商品数量失败:', error)
+      }
     }
 
-    // 减少数量：如后端有接口可补充，否则仅刷新购物车
+    // 减少数量
     const decreaseQuantity = async (item) => {
-      if (!item.isAvailable || item.quantity <= 1) return
-      await fetchCartData()
+      if (!item.isAvailable) return
+      
+      try {
+        // 如果数量为1，则直接删除
+        if (item.quantity <= 1) {
+          console.log(`商品数量为1，直接删除: cartId=${item.cartItemId}`)
+          await cart.removeFromCart(currentUserId.value, item.cartItemId)
+          return
+        }
+        
+        // 否则减少数量
+        console.log(`减少商品数量: cartId=${item.cartItemId}, 新数量=${item.quantity - 1}`)
+        await cart.updateQuantity(currentUserId.value, item.cartItemId, item.quantity - 1)
+        // 更新本地购物车数据
+        await fetchCartData()
+      } catch (error) {
+        console.error('减少商品数量失败:', error)
+      }
     }
 
     const removeItem = (item) => {
       deleteModalMessage.value = `确定要删除"${item.dishName}"吗？`
-      pendingDeleteAction.value = () => deleteCartItem(item.cartItemId)
+      pendingDeleteAction.value = () => cart.removeFromCart(currentUserId.value, item.cartItemId).then(() => fetchCartData())
       showDeleteModal.value = true
     }
 
@@ -379,26 +372,16 @@ export default {
       showDeleteModal.value = true
     }
 
-    // 删除购物车商品，严格调用后端API
-    const deleteCartItem = async (cartItemId) => {
-      try {
-        await cartAPI.removeFromCart(currentUserId.value, cartItemId)
-        await fetchCartData()
-      } catch (error) {
-        // 错误处理
-      }
-    }
-
-    // 批量删除，严格调用后端API
+    // 批量删除
     const deleteMultipleItems = async () => {
       try {
         const itemsToDelete = selectedItems.value
         for (const item of itemsToDelete) {
-          await cartAPI.removeFromCart(currentUserId.value, item.cartItemId)
+          await cart.removeFromCart(currentUserId.value, item.cartItemId)
         }
         await fetchCartData()
       } catch (error) {
-        // 错误处理
+        console.error('批量删除商品失败:', error)
       }
     }
 
@@ -489,11 +472,12 @@ export default {
     }
 
     const handleImageError = (event) => {
-      event.target.src = '/assets/placeholder.png '
+      event.target.src = '/src/assets/placeholder.png'
     }
 
     // 生命周期
     onMounted(() => {
+      console.log('购物车组件已挂载，开始获取数据')
       fetchCartData()
     })
 
@@ -869,6 +853,7 @@ export default {
   font-weight: 600;
   min-width: 24px;
   text-align: center;
+  color: #333;
 }
 
 .item-subtotal {
