@@ -260,10 +260,10 @@ namespace JISpeed.Application.Services.Common
             }
         }
 
-           // 获取导航路径（包含路况、预计时间）
+        // 获取导航路径（包含路况、预计时间）
         public async Task<NavigationRouteInfo> GetNavigationRouteAsync(
-            decimal startLongitude, decimal startLatitude, 
-            decimal endLongitude, decimal endLatitude, 
+            decimal startLongitude, decimal startLatitude,
+            decimal endLongitude, decimal endLatitude,
             string mode = "driving")
         {
             try
@@ -278,65 +278,146 @@ namespace JISpeed.Application.Services.Common
                     _ => "/v3/direction/driving"
                 };
 
+                // 用 extensions=all 参数获取完整信息
                 var response = await _httpClient.GetFromJsonAsync<JsonElement>(
-                    $"{apiEndpoint}?key={_apiKey}&origin={startLongitude},{startLatitude}&destination={endLongitude},{endLatitude}");
+                    $"{apiEndpoint}?key={_apiKey}&origin={startLongitude},{startLatitude}&destination={endLongitude},{endLatitude}&extensions=all&output=json");
 
-                if (response.GetProperty("status").GetString() == "1")
+                // 记录API响应用于调试
+                _logger.LogInformation("高德导航API响应: {Response}", response.ToString());
+
+                // 检查API状态
+                if (!response.TryGetProperty("status", out var statusProp) ||
+                    statusProp.GetString() != "1")
                 {
-                    var route = response.GetProperty("route");
-                    var paths = route.GetProperty("paths");
-                    
-                    if (paths.GetArrayLength() > 0)
+                    var status = statusProp.GetString() ?? "未知";
+                    var info = response.TryGetProperty("info", out var infoProp) ?
+                        infoProp.GetString() : "API返回失败";
+                    var infocode = response.TryGetProperty("infocode", out var infocodeProp) ?
+                        infocodeProp.GetString() : "未知错误码";
+
+                    _logger.LogWarning("高德导航API返回失败, Status: {Status}, Info: {Info}, InfoCode: {InfoCode}",
+                        status, info, infocode);
+
+                    throw new InvalidOperationException($"高德地图API错误: {info} (错误码: {infocode})");
+                }
+
+                // 获取route信息
+                if (!response.TryGetProperty("route", out var routeProp))
+                {
+                    _logger.LogError("API响应中缺少route字段");
+                    throw new InvalidOperationException("API响应格式错误: 缺少route字段");
+                }
+
+                var route = routeProp;
+
+                // 获取paths信息
+                if (!route.TryGetProperty("paths", out var pathsProp))
+                {
+                    _logger.LogError("API响应中缺少paths字段");
+                    throw new InvalidOperationException("API响应格式错误: 缺少paths字段");
+                }
+
+                var paths = pathsProp;
+
+                if (paths.GetArrayLength() == 0)
+                {
+                    _logger.LogWarning("API响应中paths数组为空");
+                    throw new InvalidOperationException("无法获取导航路径: 路径数据为空");
+                }
+
+                var path = paths[0];
+
+                // 获取steps信息
+                if (!path.TryGetProperty("steps", out var stepsProp))
+                {
+                    _logger.LogError("API响应中缺少steps字段");
+                    throw new InvalidOperationException("API响应格式错误: 缺少steps字段");
+                }
+
+                var steps = stepsProp;
+
+                // 获取距离和时长
+                var totalDistance = 0.0;
+                var estimatedDuration = 0;
+
+                if (path.TryGetProperty("distance", out var pathDistanceProp))
+                {
+                    if (!double.TryParse(pathDistanceProp.GetString(), out totalDistance))
                     {
-                        var path = paths[0];
-                        var steps = path.GetProperty("steps");
-                        
-                        var routeInfo = new NavigationRouteInfo
-                        {
-                            RouteId = Guid.NewGuid().ToString(),
-                            TotalDistance = double.Parse(path.GetProperty("distance").GetString() ?? "0"),
-                            EstimatedDuration = int.Parse(path.GetProperty("duration").GetString() ?? "0"),
-                            Mode = mode,
-                            Steps = new List<RouteStep>()
-                        };
-
-                        // 解析路径步骤
-                        foreach (var step in steps.EnumerateArray())
-                        {
-                            var routeStep = new RouteStep
-                            {
-                                Instruction = step.GetProperty("instruction").GetString() ?? "",
-                                Distance = double.Parse(step.GetProperty("distance").GetString() ?? "0"),
-                                Duration = int.Parse(step.GetProperty("duration").GetString() ?? "0"),
-                                RoadName = step.GetProperty("road_name").GetString() ?? "",
-                                TurnType = step.GetProperty("turn_type").GetString() ?? ""
-                            };
-
-                            // 解析坐标点
-                            var polyline = step.GetProperty("polyline").GetString();
-                            if (!string.IsNullOrEmpty(polyline))
-                            {
-                                var points = polyline.Split(';');
-                                foreach (var point in points)
-                                {
-                                    var coords = point.Split(',');
-                                    if (coords.Length == 2 &&
-                                        decimal.TryParse(coords[0], out var longitude) &&
-                                        decimal.TryParse(coords[1], out var latitude))
-                                    {
-                                        routeStep.Polyline.Add((longitude, latitude));
-                                    }
-                                }
-                            }
-
-                            routeInfo.Steps.Add(routeStep);
-                        }
-
-                        return routeInfo;
+                        _logger.LogWarning("无法解析总距离: {DistanceStr}", pathDistanceProp.GetString());
                     }
                 }
 
-                throw new InvalidOperationException("无法获取导航路径信息");
+                if (path.TryGetProperty("duration", out var pathDurationProp))
+                {
+                    if (!int.TryParse(pathDurationProp.GetString(), out estimatedDuration))
+                    {
+                        _logger.LogWarning("无法解析总时长: {DurationStr}", pathDurationProp.GetString());
+                    }
+                }
+
+                var routeInfo = new NavigationRouteInfo
+                {
+                    RouteId = Guid.NewGuid().ToString(),
+                    TotalDistance = totalDistance,
+                    EstimatedDuration = estimatedDuration,
+                    Mode = mode,
+                    Steps = new List<RouteStep>()
+                };
+
+                // 解析路径步骤
+                foreach (var step in steps.EnumerateArray())
+                {
+                    var routeStep = new RouteStep
+                    {
+                        // 获取instruction字段
+                        Instruction = step.TryGetProperty("instruction", out var instructionProp) ?
+                            instructionProp.GetString() ?? "" : "",
+
+                        // 获取distance字段
+                        Distance = step.TryGetProperty("distance", out var stepDistanceProp) ?
+                            (double.TryParse(stepDistanceProp.GetString(), out var distance) ? distance : 0) : 0,
+
+                        // 获取duration字段
+                        Duration = step.TryGetProperty("duration", out var stepDurationProp) ?
+                            (int.TryParse(stepDurationProp.GetString(), out var duration) ? duration : 0) : 0,
+
+                        // 获取road_name字段
+                        RoadName = step.TryGetProperty("road_name", out var roadNameProp) ?
+                            roadNameProp.GetString() ?? "" : "",
+
+                        // 获取turn_type字段
+                        TurnType = step.TryGetProperty("turn_type", out var turnTypeProp) ?
+                            turnTypeProp.GetString() ?? "" : ""
+                    };
+
+                    // 解析坐标点
+                    if (step.TryGetProperty("polyline", out var polylineProp))
+                    {
+                        var polyline = polylineProp.GetString();
+                        if (!string.IsNullOrEmpty(polyline))
+                        {
+                            var points = polyline.Split(';');
+                            foreach (var point in points)
+                            {
+                                var coords = point.Split(',');
+                                if (coords.Length == 2 &&
+                                    decimal.TryParse(coords[0], out var longitude) &&
+                                    decimal.TryParse(coords[1], out var latitude))
+                                {
+                                    routeStep.Polyline.Add((longitude, latitude));
+                                }
+                            }
+                        }
+                    }
+
+                    routeInfo.Steps.Add(routeStep);
+                }
+
+                _logger.LogInformation("成功解析导航路径, 总距离: {Distance}米, 预计时长: {Duration}秒, 步骤数: {StepCount}",
+                    totalDistance, estimatedDuration, routeInfo.Steps.Count);
+
+                return routeInfo;
             }
             catch (Exception ex)
             {
