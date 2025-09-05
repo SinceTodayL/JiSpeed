@@ -54,10 +54,10 @@
         </div>
         <div class="address-info">
           <div class="receiver-info">
-            <span class="receiver-name">{{ orderDetail.deliveryAddress.receiverName }}</span>
-            <span class="receiver-phone">{{ orderDetail.deliveryAddress.receiverPhone }}</span>
+            <span class="receiver-name">{{ orderDetail.deliveryAddress?.receiverName || '未填写' }}</span>
+            <span class="receiver-phone">{{ orderDetail.deliveryAddress?.receiverPhone || '' }}</span>
           </div>
-          <div class="address-detail">{{ orderDetail.deliveryAddress.detailedAddress }}</div>
+          <div class="address-detail">{{ orderDetail.deliveryAddress?.detailedAddress || '' }}</div>
         </div>
       </div>
 
@@ -124,19 +124,19 @@
         <div class="price-details">
           <div class="price-item">
             <span class="label">商品金额</span>
-            <span class="value">¥{{ (orderDetail.totalAmount - orderDetail.deliveryFee).toFixed(1) }}</span>
+            <span class="value">¥{{ (orderDetail.productAmount || 0).toFixed(1) }}</span>
           </div>
           <div class="price-item">
             <span class="label">配送费</span>
-            <span class="value">¥{{ orderDetail.deliveryFee.toFixed(1) }}</span>
+            <span class="value">¥{{ (orderDetail.deliveryFee || 0).toFixed(1) }}</span>
           </div>
           <div v-if="orderDetail.discountAmount > 0" class="price-item discount">
             <span class="label">优惠金额</span>
-            <span class="value">-¥{{ orderDetail.discountAmount.toFixed(1) }}</span>
+            <span class="value">-¥{{ (orderDetail.discountAmount || 0).toFixed(1) }}</span>
           </div>
           <div class="price-item total">
             <span class="label">实付金额</span>
-            <span class="value">¥{{ orderDetail.finalAmount.toFixed(1) }}</span>
+            <span class="value">¥{{ (orderDetail.finalAmount || 0).toFixed(1) }}</span>
           </div>
         </div>
       </div>
@@ -200,7 +200,7 @@
         @click="payOrder"
         class="action-btn primary"
       >
-        立即支付 ¥{{ orderDetail.finalAmount.toFixed(1) }}
+        立即支付 ¥{{ (orderDetail.finalAmount || 0).toFixed(1) }}
       </button>
       
       <button 
@@ -241,7 +241,10 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { orderAPI } from '@/api/order.js'
+import { merchantAPI } from '@/api/merchant.js'
+import { addressAPI } from '@/api/user.js'
 import AddressSelectDialog from '@/components/AddressSelectDialog.vue'
+import { merchantDishAPI } from '@/api/merchant.js'
 
 export default {
   name: 'OrderDetail',
@@ -282,23 +285,100 @@ export default {
 
     const loadOrderDetail = async () => {
       loading.value = true
-
+      console.log('[调试] loading.value 设置为 true')
       try {
         const orderId = route.params.orderId
-  const response = await orderAPI.getOrderById(orderId)
-        
-        if (response && response.code === 200) {
+        console.log('[调试] 路由参数 orderId:', orderId)
+        const response = await orderAPI.getOrderById(orderId)
+        console.log('[调试] 订单详情接口响应:', response)
+        if (response && (response.code === 200 || response.code === 0)) {
           orderDetail.value = response.data
+          // 数据保护：补齐 deliveryAddress 空对象，避免模板报错
+          if (!orderDetail.value.deliveryAddress) {
+            orderDetail.value.deliveryAddress = {}
+            console.warn('[调试] 自动补齐 deliveryAddress 空对象')
+          }
+    // 商品、费用字段的自动修复逻辑放到商品详情异步补齐后
+            // 自动映射商品信息
+            if (Array.isArray(orderDetail.value.orderDishes)) {
+              // 异步补齐商品详情
+              const dishPromises = orderDetail.value.orderDishes.map(async dish => {
+                let dishInfo = {}
+                try {
+                  const res = await merchantDishAPI.getDishById(orderDetail.value.merchantId, dish.dishId)
+                  if (res && (res.code === 0 || res.code === 200) && res.data) {
+                    dishInfo = res.data
+                  }
+                } catch (e) {}
+                return {
+                  dishId: dish.dishId || dish.id || '',
+                  dishName: dishInfo.dishName || dishInfo.name || '',
+                  coverUrl: dishInfo.coverUrl || dishInfo.imageUrl || '',
+                  price: dishInfo.price || dishInfo.dishPrice || 0,
+                  quantity: dish.quantity || dish.count || 1,
+                  subtotal: ((dishInfo.price || dishInfo.dishPrice || 0) * (dish.quantity || dish.count || 1))
+                }
+              })
+              orderDetail.value.orderItems = await Promise.all(dishPromises)
+              console.warn('[调试] 自动异步补齐商品详情到 orderItems')
+              // 商品金额：所有商品 subtotal 求和
+              orderDetail.value.productAmount = orderDetail.value.orderItems.reduce((sum, item) => sum + (item.subtotal || 0), 0)
+              // 配送费默认5元
+              orderDetail.value.deliveryFee = 5
+              // 实付金额=商品金额+配送费
+              orderDetail.value.finalAmount = (orderDetail.value.productAmount || 0) + (orderDetail.value.deliveryFee || 0)
+            } else {
+              orderDetail.value.orderItems = []
+            }
+          // 自动补齐商家信息字段（联查商家详情）
+          try {
+            const merchantRes = await merchantAPI.getMerchantById(orderDetail.value.merchantId)
+            if (merchantRes && (merchantRes.code === 0 || merchantRes.code === 200) && merchantRes.data) {
+              orderDetail.value.merchantName = merchantRes.data.merchantName || merchantRes.data.name || ''
+              orderDetail.value.merchantPhone = merchantRes.data.contactInfo || merchantRes.data.merchantPhone || merchantRes.data.phone || ''
+              orderDetail.value.merchantAddress = merchantRes.data.location || merchantRes.data.merchantAddress || merchantRes.data.address || ''
+              console.warn('[调试] 自动补齐商家详情:', merchantRes.data)
+            }
+          } catch (e) {
+            console.warn('[调试] 商家详情联查失败:', e)
+          }
+          // 自动补齐地址信息字段（联查地址详情）
+          try {
+            const addressRes = await addressAPI.getUserAddresses(orderDetail.value.userId)
+            if (addressRes && (addressRes.code === 0 || addressRes.code === 200) && Array.isArray(addressRes.data)) {
+              const addr = addressRes.data.find(a => a.addressId === orderDetail.value.addressId)
+              if (addr) {
+                orderDetail.value.deliveryAddress.receiverName = addr.receiverName || '未填写'
+                orderDetail.value.deliveryAddress.receiverPhone = addr.receiverPhone || ''
+                orderDetail.value.deliveryAddress.detailedAddress = addr.detailedAddress || ''
+                console.warn('[调试] 自动补齐地址详情:', addr)
+              }
+            }
+          } catch (e) {
+            console.warn('[调试] 地址详情联查失败:', e)
+          }
+            // 自动补齐商家信息字段
+            orderDetail.value.merchantName = orderDetail.value.merchantName || ''
+            orderDetail.value.merchantPhone = orderDetail.value.merchantPhone || ''
+            orderDetail.value.merchantAddress = orderDetail.value.merchantAddress || ''
+            // 自动补齐地址信息字段
+            orderDetail.value.deliveryAddress.receiverName = orderDetail.value.deliveryAddress.receiverName || '未填写'
+            orderDetail.value.deliveryAddress.receiverPhone = orderDetail.value.deliveryAddress.receiverPhone || ''
+            orderDetail.value.deliveryAddress.detailedAddress = orderDetail.value.deliveryAddress.detailedAddress || ''
+          // 金额字段保护逻辑已移至商品详情异步补齐后，避免覆盖已计算的金额
+          console.log('[调试] 订单详情数据:', orderDetail.value)
         } else {
+          console.warn('[调试] 订单详情接口 code 非 200/0，响应内容:', response)
           alert('订单详情加载失败')
           router.back()
         }
       } catch (error) {
-        console.error('加载订单详情失败:', error)
+        console.error('[调试] catch分支，加载订单详情失败:', error)
         alert('订单详情加载失败')
         router.back()
       } finally {
         loading.value = false
+        console.log('[调试] finally分支，loading.value 设置为 false')
       }
     }
 

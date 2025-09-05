@@ -66,28 +66,27 @@
             class="merchant-card"
           >
             <div class="merchant-image">
-              <img :src="merchant.imageUrl || '/default-merchant.jpg'" :alt="merchant.name" />
-              <div v-if="merchant.isOnline" class="online-badge">营业中</div>
+              <img :src="merchant.imageUrl || '/default-merchant.jpg'" :alt="merchant.merchantName" />
+              <div v-if="merchant.status === 1" class="online-badge">营业中</div>
               <div v-else class="offline-badge">休息中</div>
             </div>
 
             <div class="merchant-info">
-              <h3 class="merchant-name">{{ merchant.name }}</h3>
-              <p class="merchant-desc">{{ merchant.description }}</p>
-              
+              <h3 class="merchant-name">{{ merchant.merchantName || merchant.name || '商家名称缺失' }}</h3>
+              <p class="merchant-desc">{{ merchant.description || '暂无描述' }}</p>
+              <div class="merchant-contact">联系方式：{{ merchant.contactInfo || merchant.phone || '暂无' }}</div>
+              <div class="merchant-address">地址：{{ merchant.location || merchant.address || '暂无' }}</div>
               <div class="merchant-stats">
                 <div class="rating">
                   <span class="rating-stars">★</span>
                   <span class="rating-score">{{ merchant.rating || '4.5' }}</span>
                   <span class="rating-count">({{ merchant.reviewCount || '999+' }})</span>
                 </div>
-                
                 <div class="distance">
                   <i class="location-icon">📍</i>
                   <span>{{ merchant.distance || '1.2' }}km</span>
                 </div>
               </div>
-
               <div class="merchant-tags">
                 <span 
                   v-for="tag in merchant.tags?.slice(0, 3)" 
@@ -97,13 +96,11 @@
                   {{ tag }}
                 </span>
               </div>
-
               <div class="merchant-bottom">
                 <div class="delivery-info">
                   <span class="delivery-fee">配送费 ¥{{ merchant.deliveryFee || '3' }}</span>
                   <span class="delivery-time">{{ merchant.deliveryTime || '30-45' }}分钟</span>
                 </div>
-                
                 <div v-if="merchant.minOrderAmount" class="min-order">
                   起送 ¥{{ merchant.minOrderAmount }}
                 </div>
@@ -162,27 +159,39 @@ export default {
           sortBy: currentSort.value,
           keyword: searchKeyword.value || undefined
         }
-        
         // 调用真实API
         const response = await merchantAPI.getMerchantList(params)
-          if (response.code === 0) {
-        console.log('获取商家列表成功:', response.data)
+        if (response.code === 0) {
+          console.log('获取商家列表成功:', response.data)
+          // 字段映射，保证模板字段一致
+          const mappedList = (response.data || []).map(item => ({
+            merchantId: item.merchantId,
+            name: item.merchantName || item.name || '',
+            description: item.description || '',
+            imageUrl: item.imageUrl || '',
+            rating: item.rating || 4.5,
+            reviewCount: item.reviewCount || 999,
+            distance: item.distance || '',
+            deliveryFee: item.deliveryFee || 3,
+            deliveryTime: item.deliveryTime || '30-45',
+            minOrderAmount: item.minOrderAmount || '',
+            isOnline: item.status === 1,
+            tags: item.tags || [],
+            phone: item.contactInfo || '',
+            address: item.location || ''
+          }))
           if (reset) {
-            merchants.value = response.data || []
+            merchants.value = mappedList
             currentPage.value = 1
           } else {
-            merchants.value.push(...(response.data || []))
+            merchants.value.push(...mappedList)
           }
-          
-              hasMore.value = (response.data?.length || 0) >= params.size
-          
+          hasMore.value = (response.data?.length || 0) >= params.size
           if (!reset) {
             currentPage.value++
-              }
           }
-          else
-          {
-              console.error('获取商家列表失败:', response.code, response.message)
+        } else {
+          console.error('获取商家列表失败:', response.code, response.message)
         }
       } catch (error) {
         console.error('获取商家列表失败:', error)
@@ -201,7 +210,9 @@ export default {
               deliveryTime: '25-35',
               minOrderAmount: 20,
               isOnline: true,
-              tags: ['川菜', '香锅', '麻辣']
+              tags: ['川菜', '香锅', '麻辣'],
+              phone: '13800001111',
+              address: '北京市朝阳区建国路88号'
             }
           ]
         }
@@ -491,6 +502,13 @@ export default {
   font-weight: 600;
   margin: 0 0 4px 0;
   color: #333;
+  background: #ffecec;
+  padding: 2px 8px;
+  border-radius: 4px;
+  min-height: 24px;
+  word-break: break-all;
+  /* 默认值高亮显示 */
+  font-family: inherit;
 }
 
 .merchant-desc {
