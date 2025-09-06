@@ -32,17 +32,17 @@
           v-for="item in favorites" 
           :key="item.id"
           class="favorite-card"
-          @click="goToMerchant(item.merchantId)"
+          @click="goToMerchant(item.merchantId, item.dishId)"
         >
           <!-- 菜品图片 -->
           <div class="dish-image-container">
             <img 
-              :src="item.image || '/api/placeholder/120/120'"
+              :src="item.image || 'https://fakeimg.pl/300x200/cccccc/666666/?text=Food'"
               :alt="item.dishName"
               class="dish-image"
             />
             <button 
-              @click.stop="removeFavorite(item.id)"
+              @click.stop="removeFavorite(item.dishId)"
               class="remove-favorite-btn"
               title="取消收藏"
             >
@@ -139,6 +139,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { favoriteAPI } from '@/api/user.js'
+import { merchantAPI, merchantDishAPI } from '@/api/merchant.js'
 
 export default {
   name: 'FavoritesPage',
@@ -176,11 +177,50 @@ export default {
           : ''
         
         const response = await favoriteAPI.getUserFavorites(userId)
-        if (response.code === 200) {
-          favorites.value = response.data.map(item => ({
-            ...item,
-            selected: false
+        console.log('收藏API响应:', response)
+        
+        // 直接使用返回的数据，不检查code值
+        if (response && response.data && Array.isArray(response.data)) {
+          // 创建一个临时数组来存储处理后的收藏项
+          const tempFavorites = []
+          
+          // 使用Promise.all并行获取所有菜品详情
+          await Promise.all(response.data.map(async (item) => {
+            try {
+              // 从收藏信息中获取dishId和merchantId
+              const { dishId, merchantId, favorAt } = item
+              
+              // 使用merchantDishAPI获取菜品详情
+              const dishResponse = await merchantDishAPI.getDishById(merchantId, dishId)
+              
+              if (dishResponse && dishResponse.data) {
+                const dishData = dishResponse.data
+                
+                // 将API返回的菜品数据映射到我们需要的格式
+                tempFavorites.push({
+                  id: dishId,
+                  dishId: dishId,
+                  dishName: dishData.dishName || dishData.name || '未知菜品',
+                  description: dishData.description || dishData.dishDesc || '暂无描述',
+                  price: dishData.price || dishData.dishPrice || 0,
+                  originalPrice: dishData.originalPrice || dishData.price * 1.2,
+                  image: dishData.imageUrl || dishData.coverUrl || 'https://fakeimg.pl/300x200/cccccc/666666/?text=Food',
+                  rating: dishData.rating || 4.5,
+                  monthlySales: dishData.monthlySales || dishData.sales || 100,
+                  merchantId: merchantId,
+                  merchantName: dishData.merchantName || '未知商家',
+                  favoriteTime: favorAt,
+                  selected: false
+                })
+              }
+            } catch (error) {
+              console.error(`获取菜品详情失败 (${item.dishId}):`, error)
+            }
           }))
+          
+          // 更新收藏列表
+          favorites.value = tempFavorites
+          console.log('处理后的收藏列表:', favorites.value)
         } else {
           favorites.value = []
         }
@@ -193,21 +233,21 @@ export default {
     }
     
     // 取消收藏
-    const removeFavorite = (favoriteId) => {
+    const removeFavorite = (dishId) => {
       deleteModalMessage.value = '确定要取消收藏这个菜品吗？'
-      pendingDeleteAction.value = () => deleteFavoriteItem(favoriteId)
+      pendingDeleteAction.value = () => deleteFavoriteItem(dishId)
       showDeleteModal.value = true
     }
     
     // 删除收藏项
-    const deleteFavoriteItem = async (favoriteId) => {
+    const deleteFavoriteItem = async (dishId) => {
       try {
         const userId = (typeof localStorage !== 'undefined' && localStorage.getItem && localStorage.getItem('userId'))
           ? localStorage.getItem('userId')
           : ''
-        await favoriteAPI.removeFavorite(userId, favoriteId)
+        await favoriteAPI.removeFavorite(userId, dishId)
         
-        const index = favorites.value.findIndex(item => item.id === favoriteId)
+        const index = favorites.value.findIndex(item => item.dishId === dishId)
         if (index > -1) {
           favorites.value.splice(index, 1)
         }
@@ -235,8 +275,8 @@ export default {
         const itemsToDelete = selectedItems.value
         
         for (const item of itemsToDelete) {
-          await favoriteAPI.removeFavorite(userId, item.id)
-          const index = favorites.value.findIndex(fav => fav.id === item.id)
+          await favoriteAPI.removeFavorite(userId, item.dishId)
+          const index = favorites.value.findIndex(fav => fav.dishId === item.dishId)
           if (index > -1) {
             favorites.value.splice(index, 1)
           }
@@ -283,9 +323,12 @@ export default {
       console.log('批量加入购物车:', selectedItems.value.length, '件商品')
     }
     
-    // 跳转到商家页面
-    const goToMerchant = (merchantId) => {
-      router.push(`/merchant/${merchantId}`)
+    // 跳转到商家页面并定位到特定菜品
+    const goToMerchant = (merchantId, dishId) => {
+      router.push({
+        path: `/merchant/${merchantId}`,
+        query: { highlightDish: dishId }
+      })
     }
     
     // 格式化时间
@@ -540,6 +583,7 @@ export default {
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

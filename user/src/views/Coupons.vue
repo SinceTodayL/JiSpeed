@@ -6,6 +6,10 @@
         <i class="back-icon">←</i>
       </button>
       <h1 class="header-title">我的优惠券</h1>
+      <button @click="showCouponCenter" class="coupon-center-btn">
+        <i class="btn-icon">🎁</i>
+        <span>领券中心</span>
+      </button>
     </div>
 
     <!-- 统计信息 -->
@@ -108,12 +112,6 @@
           去领券中心
         </button>
       </div>
-    </div>
-
-    <!-- 领券中心悬浮按钮 -->
-    <div class="float-btn" @click="showCouponCenter">
-      <i class="btn-icon">🎁</i>
-      <span>领券中心</span>
     </div>
 
     <!-- 领券中心弹窗 -->
@@ -384,7 +382,7 @@ export default {
 .coupons {
   min-height: 100vh;
   background: #f8f9fa;
-  padding-bottom: 80px;
+  padding-bottom: 20px;
 }
 
 /* 顶部导航 */
@@ -412,6 +410,25 @@ export default {
   cursor: pointer;
   color: white;
   font-size: 18px;
+}
+
+.coupon-center-btn {
+  position: absolute;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  color: white;
+  font-size: 14px;
+}
+
+.btn-icon {
+  font-size: 16px;
 }
 
 .header-title {
@@ -696,27 +713,6 @@ export default {
   border-radius: 20px;
   font-size: 14px;
   cursor: pointer;
-}
-
-/* 悬浮按钮 */
-.float-btn {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
-  color: white;
-  padding: 12px 16px;
-  border-radius: 25px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(255, 107, 107, 0.3);
-  z-index: 1000;
-}
-
-.btn-icon {
-  font-size: 18px;
 }
 
 /* 领券中心弹窗 */

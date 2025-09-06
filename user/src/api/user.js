@@ -49,6 +49,13 @@ export const authAPI = {
       oldPassword,
       newPassword
     })
+  },
+
+  // 用户注销
+  logout: (userId) => {
+    return api.post('/api/users/logout', {
+      userId
+    })
   }
 }
 
@@ -72,7 +79,7 @@ export const userAPI = {
 
   // 根据id部分修改用户信息
   updateUser: (userId, userData) => {
-    return api.patch(`/user/${userId}`, userData)
+    return api.patch(`/api/users/${userId}`, userData)
   },
 
   // 根据id部分删除用户信息
@@ -104,6 +111,11 @@ export const favoriteAPI = {
   // 根据id删除收藏内容
   removeFavorite: (userId, favoriteId) => {
     return api.delete(`/api/users/${userId}/favorites/${favoriteId}`)
+  },
+
+  // 检查菜品是否被收藏
+  checkFavoriteStatus: (userId, dishId) => {
+    return api.get(`/api/users/${userId}/favorites/${dishId}`)
   }
 }
 
@@ -123,18 +135,13 @@ export const reviewAPI = {
 
   // 用户提交评论
   submitReview: (userId, reviewData) => {
-    return api.post(`/api/users/${userId}/comments`, {
+    return api.post(`/api/users/${userId}/review`, {
       orderId: reviewData.orderId,
       dishId: reviewData.dishId,
       rating: reviewData.rating,
       content: reviewData.content,
       isAnonymous: reviewData.isAnonymous
     })
-  },
-
-  // 根据id修改评论
-  updateReview: (userId, reviewId, reviewData) => {
-    return api.patch(`/api/users/${userId}/reviews/${reviewId}`, reviewData)
   },
 
   // 根据id删除评论
@@ -164,10 +171,7 @@ export const complaintAPI = {
     })
   },
 
-  // 根据id修改投诉
-  updateComplaint: (userId, complaintId, description) => {
-    return api.patch(`/api/users/${userId}/complaints/${complaintId}`, description)
-  },
+
 
   // 根据id删除投诉
   deleteComplaint: (userId, complaintId) => {

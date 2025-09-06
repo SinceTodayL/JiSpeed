@@ -10,6 +10,12 @@
 
     <!-- 订单信息 -->
     <div class="order-info">
+      <!-- 添加倒计时提示 -->
+      <div class="countdown-alert" :class="{'countdown-warning': countdown <= 180}">
+        <i class="timer-icon">⏱️</i>
+        <span class="countdown-text">订单将在 <span class="countdown-time">{{ formatCountdown(countdown) }}</span> 后自动取消</span>
+      </div>
+      
       <div class="amount-section">
         <div class="amount-label">支付金额</div>
         <div class="amount-value">¥{{ paymentAmount.toFixed(2) }}</div>
@@ -143,6 +149,7 @@ export default {
 
     // 响应式数据
     const orderId = ref('')
+    const payId = ref('') // 添加 payId 变量
     const paymentAmount = ref(0)
     const createTime = ref('')
     const selectedMethod = ref('ALIPAY')
@@ -240,6 +247,28 @@ export default {
     const response = await orderAPI.createPayment(orderId.value, selectedMethod.value.toLowerCase())
 
         if (response && response.code === 0) {
+          // 保存 payId 以便后续查询支付状态
+          payId.value = response.data.payId || ''
+          console.log('获取到支付ID:', payId.value)
+          
+          // 调用确认支付接口
+          if (payId.value) {
+            try {
+              console.log('调用确认支付接口，payId:', payId.value)
+              const payConfirmResponse = await orderAPI.confirmPayment(payId.value)
+              console.log('确认支付响应:', payConfirmResponse)
+              
+              // 检查确认支付是否成功
+              if (payConfirmResponse && payConfirmResponse.code === 0) {
+                console.log('确认支付成功')
+              } else {
+                console.error('确认支付失败:', payConfirmResponse)
+              }
+            } catch (payConfirmError) {
+              console.error('确认支付接口调用失败:', payConfirmError)
+            }
+          }
+          
           if (selectedMethod.value.toLowerCase() === 'cash') {
             // 货到付款直接成功
             paymentStatus.value = 'success'
@@ -267,14 +296,22 @@ export default {
     const startPaymentStatusPolling = () => {
       const pollInterval = setInterval(async () => {
         try {
-          const response = await orderAPI.getPaymentStatus(orderId.value)
+          // 使用 payId 查询支付状态，而非 orderId
+          if (!payId.value) {
+            console.error('缺少支付ID，无法查询支付状态')
+            return
+          }
+          
+          const response = await orderAPI.getPaymentStatus(payId.value)
+          console.log('轮询支付状态:', response)
           if (response && response.data) {
-            if (response.data.paymentStatus === 1) {
+            if (response.data.status === 'SUCCESS' || response.data.paymentStatus === 1) {
               // 支付成功
               paymentStatus.value = 'success'
               clearInterval(pollInterval)
               stopCountdown()
-            } else if (response.data.paymentStatus === 3) {
+              showSuccessModal.value = true
+            } else if (response.data.status === 'FAILED' || response.data.paymentStatus === 3) {
               // 支付失败
               paymentStatus.value = 'failed'
               clearInterval(pollInterval)
@@ -296,11 +333,19 @@ export default {
 
     const checkPaymentStatus = async () => {
       try {
-        const response = await orderAPI.getPaymentStatus(orderId.value)
+        // 使用 payId 查询支付状态，而非 orderId
+        if (!payId.value) {
+          alert('支付信息不完整，请重新发起支付')
+          return
+        }
+        
+        const response = await orderAPI.getPaymentStatus(payId.value)
+        console.log('手动检查支付状态:', response)
         if (response && response.data) {
-          if (response.data.paymentStatus === 1) {
+          if (response.data.status === 'SUCCESS' || response.data.paymentStatus === 1) {
             paymentStatus.value = 'success'
             stopCountdown()
+            showSuccessModal.value = true
           } else {
             alert('支付尚未完成，请继续等待或重新扫码')
           }
@@ -328,6 +373,8 @@ export default {
         if (countdown.value <= 0) {
           stopCountdown()
           paymentStatus.value = 'timeout'
+          // 通知用户订单已自动取消
+          alert('支付超时，订单已自动取消')
         }
       }, 1000)
     }
@@ -353,7 +400,7 @@ export default {
       const statusTexts = {
         'success': '支付成功',
         'failed': '支付失败',
-        'timeout': '支付超时',
+        'timeout': '支付超时，订单已自动取消',
         'processing': '支付处理中...'
       }
       return statusTexts[status] || ''
@@ -370,6 +417,7 @@ export default {
 
     return {
   orderId,
+  payId,  // 添加 payId
   paymentAmount,
   createTime,
   selectedMethod,
@@ -551,6 +599,45 @@ export default {
 }
 
 /* 订单信息 */
+/* 倒计时提示 */
+.countdown-alert {
+  background: linear-gradient(135deg, #fff3cd, #ffebcc);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  border-left: 4px solid #f0ad4e;
+  transition: all 0.3s ease;
+}
+
+.countdown-warning {
+  background: linear-gradient(135deg, #f8d7da, #ffc2c7);
+  border-left: 4px solid #e74c3c;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+
+.timer-icon {
+  font-size: 20px;
+  margin-right: 10px;
+}
+
+.countdown-text {
+  font-size: 14px;
+  color: #856404;
+}
+
+.countdown-time {
+  font-weight: 700;
+  color: #e74c3c;
+}
+
 .amount-section {
   text-align: center;
   margin-bottom: 20px;

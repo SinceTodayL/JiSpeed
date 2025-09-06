@@ -37,8 +37,24 @@
       </div>
     </div>
 
+    <!-- 顶部分类导航 -->
+    <div class="tab-navigation">
+      <div 
+        :class="['tab-item', { active: activeTab === 'menu' }]" 
+        @click="switchTab('menu')"
+      >
+        点餐
+      </div>
+      <div 
+        :class="['tab-item', { active: activeTab === 'reviews' }]" 
+        @click="switchTab('reviews')"
+      >
+        评价
+      </div>
+    </div>
+
     <!-- 菜品内容区域 -->
-    <div class="content-wrapper">
+    <div v-if="activeTab === 'menu'" class="content-wrapper">
       <!-- 分类侧边栏 -->
       <div class="categories-sidebar">
         <div class="categories-list">
@@ -48,13 +64,8 @@
             :class="['category-item', { active: activeCategory === category.categoryId }]"
             @click="scrollToCategory(category.categoryId)"
           >
-            <div class="category-icon">
-              <img v-if="category.icon" :src="category.icon" :alt="category.categoryName" />
-              <span v-else>🍽️</span>
-            </div>
             <div class="category-text">
               <span class="category-name">{{ category.categoryName }}</span>
-              <span v-if="category.dishCount" class="dish-count">({{ category.dishCount }})</span>
             </div>
           </div>
         </div>
@@ -113,6 +124,13 @@
                   <div v-if="dish.monthlySales" class="sales-badge">
                     月售{{ dish.monthlySales }}+
                   </div>
+                  <div 
+                    class="favorite-btn" 
+                    @click.stop="toggleFavorite($event, dish)"
+                    :class="{ 'is-favorite': isFavorite(dish.dishId) }"
+                  >
+                    <i class="favorite-icon">{{ isFavorite(dish.dishId) ? '❤️' : '🤍' }}</i>
+                  </div>
                 </div>
 
                 <div class="dish-info">
@@ -164,6 +182,54 @@
             <div class="empty-icon">🍽️</div>
             <p>暂无相关菜品</p>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 评价内容区域 -->
+    <div v-if="activeTab === 'reviews'" class="reviews-wrapper">
+      <div class="reviews-content">
+        <!-- 加载状态 -->
+        <div v-if="reviewsLoading" class="loading-container">
+          <div class="loading-spinner"></div>
+          <p>正在加载评价信息...</p>
+        </div>
+
+        <!-- 评价列表 -->
+        <div v-else-if="reviews.length > 0" class="reviews-list">
+          <div v-for="review in reviews" :key="review.reviewId" class="review-item">
+            <div class="review-header">
+              <div class="user-info">
+                <img 
+                  :src="review.userAvatarUrl ? `/api/uploads/${review.userAvatarUrl}` : '/src/assets/placeholder.png'" 
+                  :alt="review.userNickname || '匿名用户'" 
+                  class="user-avatar"
+                  @error="handleReviewImageError"
+                />
+                <div class="user-details">
+                  <div class="user-name">{{ review.isAnonymous ? '匿名用户' : (review.userNickname || '用户') }}</div>
+                  <div class="review-date">{{ formatReviewTime(review.reviewAt) }}</div>
+                </div>
+              </div>
+              <div class="review-rating">
+                <span v-for="i in 5" :key="i" :class="['star', { filled: i <= review.rating }]">★</span>
+              </div>
+            </div>
+            <div class="review-content">
+              {{ review.content }}
+            </div>
+          </div>
+        </div>
+        
+        <!-- 加载更多 -->
+        <div v-if="hasMoreReviews && !reviewsLoading" class="load-more-reviews">
+          <button @click="loadMoreReviews" class="load-more-btn">加载更多评价</button>
+        </div>
+
+        <!-- 空状态 -->
+        <div v-if="!reviewsLoading && reviews.length === 0" class="empty-reviews">
+          <div class="empty-icon">⭐</div>
+          <p>暂无评价</p>
         </div>
       </div>
     </div>
@@ -334,6 +400,8 @@ import { ref, reactive, onMounted, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { merchantAPI, dishAPI } from '@/api/browse.js'
 import { getCartInstance } from '@/composables/useCart.js'
+import { favoriteAPI } from '@/api/user.js'
+import { merchantAPI as merchantAPINew } from '@/api/merchant.js'
 
 export default {
   name: 'MerchantDetail',
@@ -373,10 +441,19 @@ export default {
     const allDishes = ref([])
     const loading = ref(false)
     const activeCategory = ref('')
+    const activeTab = ref('menu') // 添加activeTab状态，默认显示菜单
     const dishSearchKeyword = ref('')
     const selectedDish = ref(null)
     const showCartModal = ref(false)
     const dishesContent = ref(null)
+    const favoriteDishes = ref({}) // 存储收藏状态，key为dishId，value为收藏ID
+    
+    // 评价相关数据
+    const reviews = ref([])
+    const reviewsLoading = ref(false)
+    const currentReviewPage = ref(1)
+    const reviewPageSize = ref(10)
+    const hasMoreReviews = ref(true)
 
     // 商家配送信息
     const deliveryFee = ref(3.5)
@@ -431,6 +508,125 @@ export default {
       } catch (error) {
         console.error('获取商家信息失败:', error)
         merchantInfo.value = null
+      }
+    }
+    
+    // 获取评价列表
+    const fetchReviews = async (isLoadMore = false) => {
+      if (reviewsLoading.value) return
+      
+      reviewsLoading.value = true
+      try {
+        const response = await merchantAPINew.getMerchantReviews(
+          route.params.id, 
+          currentReviewPage.value, 
+          reviewPageSize.value
+        )
+        
+        console.log('评价数据响应:', response)
+        
+        if (response && Array.isArray(response)) {
+          // 如果是加载更多，则追加数据
+          if (isLoadMore) {
+            reviews.value = [...reviews.value, ...response]
+          } else {
+            reviews.value = response
+          }
+          
+          // 判断是否还有更多数据
+          hasMoreReviews.value = response.length === reviewPageSize.value
+        } else if (response && response.data && Array.isArray(response.data)) {
+          // 如果是加载更多，则追加数据
+          if (isLoadMore) {
+            reviews.value = [...reviews.value, ...response.data]
+          } else {
+            reviews.value = response.data
+          }
+          
+          // 判断是否还有更多数据
+          hasMoreReviews.value = response.data.length === reviewPageSize.value
+        } else {
+          console.error('获取评价数据格式不正确:', response)
+          if (!isLoadMore) {
+            reviews.value = []
+          }
+          hasMoreReviews.value = false
+        }
+      } catch (error) {
+        console.error('获取评价失败:', error)
+        if (!isLoadMore) {
+          reviews.value = []
+        }
+        hasMoreReviews.value = false
+      } finally {
+        reviewsLoading.value = false
+      }
+    }
+    
+    // 加载更多评价
+    const loadMoreReviews = async () => {
+      currentReviewPage.value++
+      await fetchReviews(true)
+    }
+    
+    // 格式化评价时间
+    const formatReviewTime = (timestamp) => {
+      if (!timestamp) return '未知时间'
+      
+      try {
+        const reviewDate = new Date(timestamp)
+        const now = new Date()
+        
+        // 计算时间差（毫秒）
+        const diff = now - reviewDate
+        
+        // 转换为秒
+        const diffSeconds = Math.floor(diff / 1000)
+        
+        // 小于1分钟
+        if (diffSeconds < 60) {
+          return '刚刚'
+        }
+        
+        // 小于1小时
+        if (diffSeconds < 3600) {
+          return `${Math.floor(diffSeconds / 60)}分钟前`
+        }
+        
+        // 小于24小时
+        if (diffSeconds < 86400) {
+          return `${Math.floor(diffSeconds / 3600)}小时前`
+        }
+        
+        // 小于30天
+        if (diffSeconds < 2592000) {
+          return `${Math.floor(diffSeconds / 86400)}天前`
+        }
+        
+        // 大于30天，显示具体日期
+        const year = reviewDate.getFullYear()
+        const month = String(reviewDate.getMonth() + 1).padStart(2, '0')
+        const day = String(reviewDate.getDate()).padStart(2, '0')
+        
+        return `${year}-${month}-${day}`
+      } catch (error) {
+        console.error('格式化评价时间失败:', error)
+        return '未知时间'
+      }
+    }
+    
+    // 图片加载错误处理
+    const handleReviewImageError = (event) => {
+      event.target.src = '/src/assets/placeholder.png'
+    }
+    
+    // 切换标签页
+    const switchTab = async (tab) => {
+      activeTab.value = tab
+      
+      // 如果切换到评价标签，并且还没有加载过评价数据，则加载评价数据
+      if (tab === 'reviews' && reviews.value.length === 0 && !reviewsLoading.value) {
+        await fetchReviews()
       }
     }
 
@@ -569,8 +765,30 @@ export default {
       dishSearchKeyword.value = ''
     }
 
-    const showDishDetail = (dish) => {
+    const showDishDetail = async (dish) => {
       selectedDish.value = dish
+      
+      // 检查菜品收藏状态
+      const userId = localStorage.getItem('userId')
+      if (userId) {
+        try {
+          // 检查收藏状态
+          const response = await favoriteAPI.checkFavoriteStatus(userId, dish.dishId)
+          if (response && response.data === true) {
+            favoriteDishes.value[dish.dishId] = true
+          } else {
+            favoriteDishes.value[dish.dishId] = false
+          }
+          
+          // 检查购物车状态
+          const quantity = getCartQuantity(dish.dishId)
+          if (quantity > 0) {
+            console.log(`打开详情: 菜品 ${dish.dishName} 在购物车中，数量: ${quantity}`)
+          }
+        } catch (error) {
+          console.error(`检查菜品 ${dish.dishId} 状态失败:`, error)
+        }
+      }
     }
 
     const closeDishDetail = () => {
@@ -772,15 +990,132 @@ export default {
     const handleImageError = (event) => {
       event.target.src = '/src/assets/placeholder.png'
     }
+    
+    // 获取用户收藏列表
+    const fetchUserFavorites = async () => {
+      try {
+        const userId = localStorage.getItem('userId')
+        if (!userId) {
+          console.log('用户未登录，无法获取收藏列表')
+          return
+        }
+        
+        const response = await favoriteAPI.getUserFavorites(userId)
+        console.log('获取用户收藏列表:', response)
+        
+        // 将收藏数据转换为便于查询的格式
+        const favorites = {}
+        
+        if (response && response.data && Array.isArray(response.data)) {
+          response.data.forEach(item => {
+            favorites[item.dishId] = true // 直接存储收藏状态为true
+          })
+        }
+        
+        favoriteDishes.value = favorites
+        console.log('处理后的收藏数据:', favoriteDishes.value)
+      } catch (error) {
+        console.error('获取收藏列表失败:', error)
+      }
+    }
+    
+    // 切换收藏状态
+    const toggleFavorite = async (event, dish) => {
+      event.stopPropagation() // 阻止事件冒泡，避免触发点击菜品的事件
+      
+      const userId = localStorage.getItem('userId')
+      if (!userId) {
+        console.log('用户未登录，无法收藏')
+        return
+      }
+      
+      const dishId = dish.dishId
+      
+      try {
+        // 先检查当前收藏状态
+        const checkResponse = await favoriteAPI.checkFavoriteStatus(userId, dishId)
+        const isFavorited = checkResponse && checkResponse.data === true
+        
+        if (isFavorited) {
+          // 已收藏，取消收藏
+          await favoriteAPI.removeFavorite(userId, dishId)
+          favoriteDishes.value[dishId] = false
+          console.log('取消收藏成功:', dishId)
+        } else {
+          // 未收藏，添加收藏
+          const response = await favoriteAPI.addToFavorites(userId, dishId)
+          if (response) {
+            favoriteDishes.value[dishId] = true
+            console.log('添加收藏成功:', response)
+          }
+        }
+      } catch (error) {
+        console.error('收藏操作失败:', error)
+      }
+    }
+    
+    // 检查菜品是否已收藏
+    const isFavorite = (dishId) => {
+      return favoriteDishes.value[dishId] === true
+    }
+    
+    // 获取单个菜品的收藏状态
+    const checkDishFavoriteStatus = async (dishId) => {
+      try {
+        const userId = localStorage.getItem('userId')
+        if (!userId) return false
+        
+        const response = await favoriteAPI.checkFavoriteStatus(userId, dishId)
+        return response && response.data === true
+      } catch (error) {
+        console.error('检查菜品收藏状态失败:', error)
+        return false
+      }
+    }
 
     // 生命周期
     onMounted(async () => {
-  // onMounted 阶段调试输出
-  console.log('onMounted 阶段 localStorage userId:', localStorage.getItem('userId'))
+      // onMounted 阶段调试输出
+      console.log('onMounted 阶段 localStorage userId:', localStorage.getItem('userId'))
+      
+      // 先获取购物车数据
+      const userId = localStorage.getItem('userId')
+      if (userId) {
+        await cart.fetchCartData(userId)
+      }
+      
+      // 获取商家和菜品信息
       await fetchMerchantInfo()
       await fetchDishes()
-      // 获取购物车数据
-      await cart.fetchCartData()
+      
+      // 检查收藏状态
+      await fetchUserFavorites()
+      
+      // 使用新API检查每个菜品的收藏状态
+      if (userId) {
+        // 遍历所有分类和菜品
+        for (const category of categories.value) {
+          for (const dish of category.dishes) {
+            try {
+              // 检查收藏状态
+              const response = await favoriteAPI.checkFavoriteStatus(userId, dish.dishId)
+              // 更新收藏状态
+              if (response && response.data === true) {
+                favoriteDishes.value[dish.dishId] = true
+              }
+              
+              // 检查购物车状态
+              const quantity = getCartQuantity(dish.dishId)
+              // 如果菜品在购物车中，触发更新
+              if (quantity > 0) {
+                console.log(`菜品 ${dish.dishName} 在购物车中，数量: ${quantity}`)
+              }
+            } catch (error) {
+              console.error(`检查菜品 ${dish.dishId} 状态失败:`, error)
+            }
+          }
+        }
+      }
     })
 
     return {
@@ -789,6 +1124,7 @@ export default {
       allDishes,
       loading,
       activeCategory,
+      activeTab, // 添加activeTab到返回值中
       dishSearchKeyword,
       selectedDish,
       cartItems,
@@ -799,8 +1135,22 @@ export default {
       filteredCategories,
       totalCartItems,
       totalCartPrice,
+      // 评价相关数据和方法
+      reviews,
+      reviewsLoading,
+      hasMoreReviews,
+      fetchReviews,
+      loadMoreReviews,
+      formatReviewTime,
+      handleReviewImageError,
+      switchTab,
+      // 原有的方法
       fetchMerchantInfo,
       fetchDishes,
+      favoriteDishes,
+      toggleFavorite,
+      isFavorite,
+      checkDishFavoriteStatus,
       scrollToCategory,
       filterDishes,
       clearDishSearch,
@@ -823,9 +1173,158 @@ export default {
 </script>
 
 <style scoped>
-.merchant-detail {
-  min-height: 100vh;
+.tab-navigation {
+  display: flex;
+  background: white;
+  border-bottom: 1px solid #e1e5e9;
+  margin-bottom: 1px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 16px 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.tab-item.active {
+  color: #007BFF;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30%;
+  height: 3px;
+  background-color: #007BFF;
+  border-radius: 3px;
+}
+
+/* 评价区域样式 */
+.reviews-wrapper {
+  flex: 1;
+  overflow-y: auto;
   background: #f8f9fa;
+  position: relative;
+}
+
+.reviews-content {
+  padding: 16px;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.review-item {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: #f0f0f0;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.review-date {
+  font-size: 12px;
+  color: #999;
+  margin-top: 2px;
+}
+
+.review-rating {
+  display: flex;
+}
+
+.star {
+  color: #e0e0e0;
+  font-size: 16px;
+  margin-left: 2px;
+}
+
+.star.filled {
+  color: #FF9500;
+}
+
+.review-content {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  word-break: break-word;
+}
+
+.load-more-reviews {
+  text-align: center;
+  margin-top: 24px;
+  margin-bottom: 16px;
+}
+
+.load-more-btn {
+  background: white;
+  border: 1px solid #e1e5e9;
+  padding: 8px 24px;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.load-more-btn:hover {
+  background: #f5f5f5;
+}
+
+.empty-reviews {
+  text-align: center;
+  padding: 40px 0;
+  color: #999;
+}
+
+.empty-reviews .empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #e0e0e0;
 }
 
 /* 商家头部样式 */
@@ -967,54 +1466,46 @@ export default {
 /* 分类侧边栏样式 */
 .categories-sidebar {
   width: 120px;
-  background: white;
+  background: #f5f7fa;
   border-right: 1px solid #e9ecef;
   position: sticky;
-  top: 0;
-  height: fit-content;
-  max-height: calc(100vh - 200px);
+  top: 50px; /* 让分类栏位于tab-navigation下方 */
+  height: calc(100vh - 20px); /* 固定高度 */
   overflow-y: auto;
+  padding-bottom: 80px;
+  border-radius: 0 0 8px 0;
+  z-index: 10;
 }
 
 .categories-list {
-  padding: 16px 0;
+  padding: 20px 8px;
 }
 
 .category-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12px 8px;
+  padding: 12px 16px;
   cursor: pointer;
   transition: all 0.3s ease;
   border-left: 3px solid transparent;
+  background: white;
+  color: #333;
+  border-radius: 6px;
+  margin: 4px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .category-item:hover {
   background: #f8f9fa;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
 .category-item.active {
-  background: #e3f2fd;
-  border-left-color: #007BFF;
-  color: #007BFF;
-}
-
-.category-icon {
-  width: 32px;
-  height: 32px;
-  margin-bottom: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-}
-
-.category-icon img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 4px;
+  background: #007BFF;
+  border-left-color: #0056b3;
+  color: white;
+  box-shadow: 0 3px 6px rgba(0, 123, 255, 0.3);
 }
 
 .category-text {
@@ -1022,19 +1513,15 @@ export default {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
+  padding: 4px 0;
 }
 
 .category-name {
-  font-size: 12px;
+  font-size: 14px;
   text-align: center;
   line-height: 1.2;
   margin-bottom: 0;
-}
-
-.dish-count {
-  font-size: 10px;
-  color: #666;
-  margin-left: 2px;
+  font-weight: 500;
 }
 
 /* 菜品内容区域样式 */
@@ -1047,7 +1534,7 @@ export default {
 .dishes-search {
   margin-bottom: 24px;
   position: sticky;
-  top: 0;
+  top: 50px; /* 让搜索栏位于tab-navigation下方 */
   background: white;
   z-index: 10;
   padding-bottom: 16px;
@@ -1073,6 +1560,8 @@ export default {
   border: 2px solid #e1e5e9;
   border-radius: 20px;
   font-size: 14px;
+  background-color: #fff;
+  color: #333;
   transition: all 0.3s ease;
 }
 
@@ -1154,8 +1643,8 @@ export default {
 
 .dish-image-container {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: 90px;
+  height: 90px; /* 增加50px高度 */
   flex-shrink: 0;
 }
 
@@ -1174,6 +1663,35 @@ export default {
   padding: 2px 6px;
   border-radius: 8px;
   font-size: 10px;
+}
+
+.favorite-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.favorite-btn:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.favorite-btn.is-favorite {
+  background: rgba(255, 241, 241, 0.9);
+}
+
+.favorite-icon {
+  font-size: 18px;
 }
 
 .dish-info {
@@ -1749,12 +2267,22 @@ export default {
     height: auto;
     max-height: none;
     position: static;
+    background: white;
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 0;
+    padding-bottom: 0;
   }
   
   .categories-list {
     display: flex;
     overflow-x: auto;
-    padding: 8px 16px;
+    padding: 12px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+  }
+  
+  .categories-list::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
   }
   
   .category-item {
@@ -1763,11 +2291,17 @@ export default {
     padding: 8px 12px;
     border-left: none;
     border-bottom: 3px solid transparent;
+    margin: 0 4px;
+    border-radius: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   }
   
   .category-item.active {
     border-left: none;
-    border-bottom-color: #007BFF;
+    border-bottom: none;
+    background: #007BFF;
+    color: white;
+    box-shadow: 0 3px 6px rgba(0, 123, 255, 0.3);
   }
   
   .category-icon {
@@ -1792,7 +2326,7 @@ export default {
   
   .dish-image-container {
     width: 100%;
-    height: 150px;
+    height: 200px; /* 增加50px高度 */
   }
   
   .cart-float {

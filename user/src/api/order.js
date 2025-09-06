@@ -57,8 +57,13 @@ export const orderAPI = {
   },
 
   // 根据OrderId获取订单详情
+  getOrderDetail: (orderId) => {
+    return api.get(`/api/orders/${orderId}`)
+  },
+  
+  // 替代 getOrderDetail 的方法（为了兼容性保留两者）
   getOrderById: (orderId) => {
-  return api.get(`/api/orders/${orderId}`)
+    return api.get(`/api/orders/${orderId}`)
   },
 
   // 用户创建订单
@@ -74,13 +79,33 @@ export const orderAPI = {
 
   // 发起支付请求，创建待支付实体
   createPayment: (orderId, paymentData) => {
-  // 支付接口只需要 query 参数 channel，无需 body
-  return api.post(`/api/orders/${orderId}/createPayment?channel=${paymentData}`)
+    // 支付接口只需要 query 参数 channel，无需 body
+    return api.post(`/api/orders/${orderId}/createPayment?channel=${paymentData}`)
+  },
+
+  // 获取支付详情
+  getPaymentStatus: (payId) => {
+    return api.get(`/api/payments/${payId}`)
+  },
+  
+  // 确认支付
+  confirmPayment: (payId) => {
+    return api.patch(`/api/payments/${payId}/pay`)
+  },
+
+  // 取消订单
+  cancelOrder: (orderId, reason) => {
+    return api.patch(`/api/orders/${orderId}/cancel`, { reason })
+  },
+
+  // 确认收货
+  confirmOrder: (orderId) => {
+    return api.patch(`/api/orders/${orderId}/confirm`)
   },
 
   // 用户创建退单申请
   createRefund: (userId, orderId, refundData) => {
-  return api.post(`/api/users/${userId}/api/orders/${orderId}/refunds`, refundData)
+    return api.post(`/api/users/${userId}/orders/${orderId}/refunds`, refundData)
   }
 }
 

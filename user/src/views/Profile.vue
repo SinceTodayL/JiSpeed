@@ -3,35 +3,18 @@
     <!-- 用户信息头部 -->
     <div class="profile-header">
       <div class="user-info">
-        <div class="avatar-section">
+        <div class="avatar-section" @click="editProfile">
           <img 
             :src="userInfo.avatarUrl || '/default-avatar.jpg'" 
             :alt="userInfo.nickname" 
             class="user-avatar"
           />
-          <div class="level-badge">Lv.{{ userInfo.level || 1 }}</div>
+          <div class="level-badge">Lv.{{ userInfo.level || 0 }}</div>
         </div>
         <div class="user-details">
           <h2 class="user-name">{{ userInfo.nickname || '用户' }}</h2>
           <p class="user-id">ID: {{ userInfo.userId || 'USER001' }}</p>
-          <div class="user-stats">
-            <div class="stat-item">
-              <span class="stat-number">{{ userInfo.stats?.totalOrders || 0 }}</span>
-              <span class="stat-label">订单</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-number">{{ userInfo.stats?.favoriteCount || 0 }}</span>
-              <span class="stat-label">收藏</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-number">{{ userInfo.stats?.availableCouponCount || 0 }}</span>
-              <span class="stat-label">优惠券</span>
-            </div>
-          </div>
         </div>
-        <button @click="editProfile" class="edit-btn">
-          <i class="edit-icon">✏️</i>
-        </button>
       </div>
     </div>
 
@@ -50,23 +33,21 @@
             <div class="menu-arrow">></div>
           </div>
           
-          <div @click="goToOrders('pending')" class="menu-item">
+          <div @click="goToOrders(0)" class="menu-item">
             <div class="menu-icon">⏳</div>
             <div class="menu-content">
               <span class="menu-title">待付款</span>
               <span class="menu-subtitle">等待支付的订单</span>
             </div>
-            <div v-if="pendingOrderCount > 0" class="menu-badge">{{ pendingOrderCount }}</div>
             <div class="menu-arrow">></div>
           </div>
           
-          <div @click="goToOrders('shipped')" class="menu-item">
+          <div @click="goToOrders('delivery')" class="menu-item">
             <div class="menu-icon">🚚</div>
             <div class="menu-content">
               <span class="menu-title">配送中</span>
               <span class="menu-subtitle">正在配送的订单</span>
             </div>
-            <div v-if="shippingOrderCount > 0" class="menu-badge">{{ shippingOrderCount }}</div>
             <div class="menu-arrow">></div>
           </div>
         </div>
@@ -124,8 +105,8 @@
           <div @click="goToComplaints" class="menu-item">
             <div class="menu-icon">📞</div>
             <div class="menu-content">
-              <span class="menu-title">投诉建议</span>
-              <span class="menu-subtitle">投诉和建议记录</span>
+              <span class="menu-title">我的投诉</span>
+              <span class="menu-subtitle">查看投诉记录</span>
             </div>
             <div class="menu-arrow">></div>
           </div>
@@ -172,8 +153,10 @@
         <h3>确认退出</h3>
         <p>确定要退出登录吗？</p>
         <div class="modal-actions">
-          <button @click="hideLogoutConfirm" class="cancel-btn">取消</button>
-          <button @click="handleLogout" class="confirm-btn">确认退出</button>
+          <button @click="hideLogoutConfirm" class="cancel-btn" :disabled="isLoggingOut">取消</button>
+          <button @click="handleLogout" class="confirm-btn" :disabled="isLoggingOut">
+            {{ isLoggingOut ? '退出中...' : '确认退出' }}
+          </button>
         </div>
       </div>
     </div>
@@ -183,7 +166,7 @@
 <script>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { userAPI } from '@/api/user.js'
+import { userAPI, authAPI } from '@/api/user.js'
 import { getCurrentUser, clearUserAuth } from '@/utils/urlParams.js'
 
 export default {
@@ -195,6 +178,7 @@ export default {
     const userInfo = ref({})
     const loading = ref(false)
     const showLogoutDialog = ref(false)
+    const isLoggingOut = ref(false)
     
     // 计算属性
     const pendingOrderCount = computed(() => {
@@ -211,11 +195,8 @@ export default {
     const fetchUserInfo = async () => {
       loading.value = true
       try {
-        // 优先从统一登录获取的用户信息开始
-        const localUserInfo = getCurrentUser()
         const userId = localStorage.getItem('userId')
         
-        console.log('Profile - 本地用户信息:', localUserInfo)
         console.log('Profile - 用户ID:', userId)
         
         if (!userId) {
@@ -224,43 +205,32 @@ export default {
           return
         }
         
-        // 尝试从API获取完整的用户信息
+        // 从API获取完整的用户信息
         try {
           const response = await userAPI.getUserById(userId)
           
           if (response.code === 200 || response.code === 0) {
-            // 合并API数据、本地数据和统计数据
-            userInfo.value = {
-              ...response.data,
-              ...localUserInfo, // 覆盖本地登录信息
-              userId: userId,
-              stats: {
-                totalOrders: response.data?.totalOrders || 0,
-                favoriteCount: response.data?.favoriteCount || 0,
-                cartItemCount: response.data?.cartItemCount || 0,
-                availableCouponCount: response.data?.availableCouponCount || 0,
-                addressCount: response.data?.addressCount || 0
-              }
-            }
+            // 直接使用API返回的数据
+            userInfo.value = response.data
             console.log('Profile - API用户信息获取成功:', userInfo.value)
           } else {
             throw new Error(response.message || 'API响应失败')
           }
         } catch (apiError) {
-          console.warn('API获取用户信息失败，使用本地信息和模拟数据:', apiError)
-          // 使用本地信息和模拟数据
+          console.warn('API获取用户信息失败:', apiError)
+          // 使用基本信息作为降级方案
+          const username = localStorage.getItem('userName') || `用户${userId.slice(-4)}`
           userInfo.value = {
-            ...localUserInfo,
             userId: userId,
-            nickname: localUserInfo?.userName || `用户${userId.slice(-4)}`,
+            nickname: username,
             avatarUrl: '/default-avatar.jpg',
-            level: 1,
+            level: 0,
             stats: {
-              totalOrders: 15,
-              favoriteCount: 8,
-              cartItemCount: 3,
-              availableCouponCount: 5,
-              addressCount: 2
+              totalOrders: 0,
+              favoriteCount: 0,
+              cartItemCount: 0,
+              availableCouponCount: 0,
+              addressCount: 0
             }
           }
           console.log('Profile - 使用降级用户信息:', userInfo.value)
@@ -273,7 +243,7 @@ export default {
           userId: userId,
           nickname: `用户${userId.slice(-4)}`,
           avatarUrl: '/default-avatar.jpg',
-          level: 1,
+          level: 0,
           stats: {
             totalOrders: 0,
             favoriteCount: 0,
@@ -293,7 +263,7 @@ export default {
     }
     
     const goToOrders = (status = '') => {
-      const query = status ? { status } : {}
+      const query = status !== '' ? { status } : {}
       router.push({ path: '/orders', query })
     }
     
@@ -314,7 +284,7 @@ export default {
     }
     
     const goToComplaints = () => {
-      router.push('/complaints')
+      router.push('/user-complaints') // 直接跳转到用户投诉记录页面
     }
     
     const goToSettings = () => {
@@ -336,11 +306,17 @@ export default {
     }
     
     const handleLogout = async () => {
+      if (isLoggingOut.value) {
+        return // 防止重复点击
+      }
+
+      isLoggingOut.value = true
+
       try {
         // 调用登出API
         const userId = localStorage.getItem('userId')
         if (userId) {
-          await userAPI.logout(userId)
+          await authAPI.logout(userId)
         }
       } catch (error) {
         console.error('退出登录API调用失败:', error)
@@ -352,6 +328,7 @@ export default {
         // 跳转到统一登录页面
         window.location.href = 'http://localhost:9527/login'
         
+        isLoggingOut.value = false
         hideLogoutConfirm()
       }
     }
@@ -367,6 +344,7 @@ export default {
       showLogoutDialog,
       pendingOrderCount,
       shippingOrderCount,
+      isLoggingOut,
       editProfile,
       goToOrders,
       goToAddresses,
@@ -407,6 +385,7 @@ export default {
 .avatar-section {
   position: relative;
   margin-right: 16px;
+  cursor: pointer; /* 添加指针样式 */
 }
 
 .user-avatar {
@@ -442,43 +421,10 @@ export default {
 .user-id {
   font-size: 14px;
   opacity: 0.8;
-  margin: 0 0 12px 0;
+  margin: 0;
 }
 
-.user-stats {
-  display: flex;
-  gap: 20px;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.stat-number {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.stat-label {
-  font-size: 12px;
-  opacity: 0.8;
-}
-
-.edit-btn {
-  background: rgba(255,255,255,0.2);
-  border: none;
-  color: white;
-  padding: 8px 12px;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.edit-btn:hover {
-  background: rgba(255,255,255,0.3);
-}
+/* 功能菜单 */
 
 /* 功能菜单 */
 .menu-section {
@@ -620,12 +566,17 @@ export default {
   transition: all 0.3s ease;
 }
 
+.cancel-btn:disabled, .confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .cancel-btn {
   background: #f5f5f5;
   color: #666;
 }
 
-.cancel-btn:hover {
+.cancel-btn:hover:not(:disabled) {
   background: #e8e8e8;
 }
 
@@ -634,7 +585,7 @@ export default {
   color: white;
 }
 
-.confirm-btn:hover {
+.confirm-btn:hover:not(:disabled) {
   background: #ff7875;
 }
 </style>

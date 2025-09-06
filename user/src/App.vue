@@ -8,8 +8,12 @@ const route = useRoute()
 
 // 判断是否显示底部导航
 const showBottomNav = computed(() => {
-  const hiddenRoutes = ['/login', '/register']
-  return !hiddenRoutes.includes(route.path)
+  const hiddenRoutes = ['/login', '/register', '/payment']
+  const hiddenRouteNames = ['Payment', 'OrderDetail'] // 这些命名路由不显示底部导航
+  
+  return !hiddenRoutes.includes(route.path) && 
+         !route.path.startsWith('/payment/') && 
+         !hiddenRouteNames.includes(route.name)
 })
 
 // 定义全局主题覆盖

@@ -126,6 +126,11 @@
 
       <!-- 历史记录 -->
       <div v-if="activeTab === 'history'" class="history-section">
+        <div class="history-header">
+          <h3 class="section-title">投诉记录</h3>
+          <button @click="viewAllComplaints" class="view-all-btn">查看全部投诉</button>
+        </div>
+        
         <div v-if="complaints.length === 0" class="empty-state">
           <div class="empty-icon">📝</div>
           <div class="empty-text">暂无投诉记录</div>
@@ -410,6 +415,11 @@ export default {
       return new Date(dateString).toLocaleString()
     }
     
+    // 查看全部投诉记录
+    const viewAllComplaints = () => {
+      router.push('/user-complaints')
+    }
+    
     const goBack = () => {
       router.back()
     }
@@ -432,7 +442,8 @@ export default {
       getTypeLabel,
       getStatusLabel,
       formatDate,
-      goBack
+      goBack,
+      viewAllComplaints
     }
   }
 }
@@ -718,6 +729,36 @@ export default {
   border: 1px solid #e9ecef;
   border-radius: 0 0 12px 12px;
   min-height: 400px;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 16px 20px 0;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0;
+  color: #333;
+}
+
+.view-all-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.view-all-btn:hover {
+  background: #0069d9;
 }
 
 .empty-state {

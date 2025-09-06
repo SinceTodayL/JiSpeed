@@ -69,6 +69,16 @@ export const merchantAPI = {
   getMerchantById: (merchantId) => {
     return api.get(`/api/merchants/${merchantId}`)
   },
+  
+  // 获取商家评价
+  getMerchantReviews: (merchantId, page = 1, size = 10) => {
+    return api.get(`/api/merchants/${merchantId}/reviews`, {
+      params: {
+        page,
+        size
+      }
+    })
+  },
 
   // 根据ID修改商家信息
   updateMerchant: (merchantId, merchantData) => {

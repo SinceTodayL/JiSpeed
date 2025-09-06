@@ -14,6 +14,9 @@ import Addresses from '@/views/Addresses.vue'
 import Favorites from '@/views/Favorites.vue'
 import Settings from '@/views/Settings.vue'
 import Complaints from '@/views/Complaints.vue'
+import UserReviews from '@/views/UserReviews.vue'
+import UserComplaints from '@/views/UserComplaints.vue'
+import UserInfoEdit from '@/views/UserInfoEdit.vue'
 
 const routes = [
   {
@@ -135,6 +138,33 @@ const routes = [
     component: Complaints,
     meta: {
       title: '投诉与建议 - 急速外卖',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/reviews',
+    name: 'UserReviews',
+    component: UserReviews,
+    meta: {
+      title: '我的评价 - 急速外卖',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/user-complaints',
+    name: 'UserComplaints',
+    component: UserComplaints,
+    meta: {
+      title: '我的投诉 - 急速外卖',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/profile/edit',
+    name: 'UserInfoEdit',
+    component: UserInfoEdit,
+    meta: {
+      title: '编辑个人信息 - 急速外卖',
       requiresAuth: true
     }
   }
