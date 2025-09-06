@@ -466,6 +466,30 @@ namespace JISpeed.Api.Controllers
             }
         }
 
+        /// 根据用户id与菜品id判断有无收藏
+        /// <param name="userId">用户ID</param>
+        /// <param name="dishId">菜品ID</param>
+        /// <returns>是否收藏</returns>
+        [HttpGet("{userId}/favorites/{dishId}")]
+        public async Task<ApiResponse<bool>> IsFavorite(string userId, string dishId)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                var isFavorite = await _userService.IsFavoriteAsync(userId, dishId);
+                return ApiResponse<bool>.Success(isFavorite, "查询收藏状态成功");
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "查询收藏状态时发生异常，UserId: {UserId}, DishId: {DishId}", userId, dishId);
+                throw new BusinessException("查询收藏状态失败");
+            }
+        }
 
         /// 删除收藏
 
