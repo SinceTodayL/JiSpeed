@@ -778,21 +778,21 @@ namespace JISpeed.Api.Controllers
                     return new UserStatsDto();
                 }
 
-                // 使用服务层方法获取统计数据
-                var favoriteCount = await _userService.GetFavoriteCountAsync(userId);
-                var cartItemCount = await _userService.GetCartItemCountAsync(userId);
-                var addressCount = await _userService.GetAddressCountAsync(userId);
+                // // 使用服务层方法获取统计数据
+                // var favoriteCount = await _userService.GetFavoriteCountAsync(userId);
+                // var cartItemCount = await _userService.GetCartItemCountAsync(userId);
+                // var addressCount = await _userService.GetAddressCountAsync(userId);
 
-                // 获取评论和投诉数量
-                var reviews = await _reviewRepository.GetByUserIdAsync(userId);
-                var complaints = await _complaintRepository.GetByUserIdAsync(userId);
+                // // 获取评论和投诉数量
+                // var reviews = await _reviewRepository.GetByUserIdAsync(userId);
+                // var complaints = await _complaintRepository.GetByUserIdAsync(userId);
 
                 return UserMapper.ToUserStatsDto(
                     totalOrders: userWithDetails.Orders?.Count ?? 0,
-                    favoriteCount: favoriteCount,
-                    cartItemCount: cartItemCount,
+                    favoriteCount: userWithDetails.Favorites?.Count ?? 0, // 直接从导航属性获取
+                    cartItemCount: userWithDetails.CartItems?.Count ?? 0, // 直接从导航属性获取
                     availableCouponCount: userWithDetails.Coupons?.Count ?? 0,
-                    addressCount: addressCount
+                    addressCount: userWithDetails.Addresses?.Count ?? 0 // 直接从导航属性获取
                 );
             }
             catch (Exception ex)
