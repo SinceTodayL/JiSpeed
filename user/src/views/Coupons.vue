@@ -215,16 +215,39 @@ export default {
     }
 
     const loadCoupons = async () => {
+      // ...existing code...
+      // 加载后输出所有优惠券详情到控制台，方便调试
+      setTimeout(() => {
+        console.log('[调试] 优惠券详情:', coupons.value)
+      }, 0)
       loading.value = true
       try {
-        const response = await couponAPI.getUserCoupons('USER123')
-        if (response && response.code === 200) {
-          coupons.value = response.data.coupons
+        // 自动获取当前用户ID（优先 localStorage，可扩展 pinia/vuex/cookie）
+        let userId = localStorage.getItem('userId')
+        if (!userId || userId.length < 10) {
+          alert('请先登录后再查看优惠券！')
+          coupons.value = []
+          stats.value = { available: 0, used: 0, expired: 0 }
+          loading.value = false
+          return
+        }
+        const response = await couponAPI.getUserCoupons(userId)
+        console.log('[调试] couponId列表:', response.data)
+        if (response && response.code === 0 && Array.isArray(response.data)) {
+          // 批量获取优惠券详情
+          const detailPromises = response.data.map(couponId => couponAPI.getCouponById(couponId))
+          const detailResults = await Promise.all(detailPromises)
+          console.log('[调试] 优惠券详情结果:', detailResults)
+          coupons.value = detailResults
+          // 简单统计（可用/已用/过期）
           stats.value = {
-            available: response.data.available,
-            used: response.data.used,
-            expired: response.data.expired
+            available: detailResults.filter(c => c.data && new Date(c.data.endTime) > new Date()).length,
+            used: 0, // 后端无已用标记，暂设为0
+            expired: detailResults.filter(c => c.data && new Date(c.data.endTime) <= new Date()).length
           }
+        } else {
+          coupons.value = []
+          stats.value = { available: 0, used: 0, expired: 0 }
         }
       } catch (error) {
         console.error('加载优惠券失败:', error)
@@ -234,14 +257,7 @@ export default {
     }
 
     const loadCouponTemplates = async () => {
-      try {
-        const response = await couponAPI.getAvailableCouponTemplates()
-        if (response && response.code === 200) {
-          couponTemplates.value = response.data.templates
-        }
-      } catch (error) {
-        console.error('加载优惠券模板失败:', error)
-      }
+  // 此接口后端未实现，直接移除
     }
 
     const getCouponTypeText = (type) => {
