@@ -238,12 +238,26 @@ export default {
           const detailPromises = response.data.map(couponId => couponAPI.getCouponById(couponId))
           const detailResults = await Promise.all(detailPromises)
           console.log('[调试] 优惠券详情结果:', detailResults)
-          coupons.value = detailResults
+          // 字段映射，保证前端模板字段一致
+          coupons.value = detailResults.map(res => {
+            const d = res.data || {}
+            return {
+              couponId: d.couponId,
+              userId: d.userId,
+              discountValue: d.faceValue,
+              minOrderAmount: d.threshold,
+              expireTime: d.endTime,
+              startTime: d.startTime,
+              couponName: d.couponName || '优惠券',
+              description: d.description || `满${d.threshold}减${d.faceValue}`,
+              status: (new Date(d.endTime) < new Date()) ? 2 : 0 // 0可用，2过期
+            }
+          })
           // 简单统计（可用/已用/过期）
           stats.value = {
-            available: detailResults.filter(c => c.data && new Date(c.data.endTime) > new Date()).length,
+            available: coupons.value.filter(c => c.status === 0).length,
             used: 0, // 后端无已用标记，暂设为0
-            expired: detailResults.filter(c => c.data && new Date(c.data.endTime) <= new Date()).length
+            expired: coupons.value.filter(c => c.status === 2).length
           }
         } else {
           coupons.value = []

@@ -44,6 +44,7 @@
 
     <!-- 商家列表 -->
     <div class="merchants-container">
+  <!-- 商家列表 -->
       <div v-if="loading" class="loading-container">
         <div class="loading-spinner"></div>
         <p>正在加载商家信息...</p>
@@ -223,24 +224,40 @@ export default {
         }
         console.log('商家列表请求参数:', params);
         const response = await merchantAPI.getAllMerchants(params)
-        console.log('商家接口返回:', response);
-          if (response && response.data) {
-            // 自动修复：直接赋值为后端返回的商家数组（根据调试输出，response.data 已为商家数组）
-            merchants.value = response.data || [];
-          total.value = response.data.total || 0
-          totalPages.value = Math.ceil(total.value / pageSize.value)
-        } else {
-          merchants.value = []
-          total.value = 0
-          totalPages.value = 1
+        console.log('商家接口原始返回:', response);
+        // 兼容直接返回数组或对象的情况
+        let rawList = [];
+        if (Array.isArray(response)) {
+          rawList = response;
+        } else if (response && Array.isArray(response.data)) {
+          rawList = response.data;
+        } else if (response && Array.isArray(response.data?.list)) {
+          rawList = response.data.list;
         }
+        const mappedList = rawList.map(item => ({
+          merchantId: item.merchantId,
+          merchantName: item.merchantName || item.name || '',
+          description: item.description || '',
+          coverImage: item.coverImage || item.imageUrl || '',
+          rating: item.rating || 4.5,
+          reviewCount: item.reviewCount || 999,
+          distance: item.distance || '',
+          deliveryFee: item.deliveryFee || 3,
+          deliveryTime: item.deliveryTime || '30-45',
+          minOrderAmount: item.minOrderAmount || '',
+          status: item.status,
+          tags: item.tags || [],
+          contactInfo: item.contactInfo || item.phone || '',
+          location: item.location || item.address || '',
+          featuredDishes: item.featuredDishes || []
+        }));
+        merchants.value = mappedList;
+        console.log('赋值后 merchants.value:', merchants.value);
       } catch (error) {
         console.error('获取商家列表失败:', error)
-        merchants.value = []
-        total.value = 0
-        totalPages.value = 1
+        merchants.value = [];
       } finally {
-        loading.value = false
+        loading.value = false;
       }
     }
 
