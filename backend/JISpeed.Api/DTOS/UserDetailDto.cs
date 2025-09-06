@@ -49,6 +49,7 @@ namespace JISpeed.Api.DTOs
     public class UserFavoriteDto
     {
         public string DishId { get; set; } = string.Empty;
+        public string MerchantId { get; set; } = string.Empty;
         public string FavorAt { get; set; } = string.Empty;
     }
 

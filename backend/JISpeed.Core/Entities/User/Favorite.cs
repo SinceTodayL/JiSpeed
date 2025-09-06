@@ -22,6 +22,10 @@ namespace JISpeed.Core.Entities.User
         [Column(TypeName = "CHAR(32)")]
         public required string DishId { get; set; } //菜品ID pk, fk->Dish(dishId)
 
+        [StringLength(450)]
+        [Column(TypeName = "VARCHAR(450)")]
+        public required string MerchantId { get; set; } //商家ID
+
         public required DateTime FavorAt { get; set; } //收藏时间
 
         //导航属性
