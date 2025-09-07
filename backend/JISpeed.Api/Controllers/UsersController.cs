@@ -466,6 +466,30 @@ namespace JISpeed.Api.Controllers
             }
         }
 
+        /// 根据用户id与菜品id判断有无收藏
+        /// <param name="userId">用户ID</param>
+        /// <param name="dishId">菜品ID</param>
+        /// <returns>是否收藏</returns>
+        [HttpGet("{userId}/favorites/{dishId}")]
+        public async Task<ApiResponse<bool>> IsFavorite(string userId, string dishId)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    throw UserExceptions.UserNotFound(userId);
+                }
+
+                var isFavorite = await _userService.IsFavoriteAsync(userId, dishId);
+                return ApiResponse<bool>.Success(isFavorite, "查询收藏状态成功");
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "查询收藏状态时发生异常，UserId: {UserId}, DishId: {DishId}", userId, dishId);
+                throw new BusinessException("查询收藏状态失败");
+            }
+        }
 
         /// 删除收藏
 
@@ -754,21 +778,21 @@ namespace JISpeed.Api.Controllers
                     return new UserStatsDto();
                 }
 
-                // 使用服务层方法获取统计数据
-                var favoriteCount = await _userService.GetFavoriteCountAsync(userId);
-                var cartItemCount = await _userService.GetCartItemCountAsync(userId);
-                var addressCount = await _userService.GetAddressCountAsync(userId);
+                // // 使用服务层方法获取统计数据
+                // var favoriteCount = await _userService.GetFavoriteCountAsync(userId);
+                // var cartItemCount = await _userService.GetCartItemCountAsync(userId);
+                // var addressCount = await _userService.GetAddressCountAsync(userId);
 
-                // 获取评论和投诉数量
-                var reviews = await _reviewRepository.GetByUserIdAsync(userId);
-                var complaints = await _complaintRepository.GetByUserIdAsync(userId);
+                // // 获取评论和投诉数量
+                // var reviews = await _reviewRepository.GetByUserIdAsync(userId);
+                // var complaints = await _complaintRepository.GetByUserIdAsync(userId);
 
                 return UserMapper.ToUserStatsDto(
                     totalOrders: userWithDetails.Orders?.Count ?? 0,
-                    favoriteCount: favoriteCount,
-                    cartItemCount: cartItemCount,
+                    favoriteCount: userWithDetails.Favorites?.Count ?? 0, // 直接从导航属性获取
+                    cartItemCount: userWithDetails.CartItems?.Count ?? 0, // 直接从导航属性获取
                     availableCouponCount: userWithDetails.Coupons?.Count ?? 0,
-                    addressCount: addressCount
+                    addressCount: userWithDetails.Addresses?.Count ?? 0 // 直接从导航属性获取
                 );
             }
             catch (Exception ex)

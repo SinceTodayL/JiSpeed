@@ -66,7 +66,7 @@ namespace JISpeed.Application.Services.Merchant
         public async Task<bool> UpdateMerchantDetailAsync(
             string merchantId, string? merchantName,
             int? status, string? contactInfo,
-            string? location,string? description)
+            string? location, string? description)
         {
             try
             {
@@ -78,11 +78,11 @@ namespace JISpeed.Application.Services.Merchant
                 }
                 _logger.LogInformation("开始更新商家详细信息, MerchantId: {MerchantId}", merchantId);
 
-                merchant.MerchantName = merchantName?? merchant.MerchantName;
-                merchant.ContactInfo = contactInfo?? merchant.ContactInfo;
-                merchant.Location = location?? merchant.Location;
-                merchant.Status = status?? merchant.Status;
-                merchant.Description = description?? merchant.Description;
+                merchant.MerchantName = merchantName ?? merchant.MerchantName;
+                merchant.ContactInfo = contactInfo ?? merchant.ContactInfo;
+                merchant.Location = location ?? merchant.Location;
+                merchant.Status = status ?? merchant.Status;
+                merchant.Description = description ?? merchant.Description;
                 await _merchantRepository.SaveChangesAsync();
                 _logger.LogInformation("成功修改商家详细信息, MerchantId: {MerchantId}, MerchantName: {MerchantName}",
                     merchantId, merchant.MerchantName);
@@ -108,26 +108,26 @@ namespace JISpeed.Application.Services.Merchant
                 List<MerchantEntity>? data;
                 if (merchantName != null)
                 {
-                    data = await _merchantRepository.SearchByNameAsync(merchantName,size,page);
+                    data = await _merchantRepository.SearchByNameAsync(merchantName, size, page);
                 }
                 else if (location != null)
                 {
-                    data = await _merchantRepository.SearchByLocationAsync(location,size,page);
+                    data = await _merchantRepository.SearchByLocationAsync(location, size, page);
                 }
                 else if (status.HasValue)
                 {
-                    data = await _merchantRepository.GetByStatusAsync(status.Value,size,page);
+                    data = await _merchantRepository.GetByStatusAsync(status.Value, size, page);
                 }
                 else
                 {
-                    data = await _merchantRepository.GetAllMerchantsAsync(size,page);
+                    data = await _merchantRepository.GetAllMerchantsAsync(size, page);
                 }
                 if (data == null)
                 {
                     _logger.LogWarning("商家不存在");
                     throw new NotFoundException(ErrorCodes.ResourceNotFound, "商家不存在");
                 }
-                
+
                 return data;
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
@@ -141,9 +141,9 @@ namespace JISpeed.Application.Services.Merchant
             try
             {
                 _logger.LogInformation("开始获取商家数据统计信息, MerchantId: {MerchantId}", merchantId);
-                
 
-                var data = await _salesStatRepository.GetByIdAsync(statTime.Date,merchantId);
+
+                var data = await _salesStatRepository.GetByIdAsync(statTime.Date, merchantId);
 
                 if (data == null)
                 {
@@ -162,34 +162,34 @@ namespace JISpeed.Application.Services.Merchant
             }
         }
 
-        
+
 
         public async Task<List<SalesStat>> GetByFiltersAsync(
-            string merchantId, 
+            string merchantId,
             int? statType, int? size, int? page,
-            DateTime? startTime, DateTime? endTime, 
+            DateTime? startTime, DateTime? endTime,
             decimal? minAmount, decimal? maxAmount)
         {
             try
             {
                 _logger.LogInformation("开始获取商家数据统计信息, MerchantId: {MerchantId}", merchantId);
                 List<SalesStat>? data;
-                if(startTime.HasValue||endTime.HasValue)
+                if (startTime.HasValue || endTime.HasValue)
                 {
                     var start = startTime.HasValue ? startTime.Value : DateTime.MinValue;
                     var end = endTime.HasValue ? endTime.Value : DateTime.Now;
                     data = await _salesStatRepository.GetByMerchantIdAndTimeRangeAsync(merchantId, start, end, size, page);
-                } 
+                }
                 else if (minAmount.HasValue || maxAmount.HasValue)
                 {
-                    var min = minAmount??0;
-                    var max = maxAmount??Decimal.MaxValue;
+                    var min = minAmount ?? 0;
+                    var max = maxAmount ?? Decimal.MaxValue;
                     data = await _salesStatRepository.GetBySalesRangeAsync(min, max, size, page);
                 }
                 else if (statType.HasValue)
-                    data = await _salesStatRepository.GetByMerchantIdAndStatTypeAsync(merchantId, statType.Value,size,page);
+                    data = await _salesStatRepository.GetByMerchantIdAndStatTypeAsync(merchantId, statType.Value, size, page);
                 else
-                    data = await _salesStatRepository.GetByMerchantIdAsync(merchantId,size,page);
+                    data = await _salesStatRepository.GetByMerchantIdAsync(merchantId, size, page);
 
                 if (data == null || !data.Any())
                 {
@@ -207,7 +207,7 @@ namespace JISpeed.Application.Services.Merchant
                 throw new BusinessException("获取商家数据统计信息失败");
             }
         }
-
+        
     }
 
 }

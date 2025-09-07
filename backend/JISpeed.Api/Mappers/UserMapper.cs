@@ -72,6 +72,7 @@ namespace JISpeed.Api.Mappers
             return new UserFavoriteDto
             {
                 DishId = favorite.DishId,
+                MerchantId = favorite.MerchantId,
                 FavorAt = favorite.FavorAt.ToString("yyyy-MM-dd HH:mm:ss")
             };
         }

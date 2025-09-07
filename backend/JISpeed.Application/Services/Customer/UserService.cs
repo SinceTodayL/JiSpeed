@@ -246,15 +246,21 @@ namespace JISpeed.Application.Services.Customer
                     return false; // 已经收藏了
                 }
 
+                var merchantId = await _context.Dishes
+                    .Where(d => d.DishId == dishId)
+                    .Select(d => d.MerchantId)
+                    .FirstOrDefaultAsync();
+
                 // 使用原生 SQL 插入，因为 Favorite 实体构造函数受限
                 var sql = @"
-                    INSERT INTO FAVORITE (""UserId"", ""DishId"", ""FavorAt"") 
-                    VALUES (:userId, :dishId, :favorAt)";
+                    INSERT INTO FAVORITE (""UserId"", ""DishId"", ""MerchantId"", ""FavorAt"") 
+                    VALUES (:userId, :dishId, :merchantId, :favorAt)";
 
                 var parameters = new[]
                 {
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":userId", userId),
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":dishId", dishId),
+                    new Oracle.ManagedDataAccess.Client.OracleParameter(":merchantId", merchantId),
                     new Oracle.ManagedDataAccess.Client.OracleParameter(":favorAt", DateTime.Now)
                 };
 
