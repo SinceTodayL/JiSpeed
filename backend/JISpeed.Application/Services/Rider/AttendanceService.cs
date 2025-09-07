@@ -84,7 +84,7 @@ namespace JISpeed.Application.Services.Rider
 
             var updatedAttendance = await _attendanceRepository.UpdateAsync(attendance);
             await _attendanceRepository.SaveChangesAsync();
-            return await _attendanceRepository.UpdateAsync(attendance);
+            return updatedAttendance;
         }
 
         public async Task<bool> DeleteAttendanceAsync(string attendanceId)
@@ -152,7 +152,7 @@ namespace JISpeed.Application.Services.Rider
 
             var updatedAttendance = await _attendanceRepository.UpdateAsync(attendance);
             await _attendanceRepository.SaveChangesAsync();
-            return await _attendanceRepository.UpdateAsync(attendance);
+            return updatedAttendance;
         }
 
         public async Task<Attendance> CheckOutAsync(string riderId, DateTime checkOutTime)

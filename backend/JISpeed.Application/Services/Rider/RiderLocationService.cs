@@ -241,6 +241,7 @@ namespace JISpeed.Application.Services.Rider
 
                 // 更新骑手状态
                 await _riderLocationRepository.UpdateRiderStatusAsync(riderId, status);
+                await _riderLocationRepository.SaveChangesAsync();
 
                 _logger.LogInformation("更新骑手在线状态成功, RiderId: {RiderId}, Status: {Status}",
                     riderId, status);

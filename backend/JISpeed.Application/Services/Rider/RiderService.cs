@@ -217,6 +217,7 @@ namespace JISpeed.Application.Services.Rider
 
                 // 保存骑手信息
                 await _riderRepository.CreateAsync(rider);
+                await _riderRepository.SaveChangesAsync();
 
                 _logger.LogInformation("骑手创建成功, RiderId: {RiderId}, Name: {Name}",
                     rider.RiderId, rider.Name);

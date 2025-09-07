@@ -313,11 +313,13 @@ namespace JISpeed.Application.Services.Rider
                     existingPerformance.Income = income;
 
                     performance = await _performanceRepository.UpdateAsync(existingPerformance);
+                    await _performanceRepository.SaveChangesAsync();
                 }
                 else
                 {
                     // 创建新记录
                     performance = await _performanceRepository.CreateAsync(performance);
+                    await _performanceRepository.SaveChangesAsync();
                 }
 
                 _logger.LogInformation("成功计算并生成月度绩效数据, RiderId: {RiderId}, Month: {Month}, TotalOrders: {TotalOrders}",

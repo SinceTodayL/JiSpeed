@@ -137,6 +137,7 @@ namespace JISpeed.Application.Services.Order
 
                 // 保存分配记录
                 await _assignmentRepository.CreateAsync(assignment);
+                await _assignmentRepository.SaveChangesAsync();
 
                 // 更新订单的分配ID
                 order.AssignId = assignment.AssignId;
@@ -201,6 +202,7 @@ namespace JISpeed.Application.Services.Order
 
                 // 保存分配记录
                 await _assignmentRepository.CreateAsync(assignment);
+                await _assignmentRepository.SaveChangesAsync();
 
                 // 更新订单
                 order.AssignId = assignment.AssignId;
@@ -330,6 +332,7 @@ namespace JISpeed.Application.Services.Order
 
                 // 删除分配记录
                 await _assignmentRepository.DeleteAsync(assignment.AssignId);
+                await _assignmentRepository.SaveChangesAsync();
 
                 // 重置订单状态
                 order.AssignId = null;
