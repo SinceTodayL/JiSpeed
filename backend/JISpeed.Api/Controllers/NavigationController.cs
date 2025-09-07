@@ -8,7 +8,7 @@ namespace JISpeed.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    //[Authorize]
     public class NavigationController : ControllerBase
     {
         private readonly INavigationService _navigationService;

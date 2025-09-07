@@ -82,6 +82,8 @@ namespace JISpeed.Application.Services.Rider
                 throw new ArgumentException($"考勤记录 {attendance.AttendanceId} 不存在");
             }
 
+            var updatedAttendance = await _attendanceRepository.UpdateAsync(attendance);
+            await _attendanceRepository.SaveChangesAsync();
             return await _attendanceRepository.UpdateAsync(attendance);
         }
 
@@ -94,6 +96,7 @@ namespace JISpeed.Application.Services.Rider
             }
 
             await _attendanceRepository.DeleteAsync(attendanceId);
+            await _attendanceRepository.SaveChangesAsync();
             return true;
         }
 
@@ -147,6 +150,8 @@ namespace JISpeed.Application.Services.Rider
             // 设置为非缺勤状态
             attendance.IsAbsent = 0;
 
+            var updatedAttendance = await _attendanceRepository.UpdateAsync(attendance);
+            await _attendanceRepository.SaveChangesAsync();
             return await _attendanceRepository.UpdateAsync(attendance);
         }
 
@@ -166,7 +171,9 @@ namespace JISpeed.Application.Services.Rider
             }
 
             attendance.CheckoutAt = checkOutTime;
-            return await _attendanceRepository.UpdateAsync(attendance);
+            var updatedAttendance = await _attendanceRepository.UpdateAsync(attendance);
+            await _attendanceRepository.SaveChangesAsync();
+            return updatedAttendance;
         }
 
         public async Task<Attendance?> GetTodayAttendanceAsync(string riderId)
@@ -278,6 +285,7 @@ namespace JISpeed.Application.Services.Rider
                 // 标记为缺勤
                 attendance.IsAbsent = 1;
                 await _attendanceRepository.UpdateAsync(attendance);
+                await _attendanceRepository.SaveChangesAsync();
             }
         }
 

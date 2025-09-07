@@ -256,6 +256,7 @@ namespace JISpeed.Application.Services.Rider
 
                 // 更新骑手信息
                 await _riderRepository.UpdateAsync(rider);
+                await _riderRepository.SaveChangesAsync();
 
                 _logger.LogInformation("骑手信息更新成功, RiderId: {RiderId}", rider.RiderId);
 
@@ -384,6 +385,7 @@ namespace JISpeed.Application.Services.Rider
                 assignment.AcceptedStatus = acceptedStatus;
                 assignment.AcceptedAt = DateTime.Now;
                 await _assignmentRepository.UpdateAsync(assignment);
+                await _assignmentRepository.SaveChangesAsync();
 
                 // 如果是确认送达，需要同时更新订单状态
                 if (acceptedStatus == 3)
