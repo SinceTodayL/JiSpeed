@@ -1,6 +1,8 @@
 using JISpeed.Core.Entities.Common;
 using JISpeed.Core.Exceptions;
+using JISpeed.Core.DTOs;
 using JISpeed.Core.Interfaces.IRepositories.Merchant;
+using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,10 +13,14 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
     public class MerchantRepository : BaseRepository<MerchantEntity, string>, IMerchantRepository
     {
         private readonly ILogger<MerchantRepository> _logger;
+        private readonly IMapService _mapService;
+
         public MerchantRepository(OracleDbContext context,
-            ILogger<MerchantRepository> logger) : base(context)
+            ILogger<MerchantRepository> logger,
+            IMapService mapService) : base(context)
         {
             _logger = logger;
+            _mapService = mapService;
         }
 
         // === 业务专用查询方法 ===
@@ -47,6 +53,102 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
                 .Take(pageSize)
                 .ToListAsync();
         }
+        public async Task<List<MerchantDetailDto>> GetAllMerchantIdsByTagAsync(
+            string addressId, int? size, int? page, int tag)
+        {
+            int currentPage = page ?? 1;
+            int pageSize = size ?? 20;
+
+            // 1. 获取用户地址坐标
+            var location = await _context.Addresses
+                .Where(a => a.AddressId == addressId)
+                .Select(a => new { a.Longitude, a.Latitude })
+                .FirstOrDefaultAsync();
+
+            if (location == null)
+            {
+                throw new Exception("地址不存在");
+            }
+
+            // 2. 获取商家（先查出基本数据，不算距离）
+            var merchants = await _context.Merchants
+                .Include(m => m.Orders)
+                .Include(m => m.Dishes)
+                .Where(m=>m.Status==1)
+                .Select(m => new 
+                {
+                    m.MerchantId,
+                    m.Longitude,
+                    m.Latitude,
+                    AvgRating = m.Dishes.Any() ? m.Dishes.Average(d => d.Rating) : 0,
+                    SalesQty = m.Orders.Count
+                })
+                .ToListAsync(); // 注意：这里取出来到内存再算距离
+
+            // 3. 计算距离 & 筛选 10000m 内的商家
+            var filtered = new List<MerchantDetailDto>();
+            foreach (var m in merchants)
+            {
+                double distance = await _mapService.CalculateDistanceAsync(
+                    location.Longitude.Value, location.Latitude.Value,
+                    m.Longitude, m.Latitude);
+
+                if (distance <= 10000 && distance>1) // 只要 10 公里内的商家
+                {
+                    filtered.Add(new MerchantDetailDto
+                    {
+                        MerchantId = m.MerchantId,
+                        Distance = (decimal)distance,
+                        Rating = (decimal)m.AvgRating,
+                        SalesQty = m.SalesQty
+                    });
+                }
+            }
+
+            // 4. 分页
+            // 按销量倒序
+            if (tag == 0)
+            {
+                return filtered
+                .OrderByDescending(m => m.SalesQty)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+            }
+            // 按距离倒序
+            if (tag == 1)
+            {
+                return filtered
+                    .OrderByDescending(m => m.Distance)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+            }
+            // 按商家评分倒序
+            if (tag == 2)
+            {
+                return filtered
+                    .OrderByDescending(m => m.Rating)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+            }
+            // 按配送时间倒序（按距离来预估）
+            if (tag == 3)
+            {
+                return filtered
+                    .OrderByDescending(m => m.Distance)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+            }
+            // 不进行筛选
+            return filtered
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+        }
+        
 
         // 根据商家名称搜索商家
         // <param name="name">商家名称</param>
@@ -77,6 +179,7 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
 
             return await query.ToListAsync();
         }
+
         // 根据状态获取商家列表
         // <param name="status">状态</param>
         // <returns>商家列表</returns>

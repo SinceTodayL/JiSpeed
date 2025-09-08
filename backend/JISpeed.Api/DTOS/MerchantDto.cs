@@ -18,7 +18,15 @@ namespace JISpeed.Api.DTOs
         public string? Location { get; set; }
         public string? Description { get; set; }
         public int? OrdersCount { get; set; }
+    }
 
+    public class MerchantDtoByTag
+    {
+        // 商家ID
+        public required string MerchantId { get; set; }
+        public required decimal Distance { get; set; }
+        public required decimal Rating { get; set; }
+        public required int SalesQty { get; set; }
     }
     public class UpdateMerchantDto
     {

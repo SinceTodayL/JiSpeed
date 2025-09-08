@@ -1,3 +1,4 @@
+using JISpeed.Core.DTOs;
 using JISpeed.Core.Entities.Rider;
 using JISpeed.Core.Entities.Common;
 using JISpeed.Core.Entities.Dish;
@@ -24,6 +25,10 @@ namespace JISpeed.Core.Interfaces.IServices
             int? status,
             string? merchantName,
             string? location);
+        
+        Task<List<MerchantDetailDto>> GetMerchantByTagAsync(
+            int? size, int? page,
+            int tag, string addressId);
 
         
         // 获取商家数据统计信息列表
@@ -33,7 +38,6 @@ namespace JISpeed.Core.Interfaces.IServices
             int? statType, int? size, int? page,
             DateTime? startTime,DateTime? endTime,
             decimal? minAmount, decimal?maxAmount);
-        
 
     }
     

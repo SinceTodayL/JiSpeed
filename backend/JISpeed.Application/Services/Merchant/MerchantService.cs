@@ -2,8 +2,8 @@ using JISpeed.Core.Entities.Merchant;
 using JISpeed.Core.Interfaces.IRepositories.Merchant;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Core.Constants;
+using JISpeed.Core.DTOs;
 using JISpeed.Core.Exceptions;
-using JISpeed.Core.Interfaces.IRepositories.Admin;
 using Microsoft.Extensions.Logging;
 using MerchantEntity = JISpeed.Core.Entities.Merchant.Merchant;
 
@@ -13,19 +13,16 @@ namespace JISpeed.Application.Services.Merchant
     {
         private readonly IMerchantRepository _merchantRepository;
         private readonly ISalesStatRepository _salesStatRepository;
-        private readonly IAdminRepository _adminRepository;
         private readonly ILogger<MerchantService> _logger;
 
         public MerchantService(
             IMerchantRepository merchantRepository,
             ISalesStatRepository salesStatRepository,
-            IAdminRepository adminRepository,
             ILogger<MerchantService> logger
             )
         {
             _merchantRepository = merchantRepository;
             _salesStatRepository = salesStatRepository;
-            _adminRepository = adminRepository;
             _logger = logger;
         }
 
@@ -122,6 +119,30 @@ namespace JISpeed.Application.Services.Merchant
                 {
                     data = await _merchantRepository.GetAllMerchantsAsync(size, page);
                 }
+                if (data == null)
+                {
+                    _logger.LogWarning("商家不存在");
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, "商家不存在");
+                }
+
+                return data;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取商家列表信息时发生异常");
+                throw new BusinessException("获取商家列表信息失败");
+            }
+        }
+
+        public async Task<List<MerchantDetailDto>> GetMerchantByTagAsync(
+            int? size, int? page,
+            int tag,  string addressId)
+        {
+            try
+            {
+                _logger.LogInformation("开始获取商家列表信息");
+
+                var data = await _merchantRepository.GetAllMerchantIdsByTagAsync(addressId,size, page,tag);
                 if (data == null)
                 {
                     _logger.LogWarning("商家不存在");

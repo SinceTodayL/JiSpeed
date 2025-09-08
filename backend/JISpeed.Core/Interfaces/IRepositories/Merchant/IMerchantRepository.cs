@@ -1,3 +1,4 @@
+using JISpeed.Core.DTOs;
 using JISpeed.Core.Entities.Common;
 
 namespace JISpeed.Core.Interfaces.IRepositories.Merchant
@@ -20,6 +21,11 @@ namespace JISpeed.Core.Interfaces.IRepositories.Merchant
         // <returns>商家列表</returns>
         Task<List<JISpeed.Core.Entities.Merchant.Merchant>> SearchByNameAsync(string merchantName,int? size,int? page);
         Task<List<string>> GetMerchantNamesAsync(string prefix, int? limit);
+
+        Task<List<MerchantDetailDto>> GetAllMerchantIdsByTagAsync(
+            string addressId, int? size, int? page, int tag);
+
+
 
         // 根据状态获取商家列表
         // <param name="status">状态</param>
