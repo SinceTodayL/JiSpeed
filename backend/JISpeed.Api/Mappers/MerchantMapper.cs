@@ -1,5 +1,6 @@
 using AutoMapper;
 using JISpeed.Api.DTOs;
+using JISpeed.Core.DTOs;
 using JISpeed.Core.Entities.Dish;
 using JISpeed.Core.Entities.Merchant;
 
@@ -23,6 +24,7 @@ namespace JISpeed.Api.Mappers
                     opt => opt.MapFrom(src => src.Orders.Count));
 
             CreateMap<UpdateMerchantDto, Merchant>();
+            CreateMap<MerchantDetailDto, MerchantDtoByTag>();
             CreateMap<UpdateDishesDto, Dish>();
             CreateMap<CreateDishesDto, Dish>();
             // 配置 SalesStat → SalesStatDto 的映射

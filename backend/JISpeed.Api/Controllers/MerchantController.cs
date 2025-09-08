@@ -142,6 +142,55 @@ namespace JISpeed.Api.Controllers
                     "系统繁忙，请稍后再试"));
             }
         }
+       
+        [HttpGet("merchants/byTag")]
+        public async Task<ActionResult<ApiResponse<List<MerchantDtoByTag>>>> GetMerchantByTagAsync(
+            [FromQuery] int tag,[FromQuery] string addressId,
+            [FromQuery] int? size, [FromQuery] int? page
+        )
+        {
+            try
+            {
+                _logger.LogInformation("收到获取获取商家列表信息请求");
+                // 获取商家详细信息
+                var data = await _merchantService.GetMerchantByTagAsync(size, page,tag,addressId);
+                // 转换为DTO
+                var response = _mapper.Map<List<MerchantDtoByTag>>(data);
+
+                _logger.LogInformation("成功获取商家信息");
+
+                return Ok(ApiResponse<List<MerchantDtoByTag>>.Success(response, "商家信息获取成功"));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败");
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex, "商家不存在");
+                return NotFound(ApiResponse<object>.Fail(
+                    ErrorCodes.ResourceNotFound,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogError(ex, "业务处理异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取商家详细信息时发生未知异常");
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
+        }
+
         [HttpGet("merchants/autocomplete")]
         [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<string>>> GetNameSuggestionsAsync(string prefix, int? limit)
