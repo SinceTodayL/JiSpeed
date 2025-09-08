@@ -1,11 +1,12 @@
-﻿using System;
+﻿using JISpeed.Core.Constants;
+using JISpeed.Core.Entities.Rider;
+using JISpeed.Core.Exceptions;
+using JISpeed.Core.Interfaces.IRepositories.Rider;
+using JISpeed.Core.Interfaces.IServices;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using JISpeed.Core.Entities.Rider;
-using JISpeed.Core.Interfaces.IRepositories.Rider;
-using JISpeed.Core.Interfaces.IServices;
-using JISpeed.Core.Exceptions;
 
 namespace JISpeed.Application.Services.Rider
 {
@@ -132,11 +133,21 @@ namespace JISpeed.Application.Services.Rider
             }
             else
             {
-                // 更新签到时间
+                // 检查是否已经签到
                 if (attendance.CheckInAt.HasValue)
                 {
-                    throw new InvalidOperationException($"骑手 {riderId} 今日已签到");
+                    throw new BusinessException(ErrorCodes.UnsupportedOperation,
+                        $"骑手 {riderId} 今日已签到，签到时间：{attendance.CheckInAt:yyyy-MM-dd HH:mm:ss}");
                 }
+
+                // 检查是否已经签退（防止重复操作）
+                if (attendance.CheckoutAt.HasValue)
+                {
+                    throw new BusinessException(ErrorCodes.UnsupportedOperation,
+                        $"骑手 {riderId} 今日已签退，无法再次签到");
+                }
+
+                // 更新签到时间
                 attendance.CheckInAt = checkInTime;
             }
 

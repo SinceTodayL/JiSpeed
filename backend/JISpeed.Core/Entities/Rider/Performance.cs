@@ -47,6 +47,6 @@ namespace JISpeed.Core.Entities.Rider
             Income = income;
         }
 
-        private Performance() { } 
+        public Performance() { } 
     }
 }

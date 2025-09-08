@@ -56,6 +56,6 @@ namespace JISpeed.Core.Entities.Rider
         }
 
         // 无参构造函数(供EF Core使用)
-        private RiderLocation() { }
+        public RiderLocation() { }
     }
 }

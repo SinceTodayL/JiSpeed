@@ -304,7 +304,7 @@ namespace JISpeed.Application.Services.Navigation
                     var merchantStep = routeInfo.Steps.FirstOrDefault(s => s.RoadName == "商家位置");
                     if (merchantStep != null && merchantStep.Polyline.Any())
                     {
-                        // 获取商家坐标（使用merchantStep的坐标）
+                        // 获取商家坐标
                         var merchantCoord = merchantStep.Polyline.First();
 
                         // 计算到商家的距离
@@ -324,16 +324,24 @@ namespace JISpeed.Application.Services.Navigation
                                 var distanceToUser = await _mapService.CalculateDistanceAsync(
                                     currentLng, currentLat, userCoord.Longitude, userCoord.Latitude);
 
+                                // 使用高德API重新计算到用户的时间
+                                var routeToUser = await _mapService.GetNavigationRouteAsync(
+                                    currentLng, currentLat, userCoord.Longitude, userCoord.Latitude, "driving");
+
                                 remainingInfo.RemainingDistance = distanceToUser;
-                                remainingInfo.RemainingTime = (int)(distanceToUser / 15.0);
+                                remainingInfo.RemainingTime = routeToUser.EstimatedDuration; // 使用API返回的准确时间
                                 remainingInfo.NextInstruction = "已到达商家，准备取餐后前往用户位置";
                             }
                         }
                         else
                         {
                             // 骑手在前往商家的途中
+                            // 使用高德API重新计算到商家的时间
+                            var routeToMerchant = await _mapService.GetNavigationRouteAsync(
+                                currentLng, currentLat, merchantCoord.Longitude, merchantCoord.Latitude, "driving");
+
                             remainingInfo.RemainingDistance = distanceToMerchant;
-                            remainingInfo.RemainingTime = (int)(distanceToMerchant / 15.0);
+                            remainingInfo.RemainingTime = routeToMerchant.EstimatedDuration; // 使用API返回的准确时间
                             remainingInfo.NextInstruction = "正在前往商家取餐";
                             remainingInfo.CurrentWaypoint = "en_route";
                         }

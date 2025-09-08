@@ -31,6 +31,6 @@ namespace JISpeed.Core.Entities.Rider
             AttendanceId = attendanceId;
         }
 
-        private ScheduleAttendance() { }
+        public ScheduleAttendance() { }
     }
 }

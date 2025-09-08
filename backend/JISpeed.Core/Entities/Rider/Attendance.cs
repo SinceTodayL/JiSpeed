@@ -48,6 +48,6 @@ namespace JISpeed.Core.Entities.Rider
             CheckoutAt = checkoutAt; //默认未签退
         }
 
-        private Attendance() { } 
+        public Attendance() { } 
     }
 }
