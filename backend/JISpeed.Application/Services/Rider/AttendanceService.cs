@@ -115,7 +115,7 @@ namespace JISpeed.Application.Services.Rider
 
             // 查找或创建当日考勤记录
             var attendance = await _attendanceRepository.GetRiderAttendanceByDateAsync(riderId, checkDate);
-
+            bool isNewRecord = false;
             if (attendance == null)
             {
                 // 创建新的考勤记录
@@ -130,6 +130,7 @@ namespace JISpeed.Application.Services.Rider
                     CheckoutAt = null,
                     Rider = rider
                 };
+                isNewRecord = true; // 标记为新记录
             }
             else
             {
@@ -161,9 +162,18 @@ namespace JISpeed.Application.Services.Rider
             // 设置为非缺勤状态
             attendance.IsAbsent = 0;
 
-            var updatedAttendance = await _attendanceRepository.UpdateAsync(attendance);
+            // 根据是否为新记录选择不同的保存方法
+            Attendance resultAttendance;
+            if (isNewRecord)
+            {
+                resultAttendance = await _attendanceRepository.CreateAsync(attendance);
+            }
+            else
+            {
+                resultAttendance = await _attendanceRepository.UpdateAsync(attendance);
+            }
             await _attendanceRepository.SaveChangesAsync();
-            return updatedAttendance;
+            return resultAttendance;
         }
 
         public async Task<Attendance> CheckOutAsync(string riderId, DateTime checkOutTime)
