@@ -74,6 +74,7 @@ namespace JISpeed.Infrastructure.Repositories.Merchant
             var merchants = await _context.Merchants
                 .Include(m => m.Orders)
                 .Include(m => m.Dishes)
+                .Where(m=>m.Status==1)
                 .Select(m => new 
                 {
                     m.MerchantId,
