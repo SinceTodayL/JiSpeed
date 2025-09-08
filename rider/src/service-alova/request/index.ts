@@ -9,7 +9,7 @@ import { getAuthorization, handleRefreshToken, showErrorMsg } from './shared';
 import type { RequestInstanceState } from './type';
 
 const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === 'Y';
-const { baseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
+const { baseURL } = getServiceBaseURL(import.meta as unknown as Env.ImportMeta, isHttpProxy);
 
 const state: RequestInstanceState = {
   errMsgStack: []
@@ -21,14 +21,14 @@ const mockAdapter = createAlovaMockAdapter([featureUsers20241014], {
   // response delay time
   delay: 1000,
 
-  // global mock toggle
-  enable: true,
+  // global mock toggle - 完全禁用Mock
+  enable: false,
   matchMode: 'methodurl'
 });
 export const alova = createAlovaRequest(
   {
     baseURL,
-    requestAdapter: import.meta.env.DEV ? mockAdapter : adapterFetch()
+    requestAdapter: adapterFetch() // 使用真实API，不使用Mock
   },
   {
     onRequest({ config }) {

@@ -49,9 +49,10 @@ export const AMapLoader = {
         this.callbacks = [];
       };
 
-      script.onerror = () => {
+      script.onerror = (error) => {
         this.loading = false;
-        reject(new Error('Failed to load AMap'));
+        console.error('高德地图加载失败:', error);
+        reject(new Error('Failed to load AMap: 网络连接失败或API密钥无效'));
       };
 
       document.head.appendChild(script);

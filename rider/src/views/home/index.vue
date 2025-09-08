@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { getRiderInfo } from '@/service/api/rider';
 import {
-  generateRiderPerformance,
   getMonthlyPerformanceOverview,
   getRiderPerformance,
   getRiderPerformanceRanking,
@@ -26,6 +25,14 @@ const riderDetail = ref<Api.Rider.RiderInfoData | null>(null);
 
 // 绩效数据
 const performanceData = ref<Api.Rider.TimeData | null>(null);
+
+// 监控绩效数据变化
+watch(performanceData, (newData, oldData) => {
+  console.log('绩效数据变化:', {
+    old: oldData,
+    new: newData
+  });
+}, { deep: true });
 const performanceTrend = ref<Api.Rider.PerformanceTrendData[] | null>(null);
 const performanceRanking = ref<Api.Rider.RankingData | null>(null);
 const monthlyOverview = ref<Api.Rider.OverviewData | null>(null);
@@ -34,10 +41,6 @@ const monthlyOverview = ref<Api.Rider.OverviewData | null>(null);
 const topPerformers = ref<Api.Rider.PerformanceTrendData[]>([]);
 const topPerformersLoading = ref(false);
 
-// 考勤状态
-const attendanceStatus = ref<'未签到' | '已签到' | '已签退'>('未签到');
-const checkInTime = ref<string>('');
-const checkOutTime = ref<string>('');
 
 // 天气信息
 const weatherInfo = ref({
@@ -198,89 +201,66 @@ const { domRef: pieChartRef, updateOptions: updatePieChart } = useEcharts(() => 
       },
       labelLine: { show: false },
       data: [
-        { name: '已完成订单', value: performanceData.value?.totalOrders || 0, color: '#5da8ff' },
-        {
-          name: '准时订单',
-          value: Math.round((performanceData.value?.totalOrders || 0) * (performanceData.value?.onTimeRate || 0)),
-          color: '#8e9dff'
-        },
-        {
-          name: '好评订单',
-          value: Math.round((performanceData.value?.totalOrders || 0) * (performanceData.value?.goodReviewRate || 0)),
-          color: '#fedc69'
-        },
-        {
-          name: '其他',
-          value: Math.round((performanceData.value?.totalOrders || 0) * (performanceData.value?.badReviewRate || 0)),
-          color: '#26deca'
-        }
+        { name: '总订单', value: performanceData.value?.totalOrders || 0, color: '#5da8ff' },
+        { name: '准时率', value: performanceData.value?.onTimeRate || 0, color: '#8e9dff' },
+        { name: '好评率', value: performanceData.value?.goodReviewRate || 0, color: '#fedc69' },
+        { name: '差评率', value: performanceData.value?.badReviewRate || 0, color: '#26deca' }
       ]
     }
   ]
 }));
 
-// 计算属性
-const completionRate = computed(() => {
-  if (!performanceData.value) return 0;
-  const total = performanceData.value.totalOrders || 0;
-  // 由于API中没有completedOrders字段，我们使用onTimeRate作为完成率指标
-  const completed = Math.round(total * (performanceData.value.onTimeRate || 0));
-  return total > 0 ? Math.round((completed / total) * 100) : 0;
-});
-
+// 直接使用原始数据，不做复杂计算
 const onTimeRatePercent = computed(() => {
-  return performanceData.value?.onTimeRate ? Math.round(performanceData.value.onTimeRate * 100) : 0;
+  return performanceData.value?.onTimeRate || 0;
 });
 
 const goodReviewRatePercent = computed(() => {
-  return performanceData.value?.goodReviewRate ? Math.round(performanceData.value.goodReviewRate * 100) : 0;
+  return performanceData.value?.goodReviewRate || 0;
 });
 
-const attendanceStatusColor = computed(() => {
-  switch (attendanceStatus.value) {
-    case '已签到':
-      return 'success';
-    case '已签退':
-      return 'info';
-    default:
-      return 'warning';
-  }
+const badReviewRatePercent = computed(() => {
+  return performanceData.value?.badReviewRate || 0;
 });
 
-// 统计卡片数据
+
+// 统计卡片数据 - 直接使用原始数据
 const cardData = computed(() => {
+  const data = performanceData.value;
+  if (!data) return [];
+  
   return [
-    {
-      key: 'completedOrders',
-      title: '本月完成订单',
-      value: Math.round((performanceData.value?.totalOrders || 0) * (performanceData.value?.onTimeRate || 0)),
-      unit: '单',
-      color: { start: '#ec4786', end: '#b955a4' },
-      icon: 'mdi:truck-delivery'
-    },
     {
       key: 'totalOrders',
       title: '本月总订单',
-      value: performanceData.value?.totalOrders || 0,
+      value: data.totalOrders || 0,
       unit: '单',
-      color: { start: '#865ec0', end: '#5144b4' },
-      icon: 'mdi:clock-outline'
+      color: { start: '#ff6b6b', end: '#ee5a24' },
+      icon: 'mdi:package-variant'
     },
     {
-      key: 'completionRate',
-      title: '完成率',
-      value: completionRate.value,
+      key: 'onTimeRate',
+      title: '准时率',
+      value: data.onTimeRate || 0,
       unit: '%',
-      color: { start: '#56cdf3', end: '#719de3' },
-      icon: 'mdi:chart-line'
+      color: { start: '#00d2ff', end: '#3a7bd5' },
+      icon: 'mdi:clock-check'
     },
     {
-      key: 'monthlyIncome',
+      key: 'goodReviewRate',
+      title: '好评率',
+      value: data.goodReviewRate || 0,
+      unit: '%',
+      color: { start: '#11998e', end: '#38ef7d' },
+      icon: 'mdi:thumb-up'
+    },
+    {
+      key: 'income',
       title: '本月收入',
-      value: Math.round(performanceData.value?.income || 0),
+      value: data.income || 0,
       unit: '¥',
-      color: { start: '#fcbc25', end: '#f68057' },
-      icon: 'ant-design:money-collect-outlined'
+      color: { start: '#ffd700', end: '#ffb347' },
+      icon: 'mdi:currency-cny'
     }
   ];
 });
@@ -305,10 +285,32 @@ async function fetchRiderPerformance() {
       year: currentYear,
       month: currentMonth
     };
+    console.log('获取绩效数据参数:', params);
 
     const { data } = await getRiderPerformance(params);
-    if (data) {
+    console.log('骑手绩效数据原始响应:', data);
+    console.log('骑手绩效数据结构:', {
+      code: data?.code,
+      message: data?.message,
+      data: data?.data,
+      timestamp: data?.timestamp
+    });
+    if (data && data.data) {
       performanceData.value = data.data;
+      console.log('绩效数据已赋值:', performanceData.value);
+      console.log('原始数据:', {
+        onTimeRate: performanceData.value.onTimeRate,
+        goodReviewRate: performanceData.value.goodReviewRate,
+        badReviewRate: performanceData.value.badReviewRate,
+        totalOrders: performanceData.value.totalOrders,
+        income: performanceData.value.income
+      });
+    } else if (data && !data.data) {
+      // 如果 data.data 为 null，但 data 有值，直接使用 data
+      performanceData.value = data as any;
+      console.log('使用 data 作为绩效数据:', performanceData.value);
+    } else {
+      console.warn('绩效数据为空或格式不正确:', data);
     }
   } catch (error) {
     console.error('获取骑手绩效数据失败', error);
@@ -324,8 +326,10 @@ async function fetchPerformanceTrend() {
     };
 
     const { data } = await getRiderPerformanceTrend(params);
-    if (data) {
+    if (data && data.data) {
       performanceTrend.value = data.data;
+    } else if (data && !data.data) {
+      performanceTrend.value = data as any;
       // 更新图表
       nextTick(() => {
         updateLineChart();
@@ -346,8 +350,10 @@ async function fetchPerformanceRanking() {
     };
 
     const { data } = await getRiderPerformanceRanking(params);
-    if (data) {
+    if (data && data.data) {
       performanceRanking.value = data.data;
+    } else if (data && !data.data) {
+      performanceRanking.value = data as any;
     }
   } catch (error) {
     console.error('获取绩效排名失败', error);
@@ -363,8 +369,10 @@ async function fetchMonthlyOverview() {
     };
 
     const { data } = await getMonthlyPerformanceOverview(params);
-    if (data) {
+    if (data && data.data) {
       monthlyOverview.value = data.data;
+    } else if (data && !data.data) {
+      monthlyOverview.value = data as any;
     }
   } catch (error) {
     console.error('获取月度概览失败', error);
@@ -382,8 +390,10 @@ async function fetchTopPerformers() {
     };
 
     const { data } = await getTopPerformers(params);
-    if (data) {
+    if (data && data.data) {
       topPerformers.value = data.data || [];
+    } else if (data && !data.data) {
+      topPerformers.value = (data as any) || [];
     }
   } catch (error) {
     console.error('获取优秀骑手排行榜失败', error);
@@ -393,48 +403,7 @@ async function fetchTopPerformers() {
   }
 }
 
-// 生成骑手月度绩效
-async function generatePerformance() {
-  try {
-    const params = {
-      riderId: riderId.value,
-      year: currentYear,
-      month: currentMonth
-    };
 
-    const { data } = await generateRiderPerformance(params);
-    if (data) {
-      window.$message?.success('绩效生成成功！');
-      // 重新获取绩效数据
-      await fetchRiderPerformance();
-      await fetchPerformanceRanking();
-    }
-  } catch (error) {
-    console.error('生成绩效失败', error);
-    window.$message?.error('生成绩效失败，请稍后重试');
-  }
-}
-
-// 模拟获取考勤状态
-function fetchAttendanceStatus() {
-  const now = new Date();
-  const currentHour = now.getHours();
-
-  // 模拟考勤逻辑
-  if (currentHour < 8) {
-    attendanceStatus.value = '未签到';
-    checkInTime.value = '';
-    checkOutTime.value = '';
-  } else if (currentHour >= 8 && currentHour < 18) {
-    attendanceStatus.value = '已签到';
-    checkInTime.value = '08:30';
-    checkOutTime.value = '';
-  } else {
-    attendanceStatus.value = '已签退';
-    checkInTime.value = '08:30';
-    checkOutTime.value = '18:30';
-  }
-}
 
 // 模拟获取天气信息
 function fetchWeatherInfo() {
@@ -447,39 +416,62 @@ function fetchWeatherInfo() {
   };
 }
 
-// 签到功能
-function handleCheckIn() {
-  if (attendanceStatus.value === '未签到') {
-    attendanceStatus.value = '已签到';
-    checkInTime.value = new Date().toLocaleTimeString('zh-CN', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-    window.$message?.success('签到成功！');
-  } else {
-    window.$message?.warning('您已经签到过了！');
-  }
-}
-
-// 签退功能
-function handleCheckOut() {
-  if (attendanceStatus.value === '已签到') {
-    attendanceStatus.value = '已签退';
-    checkOutTime.value = new Date().toLocaleTimeString('zh-CN', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-    window.$message?.success('签退成功！');
-  } else if (attendanceStatus.value === '未签到') {
-    window.$message?.warning('请先签到！');
-  } else {
-    window.$message?.warning('您已经签退过了！');
-  }
-}
 
 // 获取渐变色
 function getGradientColor(color: { start: string; end: string }) {
   return `linear-gradient(to bottom right, ${color.start}, ${color.end})`;
+}
+
+// 自动刷新定时器
+let refreshTimer: NodeJS.Timeout | null = null;
+
+// 刷新所有数据
+async function refreshAllData() {
+  if (loading.value) return;
+  
+  console.log('🔄 开始刷新首页数据...');
+  loading.value = true;
+  
+  try {
+    await Promise.all([
+      fetchRiderDetail(),
+      fetchRiderPerformance(),
+      fetchPerformanceTrend(),
+      fetchPerformanceRanking(),
+      fetchMonthlyOverview(),
+      fetchTopPerformers()
+    ]);
+
+    // 更新图表
+    nextTick(() => {
+      updateLineChart();
+      updatePieChart();
+    });
+    
+    console.log('✅ 首页数据刷新完成');
+  } catch (error) {
+    console.error('❌ 刷新首页数据失败:', error);
+  } finally {
+    loading.value = false;
+  }
+}
+
+// 启动自动刷新
+function startAutoRefresh() {
+  // 每5分钟自动刷新一次数据
+  refreshTimer = setInterval(() => {
+    refreshAllData();
+  }, 5 * 60 * 1000);
+  console.log('🔄 已启动自动刷新，间隔: 5分钟');
+}
+
+// 停止自动刷新
+function stopAutoRefresh() {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+    console.log('⏹️ 已停止自动刷新');
+  }
 }
 
 // 页面加载
@@ -519,7 +511,6 @@ onMounted(async () => {
       fetchPerformanceRanking(),
       fetchMonthlyOverview(),
       fetchTopPerformers(),
-      fetchAttendanceStatus(),
       fetchWeatherInfo()
     ]);
 
@@ -528,9 +519,17 @@ onMounted(async () => {
       updateLineChart();
       updatePieChart();
     });
+    
+    // 启动自动刷新
+    startAutoRefresh();
   } finally {
     loading.value = false;
   }
+});
+
+// 页面卸载时清理定时器
+onUnmounted(() => {
+  stopAutoRefresh();
 });
 </script>
 
@@ -562,6 +561,19 @@ onMounted(async () => {
             <div class="text-sm text-gray-500">车辆编号</div>
             <div class="text-lg font-semibold">{{ riderDetail?.vehicleNumber || '暂无' }}</div>
           </div>
+          <!-- 刷新按钮 -->
+          <NButton 
+            type="primary" 
+            size="medium" 
+            :loading="loading"
+            @click="refreshAllData"
+            class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+          >
+            <template #icon>
+              <SvgIcon icon="mdi:refresh" />
+            </template>
+            刷新数据
+          </NButton>
         </div>
       </div>
     </NCard>
@@ -593,15 +605,7 @@ onMounted(async () => {
       <NGi :span="16">
         <NCard :bordered="false" class="rounded-16px shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
           <template #header>
-            <div class="flex items-center justify-between">
-              <span>本月绩效趋势</span>
-              <NButton size="small" type="primary" @click="generatePerformance">
-                <template #icon>
-                  <SvgIcon icon="mdi:chart-line-variant" />
-                </template>
-                生成绩效
-              </NButton>
-            </div>
+            <span>本月绩效趋势</span>
           </template>
           <div ref="lineChartRef" class="h-360px overflow-hidden"></div>
         </NCard>
@@ -613,45 +617,10 @@ onMounted(async () => {
       </NGi>
     </NGrid>
 
-    <!-- 考勤状态和绩效指标 -->
+    <!-- 绩效指标和排行榜 -->
     <NGrid :cols="24" :x-gap="16" :y-gap="16" class="mb-24px">
-      <!-- 考勤状态 -->
-      <NGi :span="8">
-        <NCard title="今日考勤" :bordered="false" class="rounded-16px shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
-          <div class="text-center">
-            <NTag :type="attendanceStatusColor" size="large" class="mb-16px">
-              {{ attendanceStatus }}
-            </NTag>
-            <div class="text-sm space-y-8px">
-              <div v-if="checkInTime" class="flex justify-between">
-                <span class="text-gray-500">签到时间：</span>
-                <span class="font-medium">{{ checkInTime }}</span>
-              </div>
-              <div v-if="checkOutTime" class="flex justify-between">
-                <span class="text-gray-500">签退时间：</span>
-                <span class="font-medium">{{ checkOutTime }}</span>
-              </div>
-            </div>
-            <div class="mt-16px space-y-8px">
-              <NButton v-if="attendanceStatus === '未签到'" type="success" size="small" block @click="handleCheckIn">
-                <template #icon>
-                  <SvgIcon icon="mdi:clock-check" />
-                </template>
-                签到
-              </NButton>
-              <NButton v-if="attendanceStatus === '已签到'" type="info" size="small" block @click="handleCheckOut">
-                <template #icon>
-                  <SvgIcon icon="mdi:clock-out" />
-                </template>
-                签退
-              </NButton>
-            </div>
-          </div>
-        </NCard>
-      </NGi>
-
       <!-- 绩效指标 -->
-      <NGi :span="8">
+      <NGi :span="12">
         <NCard title="绩效指标" :bordered="false" class="rounded-16px shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
           <NSpace vertical :size="16">
             <div class="flex items-center justify-between">
@@ -675,7 +644,7 @@ onMounted(async () => {
       </NGi>
 
       <!-- 优秀骑手排行榜 -->
-      <NGi :span="8">
+      <NGi :span="12">
         <NCard title="优秀骑手排行榜" :bordered="false" class="rounded-16px shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
           <div v-if="topPerformersLoading" class="text-center py-16px">
             <NSpin size="small" />
@@ -737,9 +706,9 @@ onMounted(async () => {
           <div>
             <div class="text-blue-800 font-medium dark:text-blue-200">工作提醒</div>
             <div class="text-sm text-blue-600 dark:text-blue-300">
-              本月已完成
-              {{ Math.round((performanceData?.totalOrders || 0) * (performanceData?.onTimeRate || 0)) }} 个订单，完成率
-              {{ completionRate }}%
+              本月总订单
+              {{ performanceData?.totalOrders || 0 }} 单，准时率
+              {{ performanceData?.onTimeRate || 0 }}%
             </div>
           </div>
         </div>
@@ -749,7 +718,7 @@ onMounted(async () => {
           <div>
             <div class="text-green-800 font-medium dark:text-green-200">完成情况</div>
             <div class="text-sm text-green-600 dark:text-green-300">
-              本月总订单 {{ performanceData?.totalOrders || 0 }} 单，收入 {{ Math.round(performanceData?.income || 0) }} 元
+              本月总订单 {{ performanceData?.totalOrders || 0 }} 单，收入 {{ performanceData?.income || 0 }} 元
             </div>
           </div>
         </div>

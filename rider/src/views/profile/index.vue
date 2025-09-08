@@ -71,30 +71,31 @@ const rules: FormRules = {
 
 async function fetchRiderInfo() {
   try {
+    console.log('🔄 开始获取骑手信息...');
+    console.log('🆔 骑手ID：', currentRiderId.value);
+    
     const response = await getRiderInfo(currentRiderId.value);
-    // 根据实际API响应结构调整数据提取
-    let data;
-    if (response.data && typeof response.data === 'object' && 'code' in response.data) {
-      // 标准API响应结构
-      data = (response.data as any).data;
-    } else {
-      // 直接返回数据的结构
-      data = response.data;
-    }
+    console.log('📥 获取骑手信息API响应：', response);
+    
+    const { data } = response;
+    console.log('📥 获取到的数据：', data);
+    
     if (data) {
-      // 使用逐个赋值确保响应式更新
-      formModel.applicationUserId = data.applicationUserId || '';
-      formModel.name = data.name || '';
-      formModel.phoneNumber = data.phoneNumber || '';
-      formModel.riderId = data.riderId || '';
-      formModel.vehicleNumber = data.vehicleNumber || '';
-
-      // 同步更新原始数据，确保刷新后数据一致
+      // 更新表单数据
+      Object.assign(formModel, data);
+      
+      // 保存原始数据，用于检测变更
       originalData.value.applicationUserId = data.applicationUserId || '';
       originalData.value.name = data.name || '';
       originalData.value.phoneNumber = data.phoneNumber || '';
       originalData.value.riderId = data.riderId || '';
       originalData.value.vehicleNumber = data.vehicleNumber || '';
+      
+      console.log('✅ 获取骑手信息成功！');
+      console.log('📝 更新后的formModel：', formModel);
+      console.log('📝 更新后的originalData：', originalData.value);
+    } else {
+      console.warn('⚠️ 获取到的数据为空');
     }
   } catch (error) {
     console.error('获取骑手信息失败', error);
@@ -107,13 +108,10 @@ async function fetchRiderInfo() {
       riderId: currentRiderId.value,
       vehicleNumber: '宁A12345'
     };
-    // 使用逐个赋值确保响应式更新
-    formModel.applicationUserId = mockData.applicationUserId;
-    formModel.name = mockData.name;
-    formModel.phoneNumber = mockData.phoneNumber;
-    formModel.riderId = mockData.riderId;
-    formModel.vehicleNumber = mockData.vehicleNumber;
-
+    
+    Object.assign(formModel, mockData);
+    
+    // 保存模拟数据到原始数据
     originalData.value.applicationUserId = mockData.applicationUserId;
     originalData.value.name = mockData.name;
     originalData.value.phoneNumber = mockData.phoneNumber;
@@ -126,76 +124,66 @@ onMounted(() => {
   fetchRiderInfo();
 });
 
-async function handleUpdate() {
+async function handleSave() {
   formRef.value?.validate(async errors => {
     if (errors) {
       return;
     }
 
-    loading.value = true;
+    submitting.value = true;
     const { name, phoneNumber, vehicleNumber } = formModel;
-
+    
     try {
-      console.log('发送更新请求:', {
+      console.log('🚀 开始保存骑手信息...');
+      console.log('🆔 骑手ID：', formModel.riderId);
+      console.log('📤 发送的数据：', {
         riderId: formModel.riderId,
-        data: { name, phoneNumber, vehicleNumber }
+        name,
+        phoneNumber,
+        vehicleNumber
       });
-
+      
+      console.log('🌐 调用updateRiderInfo API...');
       const response = await updateRiderInfo(formModel.riderId, {
         name,
         phoneNumber,
         vehicleNumber
       });
-
-      console.log('更新API响应:', response);
-
-      // 根据实际API响应结构调整数据提取
-      // 如果API返回的是包装结构 {code, data, message, timestamp}
-      let updatedData;
-      if (response.data && typeof response.data === 'object' && 'code' in response.data) {
-        // 标准API响应结构
-        updatedData = (response.data as any).data;
-      } else {
-        // 直接返回数据的结构
-        updatedData = response.data;
-      }
+      
+      console.log('📥 完整API响应：', response);
+      console.log('📥 响应类型：', typeof response);
+      console.log('📥 响应结构：', Object.keys(response));
+      
+      const { data: updatedData } = response;
+      console.log('📥 响应数据：', updatedData);
+      console.log('📥 数据类型：', typeof updatedData);
 
       if (updatedData) {
-        window.$message?.success('个人信息更新成功！');
-
-        // 使用逐个赋值确保响应式更新
-        formModel.applicationUserId = updatedData.applicationUserId || formModel.applicationUserId;
-        formModel.name = updatedData.name || formModel.name;
-        formModel.phoneNumber = updatedData.phoneNumber || formModel.phoneNumber;
-        formModel.riderId = updatedData.riderId || formModel.riderId;
-        formModel.vehicleNumber = updatedData.vehicleNumber || formModel.vehicleNumber;
-
-        // 同步更新原始数据，确保数据一致性
-        originalData.value.applicationUserId = updatedData.applicationUserId || originalData.value.applicationUserId;
-        originalData.value.name = updatedData.name || originalData.value.name;
-        originalData.value.phoneNumber = updatedData.phoneNumber || originalData.value.phoneNumber;
-        originalData.value.riderId = updatedData.riderId || originalData.value.riderId;
-        originalData.value.vehicleNumber = updatedData.vehicleNumber || originalData.value.vehicleNumber;
-
-        console.log('updatedData', updatedData);
-        console.log('formModel', formModel);
-        console.log('originalData', originalData.value);
+        window.$message?.success('个人信息保存成功！');
+        
+        // 更新表单数据
+        Object.assign(formModel, updatedData);
+        
+        // 更新原始数据，确保hasChanges计算属性正确工作
+        originalData.value.applicationUserId = updatedData.applicationUserId || '';
+        originalData.value.name = updatedData.name || '';
+        originalData.value.phoneNumber = updatedData.phoneNumber || '';
+        originalData.value.riderId = updatedData.riderId || '';
+        originalData.value.vehicleNumber = updatedData.vehicleNumber || '';
+        
+        console.log('✅ 保存成功！');
+        console.log('📝 更新后的formModel：', formModel);
+        console.log('📝 更新后的originalData：', originalData.value);
       } else {
-        console.warn('更新API返回数据为空');
-        window.$message?.warning('更新成功，但未返回最新数据');
+        console.warn('⚠️ API返回数据为空');
+        window.$message?.warning('保存成功，但未返回更新后的数据');
       }
     } catch (error: any) {
-      console.error('更新骑手信息失败', error);
-      console.error('错误详情:', {
-        status: error?.response?.status,
-        statusText: error?.response?.statusText,
-        data: error?.response?.data,
-        message: error?.message
-      });
-      const errorMessage = error?.response?.data?.message || '更新失败，请稍后重试';
+      console.error('保存骑手信息失败', error);
+      const errorMessage = error?.response?.data?.message || '保存失败，请稍后重试';
       window.$message?.error(errorMessage);
     } finally {
-      loading.value = false;
+      submitting.value = false;
     }
   });
 }
@@ -320,7 +308,7 @@ const handleCancel = () => {
                 :loading="submitting"
                 :disabled="!hasChanges"
                 class="bg-gradient-to-r from-blue-500 to-purple-600 border-0"
-                @click="handleUpdate"
+                @click="handleSave"
               >
                 <template #icon>
                   <Icon icon="mdi:content-save" />

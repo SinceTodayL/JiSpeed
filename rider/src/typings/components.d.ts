@@ -33,6 +33,8 @@ declare module 'vue' {
     LookForward: typeof import('./../components/custom/look-forward.vue')['default']
     MenuToggler: typeof import('./../components/common/menu-toggler.vue')['default']
     NAvatar: typeof import('naive-ui')['NAvatar']
+    NavigationMap: typeof import('./../components/navigation/navigation-map.vue')['default']
+    NavigationPanel: typeof import('./../components/navigation/navigation-panel.vue')['default']
     NBreadcrumb: typeof import('naive-ui')['NBreadcrumb']
     NBreadcrumbItem: typeof import('naive-ui')['NBreadcrumbItem']
     NButton: typeof import('naive-ui')['NButton']

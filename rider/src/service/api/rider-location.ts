@@ -13,7 +13,7 @@ export function getRiderLatestLocation(riderId: string) {
 /** 获取骑手历史轨迹 */
 export function getRiderLocationHistory(params: Api.Rider.LocationHistoryRequest) {
   return request<Api.Rider.LocationHistoryResponse>({
-    url: `/api/Riderlocations/${params.riderId}/history`,
+    url: `/api/RiderLocations/${params.riderId}/history`,
     method: 'get',
     params
   });
@@ -22,7 +22,7 @@ export function getRiderLocationHistory(params: Api.Rider.LocationHistoryRequest
 /** 获取指定区域内的骑手 */
 export function getRidersInArea(params: Api.Rider.LocationAreaRequest) {
   return request<Api.Rider.LocationAreaResponse>({
-    url: `/api/Riderlocations/area`,
+    url: `/api/RiderLocations/area`,
     method: 'get',
     params
   });
@@ -31,7 +31,7 @@ export function getRidersInArea(params: Api.Rider.LocationAreaRequest) {
 /** 获取所有在线骑手位置 */
 export function getOnlineRidersLocation(params: Api.Rider.LocationOnlineRequest) {
   return request<Api.Rider.LocationOnlineResponse>({
-    url: `/api/Riderlocations/online`,
+    url: `/api/RiderLocations/online`,
     method: 'get',
     params
   });
@@ -40,7 +40,7 @@ export function getOnlineRidersLocation(params: Api.Rider.LocationOnlineRequest)
 /** 计算骑手到指定点的距离 */
 export function calculateRiderDistance(params: Api.Rider.LocationDistanceRequest) {
   return request<Api.Rider.LocationDistanceResponse>({
-    url: `/api/Riderlocations/${params.riderId}/distance`,
+    url: `/api/RiderLocations/${params.riderId}/distance`,
     method: 'get',
     params
   });
@@ -49,7 +49,7 @@ export function calculateRiderDistance(params: Api.Rider.LocationDistanceRequest
 /** 获取骑手当前位置的地址信息 */
 export function getRiderCurrentAddress(riderId: string) {
   return request<Api.Rider.LocationAddressResponse>({
-    url: `/api/Riderlocations/${riderId}/address`,
+    url: `/api/RiderLocations/${riderId}/address`,
     method: 'get'
   });
 }
@@ -57,7 +57,7 @@ export function getRiderCurrentAddress(riderId: string) {
 /** 更新骑手位置 */
 export function updateRiderLocation(data: Api.Rider.LocationUpdateRequest) {
   return request<Api.Rider.LocationUpdateResponse>({
-    url: `/api/Riderlocations`,
+    url: `/api/RiderLocations`,
     method: 'post',
     data
   });
@@ -66,7 +66,7 @@ export function updateRiderLocation(data: Api.Rider.LocationUpdateRequest) {
 /** 更新骑手在线状态 */
 export function updateRiderOnlineStatus(riderId: string, data: Api.Rider.LocationStatusRequest) {
   return request<Api.Rider.LocationStatusResponse>({
-    url: `/api/Riderlocations/${riderId}/status`,
+    url: `/api/RiderLocations/${riderId}/status`,
     method: 'patch',
     data
   });
@@ -79,7 +79,7 @@ export function updateRiderOnlineStatus(riderId: string, data: Api.Rider.Locatio
  */
 export function getRiderCurrentLocationInfo(riderId: string) {
   return request<Api.Rider.CurrentLocationInfoResponse>({
-    url: `/api/Riderlocations/${riderId}/address`,
+    url: `/api/RiderLocations/${riderId}/address`,
     method: 'get'
   });
 }

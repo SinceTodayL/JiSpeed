@@ -25,6 +25,7 @@ import {
   getRiderAttendanceRecordsList,
   getRiderAttendanceStats,
   getTodayAttendance,
+  riderCheckInAttendance,
   riderCheckOutAttendance
 } from '@/service/api/attendance';
 import { useAuthStore } from '@/store/modules/auth';
@@ -50,6 +51,11 @@ const isCheckedIn = ref(false);
 const isCheckedOut = ref(false);
 const currentTime = ref(new Date());
 
+// 防抖和重试机制
+const checkInRetryCount = ref(0);
+const checkOutRetryCount = ref(0);
+const maxRetryCount = 3;
+
 // 筛选条件
 const filterForm = ref({
   startDate: null as number | null,
@@ -72,12 +78,29 @@ const updateTime = () => {
 // 获取骑手信息
 async function fetchRiderInfo() {
   try {
+    console.log('开始获取骑手信息, riderId:', riderId.value);
     const { data } = await getRiderInfo(riderId.value);
+    console.log('骑手信息获取成功:', data);
     if (data) {
-      riderInfo.value = data;
+      // 兼容两种数据格式：标准格式(data.data)和简单格式(data)
+      const infoData = (data as any).data || data;
+      riderInfo.value = infoData;
     }
-  } catch {
-    // 获取骑手信息失败
+  } catch (error: any) {
+    console.error('获取骑手信息失败:', error);
+    console.error('错误详情:', {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status
+    });
+    // 获取骑手信息失败，使用默认信息
+    riderInfo.value = {
+      riderId: riderId.value,
+      name: '骑手',
+      phoneNumber: '',
+      vehicleNumber: '',
+      applicationUserId: riderId.value
+    };
   }
 }
 
@@ -86,17 +109,20 @@ async function fetchTodayAttendance() {
   try {
     const { data } = await getTodayAttendance(riderId.value);
 
-    if (data && data.data) {
-      todayRecord.value = data.data;
-      isCheckedIn.value = Boolean(data.data.checkInAt);
-      isCheckedOut.value = Boolean(data.data.checkoutAt);
+    if (data) {
+      // 兼容两种数据格式：标准格式(data.data)和简单格式(data)
+      const recordData = data.data || data;
+      todayRecord.value = recordData;
+      isCheckedIn.value = Boolean(recordData.checkInAt);
+      isCheckedOut.value = Boolean(recordData.checkoutAt);
     } else {
       todayRecord.value = null;
       isCheckedIn.value = false;
       isCheckedOut.value = false;
     }
-  } catch {
-    // 获取今日考勤状态失败
+  } catch (error) {
+    console.error('获取今日考勤状态失败:', error);
+    // 获取今日考勤状态失败，重置状态
     todayRecord.value = null;
     isCheckedIn.value = false;
     isCheckedOut.value = false;
@@ -107,30 +133,66 @@ async function fetchTodayAttendance() {
 async function fetchAttendanceRecords() {
   loading.value = true;
   try {
+    console.log('开始获取考勤记录, riderId:', riderId.value);
+    
+    // 构建请求参数
     const params: Api.Attendance.GetRiderAttendanceRequest = {
       pageIndex: pagination.value.page,
-      pageSize: pagination.value.pageSize,
-      ...(filterForm.value.startDate && {
-        startDate: new Date(filterForm.value.startDate).toISOString().split('T')[0]
-      }),
-      ...(filterForm.value.endDate && {
-        endDate: new Date(filterForm.value.endDate).toISOString().split('T')[0]
-      }),
-      ...(filterForm.value.status === 'late' && { isLate: 1 }),
-      ...(filterForm.value.status === 'absent' && { isAbsent: 1 })
+      pageSize: pagination.value.pageSize
     };
 
-    const { data } = await getRiderAttendanceRecordsList(riderId.value, params);
+    // 处理日期筛选
+    if (filterForm.value.startDate) {
+      params.startDate = new Date(filterForm.value.startDate).toISOString().split('T')[0];
+    }
+    if (filterForm.value.endDate) {
+      params.endDate = new Date(filterForm.value.endDate).toISOString().split('T')[0];
+    }
 
-    if (data && data.data) {
-      attendanceList.value = data.data.records || [];
-      pagination.value.itemCount = data.data.total || 0;
+    // 处理状态筛选
+    if (filterForm.value.status === 'late') {
+      params.isLate = 1;
+    } else if (filterForm.value.status === 'absent') {
+      params.isAbsent = 1;
+    } else if (filterForm.value.status === 'present') {
+      // 正常出勤：既不是迟到也不是缺勤
+      params.isLate = 0;
+      params.isAbsent = 0;
+    }
+
+    console.log('考勤记录请求参数:', params);
+    const { data } = await getRiderAttendanceRecordsList(riderId.value, params);
+    console.log('考勤记录获取成功:', data);
+
+    if (data) {
+      // 兼容两种数据格式：标准格式(data.data)和简单格式(data)
+      const responseData = data.data || data;
+      
+      // 根据API类型定义，处理分页响应格式
+      if (Array.isArray(responseData)) {
+        // 如果返回的是数组，说明没有分页信息，使用数组长度作为总数
+        attendanceList.value = responseData;
+        pagination.value.itemCount = responseData.length;
+      } else if (responseData.records) {
+        // 如果返回的是分页对象，使用分页信息
+        attendanceList.value = responseData.records;
+        pagination.value.itemCount = responseData.total || 0;
+      } else {
+        // 其他情况，设置为空
+        attendanceList.value = [];
+        pagination.value.itemCount = 0;
+      }
     } else {
       attendanceList.value = [];
       pagination.value.itemCount = 0;
     }
-  } catch {
-    // 获取考勤记录失败
+  } catch (error: any) {
+    console.error('获取考勤记录失败:', error);
+    console.error('错误详情:', {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status
+    });
     window.$message?.error('获取考勤记录失败');
     attendanceList.value = [];
     pagination.value.itemCount = 0;
@@ -142,6 +204,7 @@ async function fetchAttendanceRecords() {
 // 获取考勤统计
 async function fetchAttendanceStats() {
   try {
+    console.log('开始获取考勤统计, riderId:', riderId.value);
     const currentDate = new Date();
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -151,49 +214,250 @@ async function fetchAttendanceStats() {
       endDate: lastDayOfMonth.toISOString().split('T')[0]
     };
 
+    console.log('考勤统计请求参数:', params);
     const { data } = await getRiderAttendanceStats(riderId.value, params);
-    if (data && data.data) {
-      attendanceStats.value = data.data;
+    console.log('考勤统计获取成功:', data);
+    
+    if (data) {
+      // 兼容两种数据格式：标准格式(data.data)和简单格式(data)
+      const statsData = data.data || data;
+      attendanceStats.value = statsData;
+    } else {
+      // 如果没有数据，设置默认值
+      attendanceStats.value = {
+        totalWorkDays: 0,
+        totalWorkHours: 0,
+        averageWorkHours: 0,
+        lateCount: 0,
+        absentCount: 0,
+        attendanceRate: 0
+      };
     }
-  } catch {
-    // 获取考勤统计失败
+  } catch (error: any) {
+    console.error('获取考勤统计失败:', error);
+    console.error('错误详情:', {
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status
+    });
+    // 获取考勤统计失败，使用默认值
+    attendanceStats.value = {
+      totalWorkDays: 0,
+      totalWorkHours: 0,
+      averageWorkHours: 0,
+      lateCount: 0,
+      absentCount: 0,
+      attendanceRate: 0
+    };
+    // 不显示错误消息，因为统计数据不是关键功能
+  }
+}
+
+// 带重试机制的打卡函数
+async function handleCheckInWithRetry() {
+  // 防止重复点击
+  if (loading.value || isCheckedIn.value) {
+    console.log('已经防止重复点击', loading.value, isCheckedIn.value);
+    return;
+  }
+
+  try {
+    loading.value = true;
+    checkInRetryCount.value = 0;
+    
+    // 使用签到接口而不是创建考勤记录接口
+    const { data } = await riderCheckInAttendance(riderId.value);
+    console.log('if', data);
+    if (data) {
+      window.$message?.success(data.message || '打卡成功！');
+      isCheckedIn.value = true;
+      checkInRetryCount.value = 0; // 重置重试计数
+      // 刷新考勤记录
+      await fetchAttendanceRecords();
+    } else {
+      window.$message?.warning('打卡响应异常，请刷新页面查看状态');
+    }
+  } catch (error: any) {
+    // 处理具体的错误信息
+    console.error('打卡失败:', error);
+    console.error('请求详情:', {
+      riderId: riderId.value,
+      url: error?.config?.url,
+      method: error?.config?.method,
+      data: error?.config?.data,
+      headers: error?.config?.headers
+    });
+    
+    if (error?.response?.data?.message) {
+      const errorMessage = error.response.data.message;
+      // 处理乐观并发错误和重复操作
+      if (errorMessage.includes('已有考勤记录') || 
+          errorMessage.includes('已签到') || 
+          errorMessage.includes('重复') ||
+          errorMessage.includes('already') ||
+          errorMessage.includes('expected to affect 1 row') ||
+          errorMessage.includes('actually affected 0 row') ||
+          errorMessage.includes('乐观并发') ||
+          errorMessage.includes('concurrency')) {
+        // 数据库并发异常，可能是重复操作，刷新页面状态
+        window.$message?.warning('检测到重复操作，正在刷新状态...');
+        // 刷新考勤记录和状态
+        await Promise.all([
+          fetchAttendanceRecords(),
+          fetchTodayAttendance()
+        ]);
+        // 检查是否已经打卡成功
+        if (todayRecord.value?.checkInAt) {
+          isCheckedIn.value = true;
+          window.$message?.success('今日已成功打卡！');
+        }
+      } else {
+        window.$message?.error(`打卡失败：${errorMessage}`);
+      }
+    } else if (error?.response?.status) {
+      // 处理HTTP状态码错误
+      switch (error.response.status) {
+        case 400:
+          window.$message?.error('请求参数错误，请检查网络连接');
+          break;
+        case 401:
+          window.$message?.error('登录已过期，请重新登录');
+          break;
+        case 403:
+          window.$message?.error('没有权限进行此操作');
+          break;
+        case 409:
+          // 409 Conflict 通常表示乐观并发冲突，尝试重试
+          if (checkInRetryCount.value < maxRetryCount) {
+            checkInRetryCount.value++;
+            window.$message?.warning(`操作冲突，正在重试 (${checkInRetryCount.value}/${maxRetryCount})...`);
+            // 等待一段时间后重试
+            await new Promise(resolve => setTimeout(resolve, 1000 * checkInRetryCount.value));
+            await handleCheckInWithRetry();
+            return;
+          } else {
+            window.$message?.warning('操作冲突，正在刷新状态...');
+            await Promise.all([
+              fetchAttendanceRecords(),
+              fetchTodayAttendance()
+            ]);
+          }
+          break;
+        case 500:
+          window.$message?.error('服务器错误，请稍后重试');
+          break;
+        default:
+          window.$message?.error('打卡失败，请稍后重试');
+      }
+    } else {
+      window.$message?.error('网络连接失败，请检查网络后重试');
+    }
+  } finally {
+    loading.value = false;
   }
 }
 
 // 打卡
 async function handleCheckIn() {
+  await handleCheckInWithRetry();
+}
+
+// 带重试机制的签退函数
+async function handleCheckOutWithRetry() {
+  // 防止重复点击
+  if (loading.value || isCheckedOut.value || !isCheckedIn.value) {
+    return;
+  }
+
   try {
     loading.value = true;
-    const checkInData: Api.Attendance.CreateAttendanceRequest = {
-      riderId: riderId.value,
-      checkDate: new Date().toISOString().split('T')[0],
-      checkInAt: new Date().toISOString(),
-      isLate: 0,
-      isAbsent: 0
-    };
-    console.log(checkInData);
-    const { data } = await createAttendanceRecord(checkInData);
-    console.log('data',data);
+    checkOutRetryCount.value = 0;
+
+    const { data } = await riderCheckOutAttendance(riderId.value);
+
     if (data) {
-      console.log('okok');
-      window.$message?.success('打卡成功！');
-      isCheckedIn.value = true;
-      await fetchTodayAttendance();
+      window.$message?.success(data.message || '签退成功！');
+      isCheckedOut.value = true;
+      checkOutRetryCount.value = 0; // 重置重试计数
+      // 刷新考勤记录
       await fetchAttendanceRecords();
+    } else {
+      window.$message?.warning('签退响应异常，请刷新页面查看状态');
     }
   } catch (error: any) {
-    // 处理具体的错误信息
-    console.error('打卡失败:', error);
+    console.error('签退失败:', error);
+    console.error('请求详情:', {
+      riderId: riderId.value,
+      url: error?.config?.url,
+      method: error?.config?.method,
+      data: error?.config?.data,
+      headers: error?.config?.headers
+    });
+    
     if (error?.response?.data?.message) {
-      // 如果是重复考勤记录的错误，刷新今日考勤状态
-      if (error.response.data.message.includes('已有考勤记录')) {
-        await fetchTodayAttendance();
-        window.$message?.warning('今日已打卡，请勿重复操作');
+      const errorMessage = error.response.data.message;
+      if (errorMessage.includes('未签到') || 
+          errorMessage.includes('not checked in') ||
+          errorMessage.includes('需要先签到')) {
+        window.$message?.error('请先完成签到再进行签退');
+      } else if (errorMessage.includes('已签退') || 
+                 errorMessage.includes('already checked out') ||
+                 errorMessage.includes('expected to affect 1 row') ||
+                 errorMessage.includes('actually affected 0 row') ||
+                 errorMessage.includes('乐观并发') ||
+                 errorMessage.includes('concurrency')) {
+        // 数据库并发异常，可能是重复操作，刷新页面状态
+        window.$message?.warning('检测到重复操作，正在刷新状态...');
+        // 刷新考勤记录和状态
+        await Promise.all([
+          fetchAttendanceRecords(),
+          fetchTodayAttendance()
+        ]);
+        // 检查是否已经签退成功
+        if (todayRecord.value?.checkoutAt) {
+          isCheckedOut.value = true;
+          window.$message?.success('今日已成功签退！');
+        }
       } else {
-        window.$message?.error(error.response.data.message);
+        window.$message?.error(`签退失败：${errorMessage}`);
+      }
+    } else if (error?.response?.status) {
+      // 处理HTTP状态码错误
+      switch (error.response.status) {
+        case 400:
+          window.$message?.error('请求参数错误，请检查网络连接');
+          break;
+        case 401:
+          window.$message?.error('登录已过期，请重新登录');
+          break;
+        case 403:
+          window.$message?.error('没有权限进行此操作');
+          break;
+        case 409:
+          // 409 Conflict 通常表示乐观并发冲突，尝试重试
+          if (checkOutRetryCount.value < maxRetryCount) {
+            checkOutRetryCount.value++;
+            window.$message?.warning(`操作冲突，正在重试 (${checkOutRetryCount.value}/${maxRetryCount})...`);
+            // 等待一段时间后重试
+            await new Promise(resolve => setTimeout(resolve, 1000 * checkOutRetryCount.value));
+            await handleCheckOutWithRetry();
+            return;
+          } else {
+            window.$message?.warning('操作冲突，正在刷新状态...');
+            await Promise.all([
+              fetchAttendanceRecords(),
+              fetchTodayAttendance()
+            ]);
+          }
+          break;
+        case 500:
+          window.$message?.error('服务器错误，请稍后重试');
+          break;
+        default:
+          window.$message?.error('签退失败，请稍后重试');
       }
     } else {
-      window.$message?.error('打卡失败，请稍后重试');
+      window.$message?.error('网络连接失败，请检查网络后重试');
     }
   } finally {
     loading.value = false;
@@ -202,34 +466,7 @@ async function handleCheckIn() {
 
 // 签退
 async function handleCheckOut() {
-  if (!todayRecord.value) return;
-
-  try {
-    loading.value = true;
-
-    const checkOutData: Api.Attendance.CheckOutRequest = {
-      checkoutAt: new Date().toISOString(),
-      location: {
-        longitude: 116.3974, // 默认位置，实际应该获取用户位置
-        latitude: 39.9093,
-        address: '北京市'
-      }
-    };
-
-    const { data } = await riderCheckOutAttendance(riderId.value, checkOutData);
-
-    if (data && data.data) {
-      window.$message?.success('签退成功！');
-      isCheckedOut.value = true;
-      await fetchTodayAttendance();
-      await fetchAttendanceRecords();
-    }
-  } catch {
-    // 签退失败
-    window.$message?.error('签退失败，请稍后重试');
-  } finally {
-    loading.value = false;
-  }
+  await handleCheckOutWithRetry();
 }
 
 // 查看详情
@@ -240,7 +477,8 @@ async function showDetail(record: Api.Attendance.AttendanceRecord) {
       selectedRecord.value = data.data;
       showDetailModal.value = true;
     }
-  } catch {
+  } catch (error) {
+    console.error('获取考勤详情失败:', error);
     // 获取考勤详情失败
     window.$message?.error('获取考勤详情失败');
   }
@@ -248,12 +486,14 @@ async function showDetail(record: Api.Attendance.AttendanceRecord) {
 
 // 搜索
 function handleSearch() {
+  console.log('执行搜索，筛选条件:', filterForm.value);
   pagination.value.page = 1;
   fetchAttendanceRecords();
 }
 
 // 重置筛选
 function handleReset() {
+  console.log('重置筛选条件');
   filterForm.value = {
     startDate: null,
     endDate: null,
@@ -266,6 +506,13 @@ function handleReset() {
 // 分页变化
 function handlePageChange(page: number) {
   pagination.value.page = page;
+  fetchAttendanceRecords();
+}
+
+// 页面大小变化
+function handlePageSizeChange(pageSize: number) {
+  pagination.value.pageSize = pageSize;
+  pagination.value.page = 1; // 重置到第一页
   fetchAttendanceRecords();
 }
 
@@ -413,13 +660,22 @@ const statusOptions = [
 
 // 页面加载
 onMounted(async () => {
+  console.log('考勤页面开始初始化...');
+  console.log('当前认证状态:', {
+    token: authStore.token,
+    userId: authStore.userInfo.userId,
+    userName: authStore.userInfo.userName
+  });
+
   // 检查用户信息是否已初始化
   if (!authStore.userInfo.userId && authStore.token) {
+    console.log('用户信息未初始化，开始初始化...');
     await authStore.initUserInfo();
   }
 
   // 如果仍然没有用户信息，使用模拟数据
   if (!authStore.userInfo.userId) {
+    console.log('使用模拟用户数据');
     Object.assign(authStore.userInfo, {
       userId: `rider_${Date.now()}`,
       userName: '测试骑手',
@@ -428,7 +684,16 @@ onMounted(async () => {
     });
   }
 
-  await Promise.all([fetchRiderInfo(), fetchTodayAttendance(), fetchAttendanceRecords(), fetchAttendanceStats()]);
+  console.log('初始化后的用户信息:', authStore.userInfo);
+  console.log('骑手ID:', riderId.value);
+
+  try {
+    console.log('开始并行获取数据...');
+    await Promise.all([fetchRiderInfo(), /* fetchTodayAttendance(), */ fetchAttendanceRecords(), fetchAttendanceStats()]);
+    console.log('所有数据获取完成');
+  } catch (error) {
+    console.error('数据获取过程中出现错误:', error);
+  }
 
   // 启动实时时钟
   setInterval(updateTime, 1000);
@@ -593,14 +858,15 @@ onMounted(async () => {
           <NDataTable
             :columns="columns"
             :data="attendanceList"
-            :pagination="{
-              page: pagination.page,
-              pageSize: pagination.pageSize,
-              itemCount: pagination.itemCount,
-              showSizePicker: true,
-              pageSizes: [10, 15, 20, 30],
-              onUpdatePage: handlePageChange
-            }"
+              :pagination="{
+                page: pagination.page,
+                pageSize: pagination.pageSize,
+                itemCount: pagination.itemCount,
+                showSizePicker: true,
+                pageSizes: [10, 15, 20, 30],
+                onUpdatePage: handlePageChange,
+                onUpdatePageSize: handlePageSizeChange
+              }"
             :bordered="false"
             :single-line="false"
             class="mt-16px"
