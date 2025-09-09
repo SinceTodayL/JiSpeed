@@ -2,16 +2,16 @@ export const amapConfig = {
   apiKey: '2bc67deced375a36fb9db0937fb48d56',
   version: '2.0',
   securityJsCode: '',
-  plugins: ['AMap.Scale', 'AMap.ToolBar', 'AMap.Driving', 'AMap.Geolocation', 'AMap.Marker', 'AMap.InfoWindow']
+  plugins: ['AMap.Scale', 'AMap.ToolBar', 'AMap.Driving', 'AMap.Geolocation', 'AMap.Marker', 'AMap.InfoWindow', 'AMap.AutoComplete']
 } as const;
 
 // 高德地图加载器
-export class AMapLoader {
-  private static instance: any = null;
-  private static loading = false;
-  private static callbacks: Array<(AMap: any) => void> = [];
+export const AMapLoader = {
+  instance: null as any,
+  loading: false,
+  callbacks: [] as Array<(AMap: any) => void>,
 
-  static async load(): Promise<any> {
+  async load(): Promise<any> {
     if (this.instance) {
       return this.instance;
     }
@@ -49,15 +49,16 @@ export class AMapLoader {
         this.callbacks = [];
       };
 
-      script.onerror = () => {
+      script.onerror = (error) => {
         this.loading = false;
-        reject(new Error('Failed to load AMap'));
+        console.error('高德地图加载失败:', error);
+        reject(new Error('Failed to load AMap: 网络连接失败或API密钥无效'));
       };
 
       document.head.appendChild(script);
     });
   }
-}
+};
 
 // 扩展Window接口
 declare global {

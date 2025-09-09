@@ -522,10 +522,17 @@ async function submitAudit() {
   try {
     auditLoading.value = true;
     
+    // 根据后端AuditRequest DTO构建正确的数据格式
     const auditData = {
-      decision: auditForm.value.decision,
-      reason: auditForm.value.reason || ''
+      auditStatus: auditForm.value.decision === 'approve' ? 1 : 2, // 1=通过, 2=拒绝
+      rejectReason: auditForm.value.decision === 'reject' ? auditForm.value.reason : null
     };
+    
+    console.log('📤 发送审核请求:', {
+      adminId: currentAdminId.value,
+      applicationId: currentApplication.value.id,
+      auditData: auditData
+    });
     
     await auditApplication(currentAdminId.value, currentApplication.value.id, auditData);
     
@@ -534,10 +541,35 @@ async function submitAudit() {
     
     // 刷新申请列表
     await getApplicationList();
-  } catch (error) {
-    console.error('审核失败:', error);
-    message.error('审核失败: ' + (error.message || '未知错误'));
-  } finally {
+      } catch (error) {
+      console.error('❌ 审核失败详情:', {
+        error: error,
+        response: error.response,
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+      
+      let errorMessage = '审核失败';
+      if (error.response?.data?.message) {
+        errorMessage += ': ' + error.response.data.message;
+      } else if (error.response?.data?.errors) {
+        errorMessage += ': ' + JSON.stringify(error.response.data.errors);
+      } else if (error.response?.status) {
+        errorMessage += `: HTTP ${error.response.status}`;
+        if (error.response.status === 404) {
+          errorMessage += ' - 申请不存在或已被删除';
+        } else if (error.response.status === 403) {
+          errorMessage += ' - 没有权限进行此操作';
+        } else if (error.response.status === 400) {
+          errorMessage += ' - 请求参数错误';
+        }
+      } else {
+        errorMessage += ': ' + (error.message || '网络连接错误');
+      }
+      
+      message.error(errorMessage);
+    } finally {
     auditLoading.value = false;
   }
 }

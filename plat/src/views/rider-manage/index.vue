@@ -36,6 +36,7 @@ import {
   WalletOutline
 } from '@vicons/ionicons5';
 import { fetchRidersList, fetchRiderInfo, fetchRiderPerformanceRanking } from '@/api/rider';
+import OrderOverview from '@/components/OrderOverview.vue';
 
 
 defineOptions({
@@ -527,6 +528,13 @@ onMounted(() => {
       </n-gi>
     </n-grid>
 
+    <!-- 订单分配总览 -->
+    <OrderOverview 
+      :auto-refresh="true"
+      :refresh-interval="30000"
+      class="mb-6"
+    />
+
     <!-- 搜索筛选区域 -->
     <n-card title="筛选条件" class="mb-6 shadow-sm" :bordered="false">
       <template #header-extra>
@@ -775,6 +783,7 @@ onMounted(() => {
             </n-gi>
           </n-grid>
         </div>
+
       </div>
       
       <!-- 加载状态 -->

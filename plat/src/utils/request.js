@@ -60,14 +60,37 @@ function request(config) {
   }
   
   return fetch(fullUrl, fetchOptions)
-    .then(response => {
+    .then(async response => {
+      console.log(`🌐 API请求: ${method.toUpperCase()} ${fullUrl}`, { data, params });
+      console.log(`📡 响应状态: ${response.status} ${response.statusText}`);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // 尝试获取错误详情
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('❌ API错误响应:', errorData);
+        } catch (e) {
+          // 如果无法解析JSON，使用文本
+          errorData = await response.text();
+          console.error('❌ API错误响应(文本):', errorData);
+        }
+        
+        const error = new Error(`HTTP error! status: ${response.status}`);
+        error.response = { 
+          status: response.status, 
+          statusText: response.statusText,
+          data: errorData 
+        };
+        throw error;
       }
-      return response.json();
+      
+      const result = await response.json();
+      console.log('✅ API响应成功:', result);
+      return result;
     })
     .catch(error => {
-      console.error('Request failed:', error);
+      console.error('🚫 Request failed:', error);
       throw error;
     });
 }

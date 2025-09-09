@@ -6,7 +6,7 @@ import { localStg } from '@/utils/storage';
 import { SetupStoreId } from '@/enum';
 import { useRouteStore } from '../route';
 import { useTabStore } from '../tab';
-import { clearAuthStorage, getToken, getUserId, setAuthStorage } from './shared';
+import { clearAuthStorage, getToken, getUserId } from './shared';
 
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const routeStore = useRouteStore();
@@ -64,7 +64,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
       const userIdString = String(hasUserId);
       userInfo.userId = userIdString;
       token.value = String(hasToken);
-      
+
       // 先创建基础骑手用户信息
       const riderUserInfo: Api.Auth.UserInfo = {
         userId: userIdString,
@@ -80,7 +80,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
       // 尝试从API获取骑手的真实姓名
       try {
-        const { data } = await getRiderInfo({ riderId: userIdString });
+        const { data } = await getRiderInfo(userIdString);
         if (data && data.name) {
           // 更新用户名为真实姓名
           userInfo.userName = data.name;
