@@ -19,20 +19,36 @@ namespace JISpeed.Core.Interfaces.IRepositories.Order
         // 根据用户ID查询投诉列表
         Task<List<Complaint>> GetByUserIdAndStatusAsync(
             string userId,
-            int ? status, 
-            int?size,int?page);
+            int? status,
+            int? size, int? page);
         Task<List<Complaint>> GetByUserIdAsync(string userId);
+
+        /// <summary>
+        /// 根据用户ID查询投诉列表（分页）
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="page">页码</param>
+        /// <param name="size">每页大小</param>
+        /// <returns>投诉列表</returns>
+        Task<List<Complaint>> GetByUserIdAsync(string userId, int page, int size);
+
+        /// <summary>
+        /// 根据用户ID获取投诉数量
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <returns>投诉数量</returns>
+        Task<int> GetCountByUserIdAsync(string userId);
 
         // 根据商家ID查询投诉列表
         Task<List<Complaint>> GetByMerchantIdAndStatusAsync(
             string merchantId,
-            int ? status,
-            int?size,int?page);
+            int? status,
+            int? size, int? page);
         Task<List<Complaint>> GetByMerchantIdAsync(string merchantId);
         Task<List<Complaint>> GetAllByFilterAsync(
-            int ? status,
-            int?size,int?page);
-        
+            int? status,
+            int? size, int? page);
+
 
         // 根据投诉状态查询
         Task<IEnumerable<Complaint>> GetByStatusAsync(string status);

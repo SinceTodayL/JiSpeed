@@ -69,21 +69,55 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .ToListAsync();
         }
 
-        
+
         // 根据用户ID查询投诉列表
         public async Task<List<Complaint>> GetByUserIdAsync(string userId)
         {
+            // 只查询Complaint基本信息，不加载Order关联数据
             return await _context.Complaints
-                .Include(c => c.Order)
                 .Where(c => c.ComplainantId == userId)
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
         }
 
+        /// <summary>
+        /// 根据用户ID查询投诉列表（分页）
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="page">页码</param>
+        /// <param name="size">每页大小</param>
+        /// <returns>投诉列表</returns>
+        public async Task<List<Complaint>> GetByUserIdAsync(string userId, int page, int size)
+        {
+            // 只查询Complaint基本信息，不加载Order关联数据
+            var query = _context.Complaints
+                .Where(c => c.ComplainantId == userId)
+                .OrderByDescending(c => c.CreatedAt);
+
+            if (page > 0 && size > 0)
+            {
+                return await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            }
+
+            return await query.ToListAsync();
+        }
+
+        /// <summary>
+        /// 根据用户ID获取投诉数量
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <returns>投诉数量</returns>
+        public async Task<int> GetCountByUserIdAsync(string userId)
+        {
+            return await _context.Complaints
+                .Where(c => c.ComplainantId == userId)
+                .CountAsync();
+        }
+
         public async Task<List<Complaint>> GetByUserIdAndStatusAsync(
                 string userId,
-                int ? status, 
-                int?size,int?page)
+                int? status,
+                int? size, int? page)
         {
             int pageSize = size ?? 20;
             int currentPage = page ?? 1;
@@ -127,15 +161,15 @@ namespace JISpeed.Infrastructure.Repositories.Order
         // 根据商家ID查询投诉列表
         public async Task<List<Complaint>> GetByMerchantIdAsync(string merchantId)
         {
-            return await _context.Complaints 
-                .Include(c => c.Order) 
-                .ThenInclude(o => o.User) 
-                .Include(c => c.Order) 
-                .ThenInclude(o => o.OrderDishes) 
-                .ThenInclude(od => od.Dish) 
-                .Include(c => c.Complainant) 
-                .Where(c => c.Order.MerchantId== merchantId)
-                .OrderByDescending(c => c.CreatedAt) 
+            return await _context.Complaints
+                .Include(c => c.Order)
+                .ThenInclude(o => o.User)
+                .Include(c => c.Order)
+                .ThenInclude(o => o.OrderDishes)
+                .ThenInclude(od => od.Dish)
+                .Include(c => c.Complainant)
+                .Where(c => c.Order.MerchantId == merchantId)
+                .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
         }
         public async Task<List<Complaint>> GetByMerchantIdAndStatusAsync(

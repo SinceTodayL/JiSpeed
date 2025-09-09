@@ -49,6 +49,7 @@ namespace JISpeed.Api.Extensions
             services.AddScoped<IOrderRepository, OrderRepository>();
             services.AddScoped<IOrderDishRepository, OrderDishRepository>();
             services.AddScoped<IAddressRepository, AddressRepository>();
+            services.AddScoped<ICartItemRepository, CartItemRepository>();
             services.AddScoped<IReviewRepository, ReviewRepository>();
             services.AddScoped<IComplaintRepository, ComplaintRepository>();
             services.AddScoped<ISettlementRepository, SettlementRepository>();
@@ -95,7 +96,7 @@ namespace JISpeed.Api.Extensions
                 provider.GetServices<IHostedService>().OfType<AutoOrderService>().First());
             // 自动派单服务单例注册
             services.AddSingleton<IAutoOrderAssignmentService>(provider =>
-                provider.GetServices<IHostedService>().OfType<AutoOrderAssignmentService>().First());            
+                provider.GetServices<IHostedService>().OfType<AutoOrderAssignmentService>().First());
             // 骑手相关服务
             services.AddScoped<IPerformanceService, PerformanceService>();
             services.AddScoped<IMapService, AMapService>();

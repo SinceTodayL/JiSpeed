@@ -200,7 +200,12 @@ namespace JISpeed.Api.Mappers
 
         public static List<UserReviewDto> ToUserReviewDtoList(IEnumerable<Review> reviews)
         {
-            return reviews.Select(r => ToUserReviewDto(r)).ToList();
+            return reviews.Select(r =>
+            {
+                // 从DishReviews中获取第一个菜品ID，如果有多个菜品，只取第一个
+                var dishId = r.DishReviews?.FirstOrDefault()?.DishId ?? "";
+                return ToUserReviewDto(r, dishId);
+            }).ToList();
         }
 
 

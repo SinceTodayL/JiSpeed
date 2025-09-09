@@ -12,6 +12,22 @@ namespace JISpeed.Core.Interfaces.IRepositories.User
         // <returns>地址列表</returns>
         Task<List<Address>> GetByUserIdAsync(string userId);
 
+        /// <summary>
+        /// 根据用户ID获取地址列表（分页）
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="page">页码</param>
+        /// <param name="size">每页大小</param>
+        /// <returns>地址列表</returns>
+        Task<List<Address>> GetByUserIdAsync(string userId, int page, int size);
+
+        /// <summary>
+        /// 根据用户ID获取地址数量
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <returns>地址数量</returns>
+        Task<int> GetCountByUserIdAsync(string userId);
+
         // 根据用户ID获取默认地址
         // <param name="userId">用户ID</param>
         // <returns>默认地址，如果不存在则返回null</returns>

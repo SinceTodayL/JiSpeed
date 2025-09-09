@@ -18,22 +18,25 @@ namespace JISpeed.Application.Services.Customer
 {
     public class UserService : IUserService
     {
-        
+
         private readonly IMapService _mapService;
         private readonly IUserRepository _userRepository;
         private readonly IAddressRepository _addressRepository;
+        private readonly ICartItemRepository _cartItemRepository;
         private readonly OracleDbContext _context;
         private readonly ILogger<UserService> _logger;
 
         public UserService(
             IUserRepository userRepository,
             IAddressRepository addressRepository,
+            ICartItemRepository cartItemRepository,
             OracleDbContext context,
             ILogger<UserService> logger,
             IMapService mapService)
         {
             _userRepository = userRepository;
             _addressRepository = addressRepository;
+            _cartItemRepository = cartItemRepository;
             _context = context;
             _logger = logger;
             _mapService = mapService;
@@ -480,7 +483,7 @@ namespace JISpeed.Application.Services.Customer
                     return null;
                 }
 
-                if(cartItem.Quantity < quantity)
+                if (cartItem.Quantity < quantity)
                 {
                     return null;
                 }

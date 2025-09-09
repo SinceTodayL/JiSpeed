@@ -26,6 +26,7 @@ namespace JISpeed.Api.Controllers
         private readonly IUserService _userService;
         private readonly IUserRepository _userRepository;
         private readonly IAddressRepository _addressRepository;
+        private readonly ICartItemRepository _cartItemRepository;
         private readonly IReviewRepository _reviewRepository;
         private readonly IComplaintRepository _complaintRepository;
         private readonly UserManager<ApplicationUser> _userManager;
@@ -35,6 +36,7 @@ namespace JISpeed.Api.Controllers
             IUserService userService,
             IUserRepository userRepository,
             IAddressRepository addressRepository,
+            ICartItemRepository cartItemRepository,
             IReviewRepository reviewRepository,
             IComplaintRepository complaintRepository,
             UserManager<ApplicationUser> userManager)
@@ -43,6 +45,7 @@ namespace JISpeed.Api.Controllers
             _userService = userService;
             _userRepository = userRepository;
             _addressRepository = addressRepository;
+            _cartItemRepository = cartItemRepository;
             _reviewRepository = reviewRepository;
             _complaintRepository = complaintRepository;
             _userManager = userManager;
@@ -59,7 +62,8 @@ namespace JISpeed.Api.Controllers
         {
             try
             {
-                var user = await _userRepository.GetWithDetailsAsync(userId);
+                // 使用专门的方法获取用户详细信息，只包含必要的关联数据
+                var user = await _userRepository.GetUserDetailAsync(userId);
                 if (user == null)
                 {
                     throw UserExceptions.UserNotFound(userId);
@@ -83,7 +87,7 @@ namespace JISpeed.Api.Controllers
         /// <returns>用户信息列表</returns>
         [HttpGet]
         public async Task<ApiResponse<List<UserDetailDto>>> GetUsers(
-            [FromQuery] int? size, 
+            [FromQuery] int? size,
             [FromQuery] int? page,
             [FromQuery] string? userId,
             [FromQuery] string? nickname)
@@ -118,13 +122,9 @@ namespace JISpeed.Api.Controllers
                     throw UserExceptions.UserNotFound(userId);
                 }
 
-                var userWithDetails = await _userRepository.GetWithDetailsAsync(userId);
-                var allFavorites = userWithDetails?.Favorites ?? new List<Favorite>();
-                var paginatedFavorites = allFavorites
-                    .Skip(((page ?? 1) - 1) * (size ?? 10))
-                    .Take(size ?? 10)
-                    .ToList();
-                var favoriteDtos = UserMapper.ToUserFavoriteDtoList(paginatedFavorites);
+                // 使用专门的方法进行分页查询，避免查询用户的所有关联数据
+                var favorites = await _userRepository.GetUserFavoritesAsync(userId, page ?? 1, size ?? 10);
+                var favoriteDtos = UserMapper.ToUserFavoriteDtoList(favorites);
 
                 return ApiResponse<List<UserFavoriteDto>>.Success(favoriteDtos);
             }
@@ -151,12 +151,9 @@ namespace JISpeed.Api.Controllers
                     throw UserExceptions.UserNotFound(userId);
                 }
 
-                var addresses = await _addressRepository.GetByUserIdAsync(userId);
-                var paginatedAddresses = addresses
-                    .Skip(((page ?? 1) - 1) * (size ?? 10))
-                    .Take(size ?? 10)
-                    .ToList();
-                var addressDtos = UserMapper.ToUserAddressDtoList(paginatedAddresses);
+                // 使用专门的分页查询方法
+                var addresses = await _addressRepository.GetByUserIdAsync(userId, page ?? 1, size ?? 10);
+                var addressDtos = UserMapper.ToUserAddressDtoList(addresses);
 
                 return ApiResponse<List<UserAddressDto>>.Success(addressDtos);
             }
@@ -183,14 +180,9 @@ namespace JISpeed.Api.Controllers
                     throw UserExceptions.UserNotFound(userId);
                 }
 
-                var userWithDetails = await _userRepository.GetWithDetailsAsync(userId);
-                var cartItems = userWithDetails?.CartItems ?? new List<CartItem>();
-
-                var paginatedCartItems = cartItems
-                    .Skip(((page ?? 1) - 1) * (size ?? 10))
-                    .Take(size ?? 10)
-                    .ToList();
-                var cartItemDtos = UserMapper.ToUserCartItemDtoList(paginatedCartItems);
+                // 使用专门的CartItemRepository进行分页查询，避免查询用户的所有关联数据
+                var cartItems = await _cartItemRepository.GetByUserIdAsync(userId, page ?? 1, size ?? 10);
+                var cartItemDtos = UserMapper.ToUserCartItemDtoList(cartItems);
 
                 return ApiResponse<List<UserCartItemDto>>.Success(cartItemDtos);
             }
@@ -217,12 +209,9 @@ namespace JISpeed.Api.Controllers
                     throw UserExceptions.UserNotFound(userId);
                 }
 
-                var reviews = await _reviewRepository.GetByUserIdAsync(userId);
-                var paginatedReviews = reviews
-                    .Skip(((page ?? 1) - 1) * (size ?? 10))
-                    .Take(size ?? 10)
-                    .ToList();
-                var reviewDtos = UserMapper.ToUserReviewDtoList(paginatedReviews);
+                // 使用专门的分页查询方法
+                var reviews = await _reviewRepository.GetByUserIdAsync(userId, page ?? 1, size ?? 10);
+                var reviewDtos = UserMapper.ToUserReviewDtoList(reviews);
 
                 return ApiResponse<List<UserReviewDto>>.Success(reviewDtos);
             }
@@ -249,12 +238,9 @@ namespace JISpeed.Api.Controllers
                     throw UserExceptions.UserNotFound(userId);
                 }
 
-                var complaints = await _complaintRepository.GetByUserIdAsync(userId);
-                var paginatedComplaints = complaints
-                    .Skip(((page ?? 1) - 1) * (size ?? 10))
-                    .Take(size ?? 10)
-                    .ToList();
-                var complaintDtos = UserMapper.ToUserComplaintDtoList(paginatedComplaints);
+                // 使用专门的分页查询方法
+                var complaints = await _complaintRepository.GetByUserIdAsync(userId, page ?? 1, size ?? 10);
+                var complaintDtos = UserMapper.ToUserComplaintDtoList(complaints);
 
                 return ApiResponse<List<UserComplaintDto>>.Success(complaintDtos);
             }
@@ -305,7 +291,7 @@ namespace JISpeed.Api.Controllers
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is BusinessException || ex is NotFoundException))
             {
-                 _logger.LogError(ex, "更新用户信息时发生异常，UserId: {UserId}", userId);
+                _logger.LogError(ex, "更新用户信息时发生异常，UserId: {UserId}", userId);
                 throw new BusinessException("更新用户信息失败");
             }
         }
@@ -771,28 +757,15 @@ namespace JISpeed.Api.Controllers
         {
             try
             {
-                // 获取用户详细信息，包含所有关联数据
-                var userWithDetails = await _userRepository.GetWithDetailsAsync(userId);
-                if (userWithDetails == null)
-                {
-                    return new UserStatsDto();
-                }
-
-                // // 使用服务层方法获取统计数据
-                // var favoriteCount = await _userService.GetFavoriteCountAsync(userId);
-                // var cartItemCount = await _userService.GetCartItemCountAsync(userId);
-                // var addressCount = await _userService.GetAddressCountAsync(userId);
-
-                // // 获取评论和投诉数量
-                // var reviews = await _reviewRepository.GetByUserIdAsync(userId);
-                // var complaints = await _complaintRepository.GetByUserIdAsync(userId);
+                // 使用专门的统计查询方法，避免加载大量关联数据
+                var stats = await _userRepository.GetUserStatsAsync(userId);
 
                 return UserMapper.ToUserStatsDto(
-                    totalOrders: userWithDetails.Orders?.Count ?? 0,
-                    favoriteCount: userWithDetails.Favorites?.Count ?? 0, // 直接从导航属性获取
-                    cartItemCount: userWithDetails.CartItems?.Count ?? 0, // 直接从导航属性获取
-                    availableCouponCount: userWithDetails.Coupons?.Count ?? 0,
-                    addressCount: userWithDetails.Addresses?.Count ?? 0 // 直接从导航属性获取
+                    totalOrders: stats.OrderCount,
+                    favoriteCount: stats.FavoriteCount,
+                    cartItemCount: stats.CartItemCount,
+                    availableCouponCount: 0, // 可以在后续单独查询或者添加到统计方法中
+                    addressCount: stats.AddressCount
                 );
             }
             catch (Exception ex)

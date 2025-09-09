@@ -77,14 +77,46 @@ namespace JISpeed.Infrastructure.Repositories.Order
         // 根据用户ID查询评价列表
         public async Task<IEnumerable<Review>> GetByUserIdAsync(string userId)
         {
+            // 只加载DishReviews，不加载其他复杂关联
             return await _context.Reviews
-                .Include(r => r.Order)
-                .Include(r => r.User)
                 .Include(r => r.DishReviews)
-                .ThenInclude(dr => dr.Dish)
                 .Where(r => r.UserId == userId)
                 .OrderByDescending(r => r.ReviewAt)
                 .ToListAsync();
+        }
+
+        /// <summary>
+        /// 根据用户ID查询评价列表（分页）
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="page">页码</param>
+        /// <param name="size">每页大小</param>
+        /// <returns>评价列表</returns>
+        public async Task<List<Review>> GetByUserIdAsync(string userId, int page, int size)
+        {
+            var query = _context.Reviews
+                .Include(r => r.DishReviews) // 只加载DishReviews，不加载其他复杂关联
+                .Where(r => r.UserId == userId)
+                .OrderByDescending(r => r.ReviewAt);
+
+            if (page > 0 && size > 0)
+            {
+                return await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            }
+
+            return await query.ToListAsync();
+        }
+
+        /// <summary>
+        /// 根据用户ID获取评价数量
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <returns>评价数量</returns>
+        public async Task<int> GetCountByUserIdAsync(string userId)
+        {
+            return await _context.Reviews
+                .Where(r => r.UserId == userId)
+                .CountAsync();
         }
 
         // 根据商家ID查询评价列表 - 通过Order.OrderDishes.Dish.MerchantId
