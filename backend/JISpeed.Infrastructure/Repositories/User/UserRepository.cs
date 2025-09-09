@@ -148,9 +148,9 @@ namespace JISpeed.Infrastructure.Repositories.User
             }
         }
 
-        /// <summary>
+
         /// 获取用户收藏列表（分页）
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <param name="page">页码</param>
         /// <param name="size">每页大小</param>
@@ -178,9 +178,9 @@ namespace JISpeed.Infrastructure.Repositories.User
             }
         }
 
-        /// <summary>
+
         /// 获取用户收藏数量
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <returns>收藏数量</returns>
         public async Task<int> GetUserFavoritesCountAsync(string userId)
@@ -198,9 +198,9 @@ namespace JISpeed.Infrastructure.Repositories.User
             }
         }
 
-        /// <summary>
+
         /// 获取用户统计信息（订单数、收藏数、地址数等）
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <returns>统计信息</returns>
         public async Task<(int OrderCount, int FavoriteCount, int AddressCount, int CartItemCount)> GetUserStatsAsync(string userId)
@@ -221,9 +221,9 @@ namespace JISpeed.Infrastructure.Repositories.User
             }
         }
 
-        /// <summary>
+
         /// 获取用户详细信息（包含ApplicationUser和DefaultAddress）
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <returns>用户详细信息</returns>
         public async Task<UserEntity?> GetUserDetailAsync(string userId)

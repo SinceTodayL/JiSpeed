@@ -85,9 +85,9 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .ToListAsync();
         }
 
-        /// <summary>
+
         /// 根据用户ID查询评价列表（分页）
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <param name="page">页码</param>
         /// <param name="size">每页大小</param>
@@ -107,9 +107,9 @@ namespace JISpeed.Infrastructure.Repositories.Order
             return await query.ToListAsync();
         }
 
-        /// <summary>
+
         /// 根据用户ID获取评价数量
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <returns>评价数量</returns>
         public async Task<int> GetCountByUserIdAsync(string userId)

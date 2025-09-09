@@ -6,9 +6,9 @@ using Microsoft.Extensions.Logging;
 
 namespace JISpeed.Infrastructure.Repositories.User
 {
-    /// <summary>
+
     /// 购物车项仓储实现
-    /// </summary>
+
     public class CartItemRepository : BaseRepository<CartItem, string>, ICartItemRepository
     {
         private readonly ILogger<CartItemRepository> _logger;
@@ -18,9 +18,9 @@ namespace JISpeed.Infrastructure.Repositories.User
             _logger = logger;
         }
 
-        /// <summary>
+
         /// 根据用户ID获取购物车项（分页）
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <param name="page">页码</param>
         /// <param name="size">每页大小</param>
@@ -48,9 +48,9 @@ namespace JISpeed.Infrastructure.Repositories.User
             }
         }
 
-        /// <summary>
+
         /// 根据用户ID获取购物车项数量
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <returns>购物车项数量</returns>
         public async Task<int> GetCountByUserIdAsync(string userId)
@@ -68,9 +68,9 @@ namespace JISpeed.Infrastructure.Repositories.User
             }
         }
 
-        /// <summary>
+
         /// 根据用户ID和菜品ID获取购物车项
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <param name="dishId">菜品ID</param>
         /// <returns>购物车项</returns>
@@ -89,9 +89,9 @@ namespace JISpeed.Infrastructure.Repositories.User
             }
         }
 
-        /// <summary>
+
         /// 根据用户ID和购物车项ID获取购物车项
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <param name="cartItemId">购物车项ID</param>
         /// <returns>购物车项</returns>
@@ -110,9 +110,9 @@ namespace JISpeed.Infrastructure.Repositories.User
             }
         }
 
-        /// <summary>
+
         /// 删除用户的所有购物车项
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <returns>删除的数量</returns>
         public async Task<int> DeleteByUserIdAsync(string userId)

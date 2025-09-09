@@ -801,9 +801,9 @@ namespace JISpeed.Application.Services.Customer
 
         #region 评论相关方法
 
-        /// <summary>
+
         /// 用户对订单进行评论，并同步更新订单下所有菜品的评分和评论数。
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <param name="orderId">订单ID</param>
         /// <param name="rating">订单总评分</param>

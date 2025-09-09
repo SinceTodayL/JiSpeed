@@ -88,9 +88,9 @@ namespace JISpeed.Core.Interfaces.IServices
         /// <returns>购物车项ID</returns>
         Task<CartItem?> AddToCartAsync(string userId, string dishId, string merchantId);
 
-        /// <summary>
+
         /// 修改购物车商品数量
-        /// </summary>
+
         /// <param name="userId"></param>
         /// <param name="cartId"></param>
         /// <param name="quantity"></param>

@@ -23,18 +23,18 @@ namespace JISpeed.Core.Interfaces.IRepositories.Order
             int? size, int? page);
         Task<List<Complaint>> GetByUserIdAsync(string userId);
 
-        /// <summary>
+
         /// 根据用户ID查询投诉列表（分页）
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <param name="page">页码</param>
         /// <param name="size">每页大小</param>
         /// <returns>投诉列表</returns>
         Task<List<Complaint>> GetByUserIdAsync(string userId, int page, int size);
 
-        /// <summary>
+
         /// 根据用户ID获取投诉数量
-        /// </summary>
+
         /// <param name="userId">用户ID</param>
         /// <returns>投诉数量</returns>
         Task<int> GetCountByUserIdAsync(string userId);
