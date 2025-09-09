@@ -120,6 +120,14 @@ namespace JISpeed.Core.Interfaces.IServices
         /// <returns>购物车项数量</returns>
         Task<int> GetCartItemCountAsync(string userId);
 
+
+        /// 根据菜品信息批量减少购物车中对应的商品数量
+
+        /// <param name="userId">用户ID</param>
+        /// <param name="dishQuantities">菜品数量列表</param>
+        /// <returns>处理成功的数量</returns>
+        Task<int> ReduceCartItemsByDishQuantitiesAsync(string userId, List<DishQuantityDto> dishQuantities);
+
         // 地址相关方法
 
         /// 创建地址

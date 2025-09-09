@@ -32,6 +32,7 @@ namespace JISpeed.Application.Services.Order
         private readonly ICouponRepository _couponRepository;
 
         private readonly IComplaintRepository _complaintRepository;
+        private readonly IUserService _userService;
         private readonly ILogger<OrderService> _logger;
         private readonly IServiceProvider _serviceProvider;
 
@@ -49,6 +50,7 @@ namespace JISpeed.Application.Services.Order
             IComplaintRepository complaintRepository,
             ISalesStatRepository salesStatRepository,
             ICouponRepository couponRepository,
+            IUserService userService,
             IServiceProvider serviceProvider,
             ILogger<OrderService> logger
         )
@@ -66,6 +68,7 @@ namespace JISpeed.Application.Services.Order
             _complaintRepository = complaintRepository;
             _salesStatRepository = salesStatRepository;
             _couponRepository = couponRepository;
+            _userService = userService;
             _serviceProvider = serviceProvider;
             _logger = logger;
         }
@@ -190,6 +193,23 @@ namespace JISpeed.Application.Services.Order
                 else
                 {
                     _logger.LogWarning("未能获取AutoOrderService服务实例，订单 {OrderId} 将不会自动取消", orderEntity.OrderId);
+                }
+
+                // 清理购物车中对应的商品
+                try
+                {
+                    var clearedItemsCount = await _userService.ReduceCartItemsByDishQuantitiesAsync(userId, dishQuantities);
+                    if (clearedItemsCount > 0)
+                    {
+                        _logger.LogInformation("成功清理购物车商品，OrderId: {OrderId}, UserId: {UserId}, 清理数量: {ClearedCount}",
+                            orderEntity.OrderId, userId, clearedItemsCount);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // 购物车清理失败不应该影响订单创建，只记录日志
+                    _logger.LogWarning(ex, "订单创建成功但清理购物车失败，OrderId: {OrderId}, UserId: {UserId}",
+                        orderEntity.OrderId, userId);
                 }
 
                 _logger.LogInformation("成功创建订单信息, OrderId: {OrderId}", orderEntity.OrderId);

@@ -581,6 +581,62 @@ namespace JISpeed.Application.Services.Customer
             }
         }
 
+
+        /// 根据菜品信息批量减少购物车中对应的商品数量
+
+        /// <param name="userId">用户ID</param>
+        /// <param name="dishQuantities">菜品数量列表</param>
+        /// <returns>处理成功的数量</returns>
+        public async Task<int> ReduceCartItemsByDishQuantitiesAsync(string userId, List<DishQuantityDto> dishQuantities)
+        {
+            try
+            {
+                if (dishQuantities == null || !dishQuantities.Any())
+                {
+                    _logger.LogWarning("菜品数量列表为空，UserId: {UserId}", userId);
+                    return 0;
+                }
+
+                int processedCount = 0;
+
+                foreach (var dishQuantity in dishQuantities)
+                {
+                    // 查找购物车中对应的商品
+                    var cartItem = await _context.CartItems
+                        .FirstOrDefaultAsync(c => c.UserId == userId && c.DishId == dishQuantity.DishId);
+
+                    if (cartItem != null)
+                    {
+                        if (cartItem.Quantity > dishQuantity.Quantity)
+                        {
+                            // 如果购物车中的数量大于订单中的数量，则减去对应数量
+                            cartItem.Quantity -= dishQuantity.Quantity;
+                            processedCount++;
+                        }
+                        else
+                        {
+                            // 如果购物车中的数量小于等于订单中的数量，则直接删除该购物车项
+                            _context.CartItems.Remove(cartItem);
+                            processedCount++;
+                        }
+                    }
+                }
+
+                if (processedCount > 0)
+                {
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("成功处理购物车商品减少，UserId: {UserId}, 处理数量: {ProcessedCount}", userId, processedCount);
+                }
+
+                return processedCount;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "批量减少购物车商品失败，UserId: {UserId}", userId);
+                return 0;
+            }
+        }
+
         #endregion
 
         #region 地址相关方法
