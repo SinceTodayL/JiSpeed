@@ -44,7 +44,7 @@ export const request = createFlatRequest<App.Service.Response, RequestInstanceSt
         handleLogout();
         window.removeEventListener('beforeunload', handleLogout);
 
-        request.state.errMsgStack = request.state.errMsgStack.filter(msg => msg !== response.data.msg);
+        request.state.errMsgStack = request.state.errMsgStack.filter(msg => msg !== (response.data.message || response.data.msg));
       }
 
       // when the backend response code is "401", it means the token is expired
@@ -58,8 +58,8 @@ export const request = createFlatRequest<App.Service.Response, RequestInstanceSt
         return null;
       }
 
-      // other backend error
-      showErrorMsg(request.state, response.data.msg);
+      // other backend error - 使用后端返回的message字段而不是msg
+      showErrorMsg(request.state, response.data.message || response.data.msg || '未知错误');
 
       return null;
     },
@@ -72,9 +72,9 @@ export const request = createFlatRequest<App.Service.Response, RequestInstanceSt
       let message = error.message;
       let backendErrorCode = '';
 
-      // get backend error message and code
+      // get backend error message and code - 使用message字段而不是msg
       if (error.code === BACKEND_ERROR_CODE) {
-        message = error.response?.data?.msg || message;
+        message = error.response?.data?.message || error.response?.data?.msg || message;
         backendErrorCode = String(error.response?.data?.code || '');
       }
 
@@ -117,7 +117,7 @@ export const demoRequest = createRequest<App.Service.DemoResponse>(
 
       // show backend error message
       if (error.code === BACKEND_ERROR_CODE) {
-        message = error.response?.data?.message || message;
+        message = error.response?.data?.message || error.response?.data?.msg || message;
       }
 
       window.$message?.error(message);

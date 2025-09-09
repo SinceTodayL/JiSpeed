@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/modules/auth';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { useRouterPush } from '@/hooks/common/router';
 import { $t } from '@/locales';
+import { getDefaultCredentials, ROLE_CONFIG } from '@/constants/login-defaults';
 
 defineOptions({
   name: 'PwdLogin'
@@ -26,10 +27,13 @@ interface FormModel {
   password: string;
 }
 
-// By default
+// 从配置文件获取默认账号密码
+const roleDefaultCredentials = getDefaultCredentials();
+
+// 响应式表单模型
 const model: FormModel = reactive({
-  loginKey: 'TongJi',
-  password: '6547265472'
+  loginKey: roleDefaultCredentials[loginRole.value].loginKey,
+  password: roleDefaultCredentials[loginRole.value].password
 });
 
 const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
@@ -53,14 +57,7 @@ async function handleSubmit() {
   await validate();
 
   // 根据选择的角色确定userType
-  const userTypeMap = {
-    'user': 1,
-    'merchant': 2,
-    'rider': 3,
-    'admin': 4
-  };
-
-  const userType = userTypeMap[loginRole.value];
+  const userType = ROLE_CONFIG[loginRole.value].userType;
   await authStore.login(model.loginKey, model.password, userType);
 
   // 登录成功后跳转到相应的模块
@@ -131,6 +128,13 @@ watch(loginMethod, (newMethod) => {
     }, 0);
   }
 });
+
+// 监听角色变化，自动更新默认账号密码
+watch(loginRole, (newRole) => {
+  const defaultCredentials = roleDefaultCredentials[newRole];
+  model.loginKey = defaultCredentials.loginKey;
+  model.password = defaultCredentials.password;
+}, { immediate: true });
 
 // 检查登录前状态
 onMounted(async () => {
