@@ -1,0 +1,1 @@
+{"version":3,"file":"index-CfJSQuSX.js","sources":["../../src/views/_builtin/403/index.vue"],"sourcesContent":["<script setup lang=\"ts\">\ndefineOptions({\n  name: \"403\"\n});\n</script>\n\n<template>\n  <ExceptionBase type=\"403\" />\n</template>\n\n<style scoped></style>\n"],"names":["_createBlock","_component_ExceptionBase"],"mappings":"4NAOEA,EAA4BC,EAAA,CAAb,KAAK,MAAK"}
