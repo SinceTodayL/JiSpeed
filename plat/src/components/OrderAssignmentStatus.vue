@@ -201,16 +201,23 @@ async function fetchAssignmentData() {
     const response = await getRiderAssignments(props.riderId);
     console.log('骑手分配数据响应:', response);
     
-    if (response && Array.isArray(response)) {
-      // 按分配时间倒序排列
-      assignmentData.value = response.sort((a, b) => 
-        new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime()
-      );
-      console.log(`成功获取${assignmentData.value.length}条分配记录`);
+    // 处理ApiResponse格式的响应
+    let assignments = [];
+    if (response?.data && Array.isArray(response.data)) {
+      assignments = response.data;
+    } else if (response && Array.isArray(response)) {
+      // 兼容直接返回数组的情况
+      assignments = response;
     } else {
-      assignmentData.value = [];
       console.warn('获取到的分配数据格式不正确:', response);
+      assignments = [];
     }
+    
+    // 按分配时间倒序排列
+    assignmentData.value = assignments.sort((a, b) => 
+      new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime()
+    );
+    console.log(`成功获取${assignmentData.value.length}条分配记录`);
   } catch (error) {
     console.error('获取骑手分配数据失败:', error);
     message.error('获取订单分配数据失败: ' + (error.message || '未知错误'));

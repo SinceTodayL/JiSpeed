@@ -33,10 +33,13 @@ import {
   TrophyOutline,
   StatsChartOutline,
   EyeOutline,
-  WalletOutline
+  WalletOutline,
+  FlashOutline,
+  PauseCircleOutline,
+  TimeOutline
 } from '@vicons/ionicons5';
 import { fetchRidersList, fetchRiderInfo, fetchRiderPerformanceRanking } from '@/api/rider';
-import OrderOverview from '@/components/OrderOverview.vue';
+import { getAllOrdersWithDetails } from '@/api/order';
 
 
 defineOptions({
@@ -46,6 +49,11 @@ defineOptions({
 const message = useMessage();
 const loading = ref(false);
 const tableData = ref<any[]>([]);
+
+// 订单相关数据
+const ordersLoading = ref(false);
+const ordersData = ref<any[]>([]);
+const showOrdersModal = ref(false);
 
 const pagination = ref({
   page: 1,
@@ -233,6 +241,124 @@ function handlePageChange(page: number) {
   getRidersList();
 }
 
+// 订单表格列定义
+const ordersColumns: DataTableColumns = [
+  {
+    key: 'index',
+    title: '序号',
+    align: 'center',
+    width: 60,
+    render: (row) => row.index
+  },
+  {
+    key: 'OrderId',
+    title: '订单ID',
+    width: 100,
+    render: (row) => (
+      <n-text code style="font-size: 11px;">
+        {row.OrderId?.slice(-8) || '-'}
+      </n-text>
+    )
+  },
+  {
+    key: 'OrderStatus',
+    title: '状态',
+    align: 'center',
+    width: 90,
+    render: (row) => (
+      <n-tag type={row.statusType} size="small">
+        {row.statusText}
+      </n-tag>
+    )
+  },
+  {
+    key: 'User',
+    title: '用户信息',
+    width: 120,
+    render: (row) => (
+      <div class="flex flex-col">
+        <n-text strong style="font-size: 12px;">
+          {row.User?.Nickname || '未知用户'}
+        </n-text>
+        <n-text depth="3" style="font-size: 10px;">
+          ID: {row.User?.UserId?.slice(-6) || '-'}
+        </n-text>
+      </div>
+    )
+  },
+  {
+    key: 'Merchant',
+    title: '商家信息',
+    width: 140,
+    render: (row) => (
+      <div class="flex flex-col">
+        <n-text strong style="font-size: 12px;">
+          {row.Merchant?.MerchantName || '未知商家'}
+        </n-text>
+        <n-text depth="3" style="font-size: 10px; word-break: break-all;">
+          {row.Merchant?.Location || '-'}
+        </n-text>
+      </div>
+    )
+  },
+  {
+    key: 'Assignment',
+    title: '分配信息',
+    width: 140,
+    render: (row) => {
+      if (!row.Assignment) {
+        return (
+          <n-tag type="warning" size="small">
+            未分配
+          </n-tag>
+        );
+      }
+      return (
+        <div class="flex flex-col">
+          <n-text strong style="font-size: 12px;">
+            {row.Assignment.RiderName || '未知骑手'}
+          </n-text>
+          <n-text depth="3" style="font-size: 10px;">
+            {row.Assignment.RiderPhoneNumber || '-'}
+          </n-text>
+          <n-tag 
+            type={row.Assignment.AcceptedStatus ? 'success' : 'warning'} 
+            size="small"
+            style="margin-top: 2px; font-size: 10px;"
+          >
+            {row.Assignment.AcceptedStatus ? '已接单' : '待接单'}
+          </n-tag>
+        </div>
+      );
+    }
+  },
+  {
+    key: 'Address',
+    title: '配送地址',
+    width: 160,
+    render: (row) => (
+      <div class="flex flex-col">
+        <n-text strong style="font-size: 12px;">
+          {row.Address?.RecipientName || '未知收件人'}
+        </n-text>
+        <n-text depth="3" style="font-size: 10px; word-break: break-all; max-width: 150px;">
+          {row.Address?.Address || '-'}
+        </n-text>
+      </div>
+    )
+  },
+  {
+    key: 'CreateAt',
+    title: '创建时间',
+    width: 120,
+    render: (row) => (
+      <n-text style="font-size: 11px;">
+        {row.CreateAt ? new Date(row.CreateAt).toLocaleString() : '-'}
+      </n-text>
+    )
+  }
+];
+
 const columns: DataTableColumns = [
   {
     key: 'index',
@@ -405,6 +531,72 @@ function getRankingBadgeType(rank: number) {
   return 'info';                    // 其他 - 蓝色
 }
 
+// 订单状态映射
+function getOrderStatusText(status: number) {
+  const statusMap = {
+    0: '已取消',
+    1: '已支付',
+    2: '已派单',
+    3: '已接单',
+    4: '配送中',
+    5: '已送达',
+    6: '已完成'
+  };
+  return statusMap[status] || '未知状态';
+}
+
+// 订单状态颜色
+function getOrderStatusType(status: number) {
+  const typeMap = {
+    0: 'error',    // 已取消 - 红色
+    1: 'warning',  // 已支付 - 黄色
+    2: 'info',     // 已派单 - 蓝色
+    3: 'default',  // 已接单 - 灰色
+    4: 'warning',  // 配送中 - 橙色
+    5: 'success',  // 已送达 - 绿色
+    6: 'success'   // 已完成 - 绿色
+  };
+  return typeMap[status] || 'default';
+}
+
+// 获取所有订单数据
+async function getAllOrdersData() {
+  try {
+    ordersLoading.value = true;
+    
+    console.log('🚀 开始获取所有订单数据');
+    const response = await getAllOrdersWithDetails();
+    console.log('📥 收到订单数据响应:', response);
+    
+    if (response && response.data) {
+      ordersData.value = response.data.map((order, index) => ({
+        ...order,
+        index: index + 1,
+        statusText: getOrderStatusText(order.OrderStatus),
+        statusType: getOrderStatusType(order.OrderStatus)
+      }));
+      
+      console.log('处理后的订单数据:', ordersData.value);
+      message.success(`成功获取 ${ordersData.value.length} 条订单数据`);
+    } else {
+      message.error(response?.message || '获取订单数据失败');
+      ordersData.value = [];
+    }
+  } catch (error) {
+    message.error('获取订单数据失败: ' + error.message);
+    ordersData.value = [];
+    console.error('Error fetching orders data:', error);
+  } finally {
+    ordersLoading.value = false;
+  }
+}
+
+// 显示订单排单列表
+function showOrdersAssignment() {
+  showOrdersModal.value = true;
+  getAllOrdersData();
+}
+
 
 
 // 格式化时间显示
@@ -528,12 +720,6 @@ onMounted(() => {
       </n-gi>
     </n-grid>
 
-    <!-- 订单分配总览 -->
-    <OrderOverview 
-      :auto-refresh="true"
-      :refresh-interval="30000"
-      class="mb-6"
-    />
 
     <!-- 搜索筛选区域 -->
     <n-card title="筛选条件" class="mb-6 shadow-sm" :bordered="false">
@@ -554,6 +740,14 @@ onMounted(() => {
               </n-icon>
             </template>
             重置
+          </n-button>
+          <n-button size="small" @click="showOrdersAssignment" type="warning">
+            <template #icon>
+              <n-icon>
+                <StatsChartOutline />
+              </n-icon>
+            </template>
+            订单排单
           </n-button>
         </n-space>
       </template>
@@ -792,6 +986,89 @@ onMounted(() => {
           <template #description>
             <div class="text-center mt-4">
               <p class="text-gray-600">正在加载骑手信息...</p>
+              <p class="text-sm text-gray-400 mt-1">请稍候片刻</p>
+            </div>
+          </template>
+        </n-spin>
+      </div>
+    </n-modal>
+
+    <!-- 订单排单展示弹窗 -->
+    <n-modal 
+      v-model:show="showOrdersModal" 
+      preset="card" 
+      style="width: 1200px; max-height: 85vh;" 
+      class="rounded-2xl"
+      :mask-closable="false"
+    >
+      <template #header>
+        <div class="flex items-center gap-3">
+          <n-avatar 
+            :size="40"
+            style="background: linear-gradient(135deg, #fa8c16, #faad14)"
+          >
+            <n-icon size="20">
+              <StatsChartOutline />
+            </n-icon>
+          </n-avatar>
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800">
+              订单排单展示
+            </h3>
+            <p class="text-sm text-gray-500">
+              实时查看所有订单及分配情况
+            </p>
+          </div>
+        </div>
+      </template>
+
+      <div v-if="!ordersLoading" class="space-y-4">
+        <!-- 订单统计概览 -->
+        <div class="bg-gradient-to-r from-orange-50 to-yellow-50 p-4 rounded-lg">
+          <h4 class="text-gray-800 font-medium mb-4 flex items-center gap-2">
+            <n-icon color="#fa8c16">
+              <StatsChartOutline />
+            </n-icon>
+            订单统计概览
+          </h4>
+          
+          <n-grid :cols="6" :x-gap="16">
+            <n-gi v-for="status in [0, 1, 2, 3, 4, 5, 6]" :key="status">
+              <div class="text-center p-3 bg-white rounded-lg shadow-sm">
+                <div class="text-xl font-bold" :class="{
+                  'text-red-600': status === 0,
+                  'text-yellow-600': status === 1,
+                  'text-blue-600': status === 2,
+                  'text-gray-600': status === 3,
+                  'text-orange-600': status === 4,
+                  'text-green-600': [5, 6].includes(status)
+                }">
+                  {{ ordersData.filter(order => order.OrderStatus === status).length }}
+                </div>
+                <div class="text-sm text-gray-600 mt-1">{{ getOrderStatusText(status) }}</div>
+              </div>
+            </n-gi>
+          </n-grid>
+        </div>
+
+        <!-- 订单列表 -->
+        <n-data-table
+          :columns="ordersColumns"
+          :data="ordersData"
+          :loading="ordersLoading"
+          :pagination="{ pageSize: 15, showSizePicker: true, pageSizes: [10, 15, 20, 30] }"
+          flex-height
+          style="min-height: 400px;"
+          :row-class-name="() => 'hover:bg-orange-50 transition-colors duration-200'"
+        />
+      </div>
+      
+      <!-- 加载状态 -->
+      <div v-else class="flex justify-center items-center h-80">
+        <n-spin size="large">
+          <template #description>
+            <div class="text-center mt-4">
+              <p class="text-gray-600">正在加载订单数据...</p>
               <p class="text-sm text-gray-400 mt-1">请稍候片刻</p>
             </div>
           </template>
