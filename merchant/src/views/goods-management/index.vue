@@ -303,7 +303,7 @@ const columns = computed(() => {
       title: '评分',
       align: 'center' as const,
       width: 100,
-      render: (row: Api.Goods.DishItem) => `${(row.rating || 0).toFixed(1)}%`
+      render: (row: Api.Goods.DishItem) => `${(row.rating || 0).toFixed(1)}`
     },
     {
       key: 'onSale',

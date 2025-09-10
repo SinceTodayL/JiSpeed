@@ -35,7 +35,7 @@ const getData = async () => {
     console.log('开始获取订单数据，商家ID:', merchantStore.merchantId);
     
     // 分别获取所有状态的订单ID列表
-    const statusesToFetch = [0, 1, 2, 3, 4, 5, 6]; // 未支付、已支付、确认收货、已评价、售后中、售后结束、订单关闭
+    const statusesToFetch = [0, 1, 2, 3, 4, 5, 6, 7, 8]; // 未支付、已支付、确认收货、已评价、售后中、售后结束、订单关闭、配送中、待配送
     const allOrderPromises = statusesToFetch.map(status => 
       fetchGetAllOrders(merchantStore.merchantId, { orderStatus: status })
     );
@@ -371,6 +371,12 @@ const columns = computed(() => {
           case 4:
             type = 'warning'; // 售后中
             break;
+          case 7:
+            type = 'warning'; // 配送中
+            break;
+          case 8:
+            type = 'info'; // 待配送
+            break;
           default:
             type = 'default';
         }
@@ -456,6 +462,16 @@ const columns = computed(() => {
           {row.orderStatus === 4 && (
             <NButton type="warning" ghost size="small">
               处理售后
+            </NButton>
+          )}
+          {row.orderStatus === 7 && (
+            <NButton type="info" ghost size="small">
+              开始配送
+            </NButton>
+          )}
+          {row.orderStatus === 8 && (
+            <NButton type="info" ghost size="small">
+              确认送达
             </NButton>
           )}
         </div>
