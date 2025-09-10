@@ -1,6 +1,6 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '@/views/Home.vue'  // 主页 - 商家浏览页面
+import HomeNew from '@/views/HomeNew.vue'  // 新主页 - 商家浏览页面
 import Profile from '@/views/Profile.vue'  // 新增个人中心页面
 import MerchantsBrowse from '@/views/MerchantsBrowse.vue'
 import MerchantDetail from '@/views/MerchantDetail.vue'
@@ -21,7 +21,7 @@ import UserInfoEdit from '@/views/UserInfoEdit.vue'
 const routes = [
   {
     path: '/',
-    component: Home,
+  component: HomeNew,
     meta: {
       title: '首页 - 急速外卖'
     }
