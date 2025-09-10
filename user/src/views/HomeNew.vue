@@ -30,10 +30,6 @@
       <div class="merchants-container">
         <!-- 筛选和排序 -->
         <div class="filter-bar">
-          <div class="section-header">
-            <h2 class="section-title">附近商家</h2>
-            <p class="section-subtitle">为您精选优质餐厅</p>
-          </div>
           <div class="sort-options">
             <button 
               v-for="option in sortOptions" 
@@ -58,19 +54,14 @@
         </div>
         <div v-else class="merchants-grid">
           <div
-            v-for="merchant in merchants"
+            v-for="(merchant, index) in merchants"
             :key="merchant.merchantId"
             class="merchant-card"
             @click="goToMerchant(merchant.merchantId)"
           >
             <!-- 商家封面图 -->
             <div class="merchant-cover">
-              <img
-                :src="merchant.coverImage || merchant.imageUrl || '/default-merchant.jpg'"
-                :alt="merchant.merchantName || merchant.name"
-                class="cover-image"
-                @error="e => e.target.src = '/default-merchant.jpg'"
-              />
+              <img class="cover-image" :src="getMerchantImage(index)" alt="商家图片" />
               <div class="merchant-status">
                 <span v-if="merchant.status === 1" class="status-open">营业中</span>
                 <span v-else class="status-closed">休息中</span>
@@ -270,6 +261,20 @@ export default {
       fetchMerchants(true)
     })
     
+    const imageList = [
+      'https://picsum.photos/400/200?random=1',
+      'https://picsum.photos/400/200?random=2',
+      'https://picsum.photos/400/200?random=3',
+      'https://picsum.photos/400/200?random=4',
+      'https://picsum.photos/400/200?random=5',
+      // ...更多图片
+    ]
+    
+    // 轮询分配图片
+    const getMerchantImage = (index) => {
+      return imageList[index % imageList.length]
+    }
+    
     return {
       searchKeyword,
       loading,
@@ -280,7 +285,8 @@ export default {
       handleSearch,
       changeSortBy,
       loadMore,
-      goToMerchant
+      goToMerchant,
+      getMerchantImage
     }
   }
 }
@@ -288,63 +294,56 @@ export default {
 
 <style scoped>
 .home-page {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4facfe 0%, #764ba2 100%);
   min-height: 100vh;
-  padding-bottom: 80px; /* 为底部导航留空间 */
+  padding-bottom: 80px;
 }
 
 /* 欢迎区域 */
 .welcome-section {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: transparent;
   color: white;
   text-align: center;
-  padding: 40px 20px 20px;
-}
-
-.welcome-content {
-  max-width: 400px;
-  margin: 0 auto;
+  padding: 32px 20px 12px;
 }
 
 .welcome-title {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 700;
-  margin: 0 0 8px 0;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  margin-bottom: 8px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.18);
 }
 
 .welcome-subtitle {
   font-size: 16px;
-  opacity: 0.9;
-  margin: 0;
-  font-weight: 300;
+  opacity: 0.92;
+  font-weight: 400;
 }
 
 /* 搜索栏 */
 .search-section {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  padding: 0 20px 20px;
+  background: transparent;
+  padding: 0 20px 12px;
 }
 
 .search-container {
-  max-width: 400px;
+  max-width: 420px;
   margin: 0 auto;
 }
 
 .search-input-wrapper {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 25px;
-  padding: 8px 16px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  backdrop-filter: blur(10px);
+  background: rgba(255,255,255,0.98);
+  border-radius: 24px;
+  padding: 8px 18px;
+  box-shadow: 0 2px 12px rgba(79,172,254,0.08);
 }
 
 .search-icon {
   margin-right: 8px;
-  font-size: 16px;
-  color: #666;
+  font-size: 18px;
+  color: #4facfe;
 }
 
 .search-input {
@@ -357,155 +356,223 @@ export default {
   color: #333;
 }
 
-.search-input::placeholder {
-  color: #999;
-}
-
 .search-btn {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #4facfe 0%, #764ba2 100%);
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
+  padding: 8px 18px;
+  border-radius: 18px;
+  font-size: 15px;
   cursor: pointer;
   margin-left: 8px;
-  transition: all 0.3s ease;
+  transition: all 0.3s;
 }
 
 .search-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(79, 172, 254, 0.4);
+  opacity: 0.92;
 }
-/* 商家网格布局样式（搬运自 MerchantsBrowse.vue） */
+
+/* 筛选栏 */
+.filter-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 居中 */
+  gap: 12px;
+  margin-bottom: 24px;
+  margin-top: 12px;
+  padding: 24px 0 0 0;
+}
+
+.sort-options {
+  display: flex;
+  gap: 18px;
+  margin-top: 8px;
+  justify-content: center;
+}
+
+.sort-btn {
+  background: #fff;
+  color: #764ba2;
+  border: none;
+  border-radius: 18px;
+  padding: 10px 28px;
+  font-size: 17px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(76,175,254,0.13);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  letter-spacing: 1px;
+}
+
+.sort-btn.active,
+.sort-btn:hover {
+  background: linear-gradient(135deg, #4facfe 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 8px 32px rgba(76,175,254,0.18);
+}
+
+/* 商家网格布局 */
+.merchants-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 商家网格居中且最大宽度 */
 .merchants-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(3, 1fr); /* 固定三列 */
+  gap: 22px;
   margin-bottom: 40px;
-  padding: 16px;
+  padding: 12px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
 }
+
 .merchant-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
+  background: rgba(255,255,255,0.98);
+  border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+  box-shadow: 0 4px 18px rgba(76,175,254,0.10);
+  transition: all 0.3s;
   cursor: pointer;
+  border: none;
 }
+
 .merchant-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 123, 255, 0.15);
-  background: rgba(255, 255, 255, 0.98);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 32px rgba(76,175,254,0.18);
 }
+
 .merchant-cover {
   position: relative;
-  height: 180px;
+  height: 160px;
   overflow: hidden;
 }
+
 .cover-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s;
 }
+
 .merchant-card:hover .cover-image {
-  transform: scale(1.05);
+  transform: scale(1.06);
 }
+
 .merchant-status {
   position: absolute;
   top: 12px;
   right: 12px;
 }
+
 .status-open {
   background: #28a745;
   color: white;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(40,167,69,0.10);
 }
+
 .status-closed {
-  background: #dc3545;
+  background: #e74c3c;
   color: white;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(231,76,60,0.10);
 }
+
 .merchant-info {
   padding: 16px;
 }
+
 .merchant-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
+
 .merchant-name {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 19px;
+  font-weight: 700;
   color: #333;
   margin: 0;
   flex: 1;
   margin-right: 8px;
 }
+
 .merchant-rating {
   display: flex;
   align-items: center;
   gap: 4px;
 }
+
 .rating-stars {
-  font-size: 14px;
+  font-size: 15px;
 }
+
 .rating-score {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: #333;
 }
+
 .merchant-meta {
   display: flex;
-  gap: 16px;
-  margin-bottom: 12px;
+  gap: 14px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
 }
+
 .meta-item {
   display: flex;
   align-items: center;
   gap: 4px;
 }
+
 .meta-icon {
-  font-size: 12px;
+  font-size: 13px;
 }
+
 .meta-text {
-  font-size: 12px;
+  font-size: 13px;
   color: #666;
 }
+
 .merchant-tags {
   display: flex;
   gap: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
 }
+
 .tag {
   background: #f0f8ff;
-  color: #007BFF;
+  color: #4facfe;
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 12px;
 }
+
 .featured-dishes {
   border-top: 1px solid #f0f0f0;
-  padding-top: 12px;
+  padding-top: 10px;
 }
+
 .featured-title {
   font-size: 14px;
   font-weight: 600;
   color: #333;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
+
 .dishes-preview {
   display: flex;
   gap: 8px;
@@ -513,28 +580,33 @@ export default {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+
 .dishes-preview::-webkit-scrollbar {
   display: none;
 }
+
 .dish-preview {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-width: 120px;
+  min-width: 110px;
   padding: 6px;
   background: #f8f9fa;
   border-radius: 8px;
 }
+
 .dish-image {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 6px;
   object-fit: cover;
 }
+
 .dish-info {
   flex: 1;
   min-width: 0;
 }
+
 .dish-name {
   font-size: 12px;
   color: #333;
@@ -543,28 +615,33 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .dish-price {
   font-size: 12px;
   font-weight: 600;
   color: #e74c3c;
 }
+
 .load-more {
   text-align: center;
   padding: 20px;
 }
+
 .load-more-btn {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #4facfe 0%, #764ba2 100%);
   color: white;
   border: none;
-  padding: 12px 24px;
-  border-radius: 20px;
+  padding: 12px 28px;
+  border-radius: 22px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 500;
 }
+
 @media (max-width: 768px) {
   .merchants-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 12px;
   }
   .merchant-meta {
     flex-direction: column;
