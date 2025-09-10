@@ -446,29 +446,32 @@ export default {
       try {
         const userId = localStorage.getItem('userId')
         if (!userId) {
-          console.error('未找到用户ID，无法加载优惠券')
-          coupons.value = []
+          availableCoupons.value = []
           return
         }
-        
-        const totalAmount = subtotal.value
-        const response = await couponAPI.getAvailableCoupons(userId, totalAmount)
-        
-        if (response && response.code === 200) {
-          availableCoupons.value = response.data.coupons.map(coupon => ({
-            couponId: coupon.couponId,
-            description: coupon.description,
-            faceValue: coupon.discountValue,
-            threshold: coupon.minOrderAmount,
-            couponName: coupon.couponName,
-            couponType: coupon.couponType,
-            expireTime: coupon.expireTime
+        // 第一步：获取所有优惠券ID
+        const response = await couponAPI.getUserCoupons(userId)
+        console.log('用户优惠券ID列表 response:', response)
+        if (response && (response.code === 0 || response.code === 200) && Array.isArray(response.data)) {
+          // 第二步：批量获取优惠券详情
+          const couponDetails = await Promise.all(
+            response.data.map(couponId => couponAPI.getCouponById(couponId))
+          )
+          console.log('优惠券详情列表:', couponDetails)
+          // 组装前端展示数据
+          availableCoupons.value = couponDetails.map(coupon => ({
+            couponId: coupon.data.couponId,
+            description: `满${coupon.data.threshold}减${coupon.data.faceValue}`,
+            faceValue: coupon.data.faceValue,
+            threshold: coupon.data.threshold,
+            startTime: coupon.data.startTime,
+            endTime: coupon.data.endTime
           }))
         } else {
           availableCoupons.value = []
         }
       } catch (error) {
-        console.error('加载优惠券失败:', error)
+        console.error('loadCoupons 异常:', error)
         availableCoupons.value = []
       }
     }
@@ -496,7 +499,9 @@ export default {
       router.push('/addresses')
     }
 
-    const showCouponSelector = () => {
+    const showCouponSelector = async () => {
+      console.log('showCouponSelector 被调用')
+      await loadCoupons()
       showCouponModal.value = true
     }
 

@@ -180,7 +180,18 @@ export default {
   name: 'MerchantsBrowse',
   setup() {
     const router = useRouter()
-    
+    // 商家图片素材（至少9张）
+    const merchantImages = [
+      'https://picsum.photos/id/1011/400/200',
+      'https://picsum.photos/id/1012/400/200',
+      'https://picsum.photos/id/1015/400/200',
+      'https://picsum.photos/id/1025/400/200',
+      'https://picsum.photos/id/1035/400/200',
+      'https://picsum.photos/id/1041/400/200',
+      'https://picsum.photos/id/1043/400/200',
+      'https://picsum.photos/id/1050/400/200',
+      'https://picsum.photos/id/1062/400/200',
+    ]
     // 响应式数据
     const merchants = ref([])
     const loading = ref(false)
@@ -222,10 +233,7 @@ export default {
           keyword: searchKeyword.value,
           sortBy: activeFilter.value
         }
-        console.log('商家列表请求参数:', params);
         const response = await merchantAPI.getAllMerchants(params)
-        console.log('商家接口原始返回:', response);
-        // 兼容直接返回数组或对象的情况
         let rawList = [];
         if (Array.isArray(response)) {
           rawList = response;
@@ -234,11 +242,13 @@ export default {
         } else if (response && Array.isArray(response.data?.list)) {
           rawList = response.data.list;
         }
-        const mappedList = rawList.map(item => ({
+        // 分配图片
+        const mappedList = rawList.map((item, idx) => ({
           merchantId: item.merchantId,
           merchantName: item.merchantName || item.name || '',
           description: item.description || '',
-          coverImage: item.coverImage || item.imageUrl || '',
+          // 分配图片：优先接口图片，否则用素材
+          coverImage: item.coverImage || item.imageUrl || merchantImages[idx % merchantImages.length],
           rating: item.rating || 4.5,
           reviewCount: item.reviewCount || 999,
           distance: item.distance || '',
@@ -252,9 +262,7 @@ export default {
           featuredDishes: item.featuredDishes || []
         }));
         merchants.value = mappedList;
-        console.log('赋值后 merchants.value:', merchants.value);
       } catch (error) {
-        console.error('获取商家列表失败:', error)
         merchants.value = [];
       } finally {
         loading.value = false;

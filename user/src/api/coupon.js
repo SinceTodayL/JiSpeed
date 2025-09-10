@@ -56,6 +56,15 @@ export const couponAPI = {
   // 根据主键获取coupon详情
   getCouponById: (couponId) => {
     return api.get(`/api/coupons/${couponId}`)
+  },
+
+  // 获取可用的优惠券
+  getAvailableCoupons(userId, totalAmount) {
+    return api.get(`/api/users/${userId}/available-coupons`, {
+      params: {
+        totalAmount
+      }
+    })
   }
 }
 
