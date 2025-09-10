@@ -6,6 +6,7 @@ using JISpeed.Core.Exceptions;
 using JISpeed.Core.Interfaces.IRepositories.Order;
 using JISpeed.Core.Interfaces.IRepositories.Rider;
 using JISpeed.Core.Interfaces.IServices;
+using JISpeed.Infrastructure.Data;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -24,14 +25,15 @@ namespace JISpeed.Application.Services.Order
         private readonly IRiderLocationService _riderLocationService;
         private readonly IMapService _mapService;
         private readonly IRiderRepository _riderRepository;
-
+        private readonly OracleDbContext _context;
         public OrderAssignmentService(
             ILogger<OrderAssignmentService> logger,
             IOrderRepository orderRepository,
             IAssignmentRepository assignmentRepository,
             IRiderLocationService riderLocationService,
             IMapService mapService,
-            IRiderRepository riderRepository)
+            IRiderRepository riderRepository,
+            OracleDbContext context)
         {
             _logger = logger;
             _orderRepository = orderRepository;
@@ -39,6 +41,7 @@ namespace JISpeed.Application.Services.Order
             _riderLocationService = riderLocationService;
             _mapService = mapService;
             _riderRepository = riderRepository;
+            _context = context;
         }
 
         // 自动分配订单给最近的在线骑手
@@ -231,51 +234,70 @@ namespace JISpeed.Application.Services.Order
                 if (order == null)
                 {
                     _logger.LogWarning("订单不存在, OrderId: {OrderId}", orderId);
-                    throw new NotFoundException(ErrorCodes.ResourceNotFound, "订单不存在");
+                    throw OrderExceptions.OrderNotFound(orderId);
                 }
 
-                // 检查订单是否已分配
+                // 检查订单状态是否允许接受
+                if (order.OrderStatus != (int)OrderStatus.Assigned)
+                {
+                    _logger.LogWarning("订单状态不允许接受, OrderId: {OrderId}, Status: {Status}",
+                        orderId, order.OrderStatus);
+                    throw new BusinessException(ErrorCodes.OrderStatusError, "订单状态不允许接受");
+                }
+
+                // 获取分配信息
                 if (string.IsNullOrEmpty(order.AssignId))
                 {
-                    _logger.LogWarning("订单未分配, OrderId: {OrderId}", orderId);
-                    throw new BusinessException(ErrorCodes.ResourceNotFound, "订单未分配给任何骑手");
+                    throw new BusinessException(ErrorCodes.OrderNotFound, "订单未分配，无法获取分配信息");
                 }
 
-                // 用订单的AssignId获取分配记录
                 var assignment = await _assignmentRepository.GetByIdAsync(order.AssignId);
                 if (assignment == null)
                 {
-                    _logger.LogWarning("分配记录不存在, OrderId: {OrderId}, AssignId: {AssignId}", orderId, order.AssignId);
-                    throw new NotFoundException(ErrorCodes.ResourceNotFound, "分配记录不存在");
-                }
-
-                // 验证骑手身份
-                if (assignment.RiderId != riderId)
-                {
-                    _logger.LogWarning("骑手身份验证失败, OrderId: {OrderId}, ExpectedRider: {ExpectedRider}, ActualRider: {ActualRider}",
-                        orderId, assignment.RiderId, riderId);
-                    throw new BusinessException(ErrorCodes.Forbidden, "无权操作此订单");
+                    throw new BusinessException(ErrorCodes.OrderNotFound, "分配信息未找到");
                 }
 
                 // 检查分配状态
                 if (assignment.AcceptedStatus != 0)
                 {
-                    _logger.LogWarning("分配状态不允许接受, OrderId: {OrderId}, Status: {Status}",
-                        orderId, assignment.AcceptedStatus);
                     throw new BusinessException(ErrorCodes.OrderStatusError, "订单状态不允许接受");
                 }
 
-                // 更新分配状态
-                assignment.AcceptedStatus = 1; // 已接单
-                assignment.AcceptedAt = DateTime.Now;
-                await _assignmentRepository.SaveChangesAsync();
+                // 检查是否超时
+                var timeElapsed = DateTime.Now.Subtract(assignment.AssignedAt).TotalMinutes;
+                if (assignment.TimeOut.HasValue && timeElapsed > assignment.TimeOut.Value)
+                {
+                    // 处理超时订单：重置为已支付状态，删除分配信息，重新分配
+                    await ProcessTimeoutOrderAsync(orderId);
+                    throw new BusinessException(ErrorCodes.OrderTimeout, "分配已超时，无法接受");
+                }
 
-                // 更新订单状态（order已经获取过了，不需要重新获取）
-                order.OrderStatus = (int)OrderStatus.InDelivery;
-                await _orderRepository.SaveChangesAsync();
+                // 使用事务确保数据一致性
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    // 更新分配状态
+                    assignment.AcceptedStatus = 1; // 已接单
+                    assignment.AcceptedAt = DateTime.Now;
 
-                _logger.LogInformation("骑手接受订单成功, OrderId: {OrderId}, RiderId: {RiderId}", orderId, riderId);
-                return true;
+                    // 更新订单状态
+                    order.OrderStatus = (int)OrderStatus.InDelivery;
+
+                    // 一次性保存所有更改
+                    await _context.SaveChangesAsync();
+
+                    // 提交事务
+                    await transaction.CommitAsync();
+
+                    _logger.LogInformation("骑手接受订单成功, OrderId: {OrderId}, RiderId: {RiderId}", orderId, riderId);
+                    return true;
+                }
+                catch
+                {
+                    // 回滚事务
+                    await transaction.RollbackAsync();
+                    throw;
+                }
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException || ex is BusinessException))
             {
@@ -526,6 +548,71 @@ namespace JISpeed.Application.Services.Order
             {
                 _logger.LogError(ex, "获取所有订单完整信息时发生异常");
                 return new List<dynamic>();
+            }
+        }
+
+        // 处理超时订单：重置为已支付状态，删除分配信息，重新分配
+        private async Task ProcessTimeoutOrderAsync(string orderId)
+        {
+            try
+            {
+                _logger.LogInformation("开始处理超时订单, OrderId: {OrderId}", orderId);
+
+                // 获取订单
+                var order = await _orderRepository.GetByIdAsync(orderId);
+                if (order == null)
+                {
+                    _logger.LogWarning("超时订单不存在, OrderId: {OrderId}", orderId);
+                    return;
+                }
+
+                // 获取分配信息
+                if (string.IsNullOrEmpty(order.AssignId))
+                {
+                    _logger.LogWarning("超时订单未分配, OrderId: {OrderId}", orderId);
+                    return;
+                }
+
+                var assignment = await _assignmentRepository.GetByIdAsync(order.AssignId);
+                if (assignment == null)
+                {
+                    _logger.LogWarning("超时订单分配信息不存在, OrderId: {OrderId}", orderId);
+                    return;
+                }
+
+                // 删除分配信息
+                await _assignmentRepository.DeleteAsync(assignment.AssignId);
+                await _assignmentRepository.SaveChangesAsync();
+
+                // 重置订单状态为已支付，清空分配ID
+                order.OrderStatus = (int)OrderStatus.Paid;
+                order.AssignId = null;
+                await _orderRepository.SaveChangesAsync();
+
+                _logger.LogInformation("超时订单处理完成，已重置为已支付状态, OrderId: {OrderId}", orderId);
+
+                // 尝试重新自动分配
+                try
+                {
+                    var newAssignId = await AutoAssignOrderAsync(orderId);
+                    if (!string.IsNullOrEmpty(newAssignId))
+                    {
+                        _logger.LogInformation("超时订单重新分配成功, OrderId: {OrderId}, NewAssignId: {NewAssignId}",
+                            orderId, newAssignId);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("超时订单重新分配失败，无可用骑手, OrderId: {OrderId}", orderId);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "超时订单重新分配时发生异常, OrderId: {OrderId}", orderId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "处理超时订单时发生异常, OrderId: {OrderId}", orderId);
             }
         }
     }
