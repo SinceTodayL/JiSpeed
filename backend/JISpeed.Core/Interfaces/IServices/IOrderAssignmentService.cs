@@ -44,5 +44,10 @@ namespace JISpeed.Core.Interfaces.IServices
         // <param name="riderId">骑手ID</param>
         // <returns>骑手的当前分配列表</returns>
         Task<IEnumerable<dynamic>> GetRiderAssignmentsAsync(string riderId);
+
+
+        // 获取所有订单的完整信息（包含骑手、用户、商家、分配信息和订单状态）
+        // <returns>所有订单的完整信息列表</returns>
+        Task<List<dynamic>> GetAllOrdersDetailInfoAsync();
     }
 }

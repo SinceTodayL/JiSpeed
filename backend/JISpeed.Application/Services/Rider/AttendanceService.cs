@@ -199,12 +199,24 @@ namespace JISpeed.Application.Services.Rider
 
         public async Task<Attendance?> GetTodayAttendanceAsync(string riderId)
         {
+            // 验证骑手是否存在
+            var rider = await _riderRepository.GetByIdAsync(riderId);
+            if (rider == null)
+            {
+                throw RiderExceptions.RiderNotFound(riderId);
+            }
             return await _attendanceRepository.GetRiderAttendanceByDateAsync(riderId, DateTime.Today);
         }
 
         // === 查询操作 ===
         public async Task<List<Attendance>> GetRiderAttendancesAsync(string riderId)
         {
+            // 验证骑手是否存在
+            var rider = await _riderRepository.GetByIdAsync(riderId);
+            if (rider == null)
+            {
+                throw RiderExceptions.RiderNotFound(riderId);
+            }
             var attendances = await _attendanceRepository.GetByRiderIdAsync(riderId);
             return attendances.ToList();
         }
@@ -217,6 +229,26 @@ namespace JISpeed.Application.Services.Rider
 
         public async Task<List<Attendance>> GetRiderAttendancesByDateRangeAsync(string riderId, DateTime startDate, DateTime endDate)
         {
+            // 验证骑手是否存在
+            var rider = await _riderRepository.GetByIdAsync(riderId);
+            if (rider == null)
+            {
+                throw RiderExceptions.RiderNotFound(riderId);
+            }
+
+            // 如果没有提供日期参数，使用默认范围（最近一年）
+            if (startDate == DateTime.MinValue || endDate == DateTime.MinValue)
+            {
+                endDate = DateTime.Today;
+                startDate = DateTime.Today.AddYears(-1);
+            }
+
+            // 验证日期范围
+            if (startDate > endDate)
+            {
+                throw new ArgumentException("开始日期不能晚于结束日期");
+            }
+
             var attendances = await _attendanceRepository.GetByRiderIdAndDateRangeAsync(riderId, startDate, endDate);
             return attendances.ToList();
         }
@@ -254,16 +286,62 @@ namespace JISpeed.Application.Services.Rider
         // === 考勤统计 ===
         public async Task<Dictionary<string, int>> GetLateCountByRiderAsync(DateTime startDate, DateTime endDate)
         {
+            // 如果没有提供日期参数，使用默认范围（最近一年）
+            if (startDate == DateTime.MinValue || endDate == DateTime.MinValue)
+            {
+                endDate = DateTime.Today;
+                startDate = DateTime.Today.AddYears(-1);
+            }
+
+            // 验证日期范围
+            if (startDate > endDate)
+            {
+                throw new ArgumentException("开始日期不能晚于结束日期");
+            }
+
             return await _attendanceRepository.GetLateCountByRiderAsync(startDate, endDate);
         }
 
         public async Task<Dictionary<string, int>> GetAbsentCountByRiderAsync(DateTime startDate, DateTime endDate)
         {
+            // 如果没有提供日期参数，使用默认范围（最近一年）
+            if (startDate == DateTime.MinValue || endDate == DateTime.MinValue)
+            {
+                endDate = DateTime.Today;
+                startDate = DateTime.Today.AddYears(-1);
+            }
+
+            // 验证日期范围
+            if (startDate > endDate)
+            {
+                throw new ArgumentException("开始日期不能晚于结束日期");
+            }
+
             return await _attendanceRepository.GetAbsentCountByRiderAsync(startDate, endDate);
         }
 
         public async Task<Dictionary<string, object>> GetRiderAttendanceStatsAsync(string riderId, DateTime startDate, DateTime endDate)
         {
+            // 验证骑手是否存在
+            var rider = await _riderRepository.GetByIdAsync(riderId);
+            if (rider == null)
+            {
+                throw RiderExceptions.RiderNotFound(riderId);
+            }
+
+            // 如果没有提供日期参数，使用默认范围（最近一年）
+            if (startDate == DateTime.MinValue || endDate == DateTime.MinValue)
+            {
+                endDate = DateTime.Today;
+                startDate = DateTime.Today.AddYears(-1);
+            }
+
+            // 验证日期范围
+            if (startDate > endDate)
+            {
+                throw new ArgumentException("开始日期不能晚于结束日期");
+            }
+
             return await _attendanceRepository.GetRiderAttendanceStatsAsync(riderId, startDate, endDate);
         }
 
@@ -324,6 +402,19 @@ namespace JISpeed.Application.Services.Rider
 
         public async Task<List<Attendance>> GetAttendanceReportAsync(DateTime startDate, DateTime endDate)
         {
+            // 如果没有提供日期参数，使用默认范围（最近一年）
+            if (startDate == DateTime.MinValue || endDate == DateTime.MinValue)
+            {
+                endDate = DateTime.Today;
+                startDate = DateTime.Today.AddYears(-1);
+            }
+
+            // 验证日期范围
+            if (startDate > endDate)
+            {
+                throw new ArgumentException("开始日期不能晚于结束日期");
+            }
+
             var attendances = await _attendanceRepository.GetByDateRangeAsync(startDate, endDate);
             return attendances.OrderBy(a => a.CheckDate).ThenBy(a => a.Rider.Name).ToList();
         }

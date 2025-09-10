@@ -33,9 +33,13 @@ namespace JISpeed.Infrastructure.Repositories.Order
         public override async Task<List<JISpeed.Core.Entities.Order.Order>> GetAllAsync()
         {
             return await _context.Orders
-                .Include(o => o.User)
-                .Include(o => o.OrderDishes)
-                    .ThenInclude(od => od.Dish)
+                .Include(o => o.User)                    // 用户信息
+                .Include(o => o.Address)                 // 用户地址信息
+                .Include(o => o.Merchant)                // 商家信息
+                .Include(o => o.OrderDishes)             // 订单菜品
+                    .ThenInclude(od => od.Dish)          // 菜品详情
+                .Include(o => o.Payments)                // 支付信息
+                .Include(o => o.Reviews)                 // 评价信息
                 .OrderByDescending(o => o.CreateAt)
                 .ToListAsync();
         }

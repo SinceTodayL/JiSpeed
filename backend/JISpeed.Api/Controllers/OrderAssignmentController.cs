@@ -8,7 +8,7 @@ namespace JISpeed.Api.Controllers
     // 订单分配控制器 - 处理订单分配、骑手接单等业务逻辑
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    //[Authorize]
     public class OrderAssignmentController : ControllerBase
     {
         private readonly IOrderAssignmentService _orderAssignmentService;
@@ -235,6 +235,27 @@ namespace JISpeed.Api.Controllers
             {
                 _logger.LogError(ex, "获取骑手 {RiderId} 分配信息时发生异常", riderId);
                 return StatusCode(500, "服务器内部错误");
+            }
+        }
+
+        // 获取所有订单的完整信息（包含骑手、用户、商家、分配信息和订单状态）
+        // <returns>所有订单的完整信息</returns>
+        [HttpGet("orders/all")]
+        public async Task<ActionResult<List<dynamic>>> GetAllOrdersDetailInfo()
+        {
+            try
+            {
+                _logger.LogInformation("获取所有订单的完整信息");
+
+                var allOrdersDetailInfo = await _orderAssignmentService.GetAllOrdersDetailInfoAsync();
+
+                _logger.LogInformation("成功获取所有订单的完整信息，共 {Count} 个订单", allOrdersDetailInfo.Count);
+                return Ok(allOrdersDetailInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取所有订单的完整信息时发生异常");
+                return StatusCode(500, "获取所有订单信息时发生内部错误");
             }
         }
     }

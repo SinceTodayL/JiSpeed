@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using JISpeed.Api.DTOS;
+using JISpeed.Core.Entities.Rider;
+using JISpeed.Core.Exceptions;
+using JISpeed.Core.Interfaces.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using JISpeed.Core.Interfaces.IServices;
-using JISpeed.Core.Entities.Rider;
-using JISpeed.Api.DTOS;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace JISpeed.Api.Controllers
 {
@@ -65,14 +66,25 @@ namespace JISpeed.Api.Controllers
         [HttpGet("today/{riderId}")]
         public async Task<ActionResult<AttendanceDTO>> GetTodayAttendance(string riderId)
         {
-            var attendance = await _attendanceService.GetTodayAttendanceAsync(riderId);
-            if (attendance == null)
+            try
             {
-                return NotFound(new { message = "今日无考勤记录" });
-            }
+                var attendance = await _attendanceService.GetTodayAttendanceAsync(riderId);
+                if (attendance == null)
+                {
+                    return NotFound(new { message = "今日无考勤记录" });
+                }
 
-            var dto = MapToDto(attendance);
-            return Ok(new { data = dto });
+                var dto = MapToDto(attendance);
+                return Ok(new { data = dto });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         // === 考勤查询 ===
@@ -108,9 +120,20 @@ namespace JISpeed.Api.Controllers
         [HttpGet("rider/{riderId}")]
         public async Task<ActionResult<List<AttendanceDTO>>> GetRiderAttendances(string riderId)
         {
-            var attendances = await _attendanceService.GetRiderAttendancesAsync(riderId);
-            var dtos = attendances.Select(MapToDto).ToList();
-            return Ok(new { data = dtos, total = dtos.Count });
+            try
+            {
+                var attendances = await _attendanceService.GetRiderAttendancesAsync(riderId);
+                var dtos = attendances.Select(MapToDto).ToList();
+                return Ok(new { data = dtos, total = dtos.Count });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         // 按日期范围查询考勤记录
@@ -138,9 +161,24 @@ namespace JISpeed.Api.Controllers
             [FromQuery] DateTime startDate,
             [FromQuery] DateTime endDate)
         {
-            var attendances = await _attendanceService.GetRiderAttendancesByDateRangeAsync(riderId, startDate, endDate);
-            var dtos = attendances.Select(MapToDto).ToList();
-            return Ok(new { data = dtos, total = dtos.Count });
+            try
+            {
+                var attendances = await _attendanceService.GetRiderAttendancesByDateRangeAsync(riderId, startDate, endDate);
+                var dtos = attendances.Select(MapToDto).ToList();
+                return Ok(new { data = dtos, total = dtos.Count });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         // === 考勤状态查询 ===
@@ -194,8 +232,19 @@ namespace JISpeed.Api.Controllers
             [FromQuery] DateTime startDate,
             [FromQuery] DateTime endDate)
         {
-            var stats = await _attendanceService.GetLateCountByRiderAsync(startDate, endDate);
-            return Ok(new { data = stats });
+            try
+            {
+                var stats = await _attendanceService.GetLateCountByRiderAsync(startDate, endDate);
+                return Ok(new { data = stats });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         // 获取缺勤统计
@@ -207,8 +256,19 @@ namespace JISpeed.Api.Controllers
             [FromQuery] DateTime startDate,
             [FromQuery] DateTime endDate)
         {
-            var stats = await _attendanceService.GetAbsentCountByRiderAsync(startDate, endDate);
-            return Ok(new { data = stats });
+            try
+            {
+                var stats = await _attendanceService.GetAbsentCountByRiderAsync(startDate, endDate);
+                return Ok(new { data = stats });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         // 获取骑手考勤统计
@@ -222,8 +282,23 @@ namespace JISpeed.Api.Controllers
             [FromQuery] DateTime startDate,
             [FromQuery] DateTime endDate)
         {
-            var stats = await _attendanceService.GetRiderAttendanceStatsAsync(riderId, startDate, endDate);
-            return Ok(new { data = stats });
+            try
+            {
+                var stats = await _attendanceService.GetRiderAttendanceStatsAsync(riderId, startDate, endDate);
+                return Ok(new { data = stats });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         // === 考勤管理操作 ===
@@ -295,9 +370,20 @@ namespace JISpeed.Api.Controllers
             [FromQuery] DateTime startDate,
             [FromQuery] DateTime endDate)
         {
-            var attendances = await _attendanceService.GetAttendanceReportAsync(startDate, endDate);
-            var dtos = attendances.Select(MapToDto).ToList();
-            return Ok(new { data = dtos, total = dtos.Count });
+            try
+            {
+                var attendances = await _attendanceService.GetAttendanceReportAsync(startDate, endDate);
+                var dtos = attendances.Select(MapToDto).ToList();
+                return Ok(new { data = dtos, total = dtos.Count });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         // === 私有方法 ===

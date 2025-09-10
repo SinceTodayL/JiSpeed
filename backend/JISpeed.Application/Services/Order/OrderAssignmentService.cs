@@ -435,5 +435,98 @@ namespace JISpeed.Application.Services.Order
                 return Enumerable.Empty<dynamic>();
             }
         }
+
+        // 获取所有订单的完整信息（包含骑手、用户、商家、分配信息和订单状态）
+        public async Task<List<dynamic>> GetAllOrdersDetailInfoAsync()
+        {
+            try
+            {
+                _logger.LogInformation("获取所有订单完整信息");
+
+                // 获取所有订单
+                var orders = await _orderRepository.GetAllAsync();
+                if (orders == null || !orders.Any())
+                {
+                    _logger.LogWarning("没有找到任何订单");
+                    return new List<dynamic>();
+                }
+
+                var orderDetails = new List<dynamic>();
+
+                foreach (var order in orders)
+                {
+                    // 构建用户信息
+                    var userInfo = new
+                    {
+                        UserId = order.User?.UserId,
+                        Nickname = order.User?.Nickname
+                    };
+
+                    // 构建商家信息
+                    var merchantInfo = new
+                    {
+                        MerchantId = order.Merchant?.MerchantId,
+                        MerchantName = order.Merchant?.MerchantName,
+                        Location = order.Merchant?.Location,
+                        Longitude = order.Merchant?.Longitude,
+                        Latitude = order.Merchant?.Latitude
+                    };
+
+                    // 构建地址信息
+                    var addressInfo = new
+                    {
+                        AddressId = order.Address?.AddressId,
+                        RecipientName = order.Address?.ReceiverName,
+                        Address = order.Address?.DetailedAddress,
+                        Longitude = order.Address?.Longitude,
+                        Latitude = order.Address?.Latitude
+                    };
+
+                    // 构建分配信息（如果存在）
+                    dynamic? assignmentInfo = null;
+                    if (!string.IsNullOrEmpty(order.AssignId))
+                    {
+                        var assignment = await _assignmentRepository.GetByIdAsync(order.AssignId);
+                        if (assignment != null)
+                        {
+                            assignmentInfo = new
+                            {
+                                AssignId = assignment.AssignId,
+                                RiderId = assignment.RiderId,
+                                RiderName = assignment.Rider?.Name,
+                                RiderPhoneNumber = assignment.Rider?.PhoneNumber,
+                                VehicleNumber = assignment.Rider?.VehicleNumber,
+                                AssignedAt = assignment.AssignedAt,
+                                AcceptedStatus = assignment.AcceptedStatus,
+                                AcceptedAt = assignment.AcceptedAt,
+                                TimeOut = assignment.TimeOut
+                            };
+                        }
+                    }
+
+                    // 构建完整的订单详情信息
+                    var orderDetail = new
+                    {
+                        OrderId = order.OrderId,
+                        CreateAt = order.CreateAt,
+                        OrderStatus = (int)order.OrderStatus,
+                        User = userInfo,
+                        Merchant = merchantInfo,
+                        Assignment = assignmentInfo,
+                        Address = addressInfo
+                    };
+
+                    orderDetails.Add(orderDetail);
+                }
+
+                _logger.LogInformation("成功获取所有订单完整信息，共 {Count} 个订单", orderDetails.Count);
+                return orderDetails;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "获取所有订单完整信息时发生异常");
+                return new List<dynamic>();
+            }
+        }
     }
 }
