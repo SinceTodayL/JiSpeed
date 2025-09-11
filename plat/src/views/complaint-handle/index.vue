@@ -20,7 +20,8 @@ import {
   NGrid,
   NGi,
   NSpace,
-  useMessage 
+  useMessage,
+  NTooltip
 } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
 import { 
@@ -73,8 +74,7 @@ const auditForm = ref({
 // 状态选项
 const statusOptions = [
   { label: '投诉成立', value: 'approved' },
-  { label: '投诉不成立', value: 'rejected' },
-  { label: '需要进一步调查', value: 'investigating' }
+  { label: '投诉不成立', value: 'rejected' }
 ];
 
 // 投诉状态筛选选项
@@ -693,7 +693,7 @@ onMounted(() => {
         </div>
       </template>
 
-      <div class="space-y-6">
+      <div class="space-y-6 bg-white">
         <!-- 投诉详情概览 -->
         <div class="bg-white p-4 rounded-lg border border-red-200 shadow-sm">
           <h4 class="text-gray-800 font-medium mb-4 flex items-center gap-2">
@@ -703,40 +703,39 @@ onMounted(() => {
             投诉详情
           </h4>
           
-          <n-grid :cols="3" :x-gap="20" :y-gap="12">
-            <n-gi>
+          <div class="flex">
+            <div class="flex-1 mr-5">
               <div class="text-center p-3 bg-purple-50 rounded-lg border border-purple-200">
                 <div class="text-lg font-bold text-purple-700">
                   {{ getCmplStatusText(currentItem.cmplStatus) }}
                 </div>
                 <div class="text-sm text-gray-700 font-medium">当前状态</div>
               </div>
-            </n-gi>
-            <n-gi>
+            </div>
+            <div class="flex-1">
               <div class="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
                 <div class="text-lg font-bold text-blue-700">
                   {{ getCmplRoleText(currentItem.cmplRole) }}
                 </div>
                 <div class="text-sm text-gray-700 font-medium">投诉类型</div>
               </div>
-            </n-gi>
-            <n-gi>
+            </div>
+            <div class="flex-1">
               <div class="text-center p-3 bg-green-50 rounded-lg border border-green-200">
                 <div class="text-lg font-bold text-green-700">
                   {{ formatDateTime(currentItem.createdAt).split(' ')[0] }}
                 </div>
                 <div class="text-sm text-gray-700 font-medium">投诉时间</div>
               </div>
-            </n-gi>
-          </n-grid>
+            </div>
+          </div>
         </div>
 
         <n-divider />
 
         <!-- 详细信息 -->
-        <n-grid :cols="2" :x-gap="24" :y-gap="20">
-          <!-- 基本信息 -->
-          <n-gi>
+        <div class="flex">
+          <div class="flex-1 mr-5">
             <n-card title="基本信息" size="small" class="h-full">
               <template #header-extra>
                 <n-icon color="#ff4d4f">
@@ -772,10 +771,10 @@ onMounted(() => {
                 </div>
               </div>
             </n-card>
-          </n-gi>
+          </div>
           
           <!-- 投诉内容 -->
-          <n-gi>
+          <div class="flex-1">
             <n-card title="投诉内容" size="small" class="h-full">
               <template #header-extra>
                 <n-icon color="#722ed1">
@@ -789,8 +788,8 @@ onMounted(() => {
                 </n-text>
               </div>
             </n-card>
-          </n-gi>
-        </n-grid>
+          </div>
+        </div>
 
         <n-divider />
 
@@ -804,28 +803,23 @@ onMounted(() => {
           </h4>
           
           <NForm :model="auditForm" label-placement="top">
-            <n-grid :cols="2" :x-gap="16">
-              <n-gi>
-                <NFormItem label="处理结果" required>
-                  <NSelect 
-                    v-model:value="auditForm.status" 
-                    :options="statusOptions"
-                    placeholder="请选择处理结果"
-                    size="large"
-                  />
+            <div class="font-bold text-lg my-4 flex items-center">
+              <Icon icon="material-symbols:settings-outline" class="mr-2 text-xl" />
+              <span>处理操作</span>
+            </div>
+            <div class="flex">
+              <div class="flex-1 mr-5">
+                <NFormItem label="处理结果" path="status">
+                  <NSelect v-model:value="auditForm.status" placeholder="请选择处理结果" :options="statusOptions" />
                 </NFormItem>
-              </n-gi>
-              <n-gi>
-                <NFormItem label="处理原因">
-                  <NInput 
-                    v-model:value="auditForm.reason" 
-                    placeholder="请输入处理原因"
-                    size="large"
-                  />
+              </div>
+              <div class="flex-1">
+                <NFormItem label="处理原因" path="reason">
+                  <NInput v-model:value="auditForm.reason" placeholder="请输入处理原因" />
                 </NFormItem>
-              </n-gi>
-            </n-grid>
-            
+              </div>
+            </div>
+
             <NFormItem label="退款设置">
               <div class="flex items-center space-x-4">
                 <NCheckbox v-model:checked="auditForm.needRefund">

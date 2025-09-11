@@ -118,6 +118,15 @@ export function getRiderAssignments(riderId: string) {
 }
 
 /**
+ * 获取所有订单及关联信息（包含骑手、用户、商家、分配信息和订单状态）
+ * @returns 所有订单的完整信息
+ */
+export function getAllOrdersWithDetails() {
+  console.log('获取所有订单及关联信息');
+  return get('/api/OrderAssignment/orders/all');
+}
+
+/**
  * 更新订单状态
  * @param statusData - 状态更新数据 {orderId, newStatus, remark}
  */
@@ -339,19 +348,65 @@ export async function getOrderAssignmentOverview() {
   console.log('获取订单分配总览数据');
   
   try {
-    // 1. 获取所有骑手列表
+    // 1. 获取所有骑手列表 - 使用正确的API调用
+    console.log('🔄 正在调用骑手列表API...');
     const ridersResponse = await get('/api/riders', { page: 1, size: 1000 });
-    console.log('获取骑手列表响应:', ridersResponse);
+    console.log('✅ 获取骑手列表响应:', JSON.stringify(ridersResponse, null, 2));
     
-    // 检查响应数据格式
+    // 检查响应数据格式并添加详细日志
     let riders = [];
-    if (ridersResponse?.data?.Riders) {
-      riders = ridersResponse.data.Riders; // 后端返回格式为 {data: {Riders: [...], Pagination: {...}}}
-    } else if (ridersResponse?.data && Array.isArray(ridersResponse.data)) {
-      riders = ridersResponse.data; // 如果直接是数组
-    } else {
-      console.warn('骑手数据格式不符合预期:', ridersResponse);
+    
+    console.log('🔍 详细分析骑手API响应结构:');
+    console.log('📋 响应对象:', ridersResponse);
+    console.log('📋 响应类型:', typeof ridersResponse);
+    console.log('📋 响应键值:', ridersResponse ? Object.keys(ridersResponse) : 'null');
+    
+    if (ridersResponse?.data) {
+      console.log('📋 data字段存在，类型:', typeof ridersResponse.data);
+      console.log('📋 data字段内容:', ridersResponse.data);
+      console.log('📋 data字段键值:', Object.keys(ridersResponse.data || {}));
+    }
+    
+    if (!ridersResponse) {
+      console.error('❌ 骑手API响应为空');
       riders = [];
+    } else if (ridersResponse?.data?.Riders && Array.isArray(ridersResponse.data.Riders)) {
+      riders = ridersResponse.data.Riders;
+      console.log(`✅ 从 data.Riders 中解析到 ${riders.length} 个骑手:`, riders);
+    } else if (ridersResponse?.data && Array.isArray(ridersResponse.data)) {
+      riders = ridersResponse.data;
+      console.log(`✅ 从 data 数组中解析到 ${riders.length} 个骑手:`, riders);
+    } else if (ridersResponse?.Riders && Array.isArray(ridersResponse.Riders)) {
+      riders = ridersResponse.Riders;
+      console.log(`✅ 从根级 Riders 中解析到 ${riders.length} 个骑手:`, riders);
+    } else if (Array.isArray(ridersResponse)) {
+      riders = ridersResponse;
+      console.log(`✅ 响应本身是数组，包含 ${riders.length} 个骑手:`, riders);
+    } else {
+      console.warn('⚠️ 骑手数据格式不符合预期 - 尝试所有可能的解析路径:');
+      console.warn('  - ridersResponse?.data?.Riders:', ridersResponse?.data?.Riders);
+      console.warn('  - ridersResponse?.data (是否为数组):', Array.isArray(ridersResponse?.data));
+      console.warn('  - ridersResponse?.Riders:', ridersResponse?.Riders);
+      console.warn('  - ridersResponse (是否为数组):', Array.isArray(ridersResponse));
+      console.warn('⚠️ 完整响应数据:', JSON.stringify(ridersResponse, null, 2));
+      riders = [];
+    }
+    
+    console.log(`📋 最终解析到 ${riders.length} 个骑手数据`);
+    
+    // 如果没有骑手数据，返回空的概览
+    if (riders.length === 0) {
+      console.warn('⚠️ 没有找到任何骑手数据，返回空的概览');
+      return {
+        orderStats: {
+          totalOrders: 0,
+          assigned: 0,
+          delivering: 0,
+          completed: 0,
+          assignmentRate: 0
+        },
+        ridersOverview: []
+      };
     }
     
     // 2. 获取订单统计
@@ -410,13 +465,30 @@ export async function getOrderAssignmentOverview() {
     
     const allRidersOverview = [...ridersWithOrders, ...remainingRiders];
     
+    console.log('🎉 订单分配总览数据获取成功');
     return {
       orderStats,
       ridersOverview: allRidersOverview
     };
   } catch (error) {
-    console.error('获取订单分配总览失败:', error);
-    throw error;
+    console.error('❌ 获取订单分配总览失败:', error);
+    console.error('❌ 错误详情:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    
+    // 返回默认数据而不是抛出错误，确保UI能够显示
+    return {
+      orderStats: {
+        totalOrders: 0,
+        assigned: 0,
+        delivering: 0,
+        completed: 0,
+        assignmentRate: 0
+      },
+      ridersOverview: []
+    };
   }
 }
 

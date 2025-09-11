@@ -47,7 +47,9 @@ export const ORDER_STATUS_MAP: Api.Order.OrderStatusMap = {
   3: '已评价',      // Reviewed
   4: '售后中',      // Aftersales
   5: '售后结束',    // AftersalesCompleted
-  6: '订单关闭'     // Cancelled
+  6: '订单关闭',    // Cancelled
+  7: '配送中',      // Delivering
+  8: '待配送'       // PendingDelivery
 };
 
 /**
