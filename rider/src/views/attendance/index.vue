@@ -23,6 +23,7 @@ import {
   createAttendanceRecord,
   getAttendanceDetail,
   getRiderAttendanceRecordsList,
+  getRiderAttendanceByDateRange,
   getRiderAttendanceStats,
   getTodayAttendance,
   riderCheckInAttendance,
@@ -60,7 +61,7 @@ const maxRetryCount = 3;
 const filterForm = ref({
   startDate: null as number | null,
   endDate: null as number | null,
-  status: undefined as 'all' | 'present' | 'late' | 'absent' | undefined
+  status: undefined as 'present' | 'late' | 'absent' | undefined
 });
 
 // 分页
@@ -142,11 +143,15 @@ async function fetchAttendanceRecords() {
     };
 
     // 处理日期筛选
-    if (filterForm.value.startDate) {
-      params.startDate = new Date(filterForm.value.startDate).toISOString().split('T')[0];
+    if (filterForm.value.startDate && filterForm.value.startDate !== null) {
+      // NDatePicker 返回的是时间戳（毫秒），直接转换为日期字符串
+      const startDate = new Date(filterForm.value.startDate);
+      params.startDate = startDate.toISOString().split('T')[0];
     }
-    if (filterForm.value.endDate) {
-      params.endDate = new Date(filterForm.value.endDate).toISOString().split('T')[0];
+    if (filterForm.value.endDate && filterForm.value.endDate !== null) {
+      // NDatePicker 返回的是时间戳（毫秒），直接转换为日期字符串
+      const endDate = new Date(filterForm.value.endDate);
+      params.endDate = endDate.toISOString().split('T')[0];
     }
 
     // 处理状态筛选
@@ -161,8 +166,51 @@ async function fetchAttendanceRecords() {
     }
 
     console.log('考勤记录请求参数:', params);
-    const { data } = await getRiderAttendanceRecordsList(riderId.value, params);
-    console.log('考勤记录获取成功:', data);
+    console.log('筛选条件:', {
+      startDate: filterForm.value.startDate,
+      endDate: filterForm.value.endDate,
+      status: filterForm.value.status,
+      processedStartDate: params.startDate,
+      processedEndDate: params.endDate
+    });
+    
+    // 只有当开始日期和结束日期都有值且不为空字符串时才使用日期范围查询API
+    let data;
+    if (params.startDate && params.endDate && params.startDate.trim() !== '' && params.endDate.trim() !== '') {
+      console.log('使用日期范围查询API');
+      const dateRangeParams = {
+        startDate: params.startDate,
+        endDate: params.endDate,
+        pageIndex: params.pageIndex,
+        pageSize: params.pageSize,
+        // 添加状态筛选参数
+        ...(params.isLate !== undefined && { isLate: params.isLate }),
+        ...(params.isAbsent !== undefined && { isAbsent: params.isAbsent })
+      };
+      console.log('日期范围查询参数:', dateRangeParams);
+      const response = await getRiderAttendanceByDateRange(riderId.value, dateRangeParams);
+      data = response.data;
+    } else {
+      console.log('使用普通查询API');
+      const response = await getRiderAttendanceRecordsList(riderId.value, params);
+      data = response.data;
+    }
+    console.log('考勤记录API响应:', data);
+    console.log('API响应类型:', typeof data);
+    console.log('API响应是否为数组:', Array.isArray(data));
+    if (data && typeof data === 'object') {
+      console.log('API响应键:', Object.keys(data));
+      if (data.data) {
+        console.log('data.data类型:', typeof data.data);
+        console.log('data.data是否为数组:', Array.isArray(data.data));
+        console.log('data.data内容:', data.data);
+      }
+      if (data && typeof data === 'object' && 'records' in data) {
+        console.log('data.records类型:', typeof (data as any).records);
+        console.log('data.records是否为数组:', Array.isArray((data as any).records));
+        console.log('data.records内容:', (data as any).records);
+      }
+    }
 
     if (data) {
       // 兼容两种数据格式：标准格式(data.data)和简单格式(data)
@@ -173,10 +221,10 @@ async function fetchAttendanceRecords() {
         // 如果返回的是数组，说明没有分页信息，使用数组长度作为总数
         attendanceList.value = responseData;
         pagination.value.itemCount = responseData.length;
-      } else if (responseData.records) {
+      } else if (responseData && typeof responseData === 'object' && 'records' in responseData) {
         // 如果返回的是分页对象，使用分页信息
-        attendanceList.value = responseData.records;
-        pagination.value.itemCount = responseData.total || 0;
+        attendanceList.value = (responseData as any).records || [];
+        pagination.value.itemCount = (responseData as any).total || 0;
       } else {
         // 其他情况，设置为空
         attendanceList.value = [];
@@ -255,8 +303,11 @@ async function fetchAttendanceStats() {
 
 // 带重试机制的打卡函数
 async function handleCheckInWithRetry() {
-  // 防止重复点击
+  // 防止重复点击 - 如果已经打卡但未签退，则不允许再次打卡
   if (loading.value || isCheckedIn.value) {
+    if (isCheckedIn.value && !isCheckedOut.value) {
+      window.$message?.warning('今日已打卡，请先签退后再打卡');
+    }
     console.log('已经防止重复点击', loading.value, isCheckedIn.value);
     return;
   }
@@ -491,6 +542,25 @@ function handleSearch() {
   fetchAttendanceRecords();
 }
 
+// 实时筛选（当筛选条件改变时自动搜索）
+function handleFilterChange() {
+  console.log('筛选条件改变，自动触发搜索:', filterForm.value);
+  pagination.value.page = 1;
+  fetchAttendanceRecords();
+}
+
+// 清除单个筛选条件
+function clearFilter(type: 'startDate' | 'endDate' | 'status') {
+  if (type === 'startDate') {
+    filterForm.value.startDate = null;
+  } else if (type === 'endDate') {
+    filterForm.value.endDate = null;
+  } else if (type === 'status') {
+    filterForm.value.status = undefined;
+  }
+  handleFilterChange();
+}
+
 // 重置筛选
 function handleReset() {
   console.log('重置筛选条件');
@@ -518,10 +588,30 @@ function handlePageSizeChange(pageSize: number) {
 
 // 计算统计数据
 const statistics = computed(() => {
+  if (!attendanceList.value || !Array.isArray(attendanceList.value)) {
+    return {
+      total: 0,
+      present: 0,
+      late: 0,
+      absent: 0,
+      attendanceRate: 0
+    };
+  }
+
   const total = attendanceList.value.length;
-  const present = attendanceList.value.filter(record => record.isLate === 0 && record.isAbsent === 0).length;
+  const present = attendanceList.value.filter(record => 
+    record.isLate === 0 && record.isAbsent === 0
+  ).length;
   const late = attendanceList.value.filter(record => record.isLate === 1).length;
   const absent = attendanceList.value.filter(record => record.isAbsent === 1).length;
+
+  console.log('统计数据计算:', {
+    total,
+    present,
+    late,
+    absent,
+    attendanceRate: total > 0 ? Math.round((present / total) * 100) : 0
+  });
 
   return {
     total,
@@ -538,6 +628,44 @@ const statusMap = {
   absent: { text: '缺勤', type: 'error' },
   late: { text: '迟到', type: 'warning' }
 };
+
+// 计算今日考勤状态
+const todayAttendanceStatus = computed(() => {
+  if (!todayRecord.value) {
+    return {
+      canCheckIn: true,
+      canCheckOut: false,
+      statusText: '未打卡',
+      statusType: 'default'
+    };
+  }
+
+  const hasCheckedIn = Boolean(todayRecord.value.checkInAt);
+  const hasCheckedOut = Boolean(todayRecord.value.checkoutAt);
+
+  if (hasCheckedIn && hasCheckedOut) {
+    return {
+      canCheckIn: false,
+      canCheckOut: false,
+      statusText: '已完成',
+      statusType: 'success'
+    };
+  } else if (hasCheckedIn && !hasCheckedOut) {
+    return {
+      canCheckIn: false,
+      canCheckOut: true,
+      statusText: '已打卡(未签退)',
+      statusType: 'warning'
+    };
+  } else {
+    return {
+      canCheckIn: true,
+      canCheckOut: false,
+      statusText: '未打卡',
+      statusType: 'default'
+    };
+  }
+});
 
 // 获取考勤状态
 function getAttendanceStatus(record: Api.Attendance.AttendanceRecord) {
@@ -658,6 +786,11 @@ const statusOptions = [
   { label: '缺勤', value: 'absent' }
 ];
 
+// 检查是否有活跃的筛选条件
+const hasActiveFilters = computed(() => {
+  return !!(filterForm.value.startDate || filterForm.value.endDate || filterForm.value.status);
+});
+
 // 页面加载
 onMounted(async () => {
   console.log('考勤页面开始初始化...');
@@ -689,7 +822,7 @@ onMounted(async () => {
 
   try {
     console.log('开始并行获取数据...');
-    await Promise.all([fetchRiderInfo(), /* fetchTodayAttendance(), */ fetchAttendanceRecords(), fetchAttendanceStats()]);
+    await Promise.all([fetchRiderInfo(), fetchTodayAttendance(), fetchAttendanceRecords(), fetchAttendanceStats()]);
     console.log('所有数据获取完成');
   } catch (error) {
     console.error('数据获取过程中出现错误:', error);
@@ -739,7 +872,7 @@ onMounted(async () => {
           <!-- 骑手信息 -->
           <div class="text-center">
             <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-              {{ riderInfo?.name || '骑手' }}
+              {{ authStore.userInfo.userName || riderInfo?.name || '骑手' }}
             </div>
             <div class="text-sm text-gray-500">车辆：{{ riderInfo?.vehicleNumber || '暂无' }}</div>
           </div>
@@ -747,10 +880,16 @@ onMounted(async () => {
           <!-- 今日状态 -->
           <div class="text-center">
             <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-              {{ todayRecord?.checkInAt ? '已打卡' : '未打卡' }}
+              {{ todayAttendanceStatus.statusText }}
             </div>
             <div class="text-sm text-gray-500">
-              {{ todayRecord?.checkoutAt ? '已签退' : '未签退' }}
+              {{ 
+                todayRecord?.checkInAt ? `打卡时间: ${new Date(todayRecord.checkInAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}` :
+                '今日未打卡'
+              }}
+            </div>
+            <div v-if="todayRecord?.checkoutAt" class="text-sm text-gray-500">
+              签退时间: {{ new Date(todayRecord.checkoutAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) }}
             </div>
           </div>
         </div>
@@ -761,21 +900,21 @@ onMounted(async () => {
             class="px-32px"
             type="primary"
             size="large"
-            :disabled="isCheckedIn || loading"
+            :disabled="!todayAttendanceStatus.canCheckIn || loading"
             :loading="loading"
             @click="handleCheckIn"
           >
             <template #icon>
               <Icon icon="mdi:clock-check" class="mr-8px" />
             </template>
-            {{ isCheckedIn ? '已打卡' : '打卡' }}
+            {{ todayAttendanceStatus.statusText }}
           </NButton>
 
           <NButton
             class="px-32px"
             type="info"
             size="large"
-            :disabled="!isCheckedIn || isCheckedOut || loading"
+            :disabled="!todayAttendanceStatus.canCheckOut || loading"
             :loading="loading"
             @click="handleCheckOut"
           >
@@ -788,56 +927,124 @@ onMounted(async () => {
       </div>
     </NCard>
 
-    <!-- 统计卡片 -->
-    <NGrid cols="s:2 m:4" responsive="screen" :x-gap="16" :y-gap="16" class="mb-24px">
-      <NGi>
-        <NCard class="text-center bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-          <NStatistic label="总出勤天数" :value="attendanceStats?.totalWorkDays || 0" />
-        </NCard>
-      </NGi>
-      <NGi>
-        <NCard class="text-center bg-gradient-to-r from-green-500 to-green-600 text-white">
-          <NStatistic label="正常出勤" :value="statistics.present" />
-        </NCard>
-      </NGi>
-      <NGi>
-        <NCard class="text-center bg-gradient-to-r from-yellow-500 to-yellow-600 text-white">
-          <NStatistic label="迟到次数" :value="attendanceStats?.lateCount || 0" />
-        </NCard>
-      </NGi>
-      <NGi>
-        <NCard class="text-center bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-          <NStatistic label="出勤率" :value="attendanceStats?.attendanceRate || 0" suffix="%" />
-        </NCard>
-      </NGi>
-    </NGrid>
+     <!-- 统计卡片 -->
+     <NGrid cols="s:2 m:4" responsive="screen" :x-gap="20" :y-gap="20" class="mb-24px">
+        <NGi>
+          <NCard 
+            :bordered="false" 
+            class="stat-card stat-card-blue text-center bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer rounded-16px"
+          >
+           <div class="stat-card-content">
+             <div class="stat-icon-wrapper">
+               <Icon icon="mdi:calendar-check" class="stat-icon" />
+             </div>
+             <NStatistic 
+               label="出勤天数" 
+               :value="statistics.total" 
+               class="stat-value"
+               :label-style="{ color: '#6B7280', fontSize: '14px', fontWeight: '500' }"
+               :value-style="{ color: '#1F2937', fontSize: '32px', fontWeight: '700' }"
+             />
+           </div>
+           <div class="stat-card-decoration"></div>
+         </NCard>
+       </NGi>
+        <NGi>
+          <NCard 
+            :bordered="false" 
+            class="stat-card stat-card-green text-center bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer rounded-16px"
+          >
+           <div class="stat-card-content">
+             <div class="stat-icon-wrapper">
+               <Icon icon="mdi:check-circle" class="stat-icon" />
+             </div>
+             <NStatistic 
+               label="正常出勤" 
+               :value="statistics.present" 
+               class="stat-value"
+               :label-style="{ color: '#6B7280', fontSize: '14px', fontWeight: '500' }"
+               :value-style="{ color: '#1F2937', fontSize: '32px', fontWeight: '700' }"
+             />
+           </div>
+           <div class="stat-card-decoration"></div>
+         </NCard>
+       </NGi>
+        <NGi>
+          <NCard 
+            :bordered="false" 
+            class="stat-card stat-card-orange text-center bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer rounded-16px"
+          >
+           <div class="stat-card-content">
+             <div class="stat-icon-wrapper">
+               <Icon icon="mdi:clock-alert" class="stat-icon" />
+             </div>
+             <NStatistic 
+               label="迟到次数" 
+               :value="statistics.late" 
+               class="stat-value"
+               :label-style="{ color: '#6B7280', fontSize: '14px', fontWeight: '500' }"
+               :value-style="{ color: '#1F2937', fontSize: '32px', fontWeight: '700' }"
+             />
+           </div>
+           <div class="stat-card-decoration"></div>
+         </NCard>
+       </NGi>
+        <NGi>
+          <NCard 
+            :bordered="false" 
+            class="stat-card stat-card-purple text-center bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer rounded-16px"
+          >
+           <div class="stat-card-content">
+             <div class="stat-icon-wrapper">
+               <Icon icon="mdi:percent" class="stat-icon" />
+             </div>
+             <NStatistic 
+               label="出勤率" 
+               :value="statistics.attendanceRate" 
+               suffix="%" 
+               class="stat-value"
+               :label-style="{ color: '#6B7280', fontSize: '14px', fontWeight: '500' }"
+               :value-style="{ color: '#1F2937', fontSize: '32px', fontWeight: '700' }"
+             />
+           </div>
+           <div class="stat-card-decoration"></div>
+         </NCard>
+       </NGi>
+     </NGrid>
 
     <!-- 筛选表单 -->
     <NCard :bordered="false" class="mb-24px rounded-16px bg-white/90 shadow-lg backdrop-blur-sm dark:bg-gray-800/90">
       <NGrid :cols="24" :x-gap="16" :y-gap="16">
-        <NGi :span="6">
+        <NGi :span="8">
           <div>
             <label class="mb-8px block text-sm text-gray-600 dark:text-gray-400">开始日期</label>
-            <NDatePicker v-model:value="filterForm.startDate" type="date" placeholder="选择开始日期" clearable />
+            <NDatePicker 
+              v-model:value="filterForm.startDate" 
+              type="date" 
+              placeholder="选择开始日期" 
+              clearable 
+              @update:value="handleFilterChange"
+              class="w-full"
+            />
           </div>
         </NGi>
-        <NGi :span="6">
+        <NGi :span="8">
           <div>
             <label class="mb-8px block text-sm text-gray-600 dark:text-gray-400">结束日期</label>
-            <NDatePicker v-model:value="filterForm.endDate" type="date" placeholder="选择结束日期" clearable />
+            <NDatePicker 
+              v-model:value="filterForm.endDate" 
+              type="date" 
+              placeholder="选择结束日期" 
+              clearable 
+              @update:value="handleFilterChange"
+              class="w-full"
+            />
           </div>
         </NGi>
-        <NGi :span="6">
-          <div>
-            <label class="mb-8px block text-sm text-gray-600 dark:text-gray-400">状态筛选</label>
-            <NSelect v-model:value="filterForm.status" :options="statusOptions" placeholder="选择状态" clearable />
-          </div>
-        </NGi>
-        <NGi :span="6">
+        <NGi :span="8">
           <div class="flex h-full items-end">
             <NSpace>
-              <NButton type="primary" @click="handleSearch">搜索</NButton>
-              <NButton @click="handleReset">重置</NButton>
+              <NButton type="primary" @click="handleReset">重置</NButton>
             </NSpace>
           </div>
         </NGi>
@@ -848,8 +1055,22 @@ onMounted(async () => {
     <NCard :bordered="false" class="rounded-16px bg-white/90 shadow-lg backdrop-blur-sm dark:bg-gray-800/90">
       <template #header>
         <div class="flex items-center justify-between">
-          <span class="text-lg font-semibold text-gray-800 dark:text-gray-200">考勤记录</span>
-          <span class="text-sm text-gray-500">本月共 {{ pagination.itemCount }} 条记录</span>
+          <div>
+            <span class="text-lg font-semibold text-gray-800 dark:text-gray-200">考勤记录</span>
+            <!-- 显示当前筛选条件 -->
+            <div v-if="hasActiveFilters" class="mt-1 flex flex-wrap gap-2">
+              <NTag v-if="filterForm.startDate" size="small" type="info" closable @close="clearFilter('startDate')">
+                开始: {{ new Date(filterForm.startDate).toLocaleDateString('zh-CN') }}
+              </NTag>
+              <NTag v-if="filterForm.endDate" size="small" type="info" closable @close="clearFilter('endDate')">
+                结束: {{ new Date(filterForm.endDate).toLocaleDateString('zh-CN') }}
+              </NTag>
+              <NTag v-if="filterForm.status" size="small" type="warning" closable @close="clearFilter('status')">
+                状态: {{ statusOptions.find(opt => opt.value === filterForm.status)?.label }}
+              </NTag>
+            </div>
+          </div>
+          <span class="text-sm text-gray-500">共 {{ pagination.itemCount }} 条记录</span>
         </div>
       </template>
 
@@ -1027,6 +1248,119 @@ onMounted(async () => {
   background-color: rgba(59, 130, 246, 0.05);
   transform: scale(1.01);
   transition: all 0.2s ease;
+}
+
+/* 统计卡片样式 */
+.stat-card {
+  position: relative;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.stat-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.stat-icon-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+  font-size: 28px;
+  color: white;
+}
+
+.stat-value {
+  width: 100%;
+}
+
+.stat-card-decoration {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+  opacity: 0.3;
+}
+
+/* 蓝色卡片 */
+.stat-card-blue .stat-icon-wrapper {
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+}
+
+.stat-card-blue .stat-card-decoration {
+  background: linear-gradient(90deg, transparent, #3B82F6, transparent);
+}
+
+/* 绿色卡片 */
+.stat-card-green .stat-icon-wrapper {
+  background: linear-gradient(135deg, #10B981 0%, #047857 100%);
+}
+
+.stat-card-green .stat-card-decoration {
+  background: linear-gradient(90deg, transparent, #10B981, transparent);
+}
+
+/* 橙色卡片 */
+.stat-card-orange .stat-icon-wrapper {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+}
+
+.stat-card-orange .stat-card-decoration {
+  background: linear-gradient(90deg, transparent, #F59E0B, transparent);
+}
+
+/* 紫色卡片 */
+.stat-card-purple .stat-icon-wrapper {
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+}
+
+.stat-card-purple .stat-card-decoration {
+  background: linear-gradient(90deg, transparent, #8B5CF6, transparent);
+}
+
+/* 暗色模式适配 */
+.dark .stat-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .stat-card-blue .stat-icon-wrapper {
+  background: linear-gradient(135deg, #1E40AF 0%, #1E3A8A 100%);
+}
+
+.dark .stat-card-green .stat-icon-wrapper {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.dark .stat-card-orange .stat-icon-wrapper {
+  background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+}
+
+.dark .stat-card-purple .stat-icon-wrapper {
+  background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
 }
 
 /* 统计卡片动画 */

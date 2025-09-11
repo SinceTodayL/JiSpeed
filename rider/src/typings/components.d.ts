@@ -8,8 +8,6 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    AddressSearch: typeof import('./../components/AddressSearch.vue')['default']
-    AmapMap: typeof import('./../components/delivery/amap-map.vue')['default']
     AppProvider: typeof import('./../components/common/app-provider.vue')['default']
     BetterScroll: typeof import('./../components/custom/better-scroll.vue')['default']
     ButtonIcon: typeof import('./../components/custom/button-icon.vue')['default']
@@ -33,8 +31,6 @@ declare module 'vue' {
     LookForward: typeof import('./../components/custom/look-forward.vue')['default']
     MenuToggler: typeof import('./../components/common/menu-toggler.vue')['default']
     NAvatar: typeof import('naive-ui')['NAvatar']
-    NavigationMap: typeof import('./../components/navigation/navigation-map.vue')['default']
-    NavigationPanel: typeof import('./../components/navigation/navigation-panel.vue')['default']
     NBreadcrumb: typeof import('naive-ui')['NBreadcrumb']
     NBreadcrumbItem: typeof import('naive-ui')['NBreadcrumbItem']
     NButton: typeof import('naive-ui')['NButton']

@@ -93,6 +93,29 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     }
   }
 
+  /**
+   * 更新用户信息（用于个人信息修改后的同步）
+   * @param userData 要更新的用户数据
+   */
+  function updateUserInfo(userData: Partial<Api.Auth.UserInfo>) {
+    if (userData.userName !== undefined) {
+      userInfo.userName = userData.userName;
+      console.log('🔄 已更新用户姓名:', userData.userName);
+    }
+    
+    if (userData.userId !== undefined) {
+      userInfo.userId = userData.userId;
+    }
+    
+    if (userData.roles !== undefined) {
+      userInfo.roles = userData.roles;
+    }
+    
+    if (userData.buttons !== undefined) {
+      userInfo.buttons = userData.buttons;
+    }
+  }
+
   return {
     token,
     userInfo,
@@ -100,6 +123,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     isLogin,
     loginLoading,
     resetStore,
-    initUserInfo
+    initUserInfo,
+    updateUserInfo
   };
 });

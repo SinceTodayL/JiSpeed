@@ -171,6 +171,12 @@ async function handleSave() {
         originalData.value.riderId = updatedData.riderId || '';
         originalData.value.vehicleNumber = updatedData.vehicleNumber || '';
         
+        // 🔄 同步更新authStore中的用户姓名
+        if (updatedData.name && updatedData.name !== authStore.userInfo.userName) {
+          authStore.updateUserInfo({ userName: updatedData.name });
+          console.log('🔄 已同步更新authStore中的用户姓名:', updatedData.name);
+        }
+        
         console.log('✅ 保存成功！');
         console.log('📝 更新后的formModel：', formModel);
         console.log('📝 更新后的originalData：', originalData.value);

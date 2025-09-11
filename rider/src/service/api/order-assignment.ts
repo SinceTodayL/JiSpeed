@@ -7,33 +7,11 @@ import { request } from '../request';
 // ========== 订单分配 ==========
 
 /**
- * 自动分配订单
- */
-export function autoAssignOrder(data: Api.OrderAssignment.AutoAssignRequest) {
-  return request<Api.OrderAssignment.AutoAssignResponse>({
-    url: '/api/orderassignment/auto-assign',
-    method: 'post',
-    data
-  });
-}
-
-/**
- * 手动分配订单
- */
-export function manualAssignOrder(data: Api.OrderAssignment.ManualAssignRequest) {
-  return request<Api.OrderAssignment.ManualAssignResponse>({
-    url: '/api/orderassignment/manual-assign',
-    method: 'post',
-    data
-  });
-}
-
-/**
  * 骑手接受订单
  */
-export function acceptOrder(riderId: string, data: Api.OrderAssignment.AcceptOrderRequest) {
+export function acceptOrder(data: Api.OrderAssignment.AcceptOrderRequest) {
   return request<Api.OrderAssignment.AcceptOrderResponse>({
-    url: `/api/orderassignment/rider/${riderId}/accept`,
+    url: '/api/OrderAssignment/accept-order',
     method: 'post',
     data
   });
@@ -42,9 +20,9 @@ export function acceptOrder(riderId: string, data: Api.OrderAssignment.AcceptOrd
 /**
  * 骑手拒绝订单
  */
-export function rejectOrder(riderId: string, data: Api.OrderAssignment.RejectOrderRequest) {
+export function rejectOrder(data: Api.OrderAssignment.RejectOrderRequest) {
   return request<Api.OrderAssignment.RejectOrderResponse>({
-    url: `/api/orderassignment/rider/${riderId}/reject`,
+    url: '/api/OrderAssignment/reject-order',
     method: 'post',
     data
   });
@@ -53,9 +31,9 @@ export function rejectOrder(riderId: string, data: Api.OrderAssignment.RejectOrd
 /**
  * 更新订单状态
  */
-export function updateOrderStatus(assignmentId: string, data: Api.OrderAssignment.UpdateOrderStatusRequest) {
+export function updateOrderStatus(data: Api.OrderAssignment.UpdateOrderStatusRequest) {
   return request<Api.OrderAssignment.UpdateOrderStatusResponse>({
-    url: `/api/orderassignment/${assignmentId}/status`,
+    url: '/api/OrderAssignment/update-status',
     method: 'put',
     data
   });
@@ -66,9 +44,9 @@ export function updateOrderStatus(assignmentId: string, data: Api.OrderAssignmen
 /**
  * 获取订单分配信息
  */
-export function getOrderAssignmentInfo(assignmentId: string) {
+export function getOrderAssignmentInfo(orderId: string) {
   return request<Api.OrderAssignment.OrderAssignmentInfoResponse>({
-    url: `/api/orderassignment/${assignmentId}`,
+    url: `/api/OrderAssignment/order/${orderId}/assignment`,
     method: 'get'
   });
 }
@@ -78,7 +56,7 @@ export function getOrderAssignmentInfo(assignmentId: string) {
  */
 export function getRiderAssignmentList(riderId: string, params: Api.OrderAssignment.GetRiderAssignmentListRequest = {}) {
   return request<Api.OrderAssignment.RiderAssignmentListResponse>({
-    url: `/api/orderassignment/rider/${riderId}/list`,
+    url: `/api/OrderAssignment/rider/${riderId}/assignments`,
     method: 'get',
     params
   });
