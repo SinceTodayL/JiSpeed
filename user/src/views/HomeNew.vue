@@ -1,5 +1,21 @@
 <template>
   <div class="home-page">
+    <!-- 右上角地址选择器 -->
+    <div class="top-right-address">
+      <div class="address-selector" @click="handleAddressClick">
+        <div class="address-content">
+          <i class="address-icon">📍</i>
+          <div class="address-text">
+            <div class="address-label">当前地址</div>
+            <div class="address-name">
+              {{ currentAddress?.detailedAddress || '请选择地址' }}
+            </div>
+          </div>
+          <i class="dropdown-icon">▼</i>
+        </div>
+      </div>
+    </div>
+
     <!-- 欢迎区域 -->
     <div class="welcome-section">
       <div class="welcome-content">
@@ -27,106 +43,168 @@
 
     <!-- 商家列表 -->
     <div class="merchant-list-section">
-      <!-- 筛选和排序 -->
-      <div class="filter-bar">
-        <div class="section-header">
-          <h2 class="section-title">附近商家</h2>
-          <p class="section-subtitle">为您精选优质餐厅</p>
+      <div class="merchants-container">
+        <!-- 筛选和排序 -->
+        <div class="filter-bar">
+          <div class="sort-options">
+            <button 
+              v-for="option in sortOptions" 
+              :key="option.value"
+              @click="changeSortBy(option.value)"
+              :class="['sort-btn', { active: currentSort === option.value }]"
+            >
+              {{ option.label }}
+            </button>
+          </div>
         </div>
-        <div class="sort-options">
-          <button 
-            v-for="option in sortOptions" 
-            :key="option.value"
-            @click="changeSortBy(option.value)"
-            :class="['sort-btn', { active: currentSort === option.value }]"
-          >
-            {{ option.label }}
-          </button>
-        </div>
-      </div>
 
-      <!-- 商家列表 -->
-      <div class="merchant-list">
+        <!-- 商家网格卡片布局 -->
         <div v-if="loading" class="loading-container">
           <div class="loading-spinner"></div>
           <p>正在加载商家信息...</p>
         </div>
-
         <div v-else-if="merchants.length === 0" class="empty-state">
           <div class="empty-icon">🏪</div>
           <h3>暂无商家</h3>
           <p>当前条件下没有找到商家</p>
         </div>
-
         <div v-else class="merchants-grid">
-          <div 
-            v-for="merchant in merchants" 
+          <div
+            v-for="(merchant, index) in merchants"
             :key="merchant.merchantId"
-            @click="goToMerchant(merchant.merchantId)"
             class="merchant-card"
+            @click="goToMerchant(merchant.merchantId)"
           >
-            <div class="merchant-image">
-              <img :src="merchant.imageUrl || '/default-merchant.jpg'" :alt="merchant.merchantName" />
-              <div v-if="merchant.status === 1" class="online-badge">营业中</div>
-              <div v-else class="offline-badge">休息中</div>
+            <!-- 商家封面图 -->
+            <div class="merchant-cover">
+              <img class="cover-image" :src="getMerchantImage(index)" alt="商家图片" />
+              <div class="merchant-status">
+                <span v-if="merchant.status === 1" class="status-open">营业中</span>
+                <span v-else class="status-closed">休息中</span>
+              </div>
             </div>
 
+            <!-- 商家信息 -->
             <div class="merchant-info">
-              <h3 class="merchant-name">{{ merchant.merchantName || merchant.name || '商家名称缺失' }}</h3>
-              <p class="merchant-desc">{{ merchant.description || '暂无描述' }}</p>
-              <div class="merchant-contact">联系方式：{{ merchant.contactInfo || merchant.phone || '暂无' }}</div>
-              <div class="merchant-address">地址：{{ merchant.location || merchant.address || '暂无' }}</div>
-              <div class="merchant-stats">
-                <div class="rating">
-                  <span class="rating-stars">★</span>
-                  <span class="rating-score">{{ merchant.rating || '4.5' }}</span>
-                  <span class="rating-count">({{ merchant.reviewCount || '999+' }})</span>
-                </div>
-                <div class="distance">
-                  <i class="location-icon">📍</i>
-                  <span>{{ merchant.distance || '1.2' }}km</span>
+              <div class="merchant-header">
+                <h3 class="merchant-name">{{ merchant.merchantName || merchant.name || '商家名称缺失' }}</h3>
+                <div class="merchant-rating">
+                  <span class="rating-stars">⭐</span>
+                  <span class="rating-score">{{ merchant.rating || 4.5 }}</span>
                 </div>
               </div>
-              <div class="merchant-tags">
-                <span 
-                  v-for="tag in merchant.tags?.slice(0, 3)" 
+              <div class="merchant-meta">
+                <div class="meta-item">
+                  <span class="meta-icon">🚚</span>
+                  <span class="meta-text">{{ merchant.deliveryTime || '30-45' }}分钟</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-icon">💰</span>
+                  <span class="meta-text">配送费¥{{ merchant.deliveryFee || 3 }}</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-icon">📦</span>
+                  <span class="meta-text">起送¥{{ merchant.minOrderAmount || 20 }}</span>
+                </div>
+              </div>
+              <!-- 商家标签 -->
+              <div v-if="merchant.tags && merchant.tags.length" class="merchant-tags">
+                <span
+                  v-for="tag in merchant.tags.slice(0, 3)"
                   :key="tag"
                   class="tag"
                 >
                   {{ tag }}
                 </span>
               </div>
-              <div class="merchant-bottom">
-                <div class="delivery-info">
-                  <span class="delivery-fee">配送费 ¥{{ merchant.deliveryFee || '3' }}</span>
-                  <span class="delivery-time">{{ merchant.deliveryTime || '30-45' }}分钟</span>
-                </div>
-                <div v-if="merchant.minOrderAmount" class="min-order">
-                  起送 ¥{{ merchant.minOrderAmount }}
+              <!-- 特色菜品预览（如有） -->
+              <div v-if="merchant.featuredDishes && merchant.featuredDishes.length" class="featured-dishes">
+                <div class="featured-title">招牌菜：</div>
+                <div class="dishes-preview">
+                  <div
+                    v-for="dish in merchant.featuredDishes"
+                    :key="dish.dishId || dish.name"
+                    class="dish-preview"
+                  >
+                    <img :src="dish.image || '/default-dish.jpg'" class="dish-image" :alt="dish.name" />
+                    <div class="dish-info">
+                      <div class="dish-name">{{ dish.name }}</div>
+                      <div class="dish-price">¥{{ dish.price }}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+        <!-- 加载更多 -->
+        <div v-if="hasMore && !loading" class="load-more">
+          <button @click="loadMore" class="load-more-btn">
+            加载更多
+          </button>
+        </div>
       </div>
+    </div>
 
-      <!-- 加载更多 -->
-      <div v-if="hasMore && !loading" class="load-more">
-        <button @click="loadMore" class="load-more-btn">
-          加载更多
-        </button>
+    <!-- 地址选择弹窗 -->
+    <div v-if="showAddressModal" class="address-modal" @click="closeAddressModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3 class="modal-title">选择当前地址</h3>
+          <button @click="closeAddressModal" class="close-btn">✕</button>
+        </div>
+        
+        <div class="modal-body">
+          <!-- 加载状态 -->
+          <div v-if="addressLoading" class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>正在加载地址...</p>
+          </div>
+          
+          <!-- 地址列表 -->
+          <div v-else-if="userAddresses.length > 0" class="address-list">
+            <div 
+              v-for="address in userAddresses" 
+              :key="address.addressId"
+              class="address-item"
+              :class="{ active: currentAddress?.addressId === address.addressId }"
+              @click="selectAddress(address)"
+            >
+              <div class="address-info">
+                <div class="address-header">
+                  <span class="receiver-name">{{ address.receiverName }}</span>
+                  <span class="receiver-phone">{{ address.receiverPhone }}</span>
+                  <span v-if="address.isDefault" class="default-badge">默认</span>
+                </div>
+                <div class="address-detail">{{ address.detailedAddress }}</div>
+              </div>
+              <div class="select-icon" v-if="currentAddress?.addressId === address.addressId">✓</div>
+            </div>
+          </div>
+          
+          <!-- 空状态 -->
+          <div v-else class="empty-addresses">
+            <div class="empty-icon">📍</div>
+            <p>暂无收货地址</p>
+            <button @click="goToAddresses" class="add-address-btn">添加地址</button>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button @click="goToAddresses" class="manage-btn">管理地址</button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { merchantAPI } from '@/api/merchant.js'
+import { addressAPI } from '@/api/user.js'
 
 export default {
-  name: 'Home',
   setup() {
     const router = useRouter()
     
@@ -138,15 +216,33 @@ export default {
     const currentPage = ref(1)
     const hasMore = ref(true)
     
-    // 排序选项
-    const sortOptions = ref([
-      { value: 'recommended', label: '推荐' },
-      { value: 'rating', label: '评分' },
-      { value: 'distance', label: '距离' },
-      { value: 'sales', label: '销量' },
-      { value: 'delivery_time', label: '配送时间' }
-    ])
+    // 添加缺失的变量
+    const userLocation = ref({ addressId: '' })
+    const merchantImages = [
+      'https://picsum.photos/id/1011/400/200',
+      'https://picsum.photos/id/1012/400/200',
+      'https://picsum.photos/id/1015/400/200',
+      'https://picsum.photos/id/1025/400/200',
+      'https://picsum.photos/id/1035/400/200',
+      'https://picsum.photos/id/1041/400/200',
+      'https://picsum.photos/id/1043/400/200',
+      'https://picsum.photos/id/1050/400/200',
+      'https://picsum.photos/id/1062/400/200',
+      'https://picsum.photos/id/1069/400/200',
+      'https://picsum.photos/id/1074/400/200',
+      'https://picsum.photos/id/1080/400/200',
+      'https://picsum.photos/id/1084/400/200'
+    ]
     
+    // 排序选项与tag枚举值的映射
+    const sortOptions = [
+      { label: '推荐', value: 'recommend' },
+      { label: '评分', value: 'rating', tag: 0 },
+      { label: '距离', value: 'distance', tag: 1 },
+      { label: '销量', value: 'sales', tag: 2 },
+      { label: '配送时间', value: 'delivery_time', tag: 3 }
+    ]
+
     // 获取商家列表
     const fetchMerchants = async (reset = false) => {
       if (loading.value) return
@@ -156,27 +252,29 @@ export default {
         const params = {
           page: reset ? 1 : currentPage.value,
           size: 10,
-          sortBy: currentSort.value,
-          keyword: searchKeyword.value || undefined
+          merchantName: searchKeyword.value || undefined,
+          location: undefined, // 可根据实际需求补充地理位置参数
+          status: undefined // 可根据实际需求补充商家状态参数
         }
         // 调用真实API
         const response = await merchantAPI.getMerchantList(params)
+        console.log('商家接口返回数据:', response)
         if (response.code === 0) {
           console.log('获取商家列表成功:', response.data)
           // 字段映射，保证模板字段一致
           const mappedList = (response.data || []).map(item => ({
             merchantId: item.merchantId,
-            name: item.merchantName || item.name || '',
+            name: item.merchantName || '',
             description: item.description || '',
-            imageUrl: item.imageUrl || '',
-            rating: item.rating || 4.5,
-            reviewCount: item.reviewCount || 999,
-            distance: item.distance || '',
-            deliveryFee: item.deliveryFee || 3,
-            deliveryTime: item.deliveryTime || '30-45',
-            minOrderAmount: item.minOrderAmount || '',
+            imageUrl: '/default-merchant.jpg', // 默认图片
+            rating: 4.5, // 默认评分
+            reviewCount: 999, // 默认评价数
+            distance: '1.2', // 默认距离
+            deliveryFee: 3, // 默认配送费
+            deliveryTime: '30-45', // 默认配送时间
+            minOrderAmount: '', // 默认起送价
             isOnline: item.status === 1,
-            tags: item.tags || [],
+            tags: [], // 默认标签
             phone: item.contactInfo || '',
             address: item.location || ''
           }))
@@ -227,9 +325,143 @@ export default {
     }
     
     // 改变排序
-    const changeSortBy = (sortBy) => {
+    const changeSortBy = async (sortBy) => {
       currentSort.value = sortBy
-      fetchMerchants(true)
+      
+      // 查找对应的tag值
+      const option = sortOptions.find(opt => opt.value === sortBy)
+      
+      if (option && option.tag !== undefined) {
+        // 调用真实的byTag接口
+        await fetchMerchantsByTag(option.tag)
+      } else {
+        // 推荐或其他情况，使用原有接口
+        await fetchMerchants(true)
+      }
+    }
+
+    // 新增：通过Tag筛选商家的方法
+    const fetchMerchantsByTag = async (tag) => {
+      try {
+        loading.value = true
+        const params = {
+          tag: tag,
+          page: 1,
+          size: 20,
+          addressId: currentAddress.value?.addressId || localStorage.getItem('userAddressId') || '1'
+        }
+        
+        const response = await merchantAPI.getMerchantListByTag(params)
+        
+        if (response && response.code === 0 && response.data) {
+          // 获取商家ID列表
+          const merchantIds = response.data.map(item => item.merchantId)
+          
+          if (merchantIds.length > 0) {
+            // 并发获取所有商家的详细信息
+            const merchantDetails = await Promise.all(
+              merchantIds.map(async (merchantId) => {
+                try {
+                  const detailResponse = await merchantAPI.getMerchantById(merchantId)
+                  if (detailResponse && detailResponse.code === 0 && detailResponse.data) {
+                    return detailResponse.data
+                  }
+                  return null
+                } catch (error) {
+                  console.error(`获取商家 ${merchantId} 详情失败:`, error)
+                  return null
+                }
+              })
+            )
+            
+            // 过滤掉获取失败的商家，并格式化数据
+            const validMerchants = merchantDetails
+              .filter(merchant => merchant !== null)
+              .map((merchant) => ({
+                merchantId: merchant.merchantId,
+                merchantName: merchant.merchantName || `商家-${merchant.merchantId}`,
+                name: merchant.merchantName || `商家-${merchant.merchantId}`,
+                description: merchant.description || `商家ID: ${merchant.merchantId}`,
+                rating: 4.5, // 可以根据实际需要调整默认值
+                reviewCount: 999,
+                distance: '1.2',
+                deliveryFee: 3,
+                deliveryTime: '30-45',
+                minOrderAmount: 20,
+                status: merchant.status || 1,
+                isOnline: (merchant.status || 1) === 1,
+                tags: ['精选商家'],
+                contactInfo: merchant.contactInfo || '',
+                location: merchant.location || '',
+                salesQty: 0, // 如果有销量数据可以添加
+                timestamp: merchant.timestamp || Date.now()
+              }))
+            
+            merchants.value = validMerchants
+          } else {
+            merchants.value = []
+          }
+        } else {
+          // 如果 byTag 接口失败，降级使用前端排序
+          await sortMerchantsLocally(getTagNameByValue(tag))
+        }
+      } catch (error) {
+        console.error('获取筛选商家列表失败:', error)
+        // 降级：使用前端排序
+        await sortMerchantsLocally(getTagNameByValue(tag))
+      } finally {
+        loading.value = false
+      }
+    }
+    
+    // 新增：根据tag值获取排序类型名称
+    const getTagNameByValue = (tag) => {
+      const tagMap = {
+        0: 'rating',
+        1: 'distance', 
+        2: 'sales',
+        3: 'delivery_time'
+      }
+      return tagMap[tag] || 'recommend'
+    }
+
+    // 新增：前端排序方法（降级方案）
+    const sortMerchantsLocally = async (sortBy) => {
+      // 如果当前没有商家数据，先获取一次
+      if (merchants.value.length === 0) {
+        await fetchMerchants(true)
+      }
+      
+      // 前端排序
+      const sorted = [...merchants.value]
+      
+      switch (sortBy) {
+        case 'rating':
+          sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0))
+          break
+        case 'distance':
+          sorted.sort((a, b) => {
+            const distanceA = parseFloat(a.distance) || 999
+            const distanceB = parseFloat(b.distance) || 999
+            return distanceA - distanceB
+          })
+          break
+        case 'sales':
+          sorted.sort((a, b) => (b.salesQty || 0) - (a.salesQty || 0))
+          break
+        case 'delivery_time':
+          sorted.sort((a, b) => {
+            const timeA = parseInt(a.deliveryTime) || 999
+            const timeB = parseInt(b.deliveryTime) || 999
+            return timeA - timeB
+          })
+          break
+        default:
+          // 推荐排序保持原序
+          break
+      }
+      
+      merchants.value = sorted
     }
     
     // 加载更多
@@ -244,9 +476,132 @@ export default {
     
     // 页面挂载时初始化
     onMounted(() => {
+      fetchUserAddresses()
       fetchMerchants(true)
     })
     
+    const imageList = [
+      'https://picsum.photos/400/200?random=1',
+      'https://picsum.photos/400/200?random=2',
+      'https://picsum.photos/400/200?random=3',
+      'https://picsum.photos/400/200?random=4',
+      'https://picsum.photos/400/200?random=5',
+      // ...更多图片
+    ]
+    
+    // 轮询分配图片
+    const getMerchantImage = (index) => {
+      return imageList[index % imageList.length]
+    }
+    
+    // 新增：地址相关数据
+    const showAddressModal = ref(false)
+    const userAddresses = ref([])
+    const currentAddress = ref(null)
+    const addressLoading = ref(false)
+    
+    // 获取用户地址列表
+    const fetchUserAddresses = async () => {
+      try {
+        addressLoading.value = true
+        const userId = localStorage.getItem('userId')
+        
+        if (!userId) {
+          userAddresses.value = []
+          return
+        }
+        
+        const response = await addressAPI.getUserAddresses(userId)
+        
+        if (response && response.code === 0 && response.data) {
+          const addressList = Array.isArray(response.data) ? response.data : []
+          userAddresses.value = addressList
+          
+          // 设置当前地址
+          if (addressList.length > 0) {
+            // 优先使用保存的地址
+            const savedAddress = localStorage.getItem('currentSelectedAddress')
+            let selectedAddress = null
+            
+            if (savedAddress) {
+              try {
+                const parsed = JSON.parse(savedAddress)
+                selectedAddress = addressList.find(addr => addr.addressId === parsed.addressId)
+              } catch (e) {
+                console.error('解析保存地址失败:', e)
+              }
+            }
+            
+            // 如果没有保存的地址，使用默认地址
+            if (!selectedAddress) {
+              selectedAddress = addressList.find(addr => addr.isDefault === 1 || addr.isDefault === true)
+            }
+            
+            // 如果没有默认地址，使用第一个
+            if (!selectedAddress) {
+              selectedAddress = addressList[0]
+            }
+            
+            if (selectedAddress) {
+              currentAddress.value = selectedAddress
+              localStorage.setItem('currentSelectedAddress', JSON.stringify(selectedAddress))
+              localStorage.setItem('userAddressId', selectedAddress.addressId)
+            }
+          }
+          
+        } else {
+          userAddresses.value = []
+        }
+      } catch (error) {
+        console.error('获取地址列表失败:', error)
+        userAddresses.value = []
+      } finally {
+        addressLoading.value = false
+      }
+    }
+    
+    // 选择地址
+    const selectAddress = (address) => {
+      currentAddress.value = address
+      localStorage.setItem('currentSelectedAddress', JSON.stringify(address))
+      localStorage.setItem('userAddressId', address.addressId)
+      closeAddressModal()
+      
+      // 地址变更后重新加载商家列表
+      fetchMerchants(true)
+    }
+    
+    // 关闭地址选择弹窗
+    const closeAddressModal = () => {
+      showAddressModal.value = false
+    }
+    
+    // 跳转到地址管理页面
+    const goToAddresses = () => {
+      closeAddressModal()
+      router.push('/addresses')
+    }
+    
+    // 修改地址选择器点击事件
+    const handleAddressClick = () => {
+      showAddressModal.value = true
+      
+      // 如果没有地址数据，重新获取
+      if (!userAddresses.value || userAddresses.value.length === 0) {
+        fetchUserAddresses()
+      }
+    }
+
+    // 监听路由变化，从地址管理页面返回时刷新地址列表
+    watch(() => router.currentRoute.value.path, (newPath) => {
+      if (newPath === '/' || newPath === '/home') {
+        // 延迟一下，确保地址管理页面的操作已完成
+        setTimeout(() => {
+          fetchUserAddresses()
+        }, 100)
+      }
+    })
+
     return {
       searchKeyword,
       loading,
@@ -257,7 +612,19 @@ export default {
       handleSearch,
       changeSortBy,
       loadMore,
-      goToMerchant
+      goToMerchant,
+      getMerchantImage,
+      showAddressModal,
+      userAddresses,
+      currentAddress,
+      addressLoading,
+      fetchUserAddresses,
+      selectAddress,
+      closeAddressModal,
+      goToAddresses,
+      handleAddressClick,
+      fetchMerchantsByTag,
+      sortMerchantsLocally // 新增
     }
   }
 }
@@ -265,63 +632,128 @@ export default {
 
 <style scoped>
 .home-page {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4facfe 0%, #764ba2 100%);
   min-height: 100vh;
-  padding-bottom: 80px; /* 为底部导航留空间 */
+  padding-bottom: 80px;
+  position: relative;
+}
+
+/* 右上角地址选择器 */
+.top-right-address {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.top-right-address .address-selector {
+  cursor: pointer;
+}
+
+.top-right-address .address-content {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 25px;
+  padding: 8px 16px;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+  min-width: 180px;
+  max-width: 280px;
+}
+
+.top-right-address .address-content:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.top-right-address .address-icon {
+  font-size: 16px;
+  margin-right: 8px;
+  color: #4facfe;
+}
+
+.top-right-address .address-text {
+  flex: 1;
+  text-align: left;
+  color: #333;
+}
+
+.top-right-address .address-label {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-bottom: 2px;
+  color: #666;
+}
+
+.top-right-address .address-name {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  color: #333;
+}
+
+.top-right-address .dropdown-icon {
+  font-size: 10px;
+  opacity: 0.7;
+  margin-left: 8px;
+  transition: transform 0.3s;
+  color: #666;
+}
+
+.top-right-address .address-content:hover .dropdown-icon {
+  transform: rotate(180deg);
 }
 
 /* 欢迎区域 */
 .welcome-section {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: transparent;
   color: white;
   text-align: center;
-  padding: 40px 20px 20px;
-}
-
-.welcome-content {
-  max-width: 400px;
-  margin: 0 auto;
+  padding: 32px 20px 12px;
 }
 
 .welcome-title {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 700;
-  margin: 0 0 8px 0;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  margin-bottom: 8px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.18);
 }
 
 .welcome-subtitle {
   font-size: 16px;
-  opacity: 0.9;
-  margin: 0;
-  font-weight: 300;
+  opacity: 0.92;
+  font-weight: 400;
 }
 
 /* 搜索栏 */
 .search-section {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  padding: 0 20px 20px;
+  background: transparent;
+  padding: 0 20px 12px;
 }
 
 .search-container {
-  max-width: 400px;
+  max-width: 420px;
   margin: 0 auto;
 }
 
 .search-input-wrapper {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 25px;
-  padding: 8px 16px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  backdrop-filter: blur(10px);
+  background: rgba(255,255,255,0.98);
+  border-radius: 24px;
+  padding: 8px 18px;
+  box-shadow: 0 2px 12px rgba(79,172,254,0.08);
 }
 
 .search-icon {
   margin-right: 8px;
-  font-size: 16px;
-  color: #666;
+  font-size: 18px;
+  color: #4facfe;
 }
 
 .search-input {
@@ -334,255 +766,270 @@ export default {
   color: #333;
 }
 
-.search-input::placeholder {
-  color: #999;
-}
-
 .search-btn {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  background: linear-gradient(135deg, #4facfe 0%, #764ba2 100%);
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
+  padding: 8px 18px;
+  border-radius: 18px;
+  font-size: 15px;
   cursor: pointer;
   margin-left: 8px;
-  transition: all 0.3s ease;
+  transition: all 0.3s;
 }
 
 .search-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(79, 172, 254, 0.4);
-}
-/* 商家列表 */
-.merchant-list-section {
-  background: white;
-  margin-top: 8px;
-  border-radius: 20px 20px 0 0;
+  opacity: 0.92;
 }
 
+/* 筛选栏 */
 .filter-bar {
-  padding: 20px 16px 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.section-header {
-  margin-bottom: 16px;
-}
-
-.section-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
-  margin: 0 0 4px 0;
-}
-
-.section-subtitle {
-  font-size: 14px;
-  color: #666;
-  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 居中 */
+  gap: 12px;
+  margin-bottom: 24px;
+  margin-top: 12px;
+  padding: 24px 0 0 0;
 }
 
 .sort-options {
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 8px;
+  justify-content: center;
 }
 
 .sort-btn {
-  padding: 8px 16px;
-  border: 1px solid #e0e0e0;
-  background: white;
-  color: #333;
-  border-radius: 20px;
-  font-size: 14px;
+  background: #fff;
+  color: #764ba2;
+  border: none;
+  border-radius: 18px;
+  padding: 10px 28px;
+  font-size: 17px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  box-shadow: 0 4px 18px rgba(76,175,254,0.13);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  letter-spacing: 1px;
 }
 
+.sort-btn.active,
 .sort-btn:hover {
-  border-color: #4facfe;
-  color: #4facfe;
+  background: linear-gradient(135deg, #4facfe 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 8px 32px rgba(76,175,254,0.18);
 }
 
-.sort-btn.active {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  color: white;
-  border-color: transparent;
-  box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
+/* 商家网格布局 */
+.merchants-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.loading-container {
-  text-align: center;
-  padding: 40px 16px;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #4facfe;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 16px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.empty-state {
-  text-align: center;
-  padding: 60px 16px;
-}
-
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
+/* 商家网格居中且最大宽度 */
 .merchants-grid {
-  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 固定三列 */
+  gap: 22px;
+  margin-bottom: 40px;
+  padding: 12px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .merchant-card {
-  background: white;
-  border-radius: 12px;
-  margin-bottom: 16px;
+  background: rgba(255,255,255,0.98);
+  border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 18px rgba(76,175,254,0.10);
+  transition: all 0.3s;
   cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: none;
 }
 
 .merchant-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 32px rgba(76,175,254,0.18);
 }
 
-.merchant-image {
+.merchant-cover {
   position: relative;
-  height: 140px;
+  height: 160px;
   overflow: hidden;
 }
 
-.merchant-image img {
+.cover-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s;
 }
 
-.online-badge, .offline-badge {
+.merchant-card:hover .cover-image {
+  transform: scale(1.06);
+}
+
+.merchant-status {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
+  top: 12px;
+  right: 12px;
 }
 
-.online-badge {
-  background: #52c41a;
+.status-open {
+  background: #28a745;
   color: white;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(40,167,69,0.10);
 }
 
-.offline-badge {
-  background: #ff4d4f;
+.status-closed {
+  background: #e74c3c;
   color: white;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(231,76,60,0.10);
 }
 
 .merchant-info {
   padding: 16px;
 }
 
-.merchant-name {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0 0 4px 0;
-  color: #333;
-  background: #ffecec;
-  padding: 2px 8px;
-  border-radius: 4px;
-  min-height: 24px;
-  word-break: break-all;
-  /* 默认值高亮显示 */
-  font-family: inherit;
-}
-
-.merchant-desc {
-  font-size: 14px;
-  color: #666;
-  margin: 0 0 12px 0;
-}
-
-.merchant-stats {
+.merchant-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
-.rating {
+.merchant-name {
+  font-size: 19px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+  flex: 1;
+  margin-right: 8px;
+}
+
+.merchant-rating {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
 .rating-stars {
-  color: #ffb400;
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .rating-score {
+  font-size: 15px;
   font-weight: 600;
-  font-size: 14px;
+  color: #333;
 }
 
-.rating-count {
-  font-size: 12px;
-  color: #999;
+.merchant-meta {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
-.distance {
+.meta-item {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 14px;
+}
+
+.meta-icon {
+  font-size: 13px;
+}
+
+.meta-text {
+  font-size: 13px;
   color: #666;
 }
 
 .merchant-tags {
   display: flex;
   gap: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .tag {
-  padding: 2px 6px;
   background: #f0f8ff;
   color: #4facfe;
+  padding: 2px 8px;
+  border-radius: 12px;
   font-size: 12px;
-  border-radius: 4px;
 }
 
-.merchant-bottom {
+.featured-dishes {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 10px;
+}
+
+.featured-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.dishes-preview {
   display: flex;
-  justify-content: space-between;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.dishes-preview::-webkit-scrollbar {
+  display: none;
+}
+
+.dish-preview {
+  display: flex;
   align-items: center;
+  gap: 8px;
+  min-width: 110px;
+  padding: 6px;
+  background: #f8f9fa;
+  border-radius: 8px;
 }
 
-.delivery-info {
-  display: flex;
-  gap: 12px;
-  font-size: 12px;
-  color: #666;
+.dish-image {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  object-fit: cover;
 }
 
-.min-order {
+.dish-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dish-name {
   font-size: 12px;
-  color: #ff4d4f;
+  color: #333;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dish-price {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e74c3c;
 }
 
 .load-more {
@@ -591,12 +1038,246 @@ export default {
 }
 
 .load-more-btn {
+  background: linear-gradient(135deg, #4facfe 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 22px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* 地址选择弹窗样式 */
+.address-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 70vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.close-btn {
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.3s;
+}
+
+.close-btn:hover {
+  background: #f8f9fa;
+  color: #333;
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.loading-container {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e1e5e9;
+  border-top: 3px solid #4facfe;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+.address-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.address-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border: 2px solid #f0f0f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.address-item:hover {
+  border-color: #4facfe;
+}
+
+.address-item.active {
+  border-color: #4facfe;
+  background: rgba(79, 172, 254, 0.05);
+}
+
+.address-info {
+  flex: 1;
+}
+
+.address-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.receiver-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.receiver-phone {
+  font-size: 14px;
+  color: #666;
+}
+
+.default-badge {
+  padding: 2px 8px;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  font-size: 12px;
+  border-radius: 10px;
+}
+
+.address-detail {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.select-icon {
+  width: 24px;
+  height: 24px;
+  background: #4facfe;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.empty-addresses {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.add-address-btn {
+  padding: 10px 24px;
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   color: white;
   border: none;
-  padding: 12px 24px;
   border-radius: 20px;
-  cursor: pointer;
   font-size: 14px;
+  cursor: pointer;
+  margin-top: 16px;
+}
+
+.modal-footer {
+  border-top: 1px solid #f0f0f0;
+  padding: 16px 20px;
+  text-align: center;
+}
+
+.manage-btn {
+  padding: 10px 24px;
+  background: #f8f9fa;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.manage-btn:hover {
+  background: #e9ecef;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .merchants-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .merchant-meta {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .top-right-address {
+    top: 10px;
+    right: 10px;
+  }
+  
+  .top-right-address .address-content {
+    min-width: 150px;
+    max-width: 200px;
+    padding: 6px 12px;
+  }
+  
+  .top-right-address .address-name {
+    max-width: 120px;
+    font-size: 12px;
+  }
+  
+  .modal-content {
+    margin: 10px;
+    max-width: none;
+  }
 }
 </style>

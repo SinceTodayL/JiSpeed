@@ -89,6 +89,11 @@ export const merchantAPI = {
       location: merchantData.location,
       description: merchantData.description
     })
+  },
+
+  // 根据标签获取商家列表
+  getMerchantListByTag: (params) => {
+    return api.get('/api/merchants/byTag', { params })
   }
 }
 

@@ -40,7 +40,7 @@
           <div class="order-header">
             <div class="merchant-info center">
               <img 
-                :src="order.merchantLogo || '/api/placeholder/32/32'"
+                :src="order.merchantLogo || getRandomMerchantImage(order.orderId)"
                 :alt="order.merchantName"
                 class="merchant-logo"
               />
@@ -442,6 +442,36 @@ const getOrderStatusText = (status) => {
     8: '配送中'      // InDelivery
   }
   return statusTexts[status] || '未知状态'
+}
+
+// 随机商家图片素材
+const merchantImages = [
+  'https://picsum.photos/id/1011/32/32',
+  'https://picsum.photos/id/1012/32/32',
+  'https://picsum.photos/id/1015/32/32',
+  'https://picsum.photos/id/1025/32/32',
+  'https://picsum.photos/id/1035/32/32',
+  'https://picsum.photos/id/1041/32/32',
+  'https://picsum.photos/id/1043/32/32',
+  'https://picsum.photos/id/1050/32/32',
+  'https://picsum.photos/id/1062/32/32',
+  'https://picsum.photos/id/1069/32/32',
+  'https://picsum.photos/id/1074/32/32',
+  'https://picsum.photos/id/1080/32/32',
+  'https://picsum.photos/id/1084/32/32'
+]
+// 获取随机图片
+function getRandomMerchantImage(orderId) {
+  // 用订单ID做hash保证同一订单图片一致
+  let hash = 0
+  if (orderId) {
+    for (let i = 0; i < orderId.length; i++) {
+      hash = (hash << 5) - hash + orderId.charCodeAt(i)
+      hash |= 0
+    }
+  }
+  const idx = Math.abs(hash) % merchantImages.length
+  return merchantImages[idx]
 }
 
 onMounted(() => {

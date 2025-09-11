@@ -11,9 +11,9 @@
         <div v-if="merchantInfo" class="merchant-info-header">
           <div class="merchant-logo">
             <img
-              :src="merchantInfo.logo || '/src/assets/placeholder.png'"
+              :src="randomMerchantImage"
               :alt="merchantInfo.merchantName"
-              @error="handleImageError"
+              class="merchant-cover"
             />
           </div>
           <div class="merchant-details">
@@ -406,6 +406,38 @@ import { merchantAPI as merchantAPINew } from '@/api/merchant.js'
 export default {
   name: 'MerchantDetail',
   setup() {
+    // 可用于菜品的随机图片素材
+const dishImages = [
+  'https://picsum.photos/id/1011/400/200',
+  'https://picsum.photos/id/1012/400/200',
+  'https://picsum.photos/id/1015/400/200',
+  'https://picsum.photos/id/1025/400/200',
+  'https://picsum.photos/id/1035/400/200',
+  'https://picsum.photos/id/1041/400/200',
+  'https://picsum.photos/id/1043/400/200',
+  'https://picsum.photos/id/1050/400/200',
+  'https://picsum.photos/id/1062/400/200',
+  'https://picsum.photos/id/1069/400/200',
+  'https://picsum.photos/id/1074/400/200',
+  'https://picsum.photos/id/1080/400/200',
+  'https://picsum.photos/id/1084/400/200'
+]
+    const merchantImages = [
+      'https://picsum.photos/id/1011/400/200',
+      'https://picsum.photos/id/1012/400/200',
+      'https://picsum.photos/id/1015/400/200',
+      'https://picsum.photos/id/1025/400/200',
+      'https://picsum.photos/id/1035/400/200',
+      'https://picsum.photos/id/1041/400/200',
+      'https://picsum.photos/id/1043/400/200',
+      'https://picsum.photos/id/1050/400/200',
+      'https://picsum.photos/id/1062/400/200',
+      'https://picsum.photos/id/1069/400/200',
+      'https://picsum.photos/id/1074/400/200',
+      'https://picsum.photos/id/1080/400/200',
+      'https://picsum.photos/id/1084/400/200'
+    ]
+    const randomMerchantImage = merchantImages[Math.floor(Math.random() * merchantImages.length)]
     function handleAddToCart() {
       const userId = (typeof window !== 'undefined' && window.localStorage && window.localStorage.getItem)
         ? window.localStorage.getItem('userId') || ''
@@ -721,7 +753,10 @@ export default {
         })
       })
       // 将菜品分配到对应分类
-      dishes.forEach(dish => {
+      dishes.forEach((dish, idx) => {
+        // 为每个菜品分配随机图片
+        dish.coverUrl = dishImages[idx % dishImages.length]
+        
         const catId = normalizeId(dish.categoryId)
         if (categoryMap.has(catId)) {
           categoryMap.get(catId).dishes.push(dish)
@@ -1166,13 +1201,19 @@ export default {
       proceedToCheckout,
       goBack,
       handleImageError,
-      handleAddToCart
+      handleAddToCart,
+      randomMerchantImage, // ← 加上这一行
     }
   }
 }
 </script>
 
 <style scoped>
+.merchant-detail-page {
+  min-height: 100vh;
+  background: #f7f8fa; /* 或你想要的浅色 */
+}
+
 .tab-navigation {
   display: flex;
   background: white;
@@ -1804,7 +1845,6 @@ export default {
   min-width: 20px;
   text-align: center;
   color: #333;
-  flex-shrink: 0;
 }
 
 /* 购物车悬浮按钮 */
@@ -2256,6 +2296,11 @@ export default {
   margin-bottom: 16px;
 }
 
+/* 不要设置 height，默认即可 */
+.content-area {
+  width: 100%;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .content-wrapper {
@@ -2363,5 +2408,21 @@ export default {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.scroll-container {
+  background: #f7f8fa;
+  min-height: 100vh;
+  overflow: auto;
+}
+
+.merchant-cover {
+  width: 100px;
+  height: 100px;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 3px solid #fff;
+  background: #eee;
+  display: block;
 }
 </style>
