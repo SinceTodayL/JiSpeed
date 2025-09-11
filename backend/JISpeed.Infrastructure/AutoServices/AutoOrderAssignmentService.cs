@@ -14,7 +14,7 @@ namespace JISpeed.Infrastructure.AutoServices
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<AutoOrderAssignmentService> _logger;
         private readonly ConcurrentDictionary<string, DateTime> _processedOrders;
-        private readonly TimeSpan _checkInterval = TimeSpan.FromSeconds(1); // 1秒检查一次
+        private readonly TimeSpan _checkInterval = TimeSpan.FromSeconds(5); // 1秒检查一次
         private bool _isRunning = false;
         private DateTime? _lastCheckTime = null;
         private int _processedOrderCount = 0;
