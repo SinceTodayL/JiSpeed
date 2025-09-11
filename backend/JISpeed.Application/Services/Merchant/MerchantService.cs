@@ -14,16 +14,20 @@ namespace JISpeed.Application.Services.Merchant
         private readonly IMerchantRepository _merchantRepository;
         private readonly ISalesStatRepository _salesStatRepository;
         private readonly ILogger<MerchantService> _logger;
+        private readonly IMapService _mapService;
+
 
         public MerchantService(
             IMerchantRepository merchantRepository,
             ISalesStatRepository salesStatRepository,
-            ILogger<MerchantService> logger
+            ILogger<MerchantService> logger,
+            IMapService mapService
             )
         {
             _merchantRepository = merchantRepository;
             _salesStatRepository = salesStatRepository;
             _logger = logger;
+            _mapService = mapService;
         }
 
         public async Task<List<string>> GetMerchantNameForSearchAsync(string prefix, int? limit)
@@ -78,6 +82,16 @@ namespace JISpeed.Application.Services.Merchant
                 merchant.MerchantName = merchantName ?? merchant.MerchantName;
                 merchant.ContactInfo = contactInfo ?? merchant.ContactInfo;
                 merchant.Location = location ?? merchant.Location;
+                if (location != null)
+                {
+                    var geocode = await _mapService.GeocodeAsync(location);
+                    if (geocode == null)
+                    {
+                        throw new NotFoundException(ErrorCodes.GeneralError, "地址错误");
+                    }
+                    merchant.Latitude=geocode.Value.latitude;
+                    merchant.Longitude=geocode.Value.longitude;
+                }
                 merchant.Status = status ?? merchant.Status;
                 merchant.Description = description ?? merchant.Description;
                 await _merchantRepository.SaveChangesAsync();
