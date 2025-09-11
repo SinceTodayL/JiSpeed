@@ -9,7 +9,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AddressSearch: typeof import('./../components/AddressSearch.vue')['default']
-    AmapMap: typeof import('./../components/delivery/amap-map.vue')['default']
+    AmapMap: typeof import('./../components/map/amap-map.vue')['default']
     AmapNavigation: typeof import('./../components/delivery/amap-navigation.vue')['default']
     AppProvider: typeof import('./../components/common/app-provider.vue')['default']
     BetterScroll: typeof import('./../components/custom/better-scroll.vue')['default']

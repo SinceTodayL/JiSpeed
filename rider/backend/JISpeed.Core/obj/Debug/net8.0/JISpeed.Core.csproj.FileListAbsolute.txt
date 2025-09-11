@@ -1,0 +1,13 @@
+/Users/xiangmaster/Documents/GitHub/JiSpeed-backend/backend/JISpeed.Core/bin/Debug/net8.0/JISpeed.Core.deps.json
+/Users/xiangmaster/Documents/GitHub/JiSpeed-backend/backend/JISpeed.Core/bin/Debug/net8.0/JISpeed.Core.dll
+/Users/xiangmaster/Documents/GitHub/JiSpeed-backend/backend/JISpeed.Core/bin/Debug/net8.0/JISpeed.Core.pdb
+/Users/xiangmaster/Documents/GitHub/JiSpeed-backend/backend/JISpeed.Core/obj/Debug/net8.0/JISpeed.Core.csproj.AssemblyReference.cache
+/Users/xiangmaster/Documents/GitHub/JiSpeed-backend/backend/JISpeed.Core/obj/Debug/net8.0/JISpeed.Core.GeneratedMSBuildEditorConfig.editorconfig
+/Users/xiangmaster/Documents/GitHub/JiSpeed-backend/backend/JISpeed.Core/obj/Debug/net8.0/JISpeed.Core.AssemblyInfoInputs.cache
+/Users/xiangmaster/Documents/GitHub/JiSpeed-backend/backend/JISpeed.Core/obj/Debug/net8.0/JISpeed.Core.AssemblyInfo.cs
+/Users/xiangmaster/Documents/GitHub/JiSpeed-backend/backend/JISpeed.Core/obj/Debug/net8.0/JISpeed.Core.csproj.CoreCompileInputs.cache
+/Users/xiangmaster/Documents/GitHub/JiSpeed-backend/backend/JISpeed.Core/obj/Debug/net8.0/JISpeed.Core.sourcelink.json
+/Users/xiangmaster/Documents/GitHub/JiSpeed-backend/backend/JISpeed.Core/obj/Debug/net8.0/JISpeed.Core.dll
+/Users/xiangmaster/Documents/GitHub/JiSpeed-backend/backend/JISpeed.Core/obj/Debug/net8.0/refint/JISpeed.Core.dll
+/Users/xiangmaster/Documents/GitHub/JiSpeed-backend/backend/JISpeed.Core/obj/Debug/net8.0/JISpeed.Core.pdb
+/Users/xiangmaster/Documents/GitHub/JiSpeed-backend/backend/JISpeed.Core/obj/Debug/net8.0/ref/JISpeed.Core.dll

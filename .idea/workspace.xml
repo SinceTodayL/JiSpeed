@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="eeb80030-7dd9-43e3-b14a-9a23f7f484fd" name="更改" comment="">
+      <change beforePath="$PROJECT_DIR$/rider/.env" beforeDir="false" afterPath="$PROJECT_DIR$/rider/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rider/.env.backup" beforeDir="false" afterPath="$PROJECT_DIR$/rider/.env.backup" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rider/.env.prod" beforeDir="false" afterPath="$PROJECT_DIR$/rider/.env.prod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rider/.env.test" beforeDir="false" afterPath="$PROJECT_DIR$/rider/.env.test" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rider/src/typings/components.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/rider/src/typings/components.d.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rider/src/views/delivery/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/rider/src/views/delivery/index.vue" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "git-widget-placeholder": "frontend"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <servers />
+  </component>
+</project>

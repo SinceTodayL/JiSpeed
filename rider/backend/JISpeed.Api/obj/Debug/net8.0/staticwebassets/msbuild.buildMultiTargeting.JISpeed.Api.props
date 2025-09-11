@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="../build/JISpeed.Api.props" />
+</Project>

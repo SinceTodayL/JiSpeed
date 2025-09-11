@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue';
+import { computed, h, onMounted, onUnmounted, ref } from 'vue';
 import {
   NButton,
   NCard,
@@ -8,8 +8,12 @@ import {
   NDescriptionsItem,
   NModal,
   NSpace,
-  NTag
+  NTag,
+  NTab,
+  NTabs,
+  NTabPane
 } from 'naive-ui';
+import { useMessage } from 'naive-ui';
 import { Icon } from '@iconify/vue';
 import { getRiderOrderList } from '@/service/api/rider';
 import { acceptOrder, rejectOrder, updateOrderStatus, updateAssignmentStatus, confirmDelivery } from '@/service/api/order-assignment';
@@ -17,10 +21,27 @@ import { useAuthStore } from '@/store/modules/auth';
 import { useRiderStore } from '@/store/modules/rider';
 import { handleCommonError, handleOrderError } from '@/utils/rider-error-handler';
 import { useI18n } from 'vue-i18n';
+import AmapMap from '@/components/map/amap-map.vue';
+import { getRiderLatestLocation, updateRiderLocation, geocodeAddress } from '@/service/api/rider-location';
+import type { RiderLocation } from '@/service/api/rider-location';
+
+// 订单位置类型定义
+interface OrderLocation {
+  id: string;
+  orderId: string;
+  longitude: number;
+  latitude: number;
+  title: string;
+  address: string;
+  status: string;
+  amount?: number;
+  createTime?: string;
+}
 
 const authStore = useAuthStore();
 const riderStore = useRiderStore();
 const { t } = useI18n();
+const message = useMessage();
 
 // 定义通用订单数据类型
 interface OrderData {
@@ -62,6 +83,24 @@ const detailLoading = ref(false);
 // 骑手在线状态
 const isOnline = ref<boolean>(true);
 
+// 地图相关数据
+const riderLocation = ref<RiderLocation | null>(null);
+const orderLocations = ref<OrderLocation[]>([]);
+const mapLoading = ref(false);
+const mapError = ref('');
+const showMap = ref(false);
+
+// 导航相关数据
+const navigationStart = ref<{ longitude: number; latitude: number } | undefined>(undefined);
+const navigationEnd = ref<{ longitude: number; latitude: number } | undefined>(undefined);
+const navigationRoute = ref<any>(null);
+const showNavigation = ref(false);
+
+// 实时定位相关
+const locationWatchId = ref<number | null>(null);
+const isLocationWatching = ref(false);
+const locationUpdateInterval = ref<NodeJS.Timeout | null>(null);
+
 // 状态映射 - 根据后端定义：0=待接单, 1=已接单, 2=已拒绝, 3=已配送
 const statusMap = {
   0: { text: '待接单', type: 'warning' },
@@ -87,6 +126,63 @@ const fetchOrders = async () => {
     handleCommonError(error, '获取订单数据');
   } finally {
     loading.value = false;
+  }
+};
+
+// 接单操作
+const acceptOrderAction = async (order: OrderData) => {
+  if (!order.assignId) {
+    message.error('订单分配ID不存在');
+    return;
+  }
+  
+  try {
+    await updateAssignmentStatus(riderId.value, order.assignId, {
+      AcceptedStatus: 1 // 1 = 已接单
+    });
+    
+    message.success('接单成功');
+    await fetchOrders(); // 刷新订单列表
+    await fetchOrderDetail(order.assignId); // 刷新详情
+  } catch (error) {
+    handleOrderError(error, '接单失败');
+  }
+};
+
+// 拒单操作
+const rejectOrderAction = async (order: OrderData) => {
+  if (!order.assignId) {
+    message.error('订单分配ID不存在');
+    return;
+  }
+  
+  try {
+    await updateAssignmentStatus(riderId.value, order.assignId, {
+      AcceptedStatus: 2 // 2 = 已拒绝
+    });
+    
+    message.success('拒单成功');
+    await fetchOrders(); // 刷新订单列表
+  } catch (error) {
+    handleOrderError(error, '拒单失败');
+  }
+};
+
+// 完成订单操作
+const completeOrderAction = async (order: OrderData) => {
+  if (!order.assignId) {
+    message.error('订单分配ID不存在');
+    return;
+  }
+  
+  try {
+    await confirmDelivery(riderId.value, order.assignId);
+    
+    message.success('订单完成');
+    await fetchOrders(); // 刷新订单列表
+    await fetchOrderDetail(order.assignId); // 刷新详情
+  } catch (error) {
+    handleOrderError(error, '完成订单失败');
   }
 };
 
@@ -147,6 +243,18 @@ onMounted(async () => {
   }
 
   await fetchOrders();
+  await fetchRiderLocation();
+  
+  // 生成订单位置数据
+  orderLocations.value = await generateOrderLocations(orders.value);
+  
+  // 开始定时更新位置
+  startLocationUpdateInterval();
+});
+
+// 组件卸载时清理资源
+onUnmounted(() => {
+  stopLocationWatching();
 });
 
 // 处理分页变化
@@ -265,6 +373,314 @@ const paginatedOrders = computed(() => {
   if (!orders.value || !Array.isArray(orders.value)) return [];
   return orders.value;
 });
+
+// 地图相关方法
+// 获取骑手位置
+const fetchRiderLocation = async () => {
+  try {
+    mapLoading.value = true;
+    mapError.value = '';
+    
+    const { data } = await getRiderLatestLocation(riderId.value);
+    if (data && data.data) {
+      riderLocation.value = data.data;
+      console.log('骑手位置获取成功:', data.data);
+    } else {
+      // 设置默认位置（北京）
+      riderLocation.value = {
+        riderId: riderId.value,
+        longitude: 116.397428,
+        latitude: 39.90923,
+        locationTime: new Date().toISOString(),
+        status: 1
+      };
+    }
+  } catch (error: any) {
+    mapError.value = '获取骑手位置失败';
+    console.error('获取骑手位置失败:', error);
+    // 设置默认位置（北京）
+    riderLocation.value = {
+      riderId: riderId.value,
+      longitude: 116.397428,
+      latitude: 39.90923,
+      locationTime: new Date().toISOString(),
+      status: 1
+    };
+  } finally {
+    mapLoading.value = false;
+  }
+};
+
+// 更新骑手位置
+const updateRiderLocationData = async (
+  longitude: number, 
+  latitude: number, 
+  accuracy?: number,
+  speed?: number,
+  direction?: number
+) => {
+  try {
+    await updateRiderLocation({
+      riderId: riderId.value,
+      longitude,
+      latitude,
+      accuracy,
+      speed,
+      direction,
+      locationType: 'GPS'
+    });
+    
+    // 更新本地位置数据
+    riderLocation.value = {
+      riderId: riderId.value,
+      longitude,
+      latitude,
+      accuracy,
+      speed,
+      direction,
+      locationTime: new Date().toISOString(),
+      status: 1,
+      locationType: 'GPS'
+    };
+    
+    console.log('骑手位置更新成功:', riderLocation.value);
+  } catch (error: any) {
+    console.error('更新骑手位置失败:', error);
+    message.error('更新位置失败: ' + (error.message || '未知错误'));
+  }
+};
+
+// 处理地图点击事件
+const handleMapClick = (lng: number, lat: number) => {
+  console.log('地图点击位置:', { longitude: lng, latitude: lat });
+};
+
+// 处理骑手位置更新
+const handleRiderLocationUpdate = async (location: { longitude: number; latitude: number }) => {
+  try {
+    // 更新本地状态
+    riderLocation.value = {
+      ...riderLocation.value,
+      longitude: location.longitude,
+      latitude: location.latitude,
+      locationTime: new Date().toISOString(),
+      status: 1 // 在线状态
+    };
+    
+    // 发送到服务器
+    await updateRiderLocation({
+      riderId: riderId.value,
+      longitude: location.longitude,
+      latitude: location.latitude,
+      locationType: 'GPS'
+    });
+    
+    console.log('骑手位置已更新:', location);
+  } catch (error) {
+    console.error('更新骑手位置失败:', error);
+    message.error('位置更新失败');
+  }
+};
+
+// 处理订单位置点击
+const handleOrderClick = (orderId: string) => {
+  const order = orders.value.find(o => o.order?.orderId === orderId);
+  if (order) {
+    handleDetail(order);
+  }
+};
+
+// 开始导航到订单位置
+const startNavigationToOrder = (order: OrderData) => {
+  if (!riderLocation.value || !order.order?.deliveryAddress) {
+    message.warning('无法获取位置信息');
+    return;
+  }
+  
+  // 查找订单位置
+  const orderLocation = orderLocations.value.find(ol => ol.orderId === order.order?.orderId);
+  if (!orderLocation) {
+    message.warning('无法获取订单位置');
+    return;
+  }
+  
+  // 设置导航起点和终点
+  navigationStart.value = {
+    longitude: riderLocation.value.longitude,
+    latitude: riderLocation.value.latitude
+  };
+  
+  navigationEnd.value = {
+    longitude: orderLocation.longitude,
+    latitude: orderLocation.latitude
+  };
+  
+  showNavigation.value = true;
+  message.success('开始导航到订单位置');
+};
+
+// 处理路径规划完成
+const handleRoutePlanned = (route: any) => {
+  navigationRoute.value = route;
+  console.log('路径规划完成:', route);
+};
+
+// 清除导航
+const clearNavigation = () => {
+  navigationStart.value = undefined;
+  navigationEnd.value = undefined;
+  navigationRoute.value = null;
+  showNavigation.value = false;
+};
+
+// 开始实时定位
+const startLocationWatching = () => {
+  if (isLocationWatching.value) return;
+  
+  if ('geolocation' in navigator) {
+    isLocationWatching.value = true;
+    
+    // 使用浏览器定位API获取GPS位置，然后更新到服务器
+    locationWatchId.value = navigator.geolocation.watchPosition(
+      async (position) => {
+        const location = {
+          longitude: position.coords.longitude,
+          latitude: position.coords.latitude,
+          accuracy: position.coords.accuracy,
+          speed: position.coords.speed,
+          direction: position.coords.heading,
+          locationTime: new Date().toISOString(),
+          status: 1,
+          locationType: 'GPS'
+        };
+        
+        // 发送到服务器并更新本地位置
+        await updateRiderLocationData(
+          location.longitude, 
+          location.latitude, 
+          location.accuracy,
+          location.speed || undefined,
+          location.direction || undefined
+        );
+      },
+      (error) => {
+        console.error('定位失败:', error);
+        message.error('定位失败: ' + error.message);
+        stopLocationWatching();
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 5000
+      }
+    );
+    
+    message.success('开始实时定位');
+  } else {
+    message.error('浏览器不支持定位功能');
+  }
+};
+
+// 停止实时定位
+const stopLocationWatching = () => {
+  if (locationWatchId.value !== null) {
+    navigator.geolocation.clearWatch(locationWatchId.value);
+    locationWatchId.value = null;
+  }
+  
+  if (locationUpdateInterval.value) {
+    clearInterval(locationUpdateInterval.value);
+    locationUpdateInterval.value = null;
+  }
+  
+  isLocationWatching.value = false;
+  message.info('停止实时定位');
+};
+
+// 定时更新位置（从后端API获取）
+const startLocationUpdateInterval = () => {
+  if (locationUpdateInterval.value) return;
+  
+  locationUpdateInterval.value = setInterval(async () => {
+    try {
+      // 从后端API获取骑手最新位置
+      await fetchRiderLocation();
+      console.log('定时更新骑手位置成功');
+    } catch (error) {
+      console.error('定时更新位置失败:', error);
+    }
+  }, 30000); // 每30秒从后端获取一次位置
+};
+
+// 生成订单位置数据
+const generateOrderLocations = async (orders: OrderData[]): Promise<OrderLocation[]> => {
+  const orderLocations: OrderLocation[] = [];
+  
+  for (const order of orders) {
+    if (order.order?.deliveryAddress) {
+      try {
+        // 使用地理编码获取真实坐标
+        const { data } = await geocodeAddress({
+          address: order.order.deliveryAddress
+        });
+        
+        if (data && data.data) {
+          orderLocations.push({
+            id: order.order.orderId || '',
+            orderId: order.order.orderId || '',
+            longitude: data.data.longitude,
+            latitude: data.data.latitude,
+            title: `订单 ${order.order.orderId}`,
+            address: order.order.deliveryAddress,
+            status: getStatusText(order.acceptedStatus || 0),
+            amount: order.order.orderAmount || 0,
+            createTime: order.order.createAt || ''
+          });
+        } else {
+          // 如果地理编码失败，使用默认坐标
+          orderLocations.push({
+            id: order.order.orderId || '',
+            orderId: order.order.orderId || '',
+            longitude: 116.397428,
+            latitude: 39.90923,
+            title: `订单 ${order.order.orderId}`,
+            address: order.order.deliveryAddress,
+            status: getStatusText(order.acceptedStatus || 0),
+            amount: order.order.orderAmount || 0,
+            createTime: order.order.createAt || ''
+          });
+        }
+      } catch (error) {
+        console.error(`地理编码失败 ${order.order.orderId}:`, error);
+        // 地理编码失败时使用默认坐标
+        orderLocations.push({
+          id: order.order.orderId || '',
+          orderId: order.order.orderId || '',
+          longitude: 116.397428,
+          latitude: 39.90923,
+          title: `订单 ${order.order.orderId}`,
+          address: order.order.deliveryAddress,
+          status: getStatusText(order.acceptedStatus || 0),
+          amount: order.order.orderAmount || 0,
+          createTime: order.order.createAt || ''
+        });
+      }
+    }
+  }
+  
+  return orderLocations;
+};
+
+// 获取状态文本
+const getStatusText = (status: number): string => {
+  const statusMap = {
+    0: '待接单',
+    1: '已接单',
+    2: '已拒绝',
+    3: '已配送'
+  };
+  return statusMap[status as keyof typeof statusMap] || '未知';
+};
 </script>
 
 <template>
@@ -527,7 +943,7 @@ const paginatedOrders = computed(() => {
                       { 
                         size: 'small', 
                         type: 'success', 
-                        onClick: () => handleStatusUpdate(row, 1),
+                        onClick: () => acceptOrderAction(row),
                         class: 'px-4 py-1 rounded-lg font-medium'
                       },
                       { default: () => [
@@ -540,7 +956,7 @@ const paginatedOrders = computed(() => {
                       { 
                         size: 'small', 
                         type: 'warning', 
-                        onClick: () => handleStatusUpdate(row, 2),
+                        onClick: () => rejectOrderAction(row),
                         class: 'px-4 py-1 rounded-lg font-medium'
                       },
                       { default: () => [
@@ -557,7 +973,7 @@ const paginatedOrders = computed(() => {
                       { 
                         size: 'small', 
                         type: 'success', 
-                        onClick: () => handleStatusUpdate(row, 3),
+                        onClick: () => completeOrderAction(row),
                         class: 'px-4 py-1 rounded-lg font-medium'
                       },
                       { default: () => [
@@ -587,7 +1003,7 @@ const paginatedOrders = computed(() => {
     <NModal 
       v-model:show="showModal" 
       preset="card" 
-      class="w-[700px] max-w-[90vw]"
+      class="w-[900px] max-w-[95vw]"
       :loading="detailLoading"
       :mask-closable="false"
     >
@@ -603,115 +1019,269 @@ const paginatedOrders = computed(() => {
         </div>
       </template>
 
-      <div v-if="!detailLoading && orderDetail" class="space-y-6">
-        <!-- 订单基本信息 -->
-        <div class="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-800 rounded-2xl p-6">
-          <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-            <Icon icon="mdi:information" class="text-blue-500" />
-            基本信息
-          </h4>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="flex items-center gap-3">
-              <Icon icon="mdi:identifier" class="text-gray-500 text-lg" />
-              <div>
-                <p class="text-sm text-gray-600 dark:text-gray-400">订单号</p>
-                <p class="font-semibold text-gray-800 dark:text-gray-200">{{ orderDetail.order?.orderId || '-' }}</p>
+      <div v-if="!detailLoading && orderDetail">
+        <!-- 标签页 -->
+        <NTabs type="line" animated>
+          <NTabPane name="details" tab="订单详情">
+            <div class="space-y-6">
+              <!-- 订单基本信息 -->
+              <div class="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-800 rounded-2xl p-6">
+                <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                  <Icon icon="mdi:information" class="text-blue-500" />
+                  基本信息
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="flex items-center gap-3">
+                    <Icon icon="mdi:identifier" class="text-gray-500 text-lg" />
+                    <div>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">订单号</p>
+                      <p class="font-semibold text-gray-800 dark:text-gray-200">{{ orderDetail.order?.orderId || '-' }}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <Icon icon="mdi:currency-usd" class="text-green-500 text-lg" />
+                    <div>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">订单金额</p>
+                      <p class="font-bold text-green-600 dark:text-green-400 text-xl">￥{{ orderDetail.order?.orderAmount || 0 }}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div class="flex items-center gap-3">
-              <Icon icon="mdi:currency-usd" class="text-green-500 text-lg" />
-              <div>
-                <p class="text-sm text-gray-600 dark:text-gray-400">订单金额</p>
-                <p class="font-bold text-green-600 dark:text-green-400 text-xl">￥{{ orderDetail.order?.orderAmount || 0 }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- 配送信息 -->
-        <div class="bg-gradient-to-r from-orange-50 to-red-50 dark:from-gray-700 dark:to-gray-800 rounded-2xl p-6">
-          <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-            <Icon icon="mdi:map-marker" class="text-red-500" />
-            配送信息
-          </h4>
-          <div class="space-y-3">
-            <div class="flex items-start gap-3">
-              <Icon icon="mdi:map-marker-outline" class="text-red-500 text-lg mt-1" />
-              <div>
-                <p class="text-sm text-gray-600 dark:text-gray-400">配送地址</p>
-                <p class="font-medium text-gray-800 dark:text-gray-200">{{ orderDetail.order?.deliveryAddress || '-' }}</p>
+              <!-- 配送信息 -->
+              <div class="bg-gradient-to-r from-orange-50 to-red-50 dark:from-gray-700 dark:to-gray-800 rounded-2xl p-6">
+                <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                  <Icon icon="mdi:map-marker" class="text-red-500" />
+                  配送信息
+                </h4>
+                <div class="space-y-3">
+                  <div class="flex items-start gap-3">
+                    <Icon icon="mdi:map-marker-outline" class="text-red-500 text-lg mt-1" />
+                    <div>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">配送地址</p>
+                      <p class="font-medium text-gray-800 dark:text-gray-200">{{ orderDetail.order?.deliveryAddress || '-' }}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <Icon icon="mdi:store" class="text-blue-500 text-lg" />
+                    <div>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">商家名称</p>
+                      <p class="font-medium text-gray-800 dark:text-gray-200">{{ orderDetail.order?.merchantName || '-' }}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div class="flex items-center gap-3">
-              <Icon icon="mdi:store" class="text-blue-500 text-lg" />
-              <div>
-                <p class="text-sm text-gray-600 dark:text-gray-400">商家名称</p>
-                <p class="font-medium text-gray-800 dark:text-gray-200">{{ orderDetail.order?.merchantName || '-' }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- 状态信息 -->
-        <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-800 rounded-2xl p-6">
-          <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-            <Icon icon="mdi:timeline" class="text-green-500" />
-            状态信息
-          </h4>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="flex items-center gap-3">
-              <div class="w-3 h-3 bg-gradient-to-r from-green-400 to-green-500 rounded-full"></div>
-              <div>
-                <p class="text-sm text-gray-600 dark:text-gray-400">当前状态</p>
-                <NTag
-                  :type="(statusMap[(orderDetail.acceptedStatus || 0) as keyof typeof statusMap]?.type || 'default') as any"
-                  size="medium"
-                  class="px-3 py-1 rounded-full font-medium"
-                >
-                  {{ statusMap[(orderDetail.acceptedStatus || 0) as keyof typeof statusMap]?.text || '未知' }}
-                </NTag>
+              <!-- 状态信息 -->
+              <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-800 rounded-2xl p-6">
+                <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                  <Icon icon="mdi:timeline" class="text-green-500" />
+                  状态信息
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 bg-gradient-to-r from-green-400 to-green-500 rounded-full"></div>
+                    <div>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">当前状态</p>
+                      <NTag
+                        :type="(statusMap[(orderDetail.acceptedStatus || 0) as keyof typeof statusMap]?.type || 'default') as any"
+                        size="medium"
+                        class="px-3 py-1 rounded-full font-medium"
+                      >
+                        {{ statusMap[(orderDetail.acceptedStatus || 0) as keyof typeof statusMap]?.text || '未知' }}
+                      </NTag>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <Icon icon="mdi:clock-outline" class="text-gray-500 text-lg" />
+                    <div>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">超时时间</p>
+                      <p class="font-medium text-gray-800 dark:text-gray-200">{{ orderDetail.timeOut || 0 }} 分钟</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div class="flex items-center gap-3">
-              <Icon icon="mdi:clock-outline" class="text-gray-500 text-lg" />
-              <div>
-                <p class="text-sm text-gray-600 dark:text-gray-400">超时时间</p>
-                <p class="font-medium text-gray-800 dark:text-gray-200">{{ orderDetail.timeOut || 0 }} 分钟</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- 时间信息 -->
-        <div class="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-gray-700 dark:to-gray-800 rounded-2xl p-6">
-          <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-            <Icon icon="mdi:clock" class="text-purple-500" />
-            时间信息
-          </h4>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="flex items-center gap-3">
-              <Icon icon="mdi:calendar-plus" class="text-gray-500 text-lg" />
-              <div>
-                <p class="text-sm text-gray-600 dark:text-gray-400">创建时间</p>
-                <p class="font-medium text-gray-800 dark:text-gray-200">{{ orderDetail.order?.createAt || '-' }}</p>
+              <!-- 时间信息 -->
+              <div class="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-gray-700 dark:to-gray-800 rounded-2xl p-6">
+                <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                  <Icon icon="mdi:clock" class="text-purple-500" />
+                  时间信息
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="flex items-center gap-3">
+                    <Icon icon="mdi:calendar-plus" class="text-gray-500 text-lg" />
+                    <div>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">创建时间</p>
+                      <p class="font-medium text-gray-800 dark:text-gray-200">{{ orderDetail.order?.createAt || '-' }}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <Icon icon="mdi:calendar-check" class="text-blue-500 text-lg" />
+                    <div>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">分配时间</p>
+                      <p class="font-medium text-gray-800 dark:text-gray-200">{{ orderDetail.assignedAt || '-' }}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <Icon icon="mdi:calendar-heart" class="text-green-500 text-lg" />
+                    <div>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">接单时间</p>
+                      <p class="font-medium text-gray-800 dark:text-gray-200">{{ orderDetail.acceptedAt || '-' }}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="flex items-center gap-3">
-              <Icon icon="mdi:calendar-check" class="text-blue-500 text-lg" />
-              <div>
-                <p class="text-sm text-gray-600 dark:text-gray-400">分配时间</p>
-                <p class="font-medium text-gray-800 dark:text-gray-200">{{ orderDetail.assignedAt || '-' }}</p>
+          </NTabPane>
+          
+          <!-- 地图标签页 -->
+          <NTabPane name="map" tab="地图视图">
+            <div class="space-y-4">
+              <!-- 地图控制面板 -->
+              <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div class="flex items-center gap-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">骑手位置</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">订单位置</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <NButton 
+                    size="small" 
+                    type="primary" 
+                    @click="fetchRiderLocation"
+                    :loading="mapLoading"
+                  >
+                    <template #icon>
+                      <Icon icon="mdi:refresh" />
+                    </template>
+                    刷新位置
+                  </NButton>
+                  
+                  <NButton 
+                    v-if="selectedOrder && riderLocation"
+                    size="small" 
+                    type="success" 
+                    @click="startNavigationToOrder(selectedOrder)"
+                  >
+                    <template #icon>
+                      <Icon icon="mdi:navigation" />
+                    </template>
+                    导航到订单
+                  </NButton>
+                  
+                  <NButton 
+                    v-if="showNavigation"
+                    size="small" 
+                    type="warning" 
+                    @click="clearNavigation"
+                  >
+                    <template #icon>
+                      <Icon icon="mdi:close" />
+                    </template>
+                    清除导航
+                  </NButton>
+                  
+                  <NButton 
+                    v-if="!isLocationWatching"
+                    size="small" 
+                    type="info" 
+                    @click="startLocationWatching"
+                  >
+                    <template #icon>
+                      <Icon icon="mdi:crosshairs-gps" />
+                    </template>
+                    开始定位
+                  </NButton>
+                  
+                  <NButton 
+                    v-if="isLocationWatching"
+                    size="small" 
+                    type="error" 
+                    @click="stopLocationWatching"
+                  >
+                    <template #icon>
+                      <Icon icon="mdi:stop" />
+                    </template>
+                    停止定位
+                  </NButton>
+                </div>
+              </div>
+              
+              <!-- 地图组件 -->
+              <div class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
+                <AmapMap
+                  :height="400"
+                  :show-controls="true"
+                  :enable-location="true"
+                  :show-rider-location="true"
+                  :show-order-locations="true"
+                  :enable-navigation="showNavigation"
+                  :navigation-start="navigationStart"
+                  :navigation-end="navigationEnd"
+                  :rider-location="riderLocation ? {
+                    longitude: riderLocation.longitude,
+                    latitude: riderLocation.latitude,
+                    accuracy: riderLocation.accuracy,
+                    direction: riderLocation.direction
+                  } : undefined"
+                  :order-locations="orderLocations"
+                  @map-click="handleMapClick"
+                  @rider-location-update="handleRiderLocationUpdate"
+                  @order-click="handleOrderClick"
+                  @route-planned="handleRoutePlanned"
+                />
+              </div>
+              
+              <!-- 位置信息 -->
+              <div v-if="riderLocation" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-2">
+                    <Icon icon="mdi:crosshairs-gps" />
+                    骑手位置
+                  </h4>
+                  <div class="space-y-1 text-sm">
+                    <p class="text-gray-600 dark:text-gray-400">
+                      经度: {{ riderLocation.longitude.toFixed(6) }}
+                    </p>
+                    <p class="text-gray-600 dark:text-gray-400">
+                      纬度: {{ riderLocation.latitude.toFixed(6) }}
+                    </p>
+                    <p class="text-gray-600 dark:text-gray-400">
+                      更新时间: {{ new Date(riderLocation.locationTime).toLocaleString() }}
+                    </p>
+                    <p v-if="riderLocation.accuracy" class="text-gray-600 dark:text-gray-400">
+                      精度: {{ riderLocation.accuracy }}米
+                    </p>
+                  </div>
+                </div>
+                
+                <div class="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <h4 class="font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
+                    <Icon icon="mdi:map-marker" />
+                    订单位置
+                  </h4>
+                  <div class="space-y-1 text-sm">
+                    <p class="text-gray-600 dark:text-gray-400">
+                      地址: {{ orderDetail.order?.deliveryAddress || '-' }}
+                    </p>
+                    <p class="text-gray-600 dark:text-gray-400">
+                      商家: {{ orderDetail.order?.merchantName || '-' }}
+                    </p>
+                    <p class="text-gray-600 dark:text-gray-400">
+                      订单号: {{ orderDetail.order?.orderId || '-' }}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="flex items-center gap-3">
-              <Icon icon="mdi:calendar-heart" class="text-green-500 text-lg" />
-              <div>
-                <p class="text-sm text-gray-600 dark:text-gray-400">接单时间</p>
-                <p class="font-medium text-gray-800 dark:text-gray-200">{{ orderDetail.acceptedAt || '-' }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+          </NTabPane>
+        </NTabs>
       </div>
 
       <!-- 显示基本信息（当详情还在加载或没有详情数据时） -->
