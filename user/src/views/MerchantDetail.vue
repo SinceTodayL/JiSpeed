@@ -11,22 +11,17 @@
         <div v-if="merchantInfo" class="merchant-info-header">
           <div class="merchant-logo">
             <img
-              :src="randomMerchantImage"
+              :src="merchantLogo"
               :alt="merchantInfo.merchantName"
               class="merchant-cover"
             />
           </div>
           <div class="merchant-details">
             <h1 class="merchant-name">{{ merchantInfo.merchantName }}</h1>
-            <div class="merchant-rating">
-              <span class="rating-stars">⭐</span>
-              <span class="rating-score">{{ merchantInfo.rating || 4.5 }}</span>
-              <span class="rating-text">({{ merchantInfo.reviewCount || 200 }}条评价)</span>
-            </div>
             <div class="merchant-meta">
-              <span class="meta-item">🚚 {{ merchantInfo.deliveryTime || 30 }}分钟</span>
-              <span class="meta-item">💰 配送费¥{{ merchantInfo.deliveryFee || 3 }}</span>
-              <span class="meta-item">📦 起送¥{{ merchantInfo.minOrderAmount || 20 }}</span>
+              <span class="meta-item">🚚 {{ merchantInfo.deliveryTime }}分钟</span>
+              <span class="meta-item">💰 配送费¥{{ merchantInfo.deliveryFee }}</span>
+              <span class="meta-item">📦 起送¥{{ merchantInfo.minOrderAmount }}</span>
             </div>
             <div class="merchant-address">
               <span class="address-icon">📍</span>
@@ -138,9 +133,9 @@
                   <p v-if="dish.description" class="dish-desc">{{ dish.description }}</p>
                   
                   <div class="dish-rating" v-if="dish.rating">
+
+                    <span class="rating-score">{{ dish.rating }}</span>
                     <span class="rating-stars">⭐</span>
-                    <span class="rating-score">{{ dish.rating }}%</span>
-                    <span class="rating-text">好评</span>
                   </div>
 
                   <div class="dish-price-section">
@@ -242,7 +237,7 @@
           {{ cartItems.length > 0 ? cartItems.reduce((sum, item) => sum + item.quantity, 0) : 0 }}
         </div>
         <div class="cart-total">
-          ¥{{ cartItems.length > 0 ? cartItems.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2) : '0.00' }}
+          ¥{{ cartItems.length > 0 ? (cartItems.reduce((sum, item) => sum + item.subtotal, 0) + deliveryFee).toFixed(2) : '0.00' }}
         </div>
       </div>
     </div>
@@ -265,7 +260,7 @@
           <div class="modal-dish-meta">
             <div v-if="selectedDish.rating" class="modal-rating">
               <span class="rating-stars">⭐</span>
-              <span>{{ selectedDish.rating }}% 好评</span>
+              <span>{{ selectedDish.rating }} 星</span>
             </div>
             <div v-if="selectedDish.monthlySales" class="modal-sales">
               月售 {{ selectedDish.monthlySales }}+
@@ -402,6 +397,7 @@ import { merchantAPI, dishAPI } from '@/api/browse.js'
 import { getCartInstance } from '@/composables/useCart.js'
 import { favoriteAPI } from '@/api/user.js'
 import { merchantAPI as merchantAPINew } from '@/api/merchant.js'
+import { getMerchantOrRandomImage } from '@/utils/imageUtils.js'
 
 export default {
   name: 'MerchantDetail',
@@ -422,22 +418,10 @@ const dishImages = [
   'https://picsum.photos/id/1080/400/200',
   'https://picsum.photos/id/1084/400/200'
 ]
-    const merchantImages = [
-      'https://picsum.photos/id/1011/400/200',
-      'https://picsum.photos/id/1012/400/200',
-      'https://picsum.photos/id/1015/400/200',
-      'https://picsum.photos/id/1025/400/200',
-      'https://picsum.photos/id/1035/400/200',
-      'https://picsum.photos/id/1041/400/200',
-      'https://picsum.photos/id/1043/400/200',
-      'https://picsum.photos/id/1050/400/200',
-      'https://picsum.photos/id/1062/400/200',
-      'https://picsum.photos/id/1069/400/200',
-      'https://picsum.photos/id/1074/400/200',
-      'https://picsum.photos/id/1080/400/200',
-      'https://picsum.photos/id/1084/400/200'
-    ]
-    const randomMerchantImage = merchantImages[Math.floor(Math.random() * merchantImages.length)]
+    // 使用基于商家名称的图片
+    const merchantLogo = computed(() => {
+      return getMerchantOrRandomImage(merchantInfo.value?.merchantName);
+    })
     function handleAddToCart() {
       const userId = (typeof window !== 'undefined' && window.localStorage && window.localStorage.getItem)
         ? window.localStorage.getItem('userId') || ''
@@ -488,7 +472,7 @@ const dishImages = [
     const hasMoreReviews = ref(true)
 
     // 商家配送信息
-    const deliveryFee = ref(3.5)
+    const deliveryFee = ref(3)
     const minOrderAmount = ref(20)
 
     // 计算属性
@@ -527,11 +511,19 @@ const dishImages = [
         // 检查 response 是否已经是对象（已经被 axios 拦截器处理）
         if (response && typeof response === 'object' && !response.code) {
           merchantInfo.value = response
+          // 添加随机起送费、配送时间和固定配送费
+          merchantInfo.value.minOrderAmount = Math.floor(Math.random() * 15) + 15; // 15-30元随机
+          merchantInfo.value.deliveryTime = Math.floor(Math.random() * 30) + 30; // 30-60分钟随机
+          merchantInfo.value.deliveryFee = 3; // 固定3元
           console.log('处理后的商家信息(直接对象):', merchantInfo.value)
         }
         // 如果 response 包含 data 字段，说明 axios 拦截器没有处理它
         else if (response && response.data) {
           merchantInfo.value = response.data
+          // 添加随机起送费、配送时间和固定配送费
+          merchantInfo.value.minOrderAmount = Math.floor(Math.random() * 15) + 15; // 15-30元随机
+          merchantInfo.value.deliveryTime = Math.floor(Math.random() * 30) + 30; // 30-60分钟随机
+          merchantInfo.value.deliveryFee = 3; // 固定3元
           console.log('处理后的商家信息(从 response.data):', merchantInfo.value)
         } else {
           console.error('获取商家信息格式不正确:', response)
@@ -745,9 +737,21 @@ const dishImages = [
       categoriesData.forEach(cat => {
         const normalizedCatId = normalizeId(cat.categoryId);
         console.log(`分类ID处理: 原始=${cat.categoryId}, 处理后=${normalizedCatId}`);
+        
+        // 根据分类ID映射显示名称
+        let displayCategoryName = cat.categoryName;
+        if (cat.categoryName === 'CAT001') {
+          displayCategoryName = '菜品';
+        } else if (cat.categoryName === 'CAT002') {
+          displayCategoryName = '饮料';
+        } else {
+          displayCategoryName = '其他';
+        }
+        
         categoryMap.set(normalizedCatId, {
           ...cat,
           categoryId: normalizedCatId, // 使用处理后的ID
+          categoryName: displayCategoryName, // 使用映射后的显示名称
           dishes: [],
           dishCount: 0
         })
@@ -993,7 +997,7 @@ const dishImages = [
           price: item.price,
           quantity: item.quantity,
           subtotal: item.subtotal,
-          coverUrl: item.dishImage
+          coverUrl: item.dishImage || item.coverUrl || item.image || ''
         })),
         totalAmount: totalAmount,
         deliveryFee: deliveryFee.value,
@@ -1121,6 +1125,12 @@ const dishImages = [
       
       // 获取商家和菜品信息
       await fetchMerchantInfo()
+      
+      // 同步起送价
+      if (merchantInfo.value && merchantInfo.value.minOrderAmount) {
+        minOrderAmount.value = merchantInfo.value.minOrderAmount;
+      }
+      
       await fetchDishes()
       
       // 检查收藏状态
@@ -1202,13 +1212,19 @@ const dishImages = [
       goBack,
       handleImageError,
       handleAddToCart,
-      randomMerchantImage, // ← 加上这一行
+      merchantLogo,
     }
   }
 }
 </script>
 
 <style scoped>
+.merchant-detail {
+  background-color: #f7f8fa;
+  min-height: 100vh;
+  width: 100%;
+}
+
 .merchant-detail-page {
   min-height: 100vh;
   background: #f7f8fa; /* 或你想要的浅色 */
@@ -1256,8 +1272,10 @@ const dishImages = [
 .reviews-wrapper {
   flex: 1;
   overflow-y: auto;
-  background: #f8f9fa;
+  background: #f7f8fa;
   position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .reviews-content {
@@ -1502,6 +1520,7 @@ const dishImages = [
   max-width: 1200px;
   margin: 0 auto;
   min-height: calc(100vh - 200px);
+  background: #f7f8fa;
 }
 
 /* 分类侧边栏样式 */
@@ -2305,6 +2324,7 @@ const dishImages = [
 @media (max-width: 768px) {
   .content-wrapper {
     flex-direction: column;
+    background: #f7f8fa;
   }
   
   .categories-sidebar {

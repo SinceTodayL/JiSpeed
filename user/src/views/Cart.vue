@@ -409,7 +409,7 @@ export default {
           price: item.price,
           quantity: item.quantity,
           subtotal: item.subtotal,
-          coverUrl: item.dishImage,
+          coverUrl: item.image || item.coverUrl || '',
           merchantId: item.merchantId,
           merchantName: item.merchantName
         })),

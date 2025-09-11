@@ -66,11 +66,6 @@
                   ¥{{ item.originalPrice.toFixed(2) }}
                 </span>
               </div>
-              
-              <div class="rating-section">
-                <span class="rating">⭐ {{ item.rating || 4.5 }}</span>
-                <span class="sales">月销{{ item.monthlySales || 100 }}+</span>
-              </div>
             </div>
             
             <div class="favorite-time">
@@ -193,6 +188,10 @@ export default {
               // 使用merchantDishAPI获取菜品详情
               const dishResponse = await merchantDishAPI.getDishById(merchantId, dishId)
               
+              // 获取商家信息
+              const merchantResponse = await merchantAPI.getMerchantById(merchantId)
+              const merchantName = merchantResponse?.data?.merchantName || '未知商家'
+              
               if (dishResponse && dishResponse.data) {
                 const dishData = dishResponse.data
                 
@@ -205,10 +204,8 @@ export default {
                   price: dishData.price || dishData.dishPrice || 0,
                   originalPrice: dishData.originalPrice || dishData.price * 1.2,
                   image: dishData.imageUrl || dishData.coverUrl || 'https://fakeimg.pl/300x200/cccccc/666666/?text=Food',
-                  rating: dishData.rating || 4.5,
-                  monthlySales: dishData.monthlySales || dishData.sales || 100,
                   merchantId: merchantId,
-                  merchantName: dishData.merchantName || '未知商家',
+                  merchantName: merchantName,
                   favoriteTime: favorAt,
                   selected: false
                 })

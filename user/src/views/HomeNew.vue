@@ -77,10 +77,13 @@
           >
             <!-- 商家封面图 -->
             <div class="merchant-cover">
-              <img class="cover-image" :src="getMerchantImage(index)" alt="商家图片" />
+              <img class="cover-image" :src="getMerchantImageByIndex(index)" alt="商家图片" />
               <div class="merchant-status">
-                <span v-if="merchant.status === 1" class="status-open">营业中</span>
-                <span v-else class="status-closed">休息中</span>
+                <span v-if="merchant.status === 0" class="status-review">审核中</span>
+                <span v-else-if="merchant.status === 1" class="status-open">营业中</span>
+                <span v-else-if="merchant.status === 2" class="status-closed">休息中</span>
+                <span v-else-if="merchant.status === 3" class="status-banned">已封禁</span>
+                <span v-else class="status-unknown">未知状态</span>
               </div>
             </div>
 
@@ -88,23 +91,9 @@
             <div class="merchant-info">
               <div class="merchant-header">
                 <h3 class="merchant-name">{{ merchant.merchantName || merchant.name || '商家名称缺失' }}</h3>
-                <div class="merchant-rating">
+                <div v-if="merchant.rating" class="merchant-rating">
                   <span class="rating-stars">⭐</span>
-                  <span class="rating-score">{{ merchant.rating || 4.5 }}</span>
-                </div>
-              </div>
-              <div class="merchant-meta">
-                <div class="meta-item">
-                  <span class="meta-icon">🚚</span>
-                  <span class="meta-text">{{ merchant.deliveryTime || '30-45' }}分钟</span>
-                </div>
-                <div class="meta-item">
-                  <span class="meta-icon">💰</span>
-                  <span class="meta-text">配送费¥{{ merchant.deliveryFee || 3 }}</span>
-                </div>
-                <div class="meta-item">
-                  <span class="meta-icon">📦</span>
-                  <span class="meta-text">起送¥{{ merchant.minOrderAmount || 20 }}</span>
+                  <span class="rating-score">{{ merchant.rating }}</span>
                 </div>
               </div>
               <!-- 商家标签 -->
@@ -117,6 +106,19 @@
                   {{ tag }}
                 </span>
               </div>
+              
+              <!-- 商家地址和联系方式 -->
+              <div class="merchant-contact-info">
+                <div v-if="merchant.location || merchant.address" class="merchant-location">
+                  <i class="location-icon">📍</i>
+                  <span class="location-text">{{ merchant.location || merchant.address }}</span>
+                </div>
+                <div v-if="merchant.contactInfo || merchant.phone" class="merchant-phone">
+                  <i class="phone-icon">📞</i>
+                  <span class="phone-text">{{ merchant.contactInfo || merchant.phone }}</span>
+                </div>
+              </div>
+              
               <!-- 特色菜品预览（如有） -->
               <div v-if="merchant.featuredDishes && merchant.featuredDishes.length" class="featured-dishes">
                 <div class="featured-title">招牌菜：</div>
@@ -126,7 +128,7 @@
                     :key="dish.dishId || dish.name"
                     class="dish-preview"
                   >
-                    <img :src="dish.image || '/default-dish.jpg'" class="dish-image" :alt="dish.name" />
+                    <img :src="dish.image || getRandomFoodImage()" class="dish-image" :alt="dish.name" />
                     <div class="dish-info">
                       <div class="dish-name">{{ dish.name }}</div>
                       <div class="dish-price">¥{{ dish.price }}</div>
@@ -203,6 +205,7 @@ import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { merchantAPI } from '@/api/merchant.js'
 import { addressAPI } from '@/api/user.js'
+import { getMerchantImage, getRandomFoodImage, getMerchantOrRandomImage } from '@/utils/imageUtils.js'
 
 export default {
   setup() {
@@ -267,12 +270,11 @@ export default {
             name: item.merchantName || '',
             description: item.description || '',
             imageUrl: '/default-merchant.jpg', // 默认图片
-            rating: 4.5, // 默认评分
-            reviewCount: 999, // 默认评价数
-            distance: '1.2', // 默认距离
-            deliveryFee: 3, // 默认配送费
-            deliveryTime: '30-45', // 默认配送时间
-            minOrderAmount: '', // 默认起送价
+            // 移除默认评分、默认评价数、默认距离
+            deliveryFee: Math.floor(Math.random() * 5) + 1, // 随机配送费 1-5元
+            deliveryTime: `${Math.floor(Math.random() * 30) + 15}-${Math.floor(Math.random() * 30) + 30}`, // 随机配送时间
+            minOrderAmount: Math.floor(Math.random() * 15) + 15, // 随机起送价 15-30元
+            status: item.status !== undefined ? item.status : 1, // 保留原始状态值
             isOnline: item.status === 1,
             tags: [], // 默认标签
             phone: item.contactInfo || '',
@@ -301,16 +303,56 @@ export default {
               name: '麻辣香锅店',
               description: '正宗四川口味，香辣过瘾',
               imageUrl: '/images/merchant1.jpg',
-              rating: 4.6,
-              reviewCount: 1256,
-              distance: 0.8,
-              deliveryFee: 3,
-              deliveryTime: '25-35',
-              minOrderAmount: 20,
+              deliveryFee: Math.floor(Math.random() * 5) + 1,
+              deliveryTime: `${Math.floor(Math.random() * 30) + 15}-${Math.floor(Math.random() * 30) + 30}`,
+              minOrderAmount: Math.floor(Math.random() * 15) + 15,
+              status: 1, // 营业中状态
               isOnline: true,
               tags: ['川菜', '香锅', '麻辣'],
               phone: '13800001111',
               address: '北京市朝阳区建国路88号'
+            },
+            {
+              merchantId: 'M002',
+              name: '新店审核中',
+              description: '新开业店铺，正在审核中',
+              imageUrl: '/images/merchant2.jpg',
+              deliveryFee: Math.floor(Math.random() * 5) + 1,
+              deliveryTime: `${Math.floor(Math.random() * 30) + 15}-${Math.floor(Math.random() * 30) + 30}`,
+              minOrderAmount: Math.floor(Math.random() * 15) + 15,
+              status: 0, // 审核中状态
+              isOnline: false,
+              tags: ['新店', '特色小吃'],
+              phone: '13800002222',
+              address: '北京市海淀区中关村大街1号'
+            },
+            {
+              merchantId: 'M003',
+              name: '暂停营业店',
+              description: '店铺暂时休息中，稍后恢复营业',
+              imageUrl: '/images/merchant3.jpg',
+              deliveryFee: Math.floor(Math.random() * 5) + 1,
+              deliveryTime: `${Math.floor(Math.random() * 30) + 15}-${Math.floor(Math.random() * 30) + 30}`,
+              minOrderAmount: Math.floor(Math.random() * 15) + 15,
+              status: 2, // 休息中状态
+              isOnline: false,
+              tags: ['西餐', '牛排', '休息中'],
+              phone: '13800003333',
+              address: '北京市朝阳区三里屯10号'
+            },
+            {
+              merchantId: 'M004',
+              name: '违规封禁店',
+              description: '因违规操作被系统封禁',
+              imageUrl: '/images/merchant4.jpg',
+              deliveryFee: Math.floor(Math.random() * 5) + 1,
+              deliveryTime: `${Math.floor(Math.random() * 30) + 15}-${Math.floor(Math.random() * 30) + 30}`,
+              minOrderAmount: Math.floor(Math.random() * 15) + 15,
+              status: 3, // 封禁状态
+              isOnline: false,
+              tags: ['已封禁'],
+              phone: '13800004444',
+              address: '北京市东城区王府井大街88号'
             }
           ]
         }
@@ -382,12 +424,11 @@ export default {
                 merchantName: merchant.merchantName || `商家-${merchant.merchantId}`,
                 name: merchant.merchantName || `商家-${merchant.merchantId}`,
                 description: merchant.description || `商家ID: ${merchant.merchantId}`,
-                rating: 4.5, // 可以根据实际需要调整默认值
-                reviewCount: 999,
-                distance: '1.2',
-                deliveryFee: 3,
-                deliveryTime: '30-45',
-                minOrderAmount: 20,
+                // 移除默认评分
+                // 随机生成配送相关信息
+                deliveryFee: Math.floor(Math.random() * 5) + 1, // 随机配送费 1-5元
+                deliveryTime: `${Math.floor(Math.random() * 30) + 15}-${Math.floor(Math.random() * 30) + 30}`, // 随机配送时间
+                minOrderAmount: Math.floor(Math.random() * 15) + 15, // 随机起送价 15-30元
                 status: merchant.status || 1,
                 isOnline: (merchant.status || 1) === 1,
                 tags: ['精选商家'],
@@ -437,23 +478,29 @@ export default {
       
       switch (sortBy) {
         case 'rating':
-          sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0))
+          // 仅对有评分的商家进行排序，没有评分的排在后面
+          sorted.sort((a, b) => {
+            if (a.rating && b.rating) return b.rating - a.rating
+            if (a.rating) return -1
+            if (b.rating) return 1
+            return 0
+          })
           break
         case 'distance':
-          sorted.sort((a, b) => {
-            const distanceA = parseFloat(a.distance) || 999
-            const distanceB = parseFloat(b.distance) || 999
-            return distanceA - distanceB
-          })
+          // 由于已移除默认距离，这里按照商家ID排序作为替代
+          sorted.sort((a, b) => a.merchantId.localeCompare(b.merchantId))
           break
         case 'sales':
           sorted.sort((a, b) => (b.salesQty || 0) - (a.salesQty || 0))
           break
         case 'delivery_time':
+          // 使用配送时间的最小值进行排序
           sorted.sort((a, b) => {
-            const timeA = parseInt(a.deliveryTime) || 999
-            const timeB = parseInt(b.deliveryTime) || 999
-            return timeA - timeB
+            const getMinTime = (timeStr) => {
+              const match = String(timeStr).match(/^(\d+)/)
+              return match ? parseInt(match[1]) : 999
+            }
+            return getMinTime(a.deliveryTime) - getMinTime(b.deliveryTime)
           })
           break
         default:
@@ -480,18 +527,14 @@ export default {
       fetchMerchants(true)
     })
     
-    const imageList = [
-      'https://picsum.photos/400/200?random=1',
-      'https://picsum.photos/400/200?random=2',
-      'https://picsum.photos/400/200?random=3',
-      'https://picsum.photos/400/200?random=4',
-      'https://picsum.photos/400/200?random=5',
-      // ...更多图片
-    ]
-    
-    // 轮询分配图片
-    const getMerchantImage = (index) => {
-      return imageList[index % imageList.length]
+    // 商家图片处理函数
+    const getMerchantImageByIndex = (index) => {
+      // 如果有商家数据，使用商家名称获取图片
+      if (merchants.value && merchants.value[index]) {
+        return getMerchantOrRandomImage(merchants.value[index].merchantName || merchants.value[index].name);
+      }
+      // 否则返回随机食物图片
+      return getRandomFoodImage();
     }
     
     // 新增：地址相关数据
@@ -613,7 +656,8 @@ export default {
       changeSortBy,
       loadMore,
       goToMerchant,
-      getMerchantImage,
+      getMerchantImageByIndex,
+      getRandomFoodImage,
       showAddressModal,
       userAddresses,
       currentAddress,
@@ -898,6 +942,36 @@ export default {
   box-shadow: 0 2px 8px rgba(231,76,60,0.10);
 }
 
+.status-review {
+  background: #ffc107;
+  color: #333;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(255,193,7,0.10);
+}
+
+.status-banned {
+  background: #6c757d;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(108,117,125,0.10);
+}
+
+.status-unknown {
+  background: #17a2b8;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(23,162,184,0.10);
+}
+
 .merchant-info {
   padding: 16px;
 }
@@ -969,6 +1043,35 @@ export default {
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 12px;
+}
+
+.merchant-contact-info {
+  margin-bottom: 10px;
+  width: 100%;
+  padding-top: 4px;
+}
+
+.merchant-location, .merchant-phone {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #666;
+  width: 100%;
+}
+
+.location-icon, .phone-icon {
+  font-size: 14px;
+  color: #4facfe;
+  flex-shrink: 0;
+}
+
+.location-text, .phone-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 20px);
 }
 
 .featured-dishes {

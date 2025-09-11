@@ -66,7 +66,7 @@
             class="merchant-card"
           >
             <div class="merchant-image">
-              <img :src="merchant.imageUrl || '/default-merchant.jpg'" :alt="merchant.name" />
+              <img :src="getMerchantImage(merchant.name)" :alt="merchant.name" />
               <div v-if="merchant.isOnline" class="online-badge">营业中</div>
               <div v-else class="offline-badge">休息中</div>
             </div>
@@ -127,6 +127,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { merchantAPI } from '@/api/merchant.js'
+import { getMerchantOrRandomImage } from '@/utils/imageUtils.js'
 
 export default {
   name: 'Home',
@@ -213,6 +214,11 @@ export default {
       router.push(`/merchant/${merchantId}`)
     }
     
+    // 获取商家图片
+    const getMerchantImage = (merchantName) => {
+      return getMerchantOrRandomImage(merchantName)
+    }
+    
     // 页面挂载时初始化
     onMounted(() => {
       fetchMerchants(true)
@@ -228,7 +234,8 @@ export default {
       handleSearch,
       changeSortBy,
       loadMore,
-      goToMerchant
+      goToMerchant,
+      getMerchantImage
     }
   }
 }

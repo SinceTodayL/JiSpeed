@@ -65,7 +65,7 @@
           <!-- 商家封面图 -->
           <div class="merchant-cover">
             <img
-              :src="merchant.coverImage || '/api/placeholder/400/200'"
+              :src="merchant.coverImage || getMerchantOrRandomImage(merchant.merchantName)"
               :alt="merchant.merchantName"
               class="cover-image"
               @error="handleImageError"
@@ -122,7 +122,7 @@
                   class="dish-preview"
                 >
                   <img
-                    :src="dish.coverUrl || '/api/placeholder/60/60'"
+                    :src="dish.coverUrl || getRandomFoodImage()"
                     :alt="dish.dishName"
                     class="dish-image"
                     @error="handleImageError"
@@ -175,23 +175,13 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { merchantAPI } from '@/api/browse.js'
+import { getMerchantOrRandomImage, getRandomFoodImage } from '@/utils/imageUtils.js'
 
 export default {
   name: 'MerchantsBrowse',
   setup() {
     const router = useRouter()
-    // 商家图片素材（至少9张）
-    const merchantImages = [
-      'https://picsum.photos/id/1011/400/200',
-      'https://picsum.photos/id/1012/400/200',
-      'https://picsum.photos/id/1015/400/200',
-      'https://picsum.photos/id/1025/400/200',
-      'https://picsum.photos/id/1035/400/200',
-      'https://picsum.photos/id/1041/400/200',
-      'https://picsum.photos/id/1043/400/200',
-      'https://picsum.photos/id/1050/400/200',
-      'https://picsum.photos/id/1062/400/200',
-    ]
+    
     // 响应式数据
     const merchants = ref([])
     const loading = ref(false)
@@ -247,8 +237,8 @@ export default {
           merchantId: item.merchantId,
           merchantName: item.merchantName || item.name || '',
           description: item.description || '',
-          // 分配图片：优先接口图片，否则用素材
-          coverImage: item.coverImage || item.imageUrl || merchantImages[idx % merchantImages.length],
+          // 使用基于商家名称的图片
+          coverImage: item.coverImage || item.imageUrl,
           rating: item.rating || 4.5,
           reviewCount: item.reviewCount || 999,
           distance: item.distance || '',
@@ -297,9 +287,15 @@ export default {
     const goToMerchant = (merchantId) => {
       router.push(`/merchant/${merchantId}`)
     }
+    
+    // 获取商家图片
+    const getMerchantImage = (merchantName) => {
+      return getMerchantOrRandomImage(merchantName)
+    }
 
     const handleImageError = (event) => {
-      event.target.src = '/api/placeholder/400/200'
+      // 使用随机食物图片作为备选
+      event.target.src = getRandomFoodImage()
     }
 
     // 生命周期
@@ -323,6 +319,8 @@ export default {
       changeFilter,
       changePage,
       goToMerchant,
+      getMerchantOrRandomImage,
+      getRandomFoodImage,
       handleImageError
     }
   }

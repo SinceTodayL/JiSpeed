@@ -28,10 +28,6 @@
             <img :src="userInfo.avatarUrl ? userInfo.avatarUrl : '/default-avatar.jpg'" 
                  alt="用户头像" 
                  class="user-avatar" />
-            <div class="avatar-overlay">
-              <span class="edit-icon">📷</span>
-              <span class="edit-text">修改头像</span>
-            </div>
           </div>
         </div>
 
@@ -87,12 +83,20 @@
 
           <div class="form-group">
             <label class="form-label">生日</label>
-            <input
-              v-model="formData.birthday"
-              type="date"
-              class="form-input"
-              placeholder="请选择生日"
-            />
+            <div class="birthday-selects">
+              <select v-model="birthdayYear" class="birthday-select">
+                <option value="">年</option>
+                <option v-for="year in years" :key="year" :value="year">{{ year }}</option>
+              </select>
+              <select v-model="birthdayMonth" class="birthday-select">
+                <option value="">月</option>
+                <option v-for="month in 12" :key="month" :value="month">{{ month }}</option>
+              </select>
+              <select v-model="birthdayDay" class="birthday-select">
+                <option value="">日</option>
+                <option v-for="day in getDaysInMonth(birthdayYear, birthdayMonth)" :key="day" :value="day">{{ day }}</option>
+              </select>
+            </div>
           </div>
 
           <div class="form-group">
@@ -131,7 +135,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { userAPI } from '@/api/user.js'
 
@@ -147,6 +151,54 @@ export default {
       gender: 3,
       birthday: ''
     })
+    
+    // 生日下拉框相关数据
+    const birthdayYear = ref('')
+    const birthdayMonth = ref('')
+    const birthdayDay = ref('')
+    
+    // 生成年份选项（从当前年份往前推100年）
+    const years = computed(() => {
+      const currentYear = new Date().getFullYear()
+      const years = []
+      for (let i = currentYear; i >= currentYear - 100; i--) {
+        years.push(i)
+      }
+      return years
+    })
+    
+    // 根据年月获取当月天数
+    const getDaysInMonth = (year, month) => {
+      if (!year || !month) return 31
+      return new Date(year, month, 0).getDate()
+    }
+    
+    // 当年或月变化时，检查日是否超出范围
+    watch([birthdayYear, birthdayMonth], () => {
+      const daysInMonth = getDaysInMonth(birthdayYear.value, birthdayMonth.value)
+      if (birthdayDay.value > daysInMonth) {
+        birthdayDay.value = daysInMonth
+      }
+      
+      // 更新formData.birthday
+      updateBirthday()
+    })
+    
+    // 当日变化时，更新formData.birthday
+    watch(birthdayDay, () => {
+      updateBirthday()
+    })
+    
+    // 更新生日到formData
+    const updateBirthday = () => {
+      if (birthdayYear.value && birthdayMonth.value && birthdayDay.value) {
+        const month = birthdayMonth.value.toString().padStart(2, '0')
+        const day = birthdayDay.value.toString().padStart(2, '0')
+        formData.birthday = `${birthdayYear.value}-${month}-${day}`
+      } else {
+        formData.birthday = ''
+      }
+    }
 
     // 获取用户信息
     const fetchUserInfo = async () => {
@@ -173,9 +225,18 @@ export default {
             const date = new Date(response.data.birthday)
             if (!isNaN(date.getTime())) {
               formData.birthday = date.toISOString().split('T')[0]
+              
+              // 解析年月日到下拉框
+              const [year, month, day] = formData.birthday.split('-')
+              birthdayYear.value = parseInt(year)
+              birthdayMonth.value = parseInt(month)
+              birthdayDay.value = parseInt(day)
             }
           } else {
             formData.birthday = ''
+            birthdayYear.value = ''
+            birthdayMonth.value = ''
+            birthdayDay.value = ''
           }
           
           console.log('获取到的用户信息:', response.data)
@@ -258,7 +319,12 @@ export default {
       loading,
       saving,
       saveChanges,
-      goBack
+      goBack,
+      birthdayYear,
+      birthdayMonth,
+      birthdayDay,
+      years,
+      getDaysInMonth
     }
   }
 }
@@ -475,6 +541,7 @@ export default {
   border-radius: 6px;
   font-size: 14px;
   color: #333;
+  background-color: #fff;
   transition: border-color 0.3s;
   width: 100%;
   box-sizing: border-box;
@@ -494,10 +561,33 @@ export default {
   display: flex;
   align-items: center;
   cursor: pointer;
+  color: #333;
 }
 
 .radio-label input {
   margin-right: 4px;
+}
+
+.birthday-selects {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.birthday-select {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #e1e5e9;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #333;
+  background-color: #fff;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  cursor: pointer;
 }
 
 /* 响应式设计 */

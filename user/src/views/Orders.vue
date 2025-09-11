@@ -40,7 +40,7 @@
           <div class="order-header">
             <div class="merchant-info center">
               <img 
-                :src="order.merchantLogo || getRandomMerchantImage(order.orderId)"
+                :src="order.merchantLogo || getRandomMerchantImage(order.orderId, order.merchantName)"
                 :alt="order.merchantName"
                 class="merchant-logo"
               />
@@ -149,6 +149,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { orderAPI } from '../api/order'
 import { merchantAPI, merchantDishAPI } from '../api/merchant'
 import { ref, computed, onMounted } from 'vue'
+import { getMerchantOrRandomImage } from '@/utils/imageUtils.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -444,25 +445,13 @@ const getOrderStatusText = (status) => {
   return statusTexts[status] || '未知状态'
 }
 
-// 随机商家图片素材
-const merchantImages = [
-  'https://picsum.photos/id/1011/32/32',
-  'https://picsum.photos/id/1012/32/32',
-  'https://picsum.photos/id/1015/32/32',
-  'https://picsum.photos/id/1025/32/32',
-  'https://picsum.photos/id/1035/32/32',
-  'https://picsum.photos/id/1041/32/32',
-  'https://picsum.photos/id/1043/32/32',
-  'https://picsum.photos/id/1050/32/32',
-  'https://picsum.photos/id/1062/32/32',
-  'https://picsum.photos/id/1069/32/32',
-  'https://picsum.photos/id/1074/32/32',
-  'https://picsum.photos/id/1080/32/32',
-  'https://picsum.photos/id/1084/32/32'
-]
 // 获取随机图片
-function getRandomMerchantImage(orderId) {
-  // 用订单ID做hash保证同一订单图片一致
+function getRandomMerchantImage(orderId, merchantName) {
+  if (merchantName) {
+    return getMerchantOrRandomImage(merchantName);
+  }
+  
+  // 兼容旧代码，如果没有商家名称，则根据订单ID生成一致的随机图片
   let hash = 0
   if (orderId) {
     for (let i = 0; i < orderId.length; i++) {
@@ -470,8 +459,7 @@ function getRandomMerchantImage(orderId) {
       hash |= 0
     }
   }
-  const idx = Math.abs(hash) % merchantImages.length
-  return merchantImages[idx]
+  return getMerchantOrRandomImage(null); // 传入null表示使用随机图片
 }
 
 onMounted(() => {

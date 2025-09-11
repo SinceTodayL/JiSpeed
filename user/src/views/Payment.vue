@@ -63,6 +63,7 @@
         </div>
         <div class="qr-tips">
           <p>请使用{{ getPaymentMethodName(selectedMethod) }}扫描二维码完成支付</p>
+          <p class="manual-check-tip">扫码支付后，请点击下方"检查支付状态"按钮</p>
           <div class="countdown">
             <span>支付剩余时间：</span>
             <span class="time">{{ formatCountdown(countdown) }}</span>
@@ -94,6 +95,7 @@
         {{ processing ? '处理中...' : `立即支付 ¥${paymentAmount.toFixed(2)}` }}
       </button>
       
+      <!-- 支付成功后显示查看订单按钮 -->
       <button 
         v-if="paymentStatus === 'success'"
         @click="viewOrder"
@@ -102,8 +104,8 @@
         查看订单
       </button>
       
-      <div v-if="showQRCode" class="action-tips">
-        <button @click="checkPaymentStatus" class="check-btn">检查支付状态</button>
+      <!-- 支付失败或处理中显示取消按钮 -->
+      <div v-if="paymentStatus && paymentStatus !== 'success'" class="action-tips">
         <button @click="cancelPayment" class="cancel-btn">取消支付</button>
       </div>
     </div>
@@ -122,14 +124,14 @@
       </ul>
     </div>
   </div>
-  <!-- 货到付款选择弹窗 -->
+  <!-- 支付成功弹窗 -->
   <div v-if="showSuccessModal" class="modal-overlay">
     <div class="modal-content" @click.stop>
       <div class="modal-header">
-        <h3>货到付款方式已选</h3>
+        <h3>支付成功</h3>
       </div>
       <div class="modal-body">
-        <p>您已选择货到付款，请在配送员送达时支付现金。</p>
+        <p>您已完成支付，订单将尽快为您准备。</p>
         <button class="modal-btn" @click="showSuccessModal = false">确定</button>
       </div>
     </div>
@@ -185,7 +187,8 @@ export default {
 
     // 计算属性
     const showQRCode = computed(() => {
-      return qrCodeData.value && ['ALIPAY', 'WECHAT'].includes(selectedMethod.value)
+      // 始终返回 false，不显示二维码
+      return false
     })
 
     // 方法
@@ -193,7 +196,8 @@ export default {
       if (paymentStatus.value === 'success') {
         router.push('/orders')
       } else {
-        router.back()
+        // 直接跳转到首页 HomeNew
+        router.push('/')
       }
     }
 
@@ -269,16 +273,16 @@ export default {
             }
           }
           
-          if (selectedMethod.value.toLowerCase() === 'cash') {
-            // 货到付款直接成功
-            paymentStatus.value = 'success'
-            stopCountdown()
-            showSuccessModal.value = true
-          } else {
-            // 在线支付显示二维码
+          // 不论支付方式，都直接视为成功
+          paymentStatus.value = 'success'
+          stopCountdown()
+          
+          // 对于所有支付方式，都显示成功弹窗
+          showSuccessModal.value = true
+          
+          // 如果后端返回了二维码信息，可以保存但不显示
+          if (response.data.qrCode) {
             qrCodeData.value = response.data.qrCode
-            // 开始轮询支付状态
-            startPaymentStatusPolling()
           }
         } else {
           paymentStatus.value = 'failed'
@@ -293,43 +297,7 @@ export default {
       }
     }
 
-    const startPaymentStatusPolling = () => {
-      const pollInterval = setInterval(async () => {
-        try {
-          // 使用 payId 查询支付状态，而非 orderId
-          if (!payId.value) {
-            console.error('缺少支付ID，无法查询支付状态')
-            return
-          }
-          
-          const response = await orderAPI.getPaymentStatus(payId.value)
-          console.log('轮询支付状态:', response)
-          if (response && response.data) {
-            if (response.data.status === 'SUCCESS' || response.data.paymentStatus === 1) {
-              // 支付成功
-              paymentStatus.value = 'success'
-              clearInterval(pollInterval)
-              stopCountdown()
-              showSuccessModal.value = true
-            } else if (response.data.status === 'FAILED' || response.data.paymentStatus === 3) {
-              // 支付失败
-              paymentStatus.value = 'failed'
-              clearInterval(pollInterval)
-            }
-          }
-        } catch (error) {
-          console.error('查询支付状态失败:', error)
-        }
-      }, 2000) // 每2秒查询一次
-
-      // 15分钟后停止轮询
-      setTimeout(() => {
-        clearInterval(pollInterval)
-        if (paymentStatus.value !== 'success') {
-          paymentStatus.value = 'timeout'
-        }
-      }, 15 * 60 * 1000)
-    }
+    // 移除轮询功能，改为手动检查支付状态
 
     const checkPaymentStatus = async () => {
       try {
@@ -777,6 +745,12 @@ export default {
   font-size: 14px;
 }
 
+.manual-check-tip {
+  color: #e74c3c !important;
+  font-weight: bold;
+  font-size: 15px !important;
+}
+
 .countdown {
   font-size: 14px;
 }
@@ -883,10 +857,35 @@ export default {
 .check-btn {
   background: #007BFF;
   color: white;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 24px;
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
 }
 
 .check-btn:hover {
   background: #0056b3;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 123, 255, 0.3);
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(79, 172, 254, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(79, 172, 254, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(79, 172, 254, 0);
+  }
 }
 
 .cancel-btn {

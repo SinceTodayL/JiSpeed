@@ -44,7 +44,7 @@
     <div class="merchant-section">
       <div class="merchant-info">
         <img 
-          :src="merchantInfo.logo || '/src/assets/placeholder.png'" 
+          :src="merchantLogo" 
           :alt="merchantInfo.merchantName"
           class="merchant-logo"
         />
@@ -266,6 +266,7 @@ import { orderAPI, orderLogAPI } from '@/api/order.js'
 import { merchantAPI } from '@/api/browse.js'
 import { couponAPI } from '@/api/coupon.js'
 import { addressAPI } from '@/api/user.js'
+import { getMerchantOrRandomImage } from '@/utils/imageUtils.js'
 
 export default {
   name: 'OrderConfirm',
@@ -323,6 +324,11 @@ export default {
 
     const canSubmit = computed(() => {
       return selectedAddress.value && orderItems.value.length > 0 && !submitting.value
+    })
+
+    // 商家Logo计算属性
+    const merchantLogo = computed(() => {
+      return getMerchantOrRandomImage(merchantInfo.value?.merchantName)
     })
 
     // 方法
@@ -613,6 +619,7 @@ export default {
       finalAmount,
       estimatedDeliveryTime,
       canSubmit,
+      merchantLogo,
       goBack,
       showAddressSelector,
       closeAddressModal,
