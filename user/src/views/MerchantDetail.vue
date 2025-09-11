@@ -758,8 +758,10 @@ const dishImages = [
       })
       // 将菜品分配到对应分类
       dishes.forEach((dish, idx) => {
-        // 为每个菜品分配随机图片
-        dish.coverUrl = dishImages[idx % dishImages.length]
+        // 使用后端传入的菜品图片，如果不存在则使用随机图片
+        if (!dish.coverUrl) {
+          dish.coverUrl = dishImages[idx % dishImages.length];
+        }
         
         const catId = normalizeId(dish.categoryId)
         if (categoryMap.has(catId)) {

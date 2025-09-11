@@ -28,8 +28,8 @@
         <p>正在加载订单...</p>
       </div>
 
-      <!-- 订单列表 -->
-      <div v-else-if="orders.length > 0" class="orders-list">
+      <!-- 订单列表 - 现在使用网格布局 -->
+      <div v-else-if="orders.length > 0" class="orders-grid">
         <div 
           v-for="order in orders"
           :key="order.orderId"
@@ -38,14 +38,16 @@
         >
           <!-- 订单头部 -->
           <div class="order-header">
-            <div class="merchant-info center">
+            <div class="merchant-info">
               <img 
                 :src="order.merchantLogo || getRandomMerchantImage(order.orderId, order.merchantName)"
                 :alt="order.merchantName"
                 class="merchant-logo"
               />
-              <span class="merchant-name">{{ order.merchantName }}</span>
-              <div class="order-time">{{ formatTime(order.createAt) }}</div>
+              <div class="merchant-details">
+                <span class="merchant-name">{{ order.merchantName }}</span>
+                <div class="order-time">{{ formatTime(order.createAt) }}</div>
+              </div>
             </div>
             <div class="header-right">
               <div class="order-status">
@@ -63,17 +65,10 @@
               :key="item.dishId"
               class="order-item"
             >
-              <img 
-                :src="item.coverUrl || '/api/placeholder/60/60'"
-                :alt="item.dishName"
-                class="item-image"
-              />
-              <div class="item-info">
-                <div class="item-name">{{ item.dishName }}</div>
-                <div class="item-meta">
-                  <span class="item-price">¥{{ item.price }}</span>
-                  <span class="item-quantity">×{{ item.quantity }}</span>
-                </div>
+              <div class="item-simple-info">
+                <span class="item-name">{{ item.dishName }}</span>
+                <span class="item-quantity">×{{ item.quantity }}</span>
+                <span class="item-price">¥{{ item.price }}</span>
               </div>
             </div>
             <!-- 更多商品提示 -->
@@ -86,9 +81,7 @@
           <div class="order-footer">
             <div class="order-info">
               <div class="order-amount">
-                <div class="order-amount center">
-                  共{{ order.itemsCount }}件商品 实付¥{{ order.finalAmount }}
-                </div>
+                共{{ order.itemsCount }}件商品 实付¥{{ order.finalAmount }}
               </div>
             </div>
             
@@ -185,7 +178,7 @@ const getFilteredOrders = (status) => {
   if (status === 'completed') {
     return allOrders.value.filter(o => o.orderStatus === 2)
   } else if (status === 'delivery') {
-    return allOrders.value.filter(o => [1, 7, 8].includes(o.orderStatus))
+    return allOrders.value.filter(o => [1, 7, 8, 9].includes(o.orderStatus))
   } else if (status === 'aftersale') {
     return allOrders.value.filter(o => [4, 5].includes(o.orderStatus))
   } else if (status === 0) {
@@ -420,7 +413,8 @@ const getStatusClass = (status) => {
     5: 'aftersale-completed', // 售后结束
     6: 'cancelled',         // 已取消
     7: 'assigned',          // 已派单
-    8: 'in-delivery'        // 配送中
+    8: 'in-delivery',       // 配送中
+    9: 'delivered'          // 已送达
   }
   return statusClasses[status] || ''
 }
@@ -440,7 +434,8 @@ const getOrderStatusText = (status) => {
     5: '售后结束',   // AftersalesCompleted
     6: '已取消',     // Cancelled
     7: '已派单',     // Assigned
-    8: '配送中'      // InDelivery
+    8: '配送中',     // InDelivery
+    9: '已送达'      // Delivered
   }
   return statusTexts[status] || '未知状态'
 }
@@ -483,25 +478,39 @@ onMounted(() => {
   background: linear-gradient(135deg, #e3f0ff 0%, #ffffff 100%);
 }
 
-.order-card {
-  background: linear-gradient(135deg, #f8fbff 0%, #e3f0ff 100%);
-  border-radius: 32px;
-  box-shadow: 0 2px 12px rgba(0, 123, 255, 0.08);
-  margin-bottom: 24px;
-  padding: 20px 24px 16px 24px;
-  transition: box-shadow 0.3s;
+.orders-container {
+  padding: 20px;
 }
+
+.orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 25px;
+  padding: 10px 5px;
+}
+
+.order-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+  transition: all 0.2s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .order-card:hover {
-  box-shadow: 0 6px 24px rgba(0, 123, 255, 0.18);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
 
 .order-header {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
   border-bottom: 1px solid #e3f0ff;
 }
 
@@ -509,8 +518,13 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-  justify-content: center;
 }
+
+.merchant-details {
+  display: flex;
+  flex-direction: column;
+}
+
 .center {
   justify-content: center;
   align-items: center;
@@ -519,18 +533,19 @@ onMounted(() => {
 }
 
 .merchant-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
   object-fit: cover;
-  background: #e3f0ff;
-  border: 2px solid #007BFF;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
 }
 
 .merchant-name {
   font-size: 18px;
-  font-weight: 700;
-  color: #007BFF;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
 }
 
 .order-status {
@@ -543,48 +558,69 @@ onMounted(() => {
   font-weight: 600;
   padding: 4px 12px;
   border-radius: 12px;
-  background: linear-gradient(90deg, #e3f0ff 0%, #ffffff 100%);
-  color: #007BFF;
+  background: #f5f5f5;
+  color: #333;
+}
+
+.status-text.pending {
+  background: #fff8e6;
+  color: #f59e0b;
+}
+
+.status-text.completed {
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.status-text.cancelled {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.status-text.processing {
+  background: #eff6ff;
+  color: #3b82f6;
 }
 
 .order-items {
-  margin-bottom: 8px; /* 从16px减少到8px */
-  background: linear-gradient(90deg, #f8fbff 0%, #e3f0ff 100%);
-  border-radius: 10px;
-  padding: 12px 0;
+  margin-bottom: 15px;
+  padding: 16px 10px;
+  flex: 1;
 }
 
 .order-item {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid #e3f0ff;
-}
-.order-item:last-child {
-  border-bottom: none;
+  margin-bottom: 8px;
+  padding: 5px 0;
 }
 
-.item-image {
-  width: 70px;
-  height: 70px;
-  border-radius: 10px;
-  object-fit: cover;
-  background: #e3f0ff;
+.item-simple-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 }
 
-.item-info {
-  flex: 1;
-}
 .item-name {
   font-size: 16px;
-  font-weight: 600;
-  color: #007BFF;
-  margin-bottom: 6px;
+  font-weight: 500;
+  color: #333;
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.item-quantity {
+  font-size: 14px;
+  color: #666;
+}
+
+.item-price {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
 }
 .item-meta {
   display: flex;
@@ -592,7 +628,7 @@ onMounted(() => {
   gap: 16px;
 }
 .item-price {
-  font-size: 15px;
+  font-size: 17px;
   color: #e74c3c;
   font-weight: 700;
 }
@@ -602,68 +638,68 @@ onMounted(() => {
 }
 .more-items {
   text-align: center;
-  color: #007BFF;
+  color: #666;
   font-size: 13px;
   padding: 8px;
-  background: #e3f0ff;
+  background: #f5f5f5;
   border-radius: 8px;
   margin-top: 8px;
 }
 
 .order-footer {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  margin-top: 8px; /* 从16px减少到8px */
-  padding-top: 12px; /* 从16px减少到12px */
+  margin-top: auto; /* 将footer推到底部 */
+  padding-top: 16px;
   border-top: 1px solid #e3f0ff;
-  background: linear-gradient(90deg, #e3f0ff 0%, #f8fbff 100%);
-  border-radius: 0 0 32px 32px;
 }
+
 .order-info {
   flex: 1;
 }
-.order-time {
-  font-size: 13px;
-  color: #666;
-  margin-left: 12px;
-}
+
 .order-amount {
-  font-size: 16px; /* 从18px减少到16px */
-  color: #007BFF;
-  font-weight: 700;
-  margin: 0 auto;
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
 }
+
 .order-actions {
   display: flex;
-  gap: 8px; /* 从10px减少到8px */
+  gap: 8px;
 }
+
 .action-btn {
-  padding: 6px 16px; /* 从7px 18px减少到6px 16px */
-  border: 1px solid #007BFF;
-  border-radius: 18px;
-  font-size: 13px;
-  font-weight: 600;
+  padding: 6px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
+
 .action-btn.primary {
-  background: linear-gradient(90deg, #007BFF 0%, #00D4FF 100%);
-  border-color: #007BFF;
+  background: #3b82f6;
+  border-color: #3b82f6;
   color: white;
 }
+
 .action-btn.primary:hover {
-  background: #0056b3;
-  border-color: #0056b3;
+  background: #2563eb;
+  border-color: #2563eb;
 }
+
 .action-btn.secondary {
   background: white;
-  border-color: #e1e5e9;
-  color: #007BFF;
+  border-color: #e0e0e0;
+  color: #333;
 }
+
 .action-btn.secondary:hover {
-  border-color: #007BFF;
-  color: #0056b3;
+  border-color: #3b82f6;
+  color: #3b82f6;
 }
 
 /* 顶部导航 */
@@ -806,9 +842,9 @@ onMounted(() => {
   color: #155724;
 }
 
-.status-text.cancelled {
-  background: #f8d7da;
-  color: #721c24;
+.status-text.delivered {
+  background: #c3e6cb;
+  color: #155724;
 }
 
 /* 订单商品 */

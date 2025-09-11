@@ -193,7 +193,7 @@
       </button>
       
       <button 
-        v-if="[1, 7, 8].includes(orderDetail.orderStatus)"
+        v-if="[1, 7, 8, 9].includes(orderDetail.orderStatus)"
         @click="confirmOrder"
         class="action-btn primary"
       >
@@ -209,7 +209,7 @@
       </button>
       
       <button 
-        v-if="orderDetail.orderStatus === 2"
+        v-if="orderDetail.orderStatus === 2 || orderDetail.orderStatus === 9"
         @click="showReviewModal = true"
         class="action-btn secondary"
       >
@@ -217,7 +217,7 @@
       </button>
       
       <button 
-        v-if="orderDetail.orderStatus === 2"
+        v-if="orderDetail.orderStatus === 2 || orderDetail.orderStatus === 9"
         @click="showComplaintModal = true"
         class="action-btn secondary"
       >
@@ -225,7 +225,7 @@
       </button>
       
       <button 
-        v-if="orderDetail.orderStatus === 2"
+        v-if="orderDetail.orderStatus === 2 || orderDetail.orderStatus === 9"
         @click="showRefundModal = true"
         class="action-btn secondary"
       >
@@ -581,7 +581,10 @@ export default {
         3: '⭐', // Reviewed
         4: '🔄', // Aftersales
         5: '🛠️', // AftersalesCompleted
-        6: '❌'  // Cancelled
+        6: '❌', // Cancelled
+        7: '🚲', // Assigned
+        8: '🛵', // InDelivery
+        9: '📦'  // Delivered
       }
       return icons[status] || '📋'
     }
@@ -596,7 +599,8 @@ export default {
         5: '售后结束', // AftersalesCompleted
         6: '已取消', // Cancelled
         7: '已派单', // Assigned
-        8: '配送中' // InDelivery
+        8: '配送中', // InDelivery
+        9: '已送达'  // Delivered
       }
       return statusTexts[status] || '未知状态'
     }
