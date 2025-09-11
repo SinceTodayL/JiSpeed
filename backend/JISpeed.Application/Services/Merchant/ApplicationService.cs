@@ -110,6 +110,7 @@ namespace JISpeed.Application.Services.Merchant
                 data.AdminId = adminId;
                 await _applicationRepository.SaveChangesAsync();
                 data.Merchant.Status = (int)MerchantStatus.Close;
+                data.Merchant.MerchantName = data.CompanyName;
                 await _merchantRepository.SaveChangesAsync();
                 _logger.LogInformation("通过申请，ApplyId: {ApplyId}", applyId);
 
