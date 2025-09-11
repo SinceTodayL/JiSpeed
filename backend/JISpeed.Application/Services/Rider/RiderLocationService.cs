@@ -314,5 +314,33 @@ namespace JISpeed.Application.Services.Rider
                 throw CommonExceptions.GeneralError($"获取骑手当前位置的地址信息失败: {ex.Message}");
             }
         }
+
+        // 地理编码：根据地址获取经纬度
+        public async Task<GeocodeResult?> GeocodeAddressAsync(string address)
+        {
+            try
+            {
+                _logger.LogInformation("开始地理编码, Address: {Address}", address);
+
+                // 使用高德地图API进行地理编码
+                var result = await _mapService.GeocodeWithDetailsAsync(address);
+
+                if (result == null)
+                {
+                    _logger.LogWarning("地理编码失败, 无法找到地址: {Address}", address);
+                    return null;
+                }
+
+                _logger.LogInformation("地理编码成功, Address: {Address}, Longitude: {Longitude}, Latitude: {Latitude}",
+                    address, result.Longitude, result.Latitude);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "地理编码时发生异常, Address: {Address}", address);
+                throw CommonExceptions.GeneralError($"地理编码失败: {ex.Message}");
+            }
+        }
     }
 }

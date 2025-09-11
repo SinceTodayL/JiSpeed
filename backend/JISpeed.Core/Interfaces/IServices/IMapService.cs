@@ -10,6 +10,9 @@ namespace JISpeed.Core.Interfaces.IServices
         // 地理编码（地址转坐标）
         Task<(decimal longitude, decimal latitude)?> GeocodeAsync(string address);
 
+        // 地理编码（地址转坐标）- 返回详细信息
+        Task<GeocodeResult?> GeocodeWithDetailsAsync(string address);
+
         // 逆地理编码（坐标转地址）
         Task<string?> ReverseGeocodeAsync(decimal longitude, decimal latitude);
 
@@ -31,5 +34,16 @@ namespace JISpeed.Core.Interfaces.IServices
             decimal startLongitude, decimal startLatitude, 
             decimal endLongitude, decimal endLatitude, 
             string mode = "driving");
+    }
+
+    // 地理编码结果
+    public class GeocodeResult
+    {
+        public decimal Longitude { get; set; }
+        public decimal Latitude { get; set; }
+        public string? FormattedAddress { get; set; }
+        public string? Province { get; set; }
+        public string? City { get; set; }
+        public string? District { get; set; }
     }
 }

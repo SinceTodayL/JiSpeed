@@ -108,4 +108,38 @@ namespace JISpeed.Api.DTOS
         // 地址信息
         public string? Address { get; set; }
     }
+
+    // 地理编码请求DTO
+    public class GeocodeRequestDTO
+    {
+        // 地址
+        [Required(ErrorMessage = "地址不能为空")]
+        [StringLength(200, ErrorMessage = "地址长度不能超过200个字符")]
+        public string Address { get; set; } = string.Empty;
+    }
+
+    // 地理编码响应DTO
+    public class GeocodeDTO
+    {
+        // 原始地址
+        public string? Address { get; set; }
+
+        // 经度
+        public decimal Longitude { get; set; }
+
+        // 纬度
+        public decimal Latitude { get; set; }
+
+        // 格式化地址
+        public string? FormattedAddress { get; set; }
+
+        // 省份
+        public string? Province { get; set; }
+
+        // 城市
+        public string? City { get; set; }
+
+        // 区县
+        public string? District { get; set; }
+    }
 }

@@ -34,10 +34,10 @@ namespace JISpeed.Core.Entities.Merchant
         public string? Location { get; set; }
         
         [Column(TypeName = "DECIMAL(10, 6)")]
-        public decimal Longitude { get; set; } = 116.397128m;
+        public decimal Longitude { get; set; } = 121.212068m;
 
         [Column(TypeName = "DECIMAL(10, 6)")]
-        public decimal Latitude { get; set; } = 39.916527m;
+        public decimal Latitude { get; set; } = 31.282064m;
 
         // 身份验证用户关联
         [StringLength(450)]

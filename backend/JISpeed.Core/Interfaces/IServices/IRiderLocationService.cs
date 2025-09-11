@@ -33,5 +33,8 @@ namespace JISpeed.Core.Interfaces.IServices
 
         // 获取骑手当前位置的地址信息
         Task<string?> GetRiderLocationAddressAsync(string riderId);
+
+        // 地理编码：根据地址获取经纬度
+        Task<GeocodeResult?> GeocodeAddressAsync(string address);
     }
 }

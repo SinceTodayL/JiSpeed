@@ -63,6 +63,56 @@ namespace JISpeed.Application.Services.Common
             }
         }
 
+        // 地理编码（地址转坐标）- 返回详细信息
+        public async Task<GeocodeResult?> GeocodeWithDetailsAsync(string address)
+        {
+            try
+            {
+                var response = await _httpClient.GetFromJsonAsync<JsonElement>(
+                    $"/v3/geocode/geo?key={_apiKey}&address={Uri.EscapeDataString(address)}");
+
+                if (response.GetProperty("status").GetString() == "1" &&
+                    int.TryParse(response.GetProperty("count").GetString(), out var count) && count > 0)
+                {
+                    var geocode = response.GetProperty("geocodes")[0];
+                    var location = geocode.GetProperty("location").GetString();
+                    var parts = location!.Split(',');
+
+                    if (parts.Length == 2 &&
+                        decimal.TryParse(parts[0], out var longitude) &&
+                        decimal.TryParse(parts[1], out var latitude))
+                    {
+                        var result = new GeocodeResult
+                        {
+                            Longitude = longitude,
+                            Latitude = latitude,
+                            FormattedAddress = geocode.TryGetProperty("formatted_address", out var formattedAddrProp)
+                                ? formattedAddrProp.GetString() : address,
+                            Province = geocode.TryGetProperty("province", out var provinceProp)
+                                ? provinceProp.GetString() : null,
+                            City = geocode.TryGetProperty("city", out var cityProp)
+                                ? cityProp.GetString() : null,
+                            District = geocode.TryGetProperty("district", out var districtProp)
+                                ? districtProp.GetString() : null
+                        };
+
+                        _logger.LogInformation("地理编码详细信息成功, Address: {Address}, Longitude: {Longitude}, Latitude: {Latitude}, FormattedAddress: {FormattedAddress}",
+                            address, longitude, latitude, result.FormattedAddress);
+
+                        return result;
+                    }
+                }
+
+                _logger.LogWarning("地理编码未找到结果, Address: {Address}", address);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "地理编码详细信息失败, Address: {Address}", address);
+                return null;
+            }
+        }
+
         // 逆地理编码（坐标转地址）
         public async Task<string?> ReverseGeocodeAsync(decimal longitude, decimal latitude)
         {

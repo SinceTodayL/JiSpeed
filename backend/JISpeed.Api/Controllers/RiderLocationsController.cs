@@ -578,6 +578,64 @@ namespace JISpeed.Api.Controllers
                     $"调试失败: {ex.Message}"));
             }
         }
+
+        // 地理编码：根据地址获取经纬度
+        [HttpPost("geocode")]
+        [ProducesResponseType(typeof(ApiResponse<GeocodeDTO>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 500)]
+        public async Task<ActionResult<ApiResponse<GeocodeDTO>>> GeocodeAddress([FromBody] GeocodeRequestDTO request)
+        {
+            try
+            {
+                _logger.LogInformation("收到地理编码请求, Address: {Address}", request.Address);
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ApiResponse<object>.Fail(
+                        ErrorCodes.ValidationFailed,
+                        "参数验证失败",
+                        ModelState));
+                }
+
+                // 使用高德地图API进行地理编码
+                var geocodeResult = await _riderLocationService.GeocodeAddressAsync(request.Address);
+
+                if (geocodeResult == null)
+                {
+                    return BadRequest(ApiResponse<object>.Fail(
+                        ErrorCodes.ResourceNotFound,
+                        "无法找到该地址的坐标信息"));
+                }
+
+                var geocodeDto = new GeocodeDTO
+                {
+                    Address = request.Address,
+                    Longitude = geocodeResult.Longitude,
+                    Latitude = geocodeResult.Latitude,
+                    FormattedAddress = geocodeResult.FormattedAddress,
+                    Province = geocodeResult.Province,
+                    City = geocodeResult.City,
+                    District = geocodeResult.District
+                };
+
+                return Ok(ApiResponse<GeocodeDTO>.Success(geocodeDto, "地理编码成功"));
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败");
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "地理编码时发生异常, Address: {Address}", request.Address);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "地理编码失败"));
+            }
+        }
     }
 }
 
