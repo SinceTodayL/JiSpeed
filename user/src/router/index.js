@@ -158,15 +158,6 @@ const routes = [
       title: '我的投诉 - 急速外卖',
       requiresAuth: true
     }
-  },
-  {
-    path: '/profile/edit',
-    name: 'UserInfoEdit',
-    component: UserInfoEdit,
-    meta: {
-      title: '编辑个人信息 - 急速外卖',
-      requiresAuth: true
-    }
   }
   // add more routes
 ]
