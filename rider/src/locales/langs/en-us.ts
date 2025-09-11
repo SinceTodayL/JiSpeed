@@ -186,6 +186,46 @@ const local: App.I18n.Schema = {
     exception_404: '404',
     exception_500: '500'
   },
+  rider: {
+    home: {
+      title: 'My Statistics',
+      subtitle: 'Welcome back, {name}!',
+      description: 'Today is {date}, wish you a smooth work!',
+      vehicleNumber: 'Vehicle Number',
+      refreshData: 'Refresh Data'
+    },
+    delivery: {
+      title: 'Delivery Order Management',
+      subtitle: 'Smart delivery, efficient management, perfect delivery for every order',
+      realTime: 'Real-time Sync',
+      secure: 'Secure & Reliable',
+      totalOrders: 'Total Orders',
+      pendingOrders: 'Pending',
+      acceptedOrders: 'Accepted',
+      deliveredOrders: 'Delivered',
+      refresh: 'Refresh Data',
+      goOnline: 'Go Online',
+      goOffline: 'Go Offline',
+      orderList: 'Order List',
+      orderListDesc: 'Manage your delivery orders in real-time',
+      realTimeUpdate: 'Real-time Update'
+    },
+    attendance: {
+      title: 'Attendance Management',
+      subtitle: 'Manage your attendance records and maintain work discipline',
+      checkIn: 'Check In',
+      checkOut: 'Check Out',
+      todayStatus: 'Today Status',
+      workHours: 'Work Hours',
+      attendance: 'Present',
+      late: 'Late',
+      absent: 'Absent'
+    },
+    profile: {
+      title: 'Personal Information Management',
+      subtitle: 'Manage your personal information and account settings to ensure accuracy'
+    }
+  },
   page: {
     login: {
       common: {

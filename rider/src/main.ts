@@ -23,13 +23,11 @@ function parseAndStoreAuthFromURL() {
   const userId = urlParams.get('id') || urlParams.get('userId');
   const token = urlParams.get('token');
 
-  console.log('解析URL参数:', { userId, token });
 
   if (userId && token) {
     // 存储认证信息到 AuthStorage
     setAuthStorage(token, userId, 3); // userType 设为 3 表示骑手
 
-    console.log('URL参数存储认证信息:', { userId, token });
 
     // 可选：清理URL参数，避免敏感信息在地址栏显示
     const cleanUrl = window.location.origin + window.location.pathname;
@@ -38,7 +36,6 @@ function parseAndStoreAuthFromURL() {
     return true;
   }
 
-  console.log('URL中未找到认证参数');
   return false;
 }
 
@@ -64,7 +61,6 @@ async function setupApp() {
     setTimeout(() => {
       const riderStore = useRiderStore();
       riderStore.triggerAuthUpdate();
-      console.log('已触发riderStore更新，当前riderId:', riderStore.riderId);
     }, 100);
   }
 

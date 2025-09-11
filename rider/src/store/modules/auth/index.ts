@@ -76,7 +76,6 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
       // 更新用户信息
       Object.assign(userInfo, riderUserInfo);
 
-      console.log('骑手用户信息已初始化:', riderUserInfo);
 
       // 尝试从API获取骑手的真实姓名
       try {
@@ -84,7 +83,6 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
         if (data && data.name) {
           // 更新用户名为真实姓名
           userInfo.userName = data.name;
-          console.log('已获取骑手真实姓名:', data.name);
         }
       } catch (error) {
         console.warn('获取骑手真实姓名失败，使用默认名称:', error);
@@ -100,7 +98,6 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   function updateUserInfo(userData: Partial<Api.Auth.UserInfo>) {
     if (userData.userName !== undefined) {
       userInfo.userName = userData.userName;
-      console.log('🔄 已更新用户姓名:', userData.userName);
     }
     
     if (userData.userId !== undefined) {

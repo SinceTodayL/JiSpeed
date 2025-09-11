@@ -39,16 +39,49 @@ export function updateOrderStatus(data: Api.OrderAssignment.UpdateOrderStatusReq
   });
 }
 
+/**
+ * 更新分配状态（推荐使用此接口）
+ */
+export function updateAssignmentStatus(riderId: string, assignId: string, data: Api.OrderAssignment.UpdateAssignmentStatusRequest) {
+  return request<Api.OrderAssignment.UpdateAssignmentStatusResponse>({
+    url: `/api/Riders/${riderId}/assignments/${assignId}`,
+    method: 'patch',
+    data
+  });
+}
+
+/**
+ * 确认配送（完成订单）
+ */
+export function confirmDelivery(riderId: string, assignId: string) {
+  return request<Api.OrderAssignment.UpdateAssignmentStatusResponse>({
+    url: `/api/Riders/${riderId}/assignments/${assignId}`,
+    method: 'patch',
+    data: {
+      AcceptedStatus: 3  // 3 = 确认送达
+    }
+  });
+}
+
 // ========== 订单分配查询 ==========
 
 /**
  * 获取订单分配信息
+ * 注意：此API暂时不可用，返回404错误
  */
 export function getOrderAssignmentInfo(orderId: string) {
-  return request<Api.OrderAssignment.OrderAssignmentInfoResponse>({
-    url: `/api/OrderAssignment/order/${orderId}/assignment`,
-    method: 'get'
+  // 临时返回空数据，避免404错误
+  return Promise.resolve({
+    data: null,
+    code: 200,
+    message: '订单分配信息功能暂未实现'
   });
+  
+  // 原始API调用（暂时注释）
+  // return request<Api.OrderAssignment.OrderAssignmentInfoResponse>({
+  //   url: `/api/OrderAssignment/order/${orderId}/assignment`,
+  //   method: 'get'
+  // });
 }
 
 /**

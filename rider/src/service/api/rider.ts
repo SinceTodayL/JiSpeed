@@ -41,10 +41,6 @@ export function getRiderOrderList(riderId: string, params: Api.Rider.GetRiderOrd
  * @returns Promise<更新后的骑手信息数据>
  */
 export function updateRiderInfo(riderId: string, data: Api.Rider.UpdateInfoRequest) {
-  console.log('🔧 updateRiderInfo API调用：');
-  console.log('🔧 URL：', `/api/Riders/${riderId}`);
-  console.log('🔧 Method：', 'patch');
-  console.log('🔧 Data：', data);
   
   return request<Api.Rider.UpdateInfoData>({
     url: `/api/Riders/${riderId}`,
