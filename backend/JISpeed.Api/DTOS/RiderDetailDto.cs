@@ -187,4 +187,41 @@ namespace JISpeed.Api.DTOS
         // 班次结束时间
         public DateTime ShiftEnd { get; set; }
     }
+
+    // 骑手确认送达请求DTO
+    public class ConfirmDeliveryRequestDTO
+    {
+        // 订单ID
+        [Required(ErrorMessage = "订单ID不能为空")]
+        public required string OrderId { get; set; }
+
+        // 送达时间（可选，默认使用当前时间）
+        public DateTime? DeliveredAt { get; set; }
+
+        // 送达备注（可选）
+        [StringLength(200, ErrorMessage = "送达备注长度不能超过200个字符")]
+        public string? DeliveryNote { get; set; }
+    }
+
+    // 骑手确认送达响应DTO
+    public class ConfirmDeliveryResponseDTO
+    {
+        // 订单ID
+        public required string OrderId { get; set; }
+
+        // 订单状态
+        public required int OrderStatus { get; set; }
+
+        // 状态描述
+        public required string StatusDescription { get; set; }
+
+        // 送达时间
+        public required DateTime DeliveredAt { get; set; }
+
+        // 是否成功
+        public required bool IsSuccess { get; set; }
+
+        // 消息
+        public required string Message { get; set; }
+    }
 }

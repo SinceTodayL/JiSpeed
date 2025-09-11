@@ -279,6 +279,12 @@ namespace JISpeed.Application.Services.Order
                 int statusCode;
                 if (orderStatus == (int)OrderStatus.Confirmed)
                 {
+                    // 验证当前订单状态是否为骑手已送达
+                    if (entity.OrderStatus != (int)OrderStatus.Delivered)
+                    {
+                        throw new BusinessException("只有骑手已送达的订单才能确认收货");
+                    }
+
                     remark = "用户确认收货";
                     statusCode = (int)OrderLogStatus.Delivered;
                 }

@@ -161,9 +161,9 @@ namespace JISpeed.Infrastructure.DailyServices
                         // 订单创建日期为昨日0点至昨日23:59
                         if(order.CreateAt>=periodStart&&order.CreateAt<periodEnd)
                         {
-                            // 并且并未取消，成功支付
                             if (order.OrderStatus != (int)OrderStatus.Cancelled &&
-                                order.OrderStatus != (int)OrderStatus.Unpaid)
+                                order.OrderStatus != (int)OrderStatus.Unpaid &&
+                                order.OrderStatus != (int)OrderStatus.Aftersales)
                             {
                                 // 检查是否成功支付
                                 foreach (var orderPayment in order.Payments)

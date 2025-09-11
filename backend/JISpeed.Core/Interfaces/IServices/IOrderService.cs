@@ -77,15 +77,16 @@ namespace JISpeed.Core.Interfaces.IServices
 
     public enum OrderStatus
     {
-        Unpaid = 0,    // 未支付（初始状态）
-        Paid = 1,      // 已支付
-        Confirmed = 2, // 确认收货
-        Reviewed = 3,   // 已经评价
-        Aftersales = 4,// 售后中
-        AftersalesCompleted = 5, // 售后结束
-        Cancelled = 6, // 订单关闭(超时/主动取消)
-        Assigned = 7,            // 已派单
-        InDelivery = 8,          // 配送中
+        Unpaid = 0,                 // 未支付（初始状态）
+        Paid = 1,                   // 已支付
+        Assigned = 7,               // 已派单
+        InDelivery = 8,             // 配送中
+        Delivered = 9,              // 骑手已送达，等待用户确认
+        Confirmed = 2,              // 用户确认收货
+        Reviewed = 3,               // 已经评价
+        Aftersales = 4,             // 售后中
+        AftersalesCompleted = 5,    // 售后结束
+        Cancelled = 6,              // 订单关闭(超时/主动取消)
     }
 
     public enum OrderLogStatus
@@ -94,6 +95,7 @@ namespace JISpeed.Core.Interfaces.IServices
         Paid = 1,                // 已支付
         OutOfDelivery = 2,       // 派送中
         Delivered = 3,           // 送达
+        RiderDelivered = 9,      // 骑手已送达
         Cancelled = 4,           // 取消
         Aftersales = 5,          // 售后中
         AftersalesCompleted = 6, // 售后结束

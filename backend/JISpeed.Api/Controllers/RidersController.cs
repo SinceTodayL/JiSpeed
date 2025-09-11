@@ -778,5 +778,99 @@ namespace JISpeed.Api.Controllers
                     $"数据库连接失败: {ex.Message}"));
             }
         }
+
+        // 骑手确认送达
+        // <param name="riderId">骑手ID</param>
+        // <param name="request">确认送达请求</param>
+        // <returns>确认送达结果</returns>
+        [HttpPost("{riderId}/confirm-delivery")]
+        [ProducesResponseType(typeof(ApiResponse<ConfirmDeliveryResponseDTO>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 500)]
+        public async Task<ActionResult<ApiResponse<ConfirmDeliveryResponseDTO>>> ConfirmDelivery(
+            string riderId,
+            [FromBody] ConfirmDeliveryRequestDTO request)
+        {
+            try
+            {
+                _logger.LogInformation("收到骑手确认送达请求, RiderId: {RiderId}, OrderId: {OrderId}",
+                    riderId, request.OrderId);
+
+                // 参数验证
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ApiResponse<object>.Fail(
+                        ErrorCodes.ValidationFailed,
+                        "参数验证失败",
+                        ModelState.Where(kvp => kvp.Value?.Errors != null)
+                            .ToDictionary(
+                                kvp => kvp.Key,
+                                kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
+                            )));
+                }
+
+                // 调用服务确认送达
+                var success = await _riderService.ConfirmDeliveryAsync(
+                    riderId,
+                    request.OrderId,
+                    request.DeliveredAt,
+                    request.DeliveryNote);
+
+                if (success)
+                {
+                    // 构建响应
+                    var response = new ConfirmDeliveryResponseDTO
+                    {
+                        OrderId = request.OrderId,
+                        OrderStatus = (int)OrderStatus.Delivered,
+                        StatusDescription = "骑手已送达，等待用户确认",
+                        DeliveredAt = request.DeliveredAt ?? DateTime.Now,
+                        IsSuccess = true,
+                        Message = "确认送达成功"
+                    };
+
+                    return Ok(ApiResponse<ConfirmDeliveryResponseDTO>.Success(response, "确认送达成功"));
+                }
+                else
+                {
+                    return BadRequest(ApiResponse<object>.Fail(
+                        ErrorCodes.GeneralError,
+                        "确认送达失败"));
+                }
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "参数验证失败, RiderId: {RiderId}, OrderId: {OrderId}",
+                    riderId, request.OrderId);
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex, "资源不存在, RiderId: {RiderId}, OrderId: {OrderId}",
+                    riderId, request.OrderId);
+                return NotFound(ApiResponse<object>.Fail(
+                    ex.ErrorCode,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                _logger.LogWarning(ex, "业务规则验证失败, RiderId: {RiderId}, OrderId: {OrderId}",
+                    riderId, request.OrderId);
+                return BadRequest(ApiResponse<object>.Fail(
+                    ex.ErrorCode,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "骑手确认送达时发生异常, RiderId: {RiderId}, OrderId: {OrderId}",
+                    riderId, request.OrderId);
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    "系统内部错误"));
+            }
+        }
     }
 }

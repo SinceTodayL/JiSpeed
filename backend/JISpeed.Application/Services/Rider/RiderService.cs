@@ -391,13 +391,13 @@ namespace JISpeed.Application.Services.Rider
                 // 如果是确认送达，需要同时更新订单状态
                 if (acceptedStatus == 3)
                 {
-                    // 获取关联的订单并更新状态为已确认收货
+                    // 获取关联的订单并更新状态为骑手已送达
                     if (assignment.Order != null)
                     {
-                        assignment.Order.OrderStatus = (int)OrderStatus.Confirmed; // 2 = 确认收货
+                        assignment.Order.OrderStatus = (int)OrderStatus.Delivered; // 9 = 骑手已送达，等待用户确认
                         await _orderRepository.SaveChangesAsync(); // 保存订单状态更新
 
-                        _logger.LogInformation("订单状态已更新为确认收货, OrderId: {OrderId}", assignment.Order.OrderId);
+                        _logger.LogInformation("订单状态已更新为骑手已送达, OrderId: {OrderId}", assignment.Order.OrderId);
                     }
                     else
                     {
@@ -415,6 +415,99 @@ namespace JISpeed.Application.Services.Rider
                 _logger.LogError(ex, "更新订单分配状态时发生异常, RiderId: {RiderId}, AssignId: {AssignId}",
                     riderId, assignId);
                 throw CommonExceptions.GeneralError($"更新订单分配状态失败: {ex.Message}");
+            }
+        }
+
+        // 骑手确认送达
+        public async Task<bool> ConfirmDeliveryAsync(string riderId, string orderId, DateTime? deliveredAt = null, string? deliveryNote = null)
+        {
+            try
+            {
+                _logger.LogInformation("骑手开始确认送达, RiderId: {RiderId}, OrderId: {OrderId}", riderId, orderId);
+
+                // 参数验证
+                if (string.IsNullOrWhiteSpace(riderId))
+                {
+                    throw CommonExceptions.ValidationFailed("riderId", "骑手ID不能为空");
+                }
+
+                if (string.IsNullOrWhiteSpace(orderId))
+                {
+                    throw CommonExceptions.ValidationFailed("orderId", "订单ID不能为空");
+                }
+
+                // 检查骑手是否存在
+                var rider = await _riderRepository.GetByIdAsync(riderId);
+                if (rider == null)
+                {
+                    _logger.LogWarning("骑手不存在, RiderId: {RiderId}", riderId);
+                    throw RiderExceptions.RiderNotFound(riderId);
+                }
+
+                // 获取订单（包含分配信息）
+                var order = await _orderRepository.GetWithDetailsAsync(orderId);
+                if (order == null)
+                {
+                    _logger.LogWarning("订单不存在, OrderId: {OrderId}", orderId);
+                    throw OrderExceptions.OrderNotFound(orderId);
+                }
+
+                // 检查订单是否已分配
+                if (string.IsNullOrWhiteSpace(order.AssignId))
+                {
+                    _logger.LogWarning("订单未分配, OrderId: {OrderId}", orderId);
+                    throw OrderExceptions.OrderNotFound(orderId);
+                }
+
+                // 获取分配信息
+                var assignment = await _assignmentRepository.GetByIdAsync(order.AssignId);
+                if (assignment == null)
+                {
+                    _logger.LogWarning("分配信息不存在, AssignId: {AssignId}", order.AssignId);
+                    throw OrderExceptions.OrderNotFound(orderId);
+                }
+
+                // 验证订单是否属于该骑手
+                if (assignment.RiderId != riderId)
+                {
+                    _logger.LogWarning("订单不属于该骑手, OrderId: {OrderId}, RiderId: {RiderId}, AssignmentRiderId: {AssignmentRiderId}",
+                        orderId, riderId, assignment.RiderId);
+                    throw OrderExceptions.OrderNotFound(orderId);
+                }
+
+                // 验证订单状态：必须是配送中状态
+                if (order.OrderStatus != (int)OrderStatus.InDelivery)
+                {
+                    _logger.LogWarning("订单状态不允许确认送达, OrderId: {OrderId}, CurrentStatus: {CurrentStatus}",
+                        orderId, order.OrderStatus);
+                    throw OrderExceptions.OrderStatusError(orderId, order.OrderStatus, (int)OrderStatus.InDelivery);
+                }
+
+                // 验证骑手分配状态：必须是已接单状态
+                if (assignment.AcceptedStatus != 1)
+                {
+                    _logger.LogWarning("骑手分配状态不允许确认送达, AssignId: {AssignId}, CurrentStatus: {CurrentStatus}",
+                        assignment.AssignId, assignment.AcceptedStatus);
+                    throw OrderExceptions.OrderStatusError(assignment.AssignId, assignment.AcceptedStatus, 1);
+                }
+
+                // 更新订单状态为已送达
+                order.OrderStatus = (int)OrderStatus.Delivered; // 9 = 骑手已送达，等待用户确认
+                await _orderRepository.SaveChangesAsync();
+
+                // 更新分配状态为已完成
+                assignment.AcceptedStatus = 3; // 3 = 已完成
+                assignment.AcceptedAt = deliveredAt ?? DateTime.Now;
+                await _assignmentRepository.SaveChangesAsync();
+
+                _logger.LogInformation("骑手确认送达成功, RiderId: {RiderId}, OrderId: {OrderId}", riderId, orderId);
+
+                return true;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException || ex is BusinessException))
+            {
+                _logger.LogError(ex, "骑手确认送达时发生异常, RiderId: {RiderId}, OrderId: {OrderId}", riderId, orderId);
+                throw CommonExceptions.GeneralError($"骑手确认送达失败: {ex.Message}");
             }
         }
     }

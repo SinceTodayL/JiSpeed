@@ -51,5 +51,13 @@ namespace JISpeed.Core.Interfaces.IServices
         // <param name="acceptedStatus">接单状态</param>
         // <returns>更新后的订单分配</returns>
         Task<Assignment> UpdateAssignmentStatusAsync(string riderId, string assignId, int acceptedStatus);
+
+        // 骑手确认送达
+        // <param name="riderId">骑手ID</param>
+        // <param name="orderId">订单ID</param>
+        // <param name="deliveredAt">送达时间</param>
+        // <param name="deliveryNote">送达备注</param>
+        // <returns>确认送达结果</returns>
+        Task<bool> ConfirmDeliveryAsync(string riderId, string orderId, DateTime? deliveredAt = null, string? deliveryNote = null);
     }
 }

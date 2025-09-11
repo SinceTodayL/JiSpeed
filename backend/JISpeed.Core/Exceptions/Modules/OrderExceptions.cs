@@ -21,13 +21,27 @@ namespace JISpeed.Core.Exceptions
         // 返回: 业务异常
         public static BusinessException OrderStatusError(string orderId, int currentStatus, int requiredStatus)
         {
-            string statusText = currentStatus == 1 ? "待处理" :
-                               (currentStatus == 2 ? "处理中" :
-                               (currentStatus == 3 ? "已解决" : "已关闭"));
+            string statusText = currentStatus == 0 ? "未支付" :
+                               (currentStatus == 1 ? "已支付" :
+                               (currentStatus == 2 ? "已确认" :
+                               (currentStatus == 3 ? "已评价" :
+                               (currentStatus == 4 ? "售后中" :
+                               (currentStatus == 5 ? "售后结束" :
+                               (currentStatus == 6 ? "已取消" :
+                               (currentStatus == 7 ? "已派单" :
+                               (currentStatus == 8 ? "配送中" :
+                               (currentStatus == 9 ? "骑手已送达" : "未知状态")))))))));
 
-            string requiredText = requiredStatus == 1 ? "待处理" :
-                                 (requiredStatus == 2 ? "处理中" :
-                                 (requiredStatus == 3 ? "已解决" : "已关闭"));
+            string requiredText = requiredStatus == 0 ? "未支付" :
+                                 (requiredStatus == 1 ? "已支付" :
+                                 (requiredStatus == 2 ? "已确认" :
+                                 (requiredStatus == 3 ? "已评价" :
+                                 (requiredStatus == 4 ? "售后中" :
+                                 (requiredStatus == 5 ? "售后结束" :
+                                 (requiredStatus == 6 ? "已取消" :
+                                 (requiredStatus == 7 ? "已派单" :
+                                 (requiredStatus == 8 ? "配送中" :
+                                 (requiredStatus == 9 ? "骑手已送达" : "未知状态")))))))));
 
             return new BusinessException(ErrorCodes.OrderStatusError,
                 $"订单 (ID: {orderId}) 当前状态 ({statusText}) 不允许此操作，需要状态: {requiredText}");

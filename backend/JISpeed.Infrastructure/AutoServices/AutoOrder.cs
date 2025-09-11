@@ -35,7 +35,7 @@ namespace JISpeed.Infrastructure.AutoServices
         }
 
 
-        /// 恢复现有订单的任务
+        // 恢复现有订单的任务
 
         private async Task RecoverExistingTasksAsync()
         {
@@ -116,7 +116,7 @@ namespace JISpeed.Infrastructure.AutoServices
         }
 
 
-        /// 为新订单安排自动取消任务
+        // 为新订单安排自动取消任务
 
         public void ScheduleOrderCancellation(string orderId, DateTime orderCreateTime)
         {
@@ -165,7 +165,7 @@ namespace JISpeed.Infrastructure.AutoServices
         }
 
 
-        /// 为订单安排自动评价任务
+        // 为订单安排自动评价任务
 
         public void ScheduleAutoReview(string orderId, string userId, DateTime orderCreateTime)
         {
@@ -215,7 +215,7 @@ namespace JISpeed.Infrastructure.AutoServices
         }
 
 
-        /// 取消订单的自动任务
+        // 取消订单的自动任务
 
         public void CancelOrderTask(string orderId, int taskType)
         {
@@ -238,7 +238,7 @@ namespace JISpeed.Infrastructure.AutoServices
         }
 
 
-        /// 自动取消超时未支付订单
+        // 自动取消超时未支付订单
 
         private async Task CancelOrderAsync(string orderId)
         {
@@ -255,14 +255,14 @@ namespace JISpeed.Infrastructure.AutoServices
                 }
 
                 // 检查订单是否仍然是未支付状态
-                if (order.OrderStatus != 0)
+                if (order.OrderStatus != (int)OrderStatus.Unpaid)
                 {
                     _logger.LogInformation($"订单 {orderId} 状态已改变 (当前状态: {order.OrderStatus})，跳过自动取消");
                     return;
                 }
 
                 // 更新订单状态为已取消
-                order.OrderStatus = 6; // Cancelled
+                order.OrderStatus = (int)OrderStatus.Cancelled; // Cancelled
 
                 // 恢复菜品库存
                 var orderDishes = await context.OrderDishes
@@ -302,7 +302,7 @@ namespace JISpeed.Infrastructure.AutoServices
         }
 
 
-        /// 自动添加默认好评
+        // 自动添加默认好评
 
         private async Task AddAutoReviewAsync(string orderId, string userId)
         {
@@ -385,7 +385,7 @@ namespace JISpeed.Infrastructure.AutoServices
         }
 
 
-        /// 获取当前活跃任务数量
+        // 获取当前活跃任务数量
 
         public int GetActiveTaskCount()
         {
@@ -393,7 +393,7 @@ namespace JISpeed.Infrastructure.AutoServices
         }
 
 
-        /// 手动检查和取消已超时未支付的订单
+        // 手动检查和取消已超时未支付的订单
 
         public async Task CheckAndCancelOverdueOrdersAsync()
         {
@@ -407,7 +407,7 @@ namespace JISpeed.Infrastructure.AutoServices
 
                 // 查找所有已超时的未支付订单（创建时间超过15分钟）
                 var overdueOrders = await context.Orders
-                    .Where(o => o.OrderStatus == 0 &&
+                    .Where(o => o.OrderStatus == (int)OrderStatus.Unpaid &&
                            currentTime.Subtract(o.CreateAt).TotalMinutes >= 15)
                     .Select(o => new { o.OrderId, o.CreateAt })
                     .ToListAsync();
@@ -430,7 +430,7 @@ namespace JISpeed.Infrastructure.AutoServices
         }
 
 
-        /// 手动检查和处理已超时未评价的订单
+        // 手动检查和处理已超时未评价的订单
 
         public async Task CheckAndAddOverdueReviewsAsync()
         {
@@ -444,7 +444,7 @@ namespace JISpeed.Infrastructure.AutoServices
 
                 // 查找所有已超时的已确认未评价订单（创建时间超过3天且状态为已确认）
                 var overdueReviewOrders = await context.Orders
-                    .Where(o => o.OrderStatus == 2 &&
+                    .Where(o => o.OrderStatus == (int)OrderStatus.Confirmed &&
                            currentTime.Subtract(o.CreateAt).TotalDays >= 3)
                     .Select(o => new { o.OrderId, o.UserId, o.CreateAt })
                     .ToListAsync();
@@ -480,7 +480,7 @@ namespace JISpeed.Infrastructure.AutoServices
     }
 
 
-    /// 任务类型枚举
+    // 任务类型枚举
 
     public enum TaskType
     {
@@ -489,7 +489,7 @@ namespace JISpeed.Infrastructure.AutoServices
     }
 
 
-    /// 订单任务
+    // 订单任务
 
     public class OrderTask
     {
