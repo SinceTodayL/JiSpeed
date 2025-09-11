@@ -474,6 +474,14 @@ namespace JISpeed.Application.Services.Customer
         {
             try
             {
+                // 参数校验
+                if (quantity <= 0)
+                {
+                    _logger.LogWarning("购物车商品数量必须大于0，UserId: {UserId}, CartItemId: {CartItemId}, Quantity: {Quantity}",
+                        userId, cartId, quantity);
+                    return null;
+                }
+
                 var cartItem = await _context.CartItems
                     .FirstOrDefaultAsync(c => c.UserId == userId && c.CartItemId == cartId);
 
@@ -483,17 +491,15 @@ namespace JISpeed.Application.Services.Customer
                     return null;
                 }
 
-                if (cartItem.Quantity < quantity)
-                {
-                    return null;
-                }
-                _logger.LogInformation("当前购物车项数量，UserId: {UserId}, CartItemId: {CartItemId}, CurrentQuantity: {CurrentQuantity}",
-                    userId, cartId, cartItem.Quantity);
-                cartItem.Quantity -= quantity;
+                _logger.LogInformation("当前购物车项数量，UserId: {UserId}, CartItemId: {CartItemId}, CurrentQuantity: {CurrentQuantity}, NewQuantity: {NewQuantity}",
+                    userId, cartId, cartItem.Quantity, quantity);
+
+                // 直接设置为新的数量
+                cartItem.Quantity = quantity;
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("购物车项数量更新成功，UserId: {UserId}, CartItemId: {CartItemId}, NewQuantity: {NewQuantity}",
-                    userId, cartId, quantity);
+                _logger.LogInformation("购物车项数量更新成功，UserId: {UserId}, CartItemId: {CartItemId}, UpdatedQuantity: {UpdatedQuantity}",
+                    userId, cartId, cartItem.Quantity);
 
                 return cartItem;
             }
