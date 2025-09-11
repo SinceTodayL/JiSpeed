@@ -1,3 +1,4 @@
+// -*- coding: utf-8 -*-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -137,6 +138,7 @@ namespace JISpeed.Api.Mappers
         // 将Order实体转换为OrderSummaryDTO
         // <param name="order">订单实体</param>
         // <returns>订单摘要DTO</returns>
+        // ... existing code ...
         public static OrderSummaryDTO? ToOrderSummaryDTO(Order? order)
         {
             if (order == null) return null;
@@ -148,9 +150,10 @@ namespace JISpeed.Api.Mappers
                 CreateAt = order.CreateAt,
                 OrderStatus = order.OrderStatus,
                 DeliveryAddress = order.Address?.DetailedAddress ?? "未知地址",
-                MerchantName = "商家名称" // 这里可能需要从其他地方获取商家名称
+                MerchantName = order.Merchant?.MerchantName ?? "未知商家"
             };
         }
+        // ... existing code ...
 
         // 将Performance实体转换为PerformanceDTO
         // <param name="performance">绩效实体</param>

@@ -52,6 +52,9 @@ namespace JISpeed.Infrastructure.Repositories.Rider
             return await _context.Assignments
                 .Include(a => a.Rider)
                 .Include(a => a.Order)
+                    .ThenInclude(o => o.Address)  // 添加地址关联
+                .Include(a => a.Order)
+                    .ThenInclude(o => o.Merchant) // 添加商家关联
                 .Where(a => a.RiderId == riderId)
                 .OrderByDescending(a => a.AssignedAt)
                 .ToListAsync();
