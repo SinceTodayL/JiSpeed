@@ -11,9 +11,9 @@
         <div v-if="merchantInfo" class="merchant-info-header">
           <div class="merchant-logo">
             <img
-              :src="merchantInfo.logo || '/src/assets/placeholder.png'"
+              :src="randomMerchantImage"
               :alt="merchantInfo.merchantName"
-              @error="handleImageError"
+              class="merchant-cover"
             />
           </div>
           <div class="merchant-details">
@@ -422,6 +422,22 @@ const dishImages = [
   'https://picsum.photos/id/1080/400/200',
   'https://picsum.photos/id/1084/400/200'
 ]
+    const merchantImages = [
+      'https://picsum.photos/id/1011/400/200',
+      'https://picsum.photos/id/1012/400/200',
+      'https://picsum.photos/id/1015/400/200',
+      'https://picsum.photos/id/1025/400/200',
+      'https://picsum.photos/id/1035/400/200',
+      'https://picsum.photos/id/1041/400/200',
+      'https://picsum.photos/id/1043/400/200',
+      'https://picsum.photos/id/1050/400/200',
+      'https://picsum.photos/id/1062/400/200',
+      'https://picsum.photos/id/1069/400/200',
+      'https://picsum.photos/id/1074/400/200',
+      'https://picsum.photos/id/1080/400/200',
+      'https://picsum.photos/id/1084/400/200'
+    ]
+    const randomMerchantImage = merchantImages[Math.floor(Math.random() * merchantImages.length)]
     function handleAddToCart() {
       const userId = (typeof window !== 'undefined' && window.localStorage && window.localStorage.getItem)
         ? window.localStorage.getItem('userId') || ''
@@ -1185,7 +1201,8 @@ const dishImages = [
       proceedToCheckout,
       goBack,
       handleImageError,
-      handleAddToCart
+      handleAddToCart,
+      randomMerchantImage, // ← 加上这一行
     }
   }
 }
@@ -1828,7 +1845,6 @@ const dishImages = [
   min-width: 20px;
   text-align: center;
   color: #333;
-  flex-shrink: 0;
 }
 
 /* 购物车悬浮按钮 */
@@ -2398,5 +2414,15 @@ const dishImages = [
   background: #f7f8fa;
   min-height: 100vh;
   overflow: auto;
+}
+
+.merchant-cover {
+  width: 100px;
+  height: 100px;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 3px solid #fff;
+  background: #eee;
+  display: block;
 }
 </style>
