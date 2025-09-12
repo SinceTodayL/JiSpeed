@@ -1,87 +1,165 @@
-/**
- * Namespace Api
- *
- * All backend api type
- */
 declare namespace Api {
-  namespace Common {
-    /** common params of paginating */
-    interface PaginatingCommonParams {
-      /** current page number */
-      current: number;
-      /** page size */
-      size: number;
-      /** total count */
-      total: number;
-    }
-
-    /** common params of paginating query list data */
-    interface PaginatingQueryRecord<T = any> extends PaginatingCommonParams {
-      records: T[];
-    }
-
-    /** common search params of table */
-    type CommonSearchParams = Pick<Common.PaginatingCommonParams, 'current' | 'size'>;
-
-    /**
-     * enable status
-     *
-     * - "1": enabled
-     * - "2": disabled
-     */
-    type EnableStatus = '1' | '2';
-
-    /** common record */
-    type CommonRecord<T = any> = {
-      /** record id */
-      id: number;
-      /** record creator */
-      createBy: string;
-      /** record create time */
-      createTime: string;
-      /** record updater */
-      updateBy: string;
-      /** record update time */
-      updateTime: string;
-      /** record status */
-      status: EnableStatus | null;
-    } & T;
+  /** Common response structure */
+  interface Response<T = any> {
+    code: number;
+    message: string | null;
+    data: T;
+    timestamp?: number;
   }
 
-  /**
-   * namespace Auth
-   *
-   * backend api module: "auth"
-   */
+  /** Auth API */
   namespace Auth {
-    interface LoginToken {
-      token: string;
-      refreshToken: string;
-    }
-
+    /** User info for authentication */
     interface UserInfo {
       userId: string;
       userName: string;
       roles: string[];
       buttons: string[];
     }
+
+    /** Login token */
+    interface LoginToken {
+      token: string;
+      refreshToken: string;
+    }
   }
 
-  /**
-   * namespace Route
-   *
-   * backend api module: "route"
-   */
-  namespace Route {
-    type ElegantConstRoute = import('@elegant-router/types').ElegantConstRoute;
-
-    interface MenuRoute extends ElegantConstRoute {
-      id: string;
+  /** User API */
+  namespace User {
+    /** User info */
+    interface UserInfo {
+      userId: string;
+      account: string;
+      status: number;
+      createdAt: string;
+      deletedAt: string | null;
+      lastLoginAt: string;
+      lastLoginIp: string;
+      nickName: string;
+      avatarUrl: string;
+      gender: number;
+      birthday: string;
+      level: number;
+      defaultAddrId: string;
     }
 
-    interface UserRoute {
-      routes: MenuRoute[];
-      home: import('@elegant-router/types').LastLevelRouteKey;
+    /** User complaint */
+    interface Complaint {
+      complaintId: string;
+      orderId: string;
+      complainantId: string;
+      role: number;
+      description: string;
+      status: string;
+      createdAt: string;
+    }
+  }
+
+  /** Merchant API */
+  namespace Merchant {
+    /** Merchant info */
+    interface MerchantInfo {
+      merchantId: string;
+      merchantName: string;
+      status: number;
+      contactInfo: string;
+      location: string;
+    }
+
+    /** Sales statistics */
+    interface SalesStats {
+      statDate: string;
+      salesQty: number;
+      salesAmount: number;
+      merchantId: string;
+    }
+
+    /** Dish review */
+    interface DishReview {
+      reviewId: string;
+      orderId: string;
+      user: string;
+      rating: number;
+      content: string;
+      isAnonymous: number;
+      reviewAt: string;
+    }
+  }
+
+  /** Rider API */
+  namespace Rider {
+    /** Rider info */
+    interface RiderInfo {
+      riderId: string;
+      name: string;
+      phoneNumber: string;
+      vehicleNumber: string;
+      applicationUserId: string;
+      status?: number;
+    }
+
+    /** Rider performance */
+    interface Performance {
+      riderId: string;
+      statsMonth: string;
+      totalOrders: number;
+      onTimeRate: number;
+      goodReviewRate: number;
+      badReviewRate: number;
+      income: number;
+    }
+  }
+
+  /** Order API */
+  namespace Order {
+    /** Order info */
+    interface OrderInfo {
+      orderId: string;
+      userId: string;
+      merchantId: string;
+      orderStatus: number;
+      totalAmount: number;
+      createdAt: string;
+      assignId?: string;
+      merchantName?: string;
+      userName?: string;
+      address?: {
+        addressId: string;
+        longitude?: number;
+        latitude?: number;
+        detailAddress: string;
+      };
+    }
+
+    /** Order assignment info */
+    interface AssignmentInfo {
+      assignmentId: string;
+      orderId: string;
+      riderId: string;
+      assignedAt: string;
+      assignmentStatus: number;
+      remark?: string;
+    }
+
+    /** Auto assignment result */
+    interface AutoAssignmentResult {
+      isSuccess: boolean;
+      assignmentId?: string;
+      riderId?: string;
+      errorMessage?: string;
+    }
+
+    /** Order assignment request */
+    interface AssignmentRequest {
+      orderId: string;
+      riderId: string;
+    }
+
+    /** Order status update request */
+    interface StatusUpdateRequest {
+      orderId: string;
+      newStatus: number;
+      remark?: string;
     }
   }
 }

@@ -1,20 +1,26 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { getUserId } from '@/store/modules/auth/shared';
 
 export const useMerchantStore = defineStore('merchant', () => {
-  // 商家ID - 登录后从用户信息中动态获取
-  const merchantId = ref<string | null>(null);
+  // 添加响应式触发器，确保能响应localStorage变化
+  const authUpdateTrigger = ref(0);
   
-  // 商家基本信息
+  // 商家ID - 直接从 AuthStorage 读取 userId
+  const merchantId = computed(() => {
+    // 依赖触发器以支持响应式更新
+    authUpdateTrigger.value;
+    return getUserId();
+  });
+
+  // 触发认证更新（URL参数解析后或登录后调用）
+  function triggerAuthUpdate() {
+    authUpdateTrigger.value++;
+  }
+  
   const merchantInfo = ref<any | null>(null);
   
-  // 销售统计数据
   const salesStats = ref<any[]>([]);
-  
-  // 设置商家ID
-  function setMerchantId(id: string) {
-    merchantId.value = id;
-  }
   
   // 设置商家信息
   function setMerchantInfo(info: any) {
@@ -36,9 +42,9 @@ export const useMerchantStore = defineStore('merchant', () => {
     merchantId,
     merchantInfo,
     salesStats,
-    setMerchantId,
     setMerchantInfo,
     setSalesStats,
-    resetStore
+    resetStore,
+    triggerAuthUpdate
   };
 }); 

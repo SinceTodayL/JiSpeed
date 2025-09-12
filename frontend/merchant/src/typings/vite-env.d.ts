@@ -67,6 +67,12 @@ declare namespace Env {
      */
     readonly VITE_OTHER_SERVICE_BASE_URL: string;
     /**
+     * login page url
+     * 
+     * External login page URL
+     */
+    readonly VITE_LOGIN_URL: string;
+    /**
      * Whether to enable the http proxy
      *
      * Only valid in the development environment

@@ -47,9 +47,6 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
     authStore.$reset();
 
-    if (!route.meta.constant) {
-      await toLogin();
-    }
 
     tabStore.cacheTabs();
     routeStore.resetStore();
@@ -150,24 +147,20 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   }
 
   async function getUserInfo() {
-    // 返回模拟的用户信息，不发送真实API请求
-    const mockUserInfo: Api.Auth.UserInfo = {
-      userId: 'mock-user-id',
-      userName: '商家管理员',
-      roles: ['admin'],
-      buttons: [],
-      merchantId: '1' // 手动添加一个有效的商家ID用于Mock测试
-    };
+    const { data, error } = await fetchGetUserInfo();
 
-    // update store
-    Object.assign(userInfo, mockUserInfo);
+    if (!error) {
+      // update store
+      Object.assign(userInfo, data);
 
-    // 同步更新 merchant store 中的 merchantId
-    if (mockUserInfo.merchantId) {
-      merchantStore.setMerchantId(mockUserInfo.merchantId);
+      // 将 userId 存储到 localStg 中，这样 merchantStore.merchantId 才能读取到
+      const { setAuthStorage } = await import('./shared');
+      setAuthStorage(getToken(), data.userId, 2); // userType 设为 2 表示商家
+
+      return true;
     }
 
-    return true;
+    return false;
   }
 
   async function initUserInfo() {

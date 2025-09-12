@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
-import { useAuthStore } from '@/store/modules/auth';
-import { useRouterPush } from '@/hooks/common/router';
-import { useFormRules, useNaiveForm } from '@/hooks/common/form';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useAppStore } from '@/store/modules/app';
+import { useAuthStore } from '@/store/modules/auth';
+import { useFormRules, useNaiveForm } from '@/hooks/common/form';
+import { useRouterPush } from '@/hooks/common/router';
 import { $t } from '@/locales';
+import { getDefaultCredentials, ROLE_CONFIG } from '@/constants/login-defaults';
 
 defineOptions({
   name: 'PwdLogin'
@@ -22,13 +23,17 @@ const loginRole = ref<'user' | 'rider' | 'merchant' | 'admin'>('user');
 const loginMethod = ref<'username' | 'email' | 'phone'>('username');
 
 interface FormModel {
-  loginKey: string;  // 可以是用户名或邮箱
+  loginKey: string;  // 用户名或邮箱
   password: string;
 }
 
+// 从配置文件获取默认账号密码
+const roleDefaultCredentials = getDefaultCredentials();
+
+// 响应式表单模型
 const model: FormModel = reactive({
-  loginKey: 'TongJi',
-  password: '6547265472'
+  loginKey: roleDefaultCredentials[loginRole.value].loginKey,
+  password: roleDefaultCredentials[loginRole.value].password
 });
 
 const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
@@ -48,19 +53,29 @@ async function handleSubmit() {
     toggleLoginModule('code-login');
     return;
   }
-  
+
   await validate();
-  
+
   // 根据选择的角色确定userType
-  const userTypeMap = {
-    'user': 1,
-    'merchant': 2,
-    'rider': 3,
-    'admin': 4
-  };
+  const userType = ROLE_CONFIG[loginRole.value].userType;
+  const loginResult = await authStore.login(model.loginKey, model.password, userType);
+
+  // 只有登录成功时才执行跳转（auth store内部已经处理了跳转逻辑）
+  if (!loginResult.success) {
+    // 登录失败，不做任何跳转，错误信息已在auth store中显示
+    console.log('登录失败:', loginResult.error);
+    return;
+  }
   
-  const userType = userTypeMap[loginRole.value];
-  await authStore.login(model.loginKey, model.password, userType);
+  // 登录成功，auth store已经处理了跳转逻辑，这里不需要额外操作
+  console.log('登录成功');
+}
+
+// 这个函数现在不再需要，因为auth store内部已经处理了跳转逻辑
+// 保留函数定义以防其他地方引用，但不执行任何操作
+async function redirectToModule(role: 'user' | 'rider' | 'merchant' | 'admin') {
+  // 跳转逻辑已移至auth store中处理
+  console.log('跳转逻辑已由auth store处理');
 }
 
 // 登录角色选项
@@ -68,32 +83,32 @@ const loginRoleOptions = computed(() => {
   // 使用现有的翻译键和手动映射相结合
   return [
     { label: $t('page.login.pwdLogin.user'), value: 'user' as const },
-    { 
-      label: $t('page.login.pwdLogin.rider'), 
-      value: 'rider' as const 
+    {
+      label: $t('page.login.pwdLogin.rider'),
+      value: 'rider' as const
     },
-    { 
-      label: $t('page.login.pwdLogin.merchant'), 
-      value: 'merchant' as const 
+    {
+      label: $t('page.login.pwdLogin.merchant'),
+      value: 'merchant' as const
     },
     { label: $t('page.login.pwdLogin.admin'), value: 'admin' as const },
   ];
 });
 
-// 登录方式选项  
+// 登录方式选项
 const loginMethodOptions = computed(() => {
   return [
-    { 
-      label: $t('page.login.pwdLogin.usernameLogin'), 
-      value: 'username' as const 
+    {
+      label: $t('page.login.pwdLogin.usernameLogin'),
+      value: 'username' as const
     },
-    { 
-      label: $t('page.login.pwdLogin.emailLogin'), 
-      value: 'email' as const 
+    {
+      label: $t('page.login.pwdLogin.emailLogin'),
+      value: 'email' as const
     },
-    { 
-      label: $t('page.login.pwdLogin.phoneLogin'), 
-      value: 'phone' as const 
+    {
+      label: $t('page.login.pwdLogin.phoneLogin'),
+      value: 'phone' as const
     }
   ];
 });
@@ -105,6 +120,26 @@ watch(loginMethod, (newMethod) => {
       toggleLoginModule('code-login');
     }, 0);
   }
+});
+
+// 监听角色变化，自动更新默认账号密码
+watch(loginRole, (newRole) => {
+  const defaultCredentials = roleDefaultCredentials[newRole];
+  model.loginKey = defaultCredentials.loginKey;
+  model.password = defaultCredentials.password;
+}, { immediate: true });
+
+// 检查登录前状态
+onMounted(async () => {
+  // 注释掉自动检查认证状态的逻辑，防止退出登录后自动跳转
+  // const isAuthenticated = await authStore.checkAuthBeforeLogin();
+  // if (isAuthenticated) {
+  //   // checkAuthBeforeLogin方法已经处理了跳转逻辑
+  //   console.log('User already authenticated, redirecting...');
+  // }
+
+  // 直接显示登录页面，不进行自动认证检查
+  console.log('Showing login page without auto auth check');
 });
 </script>
 
@@ -139,8 +174,8 @@ watch(loginMethod, (newMethod) => {
           <label class="form-label">
             {{ appStore.locale === 'zh-CN' ? '用户名或邮箱' : 'Username or Email' }}
           </label>
-          <NInput 
-            v-model:value="model.loginKey" 
+          <NInput
+            v-model:value="model.loginKey"
             :placeholder="appStore.locale === 'zh-CN' ? '请输入用户名或邮箱' : 'Enter username or email'"
           />
         </div>
@@ -164,7 +199,7 @@ watch(loginMethod, (newMethod) => {
       <NFormItem>
         <div class="w-full">
           <NAlert type="info">
-            {{ loginMethod === 'email' 
+            {{ loginMethod === 'email'
               ? $t('page.login.common.redirectToEmailLogin')
               : $t('page.login.common.redirectToPhoneLogin')
             }}
@@ -182,17 +217,17 @@ watch(loginMethod, (newMethod) => {
           {{ $t('page.login.pwdLogin.forgetPassword') }}
         </NButton>
       </div>
-      
-      <NButton 
-        type="primary" 
-        size="large" 
-        round 
-        block 
-        :loading="authStore.loginLoading" 
+
+      <NButton
+        type="primary"
+        size="large"
+        round
+        block
+        :loading="authStore.loginLoading"
         @click="handleSubmit"
       >
-        {{ loginMethod === 'username' 
-          ? $t('common.confirm') 
+        {{ loginMethod === 'username'
+          ? $t('common.confirm')
           : $t('page.login.common.continue')
         }}
       </NButton>
@@ -209,17 +244,14 @@ watch(loginMethod, (newMethod) => {
   color: #333;
 }
 
-/* 确保所有表单项有统一的间距 */
 :deep(.n-form-item) {
   margin-bottom: 4px;
 }
 
-/* 最后一个表单项不需要底部边距 */
 :deep(.n-form-item:last-child) {
   margin-bottom: 0;
 }
 
-/* 提示框样式优化 */
 :deep(.n-alert) {
   border-radius: 6px;
 }

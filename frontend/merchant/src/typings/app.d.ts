@@ -301,6 +301,7 @@ declare namespace App {
     type Schema = {
       system: {
         title: string;
+        loginTitle: string;
         updateTitle: string;
         updateContent: string;
         updateConfirm: string;
@@ -438,6 +439,12 @@ declare namespace App {
             validateSuccess: string;
             loginSuccess: string;
             welcomeBack: string;
+            emailPlaceholder: string;
+            selectRolePlaceholder: string;
+            selectMethodPlaceholder: string;
+            redirectToEmailLogin: string;
+            redirectToPhoneLogin: string;
+            continue: string;
           };
           pwdLogin: {
             title: string;
@@ -449,6 +456,13 @@ declare namespace App {
             superAdmin: string;
             admin: string;
             user: string;
+            merchant: string;
+            rider: string;
+            loginRole: string;
+            loginMethod: string;
+            usernameLogin: string;
+            emailLogin: string;
+            phoneLogin: string;
           };
           codeLogin: {
             title: string;
@@ -497,6 +511,25 @@ declare namespace App {
             desc5: string;
           };
           creativity: string;
+        };
+        profile: {
+          title: string;
+          merchantInfo: string;
+          editProfile: string;
+          merchantName: string;
+          merchantNamePlaceholder: string;
+          status: string;
+          statusActive: string;
+          statusInactive: string;
+          contactInfo: string;
+          contactInfoPlaceholder: string;
+          location: string;
+          locationPlaceholder: string;
+          updateSuccess: string;
+          updateFailed: string;
+          loadFailed: string;
+          save: string;
+          cancel: string;
         };
       };
       form: {

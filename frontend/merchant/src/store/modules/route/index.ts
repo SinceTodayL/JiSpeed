@@ -176,11 +176,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
 
   /** Init auth route */
   async function initAuthRoute() {
-    // check if user info is initialized
-    if (!authStore.userInfo.userId) {
-      await authStore.initUserInfo();
-    }
-
+    // 无需检查用户信息，直接初始化路由
     if (authRouteMode.value === 'static') {
       initStaticAuthRoute();
     } else {
@@ -194,13 +190,8 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   function initStaticAuthRoute() {
     const { authRoutes: staticAuthRoutes } = createStaticRoutes();
 
-    if (authStore.isStaticSuper) {
-      addAuthRoutes(staticAuthRoutes);
-    } else {
-      const filteredAuthRoutes = filterAuthRoutesByRoles(staticAuthRoutes, authStore.userInfo.roles);
-
-      addAuthRoutes(filteredAuthRoutes);
-    }
+    // 添加所有路由，不进行角色过滤
+    addAuthRoutes(staticAuthRoutes);
 
     handleConstantAndAuthRoutes();
 
@@ -224,8 +215,11 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
 
       setIsInitAuthRoute(true);
     } else {
-      // if fetch user routes failed, reset store
-      authStore.resetStore();
+      // if fetch user routes failed, fallback to static routes
+      const { authRoutes: staticAuthRoutes } = createStaticRoutes();
+      addAuthRoutes(staticAuthRoutes);
+      handleConstantAndAuthRoutes();
+      setIsInitAuthRoute(true);
     }
   }
 

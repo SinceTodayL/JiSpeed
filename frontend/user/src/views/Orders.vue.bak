@@ -1,0 +1,145 @@
+<template>
+  <div class="orders-page">
+    <!-- 顶部导航 -->
+    <div class="header">
+      <button @click="goBack" class="back-btn">
+        <i class="back-icon">←</i>
+      </button>
+      <h1 class="header-title">我的订单</h1>
+    </div>
+
+    <!-- 订单状态筛选 -->
+    <div class="status-filter">
+      <div 
+        v-for="status in orderStatuses"
+        :key="status.value"
+        :class="['filter-item', { active: activeStatus === status.value }]"
+        @click="filterByStatus(status.value)"
+      >
+        <span class="filter-text">{{ status.label }}</span>
+      </div>
+    </div>
+
+    <!-- 订单列表 -->
+    <div class="orders-container">
+      <!-- 加载状态 -->
+      <div v-if="loading" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>正在加载订单...</p>
+      </div>
+
+      <!-- 订单列表 -->
+      <div v-else-if="orders.length > 0" class="orders-grid">
+        <div 
+          v-for="order in orders"
+          :key="order.orderId"
+          class="order-card"
+          @click="viewOrderDetail(order.orderId)"
+        >
+          <!-- 订单头部 -->
+          <div class="order-header">
+            <div class="merchant-info center">
+              <img 
+                :src="order.merchantLogo || getRandomMerchantImage(order.orderId, order.merchantName)"
+                :alt="order.merchantName"
+                class="merchant-logo"
+              />
+              <span class="merchant-name">{{ order.merchantName }}</span>
+              <div class="order-time">{{ formatTime(order.createAt) }}</div>
+            </div>
+            <div class="header-right">
+              <div class="order-status">
+                <span :class="['status-text', getStatusClass(order.orderStatus)]">
+                  {{ order.orderStatusText }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 订单商品 -->
+          <div class="order-items">
+            <div 
+              v-for="(item, index) in order.orderItems"
+              :key="item.dishId"
+              class="order-item"
+            >
+              <img 
+                :src="item.coverUrl || '/api/placeholder/60/60'"
+                :alt="item.dishName"
+                class="item-image"
+              />
+              <div class="item-info">
+                <div class="item-name">{{ item.dishName }}</div>
+                <div class="item-meta">
+                  <span class="item-price">¥{{ item.price }}</span>
+                  <span class="item-quantity">×{{ item.quantity }}</span>
+                </div>
+              </div>
+            </div>
+            <!-- 更多商品提示 -->
+            <div v-if="(order.orderDishes && order.orderDishes.length > 2)" class="more-items">
+              还有{{ order.orderDishes.length - 2 }}件商品
+            </div>
+          </div>
+
+          <!-- 订单底部 -->
+          <div class="order-footer">
+            <div class="order-info">
+              <div class="order-amount">
+                <div class="order-amount center">
+                  共{{ order.itemsCount }}件商品 实付¥{{ order.finalAmount }}
+                </div>
+              </div>
+            </div>
+            
+            <div class="order-actions">
+              <button 
+                v-if="order.orderStatus === 0"
+                @click.stop="payOrder(order)"
+                class="action-btn primary"
+              >
+                立即支付
+              </button>
+              
+              <button 
+                v-if="order.orderStatus === 1"
+                @click.stop="confirmOrder(order.orderId)"
+                class="action-btn primary"
+              >
+                确认收货
+              </button>
+              
+              <button 
+                v-if="[0].includes(order.orderStatus)"
+                @click.stop="cancelOrder(order.orderId)"
+                class="action-btn secondary"
+              >
+                取消订单
+              </button>
+              
+              <button 
+                v-if="order.orderStatus === 2"
+                @click.stop="reviewOrder(order.orderId)"
+                class="action-btn secondary"
+              >
+                评价
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 空状态 -->
+      <div v-else class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p class="empty-text">暂无订单</p>
+        <button @click="goShopping" class="shop-btn">去下单</button>
+      </div>
+    </div>
+
+    <!-- 分页加载 -->
+    <div v-if="hasMore && !loading" class="load-more">
+      <button @click="loadMore" class="load-more-btn">加载更多</button>
+    </div>
+  </div>
+</template>

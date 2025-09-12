@@ -1,10 +1,11 @@
 <script setup lang="tsx">
 import { reactive, ref, computed } from 'vue';
-import { NButton, NPopconfirm, NTag } from 'naive-ui';
-import { fetchGetAllOrders, getOrderStatusText } from '@/service/api';
+import { NButton, NPopconfirm, NTag, NCard, NDataTable } from 'naive-ui';
+import { fetchGetAllOrders, fetchOrderDetailsBatch, fetchDishDetailsBatch, getOrderStatusText } from '@/service/api';
 import { useAppStore } from '@/store/modules/app';
 import { useMerchantStore } from '@/store/modules/merchant';
 import { $t } from '@/locales';
+import TableHeaderOperation from '@/components/advanced/table-header-operation.vue';
 import OrderSearch from './modules/order-search.vue';
 import OrderOperateDrawer from './modules/order-operate-drawer.vue';
 
@@ -12,43 +13,149 @@ const appStore = useAppStore();
 const merchantStore = useMerchantStore();
 
 const loading = ref(false);
-const data = ref<Api.Order.OrderItem[]>([]);
-const originalData = ref<Api.Order.OrderItem[]>([]); // 保存原始数据用于搜索
+const data = ref<Api.Order.OrderDetailItem[]>([]);
+const originalData = ref<Api.Order.OrderDetailItem[]>([]); 
 const checkedRowKeys = ref<string[]>([]);
 const drawerVisible = ref(false);
 const operateType = ref<'add' | 'edit'>('add');
-const editingData = ref<Api.Order.OrderItem | null>(null);
+const editingData = ref<Api.Order.OrderDetailItem | null>(null);
 
 const searchParams = reactive<{
   orderId: string | null;
-  userId: string | null;
   orderStatus: number | null;
 }>({
   orderId: null,
-  userId: null,
   orderStatus: null
 });
 
-// 获取数据
+// 获取数据 - 先获取订单ID列表，再获取详细信息
 const getData = async () => {
   loading.value = true;
   try {
-    const result = await fetchGetAllOrders(merchantStore.merchantId);
-    console.log('API响应:', result);
+    console.log('开始获取订单数据，商家ID:', merchantStore.merchantId);
     
-    // API已经经过处理，直接是 data 数组
-    if (result && Array.isArray(result)) {
-      originalData.value = result; // 保存原始数据
-      data.value = result; // 显示数据
-      console.log('成功获取订单数据:', result);
-    } else {
-      console.warn('API响应格式不正确:', result);
+    // 分别获取所有状态的订单ID列表
+    const statusesToFetch = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]; // 未支付、已支付、用户确认收货、已评价、售后中、售后结束、订单关闭、已派单、配送中、骑手已送达
+    const allOrderPromises = statusesToFetch.map(status => 
+      fetchGetAllOrders(merchantStore.merchantId, { orderStatus: status })
+    );
+    
+    const results = await Promise.all(allOrderPromises);
+    
+    // 合并所有订单ID
+    let allOrderIds: string[] = [];
+    results.forEach(result => {
+      // @sa/axios的createFlatRequest返回包装对象 {data: [...], error: null, response: {...}}
+      // 需要提取data字段
+      const orderIds = result?.data;
+      if (Array.isArray(orderIds)) {
+        allOrderIds = allOrderIds.concat(orderIds);
+      }
+    });
+    
+    console.log('获取到订单ID列表:', allOrderIds);
+    
+    if (allOrderIds.length === 0) {
+      console.log('没有找到订单数据');
       originalData.value = [];
       data.value = [];
+      return;
     }
-  } catch (error) {
+    
+    // 批量获取订单详细信息
+    const orderDetails = await fetchOrderDetailsBatch(allOrderIds);
+    
+    console.log('获取到订单详情:', orderDetails.length, '条记录');
+    
+    if (orderDetails.length === 0) {
+      console.log('所有订单详情获取失败或无有效订单');
+      window.$message?.warning('未能获取到有效的订单详情信息');
+      originalData.value = [];
+      data.value = [];
+      return;
+    }
+    
+    // 转换后端PascalCase为前端camelCase  
+    console.log('订单详情数据样例:', orderDetails[0]);
+    
+    const transformedOrders = orderDetails.map((detail: any) => ({
+      orderId: detail.OrderId || detail.orderId || '',
+      merchantId: detail.MerchantId || detail.merchantId || merchantStore.merchantId,
+      userId: detail.UserId || detail.userId || '',
+      addressId: detail.AddressId || detail.addressId || '',
+      orderAmount: Number(detail.OrderAmount || detail.orderAmount || 0),
+      createAt: detail.CreateAt || detail.createAt || '',
+      orderStatus: Number(detail.OrderStatus || detail.orderStatus || 0),
+      reconId: detail.ReconId || detail.reconId || '',
+      couponId: detail.CouponId || detail.couponId || '',
+      assignId: detail.AssignId || detail.assignId || '',
+      orderDishes: Array.isArray(detail.OrderDishes) ? detail.OrderDishes.map((od: any) => ({
+        dishId: od.DishId || od.dishId || '',
+        quantity: Number(od.Quantity || od.quantity || 0)
+      })) : (Array.isArray(detail.orderDishes) ? detail.orderDishes : []),
+      orderLogIds: detail.OrderLogIds || detail.orderLogIds || [],
+      paymentIds: detail.PaymentIds || detail.paymentIds || [],
+      refundIds: detail.RefundIds || detail.refundIds || [],
+      complaintIds: detail.ComplaintIds || detail.complaintIds || [],
+      reviewIds: detail.ReviewIds || detail.reviewIds || []
+    }));
+    
+    // 获取所有涉及的菜品ID
+    const allDishIds = new Set<string>();
+    transformedOrders.forEach(order => {
+      order.orderDishes.forEach((dish: any) => {
+        if (dish.dishId) {
+          allDishIds.add(dish.dishId);
+        }
+      });
+    });
+    
+    console.log('订单涉及的菜品ID:', Array.from(allDishIds));
+    
+    // 批量获取菜品详情
+    let dishDetailsMap: Record<string, Api.Goods.DishItem> = {};
+    if (allDishIds.size > 0) {
+      try {
+        dishDetailsMap = await fetchDishDetailsBatch(merchantStore.merchantId, Array.from(allDishIds));
+        console.log('获取到菜品详情:', dishDetailsMap);
+      } catch (error) {
+        console.error('获取菜品详情失败:', error);
+        window.$message?.warning('获取菜品详情失败，订单中菜品信息可能不完整');
+      }
+    }
+    
+    // 将菜品详情补充到订单数据中
+    const ordersWithDishDetails = transformedOrders.map(order => ({
+      ...order,
+      orderDishes: order.orderDishes.map((dish: any) => ({
+        ...dish,
+        dishDetails: dishDetailsMap[dish.dishId] || null // 补充菜品详细信息
+      }))
+    }));
+    
+    // 按创建时间降序排列
+    ordersWithDishDetails.sort((a, b) => new Date(b.createAt).getTime() - new Date(a.createAt).getTime());
+    
+    originalData.value = ordersWithDishDetails;
+    data.value = ordersWithDishDetails;
+    console.log('成功获取订单详细数据（包含菜品详情）:', ordersWithDishDetails.length, '条记录');
+    console.log('最终数据赋值给data.value:', data.value.length, '条');
+    
+  } catch (error: any) {
     console.error('获取订单数据失败:', error);
-    window.$message?.error('获取订单数据失败，请检查网络连接');
+    
+    let errorMessage = '获取订单数据失败';
+    if (error?.response?.status === 401) {
+      errorMessage = '认证失败，请重新登录';
+    } else if (error?.response?.status === 403) {
+      errorMessage = '权限不足，无法访问订单数据';
+    } else if (error?.response?.status === 404) {
+      errorMessage = 'API端点不存在，请检查后端服务状态';
+    } else if (error?.code === 'ERR_NETWORK') {
+      errorMessage = '网络连接失败，请检查后端服务是否运行';
+    }
+    
+    window.$message?.error(errorMessage);
     originalData.value = [];
     data.value = [];
   } finally {
@@ -67,14 +174,7 @@ const filterData = () => {
     );
   }
   
-  // 根据用户ID搜索
-  if (searchParams.userId && searchParams.userId.trim()) {
-    filteredData = filteredData.filter(item => 
-      item.userId.toLowerCase().includes(searchParams.userId!.toLowerCase())
-    );
-  }
-  
-  // 根据订单状态搜索
+  // 根据订单状态搜索（在已有的1-4状态中进一步过滤）
   if (searchParams.orderStatus !== null && searchParams.orderStatus !== undefined) {
     const statusValue = Number(searchParams.orderStatus);
     filteredData = filteredData.filter(item => 
@@ -94,7 +194,6 @@ const handleSearch = () => {
 const resetSearchParams = () => {
   Object.assign(searchParams, {
     orderId: null,
-    userId: null,
     orderStatus: null
   });
   data.value = [...originalData.value]; // 重置为原始数据
@@ -145,13 +244,15 @@ const handleSubmitted = () => {
 // 列配置
 const columnChecks = ref([
   { key: 'selection', title: '选择', checked: true },
-  { key: 'orderId', title: '订单ID', checked: true },
-  { key: 'userId', title: '用户ID', checked: true },
+  { key: 'orderSummary', title: '订单概要', checked: true },
+  { key: 'customerInfo', title: '客户信息', checked: true },
+  { key: 'dishDetails', title: '菜品详情', checked: true },
   { key: 'orderAmount', title: '订单金额', checked: true },
   { key: 'orderStatus', title: '订单状态', checked: true },
-  { key: 'createAt', title: '创建时间', checked: true },
-  { key: 'addressId', title: '地址信息', checked: true },
-  { key: 'couponId', title: '优惠券ID', checked: true },
+  { key: 'createAt', title: '下单时间', checked: true },
+  { key: 'dishCount', title: '菜品数量', checked: false },
+  { key: 'paymentInfo', title: '支付信息', checked: false },
+  { key: 'addressInfo', title: '配送地址', checked: false },
   { key: 'operate', title: '操作', checked: true }
 ]);
 
@@ -163,57 +264,130 @@ const columns = computed(() => {
       width: 48
     },
     {
-      key: 'orderId',
-      title: '订单ID',
-      align: 'center' as const,
-      width: 140,
-      ellipsis: {
-        tooltip: true
+      key: 'orderSummary',
+      title: '订单概要',
+      align: 'left' as const,
+      width: 200,
+      render: (row: any) => {
+        const dishCount = row.orderDishes?.length || 0;
+        const shortOrderId = row.orderId.slice(-6); // 只显示订单ID的后6位
+        
+        const totalAmount = row.orderAmount ? `¥${row.orderAmount.toFixed(2)}` : '¥0.00';
+        
+        return (
+          <div class="flex-col gap-4px">
+            <div class="text-sm font-semibold">#{shortOrderId}</div>
+            <div class="text-xs text-gray-600">
+              {dishCount > 0 ? `${dishCount}种菜品 | ${totalAmount}` : '订单详情'}
+            </div>
+          </div>
+        );
       }
     },
     {
-      key: 'userId',
-      title: '用户ID',
-      align: 'center' as const,
+      key: 'customerInfo',
+      title: '客户信息',
+      align: 'left' as const,
       width: 120,
-      ellipsis: {
-        tooltip: true
+      render: (row: any) => {
+        const shortUserId = row.userId ? row.userId.slice(-6) : '未知用户'; // 只显示用户ID的后6位
+        return (
+          <div class="flex-col gap-4px">
+            <div class="text-sm">用户{shortUserId}</div>
+            {row.couponId && (
+              <div class="text-xs text-blue-600">使用优惠券</div>
+            )}
+          </div>
+        );
+      }
+    },
+    {
+      key: 'dishDetails',
+      title: '菜品详情',
+      align: 'left' as const,
+      width: 300,
+      render: (row: any) => {
+        const dishes = row.orderDishes || [];
+        if (dishes.length === 0) {
+          return <div class="text-sm text-gray-500">无菜品信息</div>;
+        }
+        
+        return (
+          <div class="flex-col gap-8px max-h-120px overflow-y-auto">
+            {dishes.map((dish: any, index: number) => {
+              const dishDetails = dish.dishDetails;
+              const dishName = dishDetails?.dishName || `菜品${dish.dishId.slice(-4)}`;
+              const price = dishDetails?.price ? `¥${dishDetails.price.toFixed(2)}` : '价格未知';
+              
+              return (
+                <div key={dish.dishId} class="flex justify-between items-center text-sm border-b border-gray-100 pb-4px last:border-b-0">
+                  <div class="flex-col flex-1">
+                    <div class="font-medium text-gray-800">{dishName}</div>
+                    <div class="text-xs text-gray-500">单价: {price}</div>
+                  </div>
+                  <div class="text-right ml-8px">
+                    <div class="font-semibold text-orange-600">x{dish.quantity}</div>
+                    <div class="text-xs text-gray-500">
+                      {dishDetails?.price ? `¥${(dishDetails.price * dish.quantity).toFixed(2)}` : '-'}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
       }
     },
     {
       key: 'orderAmount',
       title: '订单金额',
       align: 'center' as const,
-      width: 120,
-      render: (row: Api.Order.OrderItem) => `¥${row.orderAmount.toFixed(2)}`
+      width: 100,
+      render: (row: any) => (
+        <div class="font-semibold text-orange-600">
+          ¥{row.orderAmount.toFixed(2)}
+        </div>
+      )
     },
     {
       key: 'orderStatus',
       title: '订单状态',
       align: 'center' as const,
       width: 100,
-      render: (row: Api.Order.OrderItem) => {
+      render: (row: any) => {
         const statusText = getOrderStatusText(row.orderStatus);
-        let type: 'default' | 'success' | 'warning' | 'error' = 'default';
+        let type: 'default' | 'success' | 'warning' | 'error' | 'info' = 'default';
         
         switch (row.orderStatus) {
+          case 0:
+            type = 'error'; // 未支付
+            break;
           case 1:
-            type = 'warning'; // 待付款
+            type = 'success'; // 已支付
             break;
           case 2:
-            type = 'default'; // 待发货
+            type = 'info'; // 用户确认收货
             break;
           case 3:
-            type = 'success'; // 已发货
+            type = 'success'; // 已评价
             break;
           case 4:
-            type = 'success'; // 已完成
+            type = 'warning'; // 售后中
             break;
           case 5:
-            type = 'error'; // 已取消
+            type = 'success'; // 售后结束
             break;
-          case 49:
-            type = 'success'; // 进行中
+          case 6:
+            type = 'error'; // 订单关闭
+            break;
+          case 7:
+            type = 'info'; // 已派单
+            break;
+          case 8:
+            type = 'warning'; // 配送中
+            break;
+          case 9:
+            type = 'info'; // 骑手已送达
             break;
           default:
             type = 'default';
@@ -228,53 +402,69 @@ const columns = computed(() => {
     },
     {
       key: 'createAt',
-      title: '创建时间',
+      title: '下单时间',
       align: 'center' as const,
-      width: 160,
-      render: (row: Api.Order.OrderItem) => {
+      width: 140,
+      render: (row: any) => {
         // 格式化时间显示
         const date = new Date(row.createAt);
-        return date.toLocaleString('zh-CN');
+        return (
+          <div class="flex-col gap-4px">
+            <div class="text-sm">{date.toLocaleDateString('zh-CN')}</div>
+            <div class="text-xs text-gray-500">{date.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'})}</div>
+          </div>
+        );
       }
     },
     {
-      key: 'addressId',
-      title: '地址信息',
+      key: 'dishCount',
+      title: '菜品数量',
       align: 'center' as const,
+      width: 80,
+      render: (row: any) => {
+        const totalQuantity = row.orderDishes?.reduce((sum: number, dish: any) => sum + (dish.quantity || 0), 0) || 0;
+        const dishCount = row.orderDishes?.length || 0;
+        return (
+          <div class="text-center">
+            <div class="text-sm font-semibold">{totalQuantity}</div>
+            <div class="text-xs text-gray-500">{dishCount}种菜品 {totalQuantity}份</div>
+          </div>
+        );
+      }
+    },
+    {
+      key: 'paymentInfo',
+      title: '支付信息',
+      align: 'center' as const,
+      width: 120,
+      render: (row: any) => {
+        const paymentCount = row.paymentIds?.length || 0;
+        return paymentCount > 0 ? `${paymentCount}笔支付` : '无支付记录';
+      }
+    },
+    {
+      key: 'addressInfo',
+      title: '配送地址',
+      align: 'left' as const,
       width: 200,
       ellipsis: {
         tooltip: true
-      }
-    },
-    {
-      key: 'couponId',
-      title: '优惠券ID',
-      align: 'center' as const,
-      width: 120,
-      ellipsis: {
-        tooltip: true
+      },
+      render: (row: any) => {
+        const shortAddressId = row.addressId ? row.addressId.slice(-6) : '';
+        return shortAddressId ? `地址${shortAddressId}` : '无地址信息';
       }
     },
     {
       key: 'operate',
       title: '操作',
       align: 'center' as const,
-      width: 130,
-      render: (row: Api.Order.OrderItem) => (
+      width: 100,
+      render: (row: any) => (
         <div class="flex-center gap-8px">
           <NButton type="primary" ghost size="small" onClick={() => handleEdit(row.orderId)}>
-            查看
+            查看详情
           </NButton>
-          <NPopconfirm onPositiveClick={() => handleDelete(row.orderId)}>
-            {{
-              default: () => '确认删除吗？',
-              trigger: () => (
-                <NButton type="error" ghost size="small">
-                  删除
-                </NButton>
-              )
-            }}
-          </NPopconfirm>
         </div>
       )
     }
@@ -313,7 +503,7 @@ getData();
         :scroll-x="1200"
         :loading="loading"
         remote
-        :row-key="(row: Api.Order.OrderItem) => row.orderId"
+        :row-key="(row: Api.Order.OrderDetailItem) => row.orderId"
         class="sm:h-full"
       />
       <OrderOperateDrawer

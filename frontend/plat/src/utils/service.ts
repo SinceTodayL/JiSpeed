@@ -32,7 +32,7 @@ export function createServiceConfig(env: Env.ImportMeta) {
   });
 
   const config: App.Service.ServiceConfig = {
-    baseURL: httpConfig.baseURL,
+    baseURL: httpConfig.baseURL, // 使用从环境变量读取的 baseURL
     proxyPattern: createProxyPattern(),
     other: otherConfig
   };

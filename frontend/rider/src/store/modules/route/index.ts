@@ -2,17 +2,15 @@ import { computed, nextTick, ref, shallowRef } from 'vue';
 import type { RouteRecordRaw } from 'vue-router';
 import { defineStore } from 'pinia';
 import { useBoolean } from '@sa/hooks';
-import type { CustomRoute, ElegantConstRoute, LastLevelRouteKey, RouteKey, RouteMap } from '@elegant-router/types';
+import type { ElegantConstRoute, LastLevelRouteKey, RouteKey, RouteMap } from '@elegant-router/types';
 import { router } from '@/router';
-import { fetchGetConstantRoutes, fetchGetUserRoutes, fetchIsRouteExist } from '@/service/api';
+import { fetchGetConstantRoutes, fetchIsRouteExist } from '@/service/api';
 import { SetupStoreId } from '@/enum';
 import { createStaticRoutes, getAuthVueRoutes } from '@/router/routes';
-import { ROOT_ROUTE } from '@/router/routes/builtin';
-import { getRouteName, getRoutePath } from '@/router/elegant/transform';
-import { useAuthStore } from '../auth';
+import { getRouteName } from '@/router/elegant/transform';
+import { useAuthStore } from '../auth/index';
 import { useTabStore } from '../tab';
 import {
-  filterAuthRoutesByRoles,
   getBreadcrumbsByRoute,
   getCacheRouteNames,
   getGlobalMenusByAuthRoutes,
@@ -174,18 +172,12 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
     tabStore.initHomeTab();
   }
 
-  /** Init auth route */
+    /** Init auth route */
   async function initAuthRoute() {
-    // check if user info is initialized
-    if (!authStore.userInfo.userId) {
-      await authStore.initUserInfo();
-    }
+    // 骑手模块：即使没有用户信息也要初始化路由
 
-    if (authRouteMode.value === 'static') {
-      initStaticAuthRoute();
-    } else {
-      await initDynamicAuthRoute();
-    }
+    // 骑手模块：强制使用静态路由模式，确保路由立即可用
+    initStaticAuthRoute();
 
     tabStore.initHomeTab();
   }
@@ -194,12 +186,13 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   function initStaticAuthRoute() {
     const { authRoutes: staticAuthRoutes } = createStaticRoutes();
 
-    if (authStore.isStaticSuper) {
-      addAuthRoutes(staticAuthRoutes);
-    } else {
-      const filteredAuthRoutes = filterAuthRoutesByRoles(staticAuthRoutes, authStore.userInfo.roles);
 
-      addAuthRoutes(filteredAuthRoutes);
+    // 骑手模块：始终添加所有路由，不进行角色过滤
+    addAuthRoutes(staticAuthRoutes);
+
+    // 骑手模块：确保设置默认的首页路由
+    if (!routeHome.value) {
+      setRouteHome('home');
     }
 
     handleConstantAndAuthRoutes();
@@ -207,42 +200,19 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
     setIsInitAuthRoute(true);
   }
 
-  /** Init dynamic auth route */
-  async function initDynamicAuthRoute() {
-    const { data, error } = await fetchGetUserRoutes();
 
-    if (!error) {
-      const { routes, home } = data;
-
-      addAuthRoutes(routes);
-
-      handleConstantAndAuthRoutes();
-
-      setRouteHome(home);
-
-      handleUpdateRootRouteRedirect(home);
-
-      setIsInitAuthRoute(true);
-    } else {
-      // if fetch user routes failed, reset store
-      authStore.resetStore();
-    }
-  }
 
   /** handle constant and auth routes */
   function handleConstantAndAuthRoutes() {
+
     const allRoutes = [...constantRoutes.value, ...authRoutes.value];
 
     const sortRoutes = sortRoutesByOrder(allRoutes);
-
     const vueRoutes = getAuthVueRoutes(sortRoutes);
 
     resetVueRoutes();
-
     addRoutesToVueRouter(vueRoutes);
-
     getGlobalMenus(sortRoutes);
-
     getCacheRoutes(vueRoutes);
   }
 
@@ -267,24 +237,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
     removeRouteFns.push(fn);
   }
 
-  /**
-   * Update root route redirect when auth route mode is dynamic
-   *
-   * @param redirectKey Redirect route key
-   */
-  function handleUpdateRootRouteRedirect(redirectKey: LastLevelRouteKey) {
-    const redirect = getRoutePath(redirectKey);
 
-    if (redirect) {
-      const rootRoute: CustomRoute = { ...ROOT_ROUTE, redirect };
-
-      router.removeRoute(rootRoute.name);
-
-      const [rootVueRoute] = getAuthVueRoutes([rootRoute]);
-
-      router.addRoute(rootVueRoute);
-    }
-  }
 
   /**
    * Get is auth route exist

@@ -87,7 +87,7 @@ async function handleDevModeLogin() {
 
     // 更新store中的token
     Object.assign(authStore.userInfo, {
-      userId: 'mock_user_001',
+      userId: `rider_${Date.now()}`, // 使用时间戳生成唯一ID
       userName: '测试骑手',
       roles: ['rider'],
       buttons: []

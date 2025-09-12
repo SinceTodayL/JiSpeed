@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { $t } from '@/locales';
+import { fetchVerifyEmail } from '@/service/api';
 import WaveBg from '@/components/custom/wave-bg.vue';
 
 /**
@@ -49,18 +50,15 @@ async function handleVerifyClick() {
     loading.value = true;
     verificationStatus.value = 'pending';
     
-    // Call backend verification API directly (temporary solution)
-    // Note: This may cause CORS issues, but let's test the API first
-    const apiUrl = `http://localhost:5090/api/Auth/verify-email?userId=${userId.value}&token=${token.value}`;
+    // Call backend verification API using unified request
+    const { data: result, error } = await fetchVerifyEmail(userId.value, token.value);    
     
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    const result = await response.json();
+    // Check if there's an error
+    if (!result) {
+      verificationStatus.value = 'error';
+      message.value = '验证失败，请重试 (backend error, fetchVerifyEmail() return None)';
+      return;
+    }
     
     // Process verification result
     if (result.code === 0) {
@@ -68,14 +66,14 @@ async function handleVerifyClick() {
       verificationStatus.value = 'success';
       message.value = '邮箱验证成功！正在跳转到登录页面...';
       
-      // Redirect to login page after 2 seconds
+      // Redirect to login page
       setTimeout(() => {
         router.push('/login');
-      }, 2000);
+      }, 50);
     } else {
       // Verification failed
       verificationStatus.value = 'error';
-      message.value = result.message || '验证失败，请重试';
+      message.value = result?.message || '验证失败，请重试';
     }
     
   } catch (error) {
@@ -153,7 +151,7 @@ async function handleVerifyClick() {
   align-items: center;
   justify-content: center;
   position: relative;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #e16b4b 0%, #1d2be6 100%);
 }
 
 .verify-content {

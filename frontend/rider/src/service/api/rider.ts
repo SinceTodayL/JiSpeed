@@ -1,108 +1,96 @@
 import { request } from '../request';
 
-/* ========== GET ========== */
+// ========== 骑手基础信息 ==========
 
-/** 1. 根据id获取骑手信息 */
-export function getRiderInfo(params: Api.Rider.Request) {
-  return request<Api.Rider.InfoData>({
-    url: `/api/riders/${params.riderId}`,
+/**
+ * 获取骑手信息
+ *
+ * @param riderId 骑手ID
+ * @returns Promise<骑手信息数据>
+ */
+export function getRiderInfo(riderId: string) {
+  return request<Api.Rider.RiderInfoData>({
+    url: `/api/Riders/${riderId}`,
     method: 'get'
   });
 }
 
-/** 2. 根据id获取骑手订单列表 */
-export function getRiderOrderList(riderId: string, params: Api.Rider.OrderListRequest) {
-  return request<Api.Rider.Datum[]>({
-    url: `/api/riders/${riderId}/assignments`,
+/**
+ * 获取骑手订单列表
+ *
+ * @param riderId 骑手ID
+ * @param params 查询参数
+ * @param params.status 接单状态（0:未处理, 1:已接单, 2:已拒单, 3:已完成）
+ * @returns Promise<订单分配数据列表>
+ */
+export function getRiderOrderList(riderId: string, params: Api.Rider.GetRiderOrderListRequest = {}) {
+  return request<Api.Rider.OrderAssignmentData[]>({
+    url: `/api/Riders/${riderId}/assignments`,
     method: 'get',
-    params
+    params: {
+      status: params.status
+    }
   });
 }
 
-/** 3. 根据id和时间获取骑手特定月份的绩效详情 */
-export function getRiderPerformance(params: Api.Rider.TimeRequest) {
-  return request<Api.Rider.TimeResponse>({
-    url: `/api/riders/${params.riderId}/performance`,
-    method: 'get',
-    params
-  });
-}
-
-/** 4. 根据id获取骑手考勤记录 */
-export function getRiderCheckRecords(riderId: string, params: Api.Rider.CheckRequest) {
-  return request<Api.Rider.CheckResponse>({
-    url: `/api/riders/${riderId}/checks`,
-    method: 'get',
-    params
-  });
-}
-
-/** 5. 根据id获取骑手排班列表 */
-export function getRiderSchedule(riderId: string, params: Api.Rider.ScheduleRequest) {
-  return request<Api.Rider.ScheduleResponse>({
-    url: `/api/riders/${riderId}/schedules`,
-    method: 'get',
-    params
-  });
-}
-
-/** 6. 根据骑手和订单id获取特定订单分配的详情 */
-export function getRiderAssignDetail(params: Api.Rider.AssignRequest) {
-  return request<Api.Rider.AssignResponse>({
-    url: `/api/riders/${params.riderId}/assigns/${params.assignId}`,
-    method: 'get'
-  });
-}
-
-/* ========== POST ========== */
-
-/** 1. 骑手注册 */
-export function registerRider(data: Api.Rider.RegisterRequest) {
-  return request<Api.Rider.RegisterResponse>({
-    url: `/riders/register`,
-    method: 'post',
-    data
-  });
-}
-
-/** 2. 创建考勤记录（签到） */
-export function createAttendanceRecord(riderId: string, data: Api.Rider.AttendanceRequest) {
-  return request<Api.Rider.AttendanceResponse>({
-    url: `/riders/${riderId}/attendance`,
-    method: 'post',
-    data
-  });
-}
-
-/* ========== PATCH ========== */
-
-/** 1. 更新骑手信息 */
+/**
+ * 更新骑手信息
+ *
+ * @param riderId 骑手ID
+ * @param data 更新数据
+ * @returns Promise<更新后的骑手信息数据>
+ */
 export function updateRiderInfo(riderId: string, data: Api.Rider.UpdateInfoRequest) {
+  
   return request<Api.Rider.UpdateInfoData>({
-    url: `/api/riders/${riderId}`,
+    url: `/api/Riders/${riderId}`,
     method: 'patch',
     data
   });
 }
 
-/** 2. 更新订单分配状态 */
+/**
+ * 骑手注册
+ *
+ * @param data 注册数据
+ * @returns Promise<注册响应数据>
+ */
+export function registerRider(data: Api.Rider.RegisterRequest) {
+  return request<Api.Rider.RegisterData>({
+    url: '/api/Riders',
+    method: 'post',
+    data
+  });
+}
+
+// ========== 订单管理 ==========
+
+/**
+ * 更新订单分配状态
+ *
+ * @param riderId 骑手ID
+ * @param assignId 分配ID
+ * @param data 更新数据
+ * @returns Promise<更新后的分配数据>
+ */
 export function updateAssignStatus(riderId: string, assignId: string, data: Api.Rider.UpdateAssignStatusRequest) {
   return request<Api.Rider.UpdateAssignData>({
-    url: `/api/riders/${riderId}/assignments/${assignId}`,
+    url: `/api/Riders/${riderId}/assignments/${assignId}`,
     method: 'patch',
     data
   });
 }
 
-/** 3. 更新考勤记录（签退） */
-export function updateAttendanceRecord(
-  riderId: string,
-  attendanceId: string,
-  data: Api.Rider.UpdateAttendanceRecordRequest
-) {
-  return request<Api.Rider.UpdateAttendanceResponse>({
-    url: `/riders/${riderId}/attendance/${attendanceId}`,
-    method: 'patch',
-    data
+/**
+ * 获取骑手列表
+ *
+ * @param params 查询参数
+ * @returns Promise<骑手列表数据>
+ */
+export function getRiderList(params: Api.Rider.GetRiderListRequest = {}) {
+  return request<Api.Rider.RiderListResponse>({
+    url: '/api/Riders',
+    method: 'get',
+    params
   });
 }

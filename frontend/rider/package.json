@@ -93,13 +93,11 @@
     "xlsx": "0.18.5"
   },
   "devDependencies": {
-    "@amap/amap-jsapi-types": "0.0.15",
     "@elegant-router/vue": "0.3.8",
     "@iconify/json": "2.2.357",
     "@sa/scripts": "workspace:*",
     "@sa/uno-preset": "workspace:*",
     "@soybeanjs/eslint-config": "1.7.1",
-    "@types/bmapgl": "0.0.7",
     "@types/node": "24.0.13",
     "@types/nprogress": "0.2.3",
     "@unocss/eslint-config": "66.3.3",

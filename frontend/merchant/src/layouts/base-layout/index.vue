@@ -118,10 +118,10 @@ function getSiderCollapsedWidth() {
     :sider-visible="siderVisible"
     :sider-width="siderWidth"
     :sider-collapsed-width="siderCollapsedWidth"
-    :footer-visible="themeStore.footer.visible"
-    :footer-height="themeStore.footer.height"
-    :fixed-footer="themeStore.footer.fixed"
-    :right-footer="themeStore.footer.right"
+    :footer-visible="false"
+    :footer-height="0"
+    :fixed-footer="false"
+    :right-footer="false"
   >
     <template #header>
       <GlobalHeader v-bind="headerProps" />
@@ -135,9 +135,10 @@ function getSiderCollapsedWidth() {
     <GlobalMenu />
     <GlobalContent />
     <ThemeDrawer />
-    <template #footer>
+    <!-- 移除底部版权栏，释放页面空间 -->
+    <!-- <template #footer>
       <GlobalFooter />
-    </template>
+    </template> -->
   </AdminLayout>
 </template>
 

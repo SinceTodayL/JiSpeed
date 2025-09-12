@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
+import { createDish, updateDish } from '@/service/api';
+import { useMerchantStore } from '@/store/modules/merchant';
 
 defineOptions({
   name: 'GoodsOperateDrawer'
@@ -21,6 +23,8 @@ interface Emits {
 
 const emit = defineEmits<Emits>();
 
+const merchantStore = useMerchantStore();
+
 const visible = defineModel<boolean>('visible', {
   default: false
 });
@@ -38,7 +42,7 @@ const title = computed(() => {
 
 type Model = Pick<
   Api.Goods.DishItem,
-  'dishName' | 'price' | 'originPrice' | 'coverUrl' | 'categoryId' | 'onSale' | 'quantity'
+  'dishName' | 'price' | 'originPrice' | 'coverUrl' | 'categoryId' | 'onSale' | 'StockQuantity' | 'Description'
 >;
 
 const model = ref(createDefaultModel());
@@ -51,7 +55,8 @@ function createDefaultModel(): Model {
     coverUrl: '',
     categoryId: '',
     onSale: 1,
-    quantity: 0
+    StockQuantity: 0,
+    Description: ''
   };
 }
 
@@ -80,7 +85,8 @@ function handleInitModel() {
       coverUrl: props.rowData.coverUrl,
       categoryId: props.rowData.categoryId,
       onSale: props.rowData.onSale,
-      quantity: props.rowData.quantity
+      StockQuantity: props.rowData.StockQuantity || 0,
+      Description: props.rowData.Description || ''
     });
   }
 }
@@ -90,14 +96,64 @@ function closeDrawer() {
 }
 
 async function handleSubmit() {
-  await validate();
-  
-  // TODO: 实现提交逻辑
-  console.log('提交数据:', model.value);
-  
-  window.$message?.success(props.operateType === 'add' ? '新增成功' : '更新成功');
-  closeDrawer();
-  emit('submitted');
+  try {
+    await validate();
+    
+    if (props.operateType === 'add') {
+      // Create new dish
+      const createData: Api.Goods.CreateDishRequest = {
+        categoryId: model.value.categoryId,
+        dishName: model.value.dishName,
+        price: model.value.price,
+        originPrice: model.value.originPrice,
+        coverUrl: model.value.coverUrl || undefined,
+        Description: model.value.Description,
+        StockQuantity: model.value.StockQuantity
+      };
+      
+      const result = await createDish(merchantStore.merchantId, createData);
+      
+      window.$message?.success('新增商品成功');
+    } else {
+      // Update existing dish
+      if (!props.rowData?.dishId) {
+        throw new Error('缺少菜品ID，无法更新');
+      }
+      
+      const updateData: Api.Goods.UpdateDishRequest = {
+        categoryId: model.value.categoryId,
+        dishName: model.value.dishName,
+        price: model.value.price,
+        originPrice: model.value.originPrice,
+        coverUrl: model.value.coverUrl || undefined,
+        onSale: model.value.onSale,
+        StockQuantity: model.value.StockQuantity,
+        Description: model.value.Description
+      };
+      
+      const result = await updateDish(merchantStore.merchantId, props.rowData.dishId, updateData);
+      
+      window.$message?.success('更新商品成功');
+    }
+    
+    closeDrawer();
+    emit('submitted');
+  } catch (error: any) {
+    console.error('Submit failed:', error);
+    
+    // Enhanced error handling for dish operations
+    let errorMessage = props.operateType === 'add' ? '新增商品失败' : '更新商品失败';
+    
+    if (error?.response?.status === 401) {
+      errorMessage = '认证失败，请重新登录';
+    } else if (error?.response?.status === 400) {
+      errorMessage = '请求数据格式错误，请检查输入内容';
+    } else if (error?.response?.status === 500) {
+      errorMessage = '后端处理错误，请联系管理员';
+    }
+    
+    window.$message?.error(errorMessage);
+  }
 }
 
 watch(visible, () => {
@@ -124,8 +180,16 @@ watch(visible, () => {
         <NFormItem label="原价" path="originPrice">
           <NInputNumber v-model:value="model.originPrice" placeholder="请输入原价" :precision="2" :min="0" class="w-full" />
         </NFormItem>
-        <NFormItem label="库存数量" path="quantity">
-          <NInputNumber v-model:value="model.quantity" placeholder="请输入库存数量" :min="0" class="w-full" />
+        <NFormItem label="库存数量" path="StockQuantity">
+          <NInputNumber v-model:value="model.StockQuantity" placeholder="请输入库存数量" :min="0" class="w-full" />
+        </NFormItem>
+        <NFormItem label="菜品描述" path="Description">
+          <NInput 
+            v-model:value="model.Description" 
+            type="textarea" 
+            placeholder="请输入菜品描述" 
+            :autosize="{ minRows: 2, maxRows: 4 }"
+          />
         </NFormItem>
         <NFormItem label="商品图片" path="coverUrl">
           <NInput v-model:value="model.coverUrl" placeholder="请输入图片URL" />

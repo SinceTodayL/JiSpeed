@@ -64,10 +64,8 @@ declare namespace Api {
       code: number;
       message?: string;
       data?: {
-        token?: string;
-        refreshToken?: string;
-        userType?: number;
-        Id?: string;
+        Id?: string;   // actually, ? is not needed
+        Token?: string;
       };
     }
 
@@ -81,6 +79,17 @@ declare namespace Api {
     interface RegisterResponse {
       code: number;
       message?: string;
+    }
+
+    interface VerifyEmailResponse {
+      code: number;
+      message?: string;
+      data?: EmailResponseData;
+    }
+
+    interface EmailResponseData{
+      userId: string;
+      userToken: string;
     }
 
     interface UserInfo {

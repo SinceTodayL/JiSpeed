@@ -1,23 +1,17 @@
 import { computed, reactive, ref } from 'vue';
-import { useRoute } from 'vue-router';
 import { defineStore } from 'pinia';
 import { useLoading } from '@sa/hooks';
-import { fetchGetUserInfo, fetchLogin } from '@/service/api';
-import { useRouterPush } from '@/hooks/common/router';
+import { getRiderInfo } from '@/service/api/rider';
 import { localStg } from '@/utils/storage';
 import { SetupStoreId } from '@/enum';
-import { $t } from '@/locales';
 import { useRouteStore } from '../route';
 import { useTabStore } from '../tab';
-import { clearAuthStorage, getToken } from './shared';
+import { clearAuthStorage, getToken, getUserId } from './shared';
 
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
-  const route = useRoute();
-  const authStore = useAuthStore();
   const routeStore = useRouteStore();
   const tabStore = useTabStore();
-  const { toLogin, redirectFromLogin } = useRouterPush(false);
-  const { loading: loginLoading, startLoading, endLoading } = useLoading();
+  const { loading: loginLoading } = useLoading();
 
   const token = ref(getToken());
 
@@ -44,12 +38,6 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
     clearAuthStorage();
 
-    authStore.$reset();
-
-    if (!route.meta.constant) {
-      await toLogin();
-    }
-
     tabStore.cacheTabs();
     routeStore.resetStore();
   }
@@ -65,108 +53,63 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   }
 
   /**
-   * Check if current login user is different from previous login user If different, clear all tabs
-   *
-   * @returns {boolean} Whether to clear all tabs
+   * 初始化用户信息（从本地存储获取）
    */
-  function checkTabClear(): boolean {
-    if (!userInfo.userId) {
-      return false;
+  async function initUserInfo() {
+    const hasToken = getToken();
+    const hasUserId = getUserId();
+
+    if (hasToken && hasUserId) {
+      // 从本地存储获取用户ID并设置到 userInfo
+      const userIdString = String(hasUserId);
+      userInfo.userId = userIdString;
+      token.value = String(hasToken);
+
+      // 先创建基础骑手用户信息
+      const riderUserInfo: Api.Auth.UserInfo = {
+        userId: userIdString,
+        userName: '骑手', // 临时显示"骑手"，后续从API获取真实姓名
+        roles: ['rider'],
+        buttons: []
+      };
+
+      // 更新用户信息
+      Object.assign(userInfo, riderUserInfo);
+
+
+      // 尝试从API获取骑手的真实姓名
+      try {
+        const { data } = await getRiderInfo(userIdString);
+        if (data && data.name) {
+          // 更新用户名为真实姓名
+          userInfo.userName = data.name;
+        }
+      } catch (error) {
+        console.warn('获取骑手真实姓名失败，使用默认名称:', error);
+        // 如果API调用失败，保持默认的"骑手"名称
+      }
     }
-
-    const lastLoginUserId = localStg.get('lastLoginUserId');
-
-    // Clear all tabs if current user is different from previous user
-    if (!lastLoginUserId || lastLoginUserId !== userInfo.userId) {
-      localStg.remove('globalTabs');
-      tabStore.clearTabs();
-
-      localStg.remove('lastLoginUserId');
-      return true;
-    }
-
-    localStg.remove('lastLoginUserId');
-    return false;
   }
 
   /**
-   * Login
-   *
-   * @param userName User name
-   * @param password Password
-   * @param [redirect=true] Whether to redirect after login. Default is `true`
+   * 更新用户信息（用于个人信息修改后的同步）
+   * @param userData 要更新的用户数据
    */
-  async function login(userName: string, password: string, redirect = true) {
-    startLoading();
-
-    const { data: loginToken, error } = await fetchLogin(userName, password);
-
-    if (!error) {
-      const pass = await loginByToken(loginToken);
-
-      if (pass) {
-        // Check if the tab needs to be cleared
-        const isClear = checkTabClear();
-        let needRedirect = redirect;
-
-        if (isClear) {
-          // If the tab needs to be cleared,it means we don't need to redirect.
-          needRedirect = false;
-        }
-        await redirectFromLogin(needRedirect);
-
-        window.$notification?.success({
-          title: $t('page.login.common.loginSuccess'),
-          content: $t('page.login.common.welcomeBack', { userName: userInfo.userName }),
-          duration: 4500
-        });
-      }
-    } else {
-      resetStore();
+  function updateUserInfo(userData: Partial<Api.Auth.UserInfo>) {
+    if (userData.userName !== undefined) {
+      userInfo.userName = userData.userName;
     }
-
-    endLoading();
-  }
-
-  async function loginByToken(loginToken: Api.Auth.LoginToken) {
-    // 1. stored in the localStorage, the later requests need it in headers
-    localStg.set('token', loginToken.token);
-    localStg.set('refreshToken', loginToken.refreshToken);
-
-    // 2. get user info
-    const pass = await getUserInfo();
-
-    if (pass) {
-      token.value = loginToken.token;
-
-      return true;
+    
+    if (userData.userId !== undefined) {
+      userInfo.userId = userData.userId;
     }
-
-    return false;
-  }
-
-  async function getUserInfo() {
-    const { data: info, error } = await fetchGetUserInfo();
-
-    if (!error) {
-      // update store
-      Object.assign(userInfo, info);
-
-      return true;
+    
+    if (userData.roles !== undefined) {
+      userInfo.roles = userData.roles;
     }
-
-    return false;
-  }
-
-  async function initUserInfo() {
-    const hasToken = getToken();
-
-    if (hasToken) {
-      const pass = await getUserInfo();
-
-      if (!pass) {
-        resetStore();
-      }
+    
+    if (userData.buttons !== undefined) {
+      userInfo.buttons = userData.buttons;
     }
   }
 
@@ -177,7 +120,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     isLogin,
     loginLoading,
     resetStore,
-    login,
-    initUserInfo
+    initUserInfo,
+    updateUserInfo
   };
 });

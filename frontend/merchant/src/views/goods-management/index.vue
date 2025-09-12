@@ -1,17 +1,18 @@
 <script setup lang="tsx">
 import { reactive, ref, computed } from 'vue';
 import { NButton, NPopconfirm, NTag, NImage } from 'naive-ui';
-import { fetchGetAllDishes } from '@/service/api';
+import { fetchGetAllDishes, deleteDish, batchDeleteDishes, createDish, updateDish } from '@/service/api';
+import { localStg } from '@/utils/storage';
 import { useAppStore } from '@/store/modules/app';
 import { $t } from '@/locales';
 import GoodsSearch from './modules/goods-search.vue';
 import GoodsOperateDrawer from './modules/goods-operate-drawer.vue';
-import DishReviewsModal from './modules/dish-reviews-modal.vue';
+import MerchantReviewsModal from './modules/dish-reviews-modal.vue';
+import { useMerchantStore } from '@/store/modules/merchant';
 
+const merchantStore = useMerchantStore();
 const appStore = useAppStore();
 
-// 使用硬编码的商家ID进行测试
-const MERCHANT_ID = 'MER1234567890001';
 
 const loading = ref(false);
 const data = ref<Api.Goods.DishItem[]>([]);
@@ -21,15 +22,8 @@ const drawerVisible = ref(false);
 const operateType = ref<'add' | 'edit'>('add');
 const editingData = ref<Api.Goods.DishItem | null>(null);
 
-// 评论相关状态
+// Reviews related state
 const reviewsModalVisible = ref(false);
-const selectedDishForReviews = ref<{
-  dishId: string;
-  dishName: string;
-}>({
-  dishId: '',
-  dishName: ''
-});
 
 const searchParams = reactive<{
   dishName: string | null;
@@ -41,29 +35,91 @@ const searchParams = reactive<{
   onSale: null
 });
 
-// 获取数据
+// Get dishes data from backend API
 const getData = async () => {
   loading.value = true;
   try {
-    const result = await fetchGetAllDishes(MERCHANT_ID);
-    console.log('API响应:', result);
+    // Check authentication status
+    const token = localStg.get('token');
+    const merchantId = merchantStore.merchantId;
     
-    if (result && result.data && Array.isArray(result.data.data)) {
-      
-      originalData.value = result.data.data; // 保存原始数据
-      data.value = result.data.data; // 显示数据
-      console.log('成功获取商品数据:', result.data.data);
-    } else {
-      console.warn('API响应格式不正确:', result);
-      if(!Array.isArray(result.data?.data)){
-        console.log('result.data.data is not array, actual structure:', result.data);
+    if (!token) {
+      window.$message?.error('未找到认证令牌，请重新登录');
+      return;
+    }
+    
+    if (!merchantId) {
+      window.$message?.error('未找到商家ID，请检查登录状态');
+      return;
+    }
+    
+    // Fetch dishes for the current merchant
+    const response: any = await fetchGetAllDishes(merchantStore.merchantId);
+    
+    // Extract actual data from the response
+    // Backend returns: ApiResponse<List<DishesDto>> wrapped by axios
+    let actualData: any[] = [];
+    
+    if (Array.isArray(response)) {
+      // Case 1: response is already the dishes array (after transformBackendResponse)
+      actualData = response;
+    } else if (response && typeof response === 'object') {
+      // Case 2: response is axios response object containing ApiResponse
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        actualData = response.data.data;
+      } else if (response.data && Array.isArray(response.data)) {
+        actualData = response.data;
       }
+    }
+
+    // Transform backend C# PascalCase to frontend camelCase
+    if (actualData && Array.isArray(actualData) && actualData.length >= 0) {
+      const transformedData = actualData.map((dish: any, index: number) => {
+        // Map backend PascalCase fields to frontend camelCase
+        const transformedDish: Api.Goods.DishItem = {
+          dishId: dish.DishId || dish.dishId || `temp-${index}`,
+          categoryId: dish.CategoryId || dish.categoryId || '',
+          dishName: dish.DishName || dish.dishName || '未命名菜品',
+          price: Number(dish.Price || dish.price || 0),
+          originPrice: Number(dish.OriginPrice || dish.originPrice || 0),
+          coverUrl: dish.CoverUrl || dish.coverUrl || '',
+          monthlySales: dish.MonthlySales || dish.monthlySales || 0,
+          rating: dish.Rating || dish.rating || 0,
+          onSale: dish.OnSale !== undefined ? dish.OnSale : (dish.onSale !== undefined ? dish.onSale : 1),
+          merchantId: dish.MerchantId || dish.merchantId || merchantStore.merchantId,
+          StockQuantity: dish.StockQuantity || dish.stockQuantity || 0, // 正确映射库存数量
+          reviewQuantity: dish.ReviewQuantity || dish.reviewQuantity || 0,
+          categoryName: dish.CategoryName || dish.categoryName || undefined,
+          Description: dish.Description || dish.description || undefined // 添加菜品描述映射
+        };
+        
+        return transformedDish;
+      });
+      
+      originalData.value = transformedData; // Save original data for search
+      data.value = transformedData; // Display data
+    } else {
       originalData.value = [];
       data.value = [];
     }
-  } catch (error) {
-    console.error('获取商品数据失败:', error);
-    window.$message?.error('获取商品数据失败，请检查网络连接');
+  } catch (error: any) {
+    
+    // Enhanced error handling
+    let errorMessage = '获取商品数据失败';
+    
+    if (error?.response?.status === 401) {
+      errorMessage = '认证失败，请重新登录';
+    } else if (error?.response?.status === 403) {
+      errorMessage = '权限不足，无法访问商品数据';
+    } else if (error?.response?.status === 404) {
+      errorMessage = 'API端点不存在，请检查后端服务状态';
+    } else if (error?.response?.status === 500) {
+      errorMessage = '后端服务器错误，请联系管理员';
+    } else if (error?.code === 'ERR_NETWORK') {
+      errorMessage = '网络连接失败，请检查后端服务是否运行';
+    }
+    
+    window.$message?.error(errorMessage);
     originalData.value = [];
     data.value = [];
   } finally {
@@ -132,19 +188,36 @@ const handleEdit = (dishId: string) => {
   }
 };
 
-// 删除
-const handleDelete = (dishId: string) => {
-  console.log('删除商品:', dishId);
-  // TODO: 实现删除功能
-  getData();
+// Delete single dish
+const handleDelete = async (dishId: string) => {
+  try {
+    const result = await deleteDish(merchantStore.merchantId, dishId);
+    
+    window.$message?.success('商品删除成功');
+    getData(); // Refresh data after successful deletion
+  } catch (error) {
+    window.$message?.error('删除商品失败，请重试');
+  }
 };
 
-// 批量删除
-const handleBatchDelete = () => {
-  console.log('批量删除:', checkedRowKeys.value);
-  // TODO: 实现批量删除功能
-  checkedRowKeys.value = [];
-  getData();
+// Batch delete multiple dishes
+const handleBatchDelete = async () => {
+  if (checkedRowKeys.value.length === 0) {
+    window.$message?.warning('请选择要删除的商品');
+    return;
+  }
+  
+  try {
+    
+    // Delete all selected dishes in parallel
+    await batchDeleteDishes(merchantStore.merchantId, checkedRowKeys.value);
+    
+    window.$message?.success(`成功删除 ${checkedRowKeys.value.length} 个商品`);
+    checkedRowKeys.value = []; // Clear selection
+    getData(); // Refresh data after successful deletion
+  } catch (error) {
+    window.$message?.error('批量删除商品失败，请重试');
+  }
 };
 
 // 刷新
@@ -157,16 +230,9 @@ const handleSubmitted = () => {
   getData();
 };
 
-// 查看评论
-const handleViewReviews = (dishId: string) => {
-  const item = data.value.find(dish => dish.dishId === dishId);
-  if (item) {
-    selectedDishForReviews.value = {
-      dishId: item.dishId,
-      dishName: item.dishName
-    };
-    reviewsModalVisible.value = true;
-  }
+// View reviews
+const handleViewReviews = () => {
+  reviewsModalVisible.value = true;
 };
 
 // 列配置
@@ -179,8 +245,9 @@ const columnChecks = ref([
   { key: 'monthlySales', title: '月销量', checked: true },
   { key: 'rating', title: '评分', checked: true },
   { key: 'onSale', title: '销售状态', checked: true },
-  { key: 'quantity', title: '库存数量', checked: true },
-  { key: 'operate', title: '操作', checked: true }
+  { key: 'StockQuantity', title: '库存数量', checked: true },
+  { key: 'Description', title: '菜品描述', checked: true },
+  { key: 'operate', title: '操作', checked: true },
 ]);
 
 const columns = computed(() => {
@@ -199,7 +266,7 @@ const columns = computed(() => {
         <NImage
           width="60"
           height="60"
-          src={row.coverUrl}
+          src={row.coverUrl || undefined}
           fallback-src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik0yNSAyNUMyNSAyNy43NjE0IDI3LjIzODYgMzAgMzAgMzBDMzIuNzYxNCAzMCAzNSAyNy43NjE0IDM1IDI1QzM1IDIyLjIzODYgMzIuNzYxNCAyMCAzMCAyMEMyNy4yMzg2IDIwIDI1IDIyLjIzODYgMjUgMjVaIiBmaWxsPSIjQzNDM0MzIi8+CjxwYXRoIGQ9Ik0yMCAzNUwyNS44NTc5IDI5LjE0MjFDMjYuMjQ4NCAyOC43NTE2IDI2Ljg4MTYgMjguNzUxNiAyNy4yNzIxIDI5LjE0MjFMMzAgMzJMMzIuNzI3OSAyOS4yNzIxQzMzLjExODQgMjguODgxNiAzMy43NTE2IDI4Ljg4MTYgMzQuMTQyMSAyOS4yNzIxTDQwIDM1VjQwSDE5VjM1eiIgZmlsbD0iI0MzQzNDMyIvPgo8L3N2Zz4K"
           style="border-radius: 4px; object-fit: cover;"
         />
@@ -236,7 +303,7 @@ const columns = computed(() => {
       title: '评分',
       align: 'center' as const,
       width: 100,
-      render: (row: Api.Goods.DishItem) => `${row.rating.toFixed(1)}%`
+      render: (row: Api.Goods.DishItem) => `${(row.rating || 0).toFixed(1)}`
     },
     {
       key: 'onSale',
@@ -256,10 +323,18 @@ const columns = computed(() => {
       }
     },
     {
-      key: 'quantity',
+      key: 'StockQuantity',
       title: '库存数量',
       align: 'center' as const,
-      width: 100
+      width: 100,
+      render: (row: Api.Goods.DishItem) => row.StockQuantity || 0
+    },
+    {
+      key: 'Description',
+      title: '菜品描述',
+      align: 'center' as const,
+      width: 150,
+      render: (row: Api.Goods.DishItem) => row.Description || '-'
     },
     {
       key: 'operate',
@@ -268,7 +343,7 @@ const columns = computed(() => {
       width: 180,
       render: (row: Api.Goods.DishItem) => (
         <div class="flex-center gap-8px">
-          <NButton type="info" ghost size="small" onClick={() => handleViewReviews(row.dishId)}>
+          <NButton type="info" ghost size="small" onClick={() => handleViewReviews()}>
             查看评论
           </NButton>
           <NButton type="primary" ghost size="small" onClick={() => handleEdit(row.dishId)}>
@@ -319,7 +394,7 @@ getData();
         :data="data"
         size="small"
         :flex-height="!appStore.isMobile"
-        :scroll-x="1012"
+        :scroll-x="1162"
         :loading="loading"
         remote
         :row-key="(row: Api.Goods.DishItem) => row.dishId"
@@ -332,12 +407,9 @@ getData();
         @submitted="handleSubmitted"
       />
       
-      <!-- 评论模态框 -->
-      <DishReviewsModal
+      <MerchantReviewsModal
         v-model:visible="reviewsModalVisible"
-        :merchant-id="MERCHANT_ID"
-        :dish-id="selectedDishForReviews.dishId"
-        :dish-name="selectedDishForReviews.dishName"
+        :merchant-id="merchantStore.merchantId"
       />
     </NCard>
   </div>
