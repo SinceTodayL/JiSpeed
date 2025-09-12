@@ -18,15 +18,15 @@ export interface RoleDefaultCredentials {
 // 默认值配置
 export const PRODUCTION_DEFAULTS: RoleDefaultCredentials = {
   user: {
-    loginKey: '',
-    password: ''
+    loginKey: 'xuqingpeng',
+    password: '123456'
   },
   rider: {
     loginKey: '2351716@tongji.edu.cn',
     password: '123456'
   },
   merchant: {
-    loginKey: 'test_1226',
+    loginKey: 'jispeed_merchant',
     password: '123456'
   },
   admin: {

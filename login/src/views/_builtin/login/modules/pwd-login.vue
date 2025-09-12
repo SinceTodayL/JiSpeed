@@ -58,31 +58,24 @@ async function handleSubmit() {
 
   // 根据选择的角色确定userType
   const userType = ROLE_CONFIG[loginRole.value].userType;
-  await authStore.login(model.loginKey, model.password, userType);
+  const loginResult = await authStore.login(model.loginKey, model.password, userType);
 
-  // 登录成功后跳转到相应的模块
-  await redirectToModule(loginRole.value);
+  // 只有登录成功时才执行跳转（auth store内部已经处理了跳转逻辑）
+  if (!loginResult.success) {
+    // 登录失败，不做任何跳转，错误信息已在auth store中显示
+    console.log('登录失败:', loginResult.error);
+    return;
+  }
+  
+  // 登录成功，auth store已经处理了跳转逻辑，这里不需要额外操作
+  console.log('登录成功');
 }
 
-// 根据用户角色跳转到相应的模块
+// 这个函数现在不再需要，因为auth store内部已经处理了跳转逻辑
+// 保留函数定义以防其他地方引用，但不执行任何操作
 async function redirectToModule(role: 'user' | 'rider' | 'merchant' | 'admin') {
-  const moduleUrls = {
-    'user': import.meta.env.VITE_USER_FRONTEND_URL,
-    'merchant': import.meta.env.VITE_MERCHANT_FRONTEND_URL,
-    'rider': import.meta.env.VITE_RIDER_FRONTEND_URL,
-    'admin': import.meta.env.VITE_ADMIN_FRONTEND_URL
-  };
-
-  const targetUrl = moduleUrls[role];
-
-  if (targetUrl) {
-    // 延迟跳转，确保登录状态已保存
-    setTimeout(() => {
-      window.location.href = targetUrl;
-    }, 500);
-  } else {
-    console.warn(`No frontend URL configured for role: ${role}`);
-  }
+  // 跳转逻辑已移至auth store中处理
+  console.log('跳转逻辑已由auth store处理');
 }
 
 // 登录角色选项

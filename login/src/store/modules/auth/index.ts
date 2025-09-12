@@ -104,8 +104,9 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
    * @param password Password
    * @param userType User role type (1: User, 2: Merchant, 3: Rider, 4: Admin)
    * @param [redirect=true] Whether to redirect after login. Default is `true`
+   * @returns Promise<{success: boolean, error?: string}> 返回登录结果
    */
-  async function login(loginKey: string, password: string, userType: number, redirect = true) {
+  async function login(loginKey: string, password: string, userType: number, redirect = true): Promise<{success: boolean, error?: string}> {
     startLoading();
 
     // 重置自动检查标志
@@ -134,7 +135,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
           content: error.message || '登录失败，请稍后重试',
           duration: 4500
         });
-        return;
+        return { success: false, error: error.message || '登录失败，请稍后重试' };
       }
 
       // 检查后端响应
@@ -209,7 +210,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
           });
 
           endLoading(); // 结束loading状态
-          return;
+          return { success: true };
         }
 
         // 存储认证信息
@@ -250,29 +251,31 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
         });
 
         endLoading(); // 登录成功，结束loading状态
-        return; // 明确结束成功流程
+        return { success: true }; // 明确结束成功流程
 
       } else {
         // 登录失败，显示后端返回的错误信息 - 立即停止loading状态
         endLoading(); // 立即结束loading状态
         console.log('Login failed - response:', response);
+        const errorMessage = response?.message || '密码输入错误，请检查用户名和密码';
         window.$notification?.error({
           title: '登录失败',
-          content: response?.message || '登录失败，请检查用户名和密码',
+          content: errorMessage,
           duration: 4500
         });
-        return; // 明确返回，避免继续执行
+        return { success: false, error: errorMessage };
       }
     } catch (error: any) {
       // 网络错误或其他错误 - 立即停止loading状态
       endLoading(); // 立即结束loading状态
       console.error('Login error:', error);
+      const errorMessage = error.message || '网络错误，请稍后重试';
       window.$notification?.error({
         title: '登录失败',
-        content: error.message || '网络错误，请稍后重试',
+        content: errorMessage,
         duration: 4500
       });
-      return; // 明确返回
+      return { success: false, error: errorMessage };
     }
 
     // 现在所有分支都已经显式处理了endLoading()，这里不再需要
