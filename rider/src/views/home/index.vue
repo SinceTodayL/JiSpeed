@@ -12,9 +12,11 @@ import { useEcharts } from '@/hooks/common/echarts';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { useAuthStore } from '../../store/modules/auth';
 import { useRiderStore } from '../../store/modules/rider';
+import { useI18n } from 'vue-i18n';
 
 const authStore = useAuthStore();
 const riderStore = useRiderStore();
+const { t } = useI18n();
 
 // 骑手ID - 使用统一的 riderStore 获取
 const riderId = computed(() => riderStore.riderId || authStore.userInfo.userId);
@@ -28,10 +30,6 @@ const performanceData = ref<Api.Rider.TimeData | null>(null);
 
 // 监控绩效数据变化
 watch(performanceData, (newData, oldData) => {
-  console.log('绩效数据变化:', {
-    old: oldData,
-    new: newData
-  });
 }, { deep: true });
 const performanceTrend = ref<Api.Rider.PerformanceTrendData[] | null>(null);
 const performanceRanking = ref<Api.Rider.RankingData | null>(null);
@@ -42,13 +40,6 @@ const topPerformers = ref<Api.Rider.PerformanceTrendData[]>([]);
 const topPerformersLoading = ref(false);
 
 
-// 天气信息
-const weatherInfo = ref({
-  temperature: 25,
-  condition: '晴天',
-  humidity: 65,
-  windSpeed: 3.2
-});
 
 // 当前年月
 const currentDate = new Date();
@@ -56,159 +47,183 @@ const currentYear = currentDate.getFullYear();
 const currentMonth = currentDate.getMonth() + 1;
 
 // 折线图配置
-const { domRef: lineChartRef, updateOptions: updateLineChart } = useEcharts(() => ({
-  tooltip: {
-    trigger: 'axis',
-    axisPointer: {
-      type: 'cross',
-      label: {
-        backgroundColor: '#6a7985'
+const { domRef: lineChartRef, updateOptions: updateLineChart } = useEcharts(() => {
+  const trendData = performanceTrend.value || [];
+  
+  return {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'cross',
+        label: {
+          backgroundColor: '#6a7985'
+        }
       }
-    }
-  },
-  legend: {
-    data: ['完成订单', '准时率', '好评率']
-  },
-  grid: {
-    left: '3%',
-    right: '4%',
-    bottom: '3%',
-    containLabel: true
-  },
-  xAxis: {
-    type: 'category',
-    boundaryGap: false,
-    data: performanceTrend.value?.map((item: any) => item.statsMonth) || []
-  },
-  yAxis: [
-    {
-      type: 'value',
-      name: '订单数量',
-      position: 'left'
     },
-    {
-      type: 'value',
-      name: '百分比',
-      position: 'right',
-      min: 0,
-      max: 100,
-      axisLabel: {
-        formatter: '{value}%'
+    legend: {
+      data: ['完成订单', '准时率', '好评率']
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: trendData.map((item: any) => item.statsMonth) || []
+    },
+    yAxis: [
+      {
+        type: 'value',
+        name: '订单数量',
+        position: 'left'
+      },
+      {
+        type: 'value',
+        name: '百分比',
+        position: 'right',
+        min: 0,
+        max: 100,
+        axisLabel: {
+          formatter: '{value}%'
+        }
       }
-    }
-  ],
-  series: [
-    {
-      color: '#8e9dff',
-      name: '完成订单',
-      type: 'line',
-      smooth: true,
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0.25, color: '#8e9dff' },
-            { offset: 1, color: '#fff' }
-          ]
-        }
+    ],
+    series: [
+      {
+        color: '#8e9dff',
+        name: '完成订单',
+        type: 'line',
+        smooth: true,
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0.25, color: '#8e9dff' },
+              { offset: 1, color: '#fff' }
+            ]
+          }
+        },
+        emphasis: { focus: 'series' },
+        data: trendData.map((item: any) => item.totalOrders) || []
       },
-      emphasis: { focus: 'series' },
-      data: performanceTrend.value?.map((item: any) => item.totalOrders) || []
-    },
-    {
-      color: '#26deca',
-      name: '准时率',
-      type: 'line',
-      smooth: true,
-      yAxisIndex: 1,
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0.25, color: '#26deca' },
-            { offset: 1, color: '#fff' }
-          ]
-        }
+      {
+        color: '#26deca',
+        name: '准时率',
+        type: 'line',
+        smooth: true,
+        yAxisIndex: 1,
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0.25, color: '#26deca' },
+              { offset: 1, color: '#fff' }
+            ]
+          }
+        },
+        emphasis: { focus: 'series' },
+        data: trendData.map((item: any) => Math.round(item.onTimeRate * 100)) || []
       },
-      emphasis: { focus: 'series' },
-      data: performanceTrend.value?.map((item: any) => Math.round(item.onTimeRate * 100)) || []
-    },
-    {
-      color: '#fedc69',
-      name: '好评率',
-      type: 'line',
-      smooth: true,
-      yAxisIndex: 1,
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0.25, color: '#fedc69' },
-            { offset: 1, color: '#fff' }
-          ]
-        }
-      },
-      emphasis: { focus: 'series' },
-      data: performanceTrend.value?.map((item: any) => Math.round(item.goodReviewRate * 100)) || []
-    }
-  ]
-}));
+      {
+        color: '#fedc69',
+        name: '好评率',
+        type: 'line',
+        smooth: true,
+        yAxisIndex: 1,
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0.25, color: '#fedc69' },
+              { offset: 1, color: '#fff' }
+            ]
+          }
+        },
+        emphasis: { focus: 'series' },
+        data: trendData.map((item: any) => Math.round(item.goodReviewRate * 100)) || []
+      }
+    ]
+  };
+});
 
 // 饼图配置
-const { domRef: pieChartRef, updateOptions: updatePieChart } = useEcharts(() => ({
-  tooltip: {
-    trigger: 'item',
-    formatter: '{a} <br/>{b}: {c}单 ({d}%)'
-  },
-  legend: {
-    bottom: '1%',
-    left: 'center',
-    itemStyle: { borderWidth: 0 }
-  },
-  series: [
-    {
-      color: ['#5da8ff', '#8e9dff', '#fedc69', '#26deca'],
-      name: '订单类型',
-      type: 'pie',
-      radius: ['45%', '75%'],
-      avoidLabelOverlap: false,
-      itemStyle: {
-        borderRadius: 10,
-        borderColor: '#fff',
-        borderWidth: 1
-      },
-      label: {
-        show: false,
-        position: 'center'
-      },
-      emphasis: {
+const { domRef: pieChartRef, updateOptions: updatePieChart } = useEcharts(() => {
+  const perfData = performanceData.value;
+  
+  return {
+    tooltip: {
+      trigger: 'item',
+      formatter: '{a} <br/>{b}: {c} ({d}%)'
+    },
+    legend: {
+      bottom: '1%',
+      left: 'center',
+      itemStyle: { borderWidth: 0 }
+    },
+    series: [
+      {
+        color: ['#5da8ff', '#8e9dff', '#fedc69', '#26deca'],
+        name: '绩效指标',
+        type: 'pie',
+        radius: ['45%', '75%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10,
+          borderColor: '#fff',
+          borderWidth: 1
+        },
         label: {
-          show: true,
-          fontSize: '12'
-        }
-      },
-      labelLine: { show: false },
-      data: [
-        { name: '总订单', value: performanceData.value?.totalOrders || 0, color: '#5da8ff' },
-        { name: '准时率', value: performanceData.value?.onTimeRate || 0, color: '#8e9dff' },
-        { name: '好评率', value: performanceData.value?.goodReviewRate || 0, color: '#fedc69' },
-        { name: '差评率', value: performanceData.value?.badReviewRate || 0, color: '#26deca' }
-      ]
-    }
-  ]
-}));
+          show: false,
+          position: 'center'
+        },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: '12'
+          }
+        },
+        labelLine: { show: false },
+        data: [
+          { 
+            name: '总订单', 
+            value: perfData?.totalOrders || 0, 
+            color: '#5da8ff' 
+          },
+          { 
+            name: '准时率', 
+            value: Math.round((perfData?.onTimeRate || 0) * 100), 
+            color: '#8e9dff' 
+          },
+          { 
+            name: '好评率', 
+            value: Math.round((perfData?.goodReviewRate || 0) * 100), 
+            color: '#fedc69' 
+          },
+          { 
+            name: '差评率', 
+            value: Math.round((perfData?.badReviewRate || 0) * 100), 
+            color: '#26deca' 
+          }
+        ]
+      }
+    ]
+  };
+});
 
 // 直接使用原始数据，不做复杂计算
 const onTimeRatePercent = computed(() => {
@@ -224,7 +239,7 @@ const badReviewRatePercent = computed(() => {
 });
 
 
-// 统计卡片数据 - 直接使用原始数据
+// 统计卡片数据 - 使用真实API数据
 const cardData = computed(() => {
   const data = performanceData.value;
   if (!data) return [];
@@ -241,7 +256,7 @@ const cardData = computed(() => {
     {
       key: 'onTimeRate',
       title: '准时率',
-      value: data.onTimeRate || 0,
+      value: Math.round((data.onTimeRate || 0) * 100),
       unit: '%',
       color: { start: '#00d2ff', end: '#3a7bd5' },
       icon: 'mdi:clock-check'
@@ -249,7 +264,7 @@ const cardData = computed(() => {
     {
       key: 'goodReviewRate',
       title: '好评率',
-      value: data.goodReviewRate || 0,
+      value: Math.round((data.goodReviewRate || 0) * 100),
       unit: '%',
       color: { start: '#11998e', end: '#38ef7d' },
       icon: 'mdi:thumb-up'
@@ -268,9 +283,10 @@ const cardData = computed(() => {
 // 获取骑手详细信息
 async function fetchRiderDetail() {
   try {
-    const { data } = await getRiderInfo(riderId.value);
-    if (data) {
-      riderDetail.value = data;
+    const response = await getRiderInfo(riderId.value);
+    
+    if (response.data) {
+      riderDetail.value = response.data;
     }
   } catch (error) {
     console.error('获取骑手详细信息失败', error);
@@ -285,32 +301,10 @@ async function fetchRiderPerformance() {
       year: currentYear,
       month: currentMonth
     };
-    console.log('获取绩效数据参数:', params);
 
-    const { data } = await getRiderPerformance(params);
-    console.log('骑手绩效数据原始响应:', data);
-    console.log('骑手绩效数据结构:', {
-      code: data?.code,
-      message: data?.message,
-      data: data?.data,
-      timestamp: data?.timestamp
-    });
-    if (data && data.data) {
-      performanceData.value = data.data;
-      console.log('绩效数据已赋值:', performanceData.value);
-      console.log('原始数据:', {
-        onTimeRate: performanceData.value.onTimeRate,
-        goodReviewRate: performanceData.value.goodReviewRate,
-        badReviewRate: performanceData.value.badReviewRate,
-        totalOrders: performanceData.value.totalOrders,
-        income: performanceData.value.income
-      });
-    } else if (data && !data.data) {
-      // 如果 data.data 为 null，但 data 有值，直接使用 data
-      performanceData.value = data as any;
-      console.log('使用 data 作为绩效数据:', performanceData.value);
-    } else {
-      console.warn('绩效数据为空或格式不正确:', data);
+    const response = await getRiderPerformance(params);
+    if (response.data) {
+      performanceData.value = response.data as unknown as Api.Rider.TimeData;
     }
   } catch (error) {
     console.error('获取骑手绩效数据失败', error);
@@ -325,16 +319,16 @@ async function fetchPerformanceTrend() {
       months: 7 // 获取最近7个月的趋势
     };
 
-    const { data } = await getRiderPerformanceTrend(params);
-    if (data && data.data) {
-      performanceTrend.value = data.data;
-    } else if (data && !data.data) {
-      performanceTrend.value = data as any;
-      // 更新图表
-      nextTick(() => {
-        updateLineChart();
-      });
+    const response = await getRiderPerformanceTrend(params);
+    
+    if (response.data) {
+      performanceTrend.value = response.data as unknown as Api.Rider.PerformanceTrendData[];
     }
+    
+    // 更新图表
+    nextTick(() => {
+      updateLineChart();
+    });
   } catch (error) {
     console.error('获取绩效趋势失败', error);
   }
@@ -349,11 +343,10 @@ async function fetchPerformanceRanking() {
       month: currentMonth
     };
 
-    const { data } = await getRiderPerformanceRanking(params);
-    if (data && data.data) {
-      performanceRanking.value = data.data;
-    } else if (data && !data.data) {
-      performanceRanking.value = data as any;
+    const response = await getRiderPerformanceRanking(params);
+    
+    if (response.data) {
+      performanceRanking.value = response.data as unknown as Api.Rider.RankingData;
     }
   } catch (error) {
     console.error('获取绩效排名失败', error);
@@ -368,11 +361,10 @@ async function fetchMonthlyOverview() {
       month: currentMonth
     };
 
-    const { data } = await getMonthlyPerformanceOverview(params);
-    if (data && data.data) {
-      monthlyOverview.value = data.data;
-    } else if (data && !data.data) {
-      monthlyOverview.value = data as any;
+    const response = await getMonthlyPerformanceOverview(params);
+    
+    if (response.data) {
+      monthlyOverview.value = response.data as unknown as Api.Rider.OverviewData;
     }
   } catch (error) {
     console.error('获取月度概览失败', error);
@@ -389,11 +381,10 @@ async function fetchTopPerformers() {
       topCount: 10
     };
 
-    const { data } = await getTopPerformers(params);
-    if (data && data.data) {
-      topPerformers.value = data.data || [];
-    } else if (data && !data.data) {
-      topPerformers.value = (data as any) || [];
+    const response = await getTopPerformers(params);
+    
+    if (response.data) {
+      topPerformers.value = response.data as unknown as Api.Rider.PerformanceTrendData[] || [];
     }
   } catch (error) {
     console.error('获取优秀骑手排行榜失败', error);
@@ -405,16 +396,6 @@ async function fetchTopPerformers() {
 
 
 
-// 模拟获取天气信息
-function fetchWeatherInfo() {
-  // 这里可以接入真实的天气API
-  weatherInfo.value = {
-    temperature: Math.floor(Math.random() * 15) + 20, // 20-35度
-    condition: ['晴天', '多云', '阴天', '小雨'][Math.floor(Math.random() * 4)],
-    humidity: Math.floor(Math.random() * 30) + 50, // 50-80%
-    windSpeed: Math.random() * 5 + 1 // 1-6级风
-  };
-}
 
 
 // 获取渐变色
@@ -429,7 +410,6 @@ let refreshTimer: NodeJS.Timeout | null = null;
 async function refreshAllData() {
   if (loading.value) return;
   
-  console.log('🔄 开始刷新首页数据...');
   loading.value = true;
   
   try {
@@ -448,7 +428,6 @@ async function refreshAllData() {
       updatePieChart();
     });
     
-    console.log('✅ 首页数据刷新完成');
   } catch (error) {
     console.error('❌ 刷新首页数据失败:', error);
   } finally {
@@ -462,7 +441,6 @@ function startAutoRefresh() {
   refreshTimer = setInterval(() => {
     refreshAllData();
   }, 5 * 60 * 1000);
-  console.log('🔄 已启动自动刷新，间隔: 5分钟');
 }
 
 // 停止自动刷新
@@ -470,7 +448,6 @@ function stopAutoRefresh() {
   if (refreshTimer) {
     clearInterval(refreshTimer);
     refreshTimer = null;
-    console.log('⏹️ 已停止自动刷新');
   }
 }
 
@@ -479,20 +456,14 @@ onMounted(async () => {
   loading.value = true;
 
   // 检查用户信息是否已初始化
-  console.log('=== 骑手首页加载 ===');
-  console.log('当前用户信息:', authStore.userInfo);
-  console.log('当前token:', authStore.token);
 
   // 如果没有用户信息但有token，尝试初始化
   if (!authStore.userInfo.userId && authStore.token) {
-    console.log('检测到token但用户信息为空，尝试初始化用户信息...');
     await authStore.initUserInfo();
-    console.log('初始化后的用户信息:', authStore.userInfo);
   }
 
   // 如果仍然没有用户信息，使用模拟数据
   if (!authStore.userInfo.userId) {
-    console.log('用户信息初始化失败，使用模拟数据');
     // 设置模拟用户信息
     Object.assign(authStore.userInfo, {
       userId: `rider_${Date.now()}`,
@@ -500,7 +471,6 @@ onMounted(async () => {
       roles: ['rider'],
       buttons: []
     });
-    console.log('设置的模拟用户信息:', authStore.userInfo);
   }
 
   try {
@@ -511,7 +481,6 @@ onMounted(async () => {
       fetchPerformanceRanking(),
       fetchMonthlyOverview(),
       fetchTopPerformers(),
-      fetchWeatherInfo()
     ]);
 
     // 更新图表
@@ -543,22 +512,16 @@ onUnmounted(() => {
         </div>
         <div class="flex-1">
           <h1 class="text-2xl text-gray-800 font-bold dark:text-gray-200">
-            欢迎回来，{{ riderDetail?.name || '骑手' }}！
+            {{ t('rider.home.subtitle', { name: riderDetail?.name || '骑手' }) }}
           </h1>
           <p class="mt-2px text-gray-600 dark:text-gray-400">
-            今天是 {{ new Date().toLocaleDateString('zh-CN') }}，祝您工作顺利！
+            {{ t('rider.home.description', { date: new Date().toLocaleDateString('zh-CN') }) }}
           </p>
         </div>
         <div class="flex items-center space-x-16px">
-          <!-- 天气信息 -->
-          <div class="text-center">
-            <div class="text-sm text-gray-500">天气</div>
-            <div class="text-lg font-semibold">{{ weatherInfo.temperature }}°C</div>
-            <div class="text-xs text-gray-400">{{ weatherInfo.condition }}</div>
-          </div>
           <!-- 车辆信息 -->
           <div class="text-center">
-            <div class="text-sm text-gray-500">车辆编号</div>
+            <div class="text-sm text-gray-500">{{ t('rider.home.vehicleNumber') }}</div>
             <div class="text-lg font-semibold">{{ riderDetail?.vehicleNumber || '暂无' }}</div>
           </div>
           <!-- 刷新按钮 -->
@@ -572,7 +535,7 @@ onUnmounted(() => {
             <template #icon>
               <SvgIcon icon="mdi:refresh" />
             </template>
-            刷新数据
+            {{ t('rider.home.refreshData') }}
           </NButton>
         </div>
       </div>
@@ -723,25 +686,6 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="flex items-center rounded-lg bg-orange-50 p-12px dark:bg-orange-900/20">
-          <SvgIcon icon="mdi:weather-sunny" class="mr-12px text-orange-500" />
-          <div>
-            <div class="text-orange-800 font-medium dark:text-orange-200">天气提醒</div>
-            <div class="text-sm text-orange-600 dark:text-orange-300">
-              今日{{ weatherInfo.condition }}，温度{{ weatherInfo.temperature }}°C，注意防晒和保暖
-            </div>
-          </div>
-        </div>
-
-        <div class="flex items-center rounded-lg bg-purple-50 p-12px dark:bg-purple-900/20">
-          <SvgIcon icon="mdi:chart-line" class="mr-12px text-purple-500" />
-          <div>
-            <div class="text-purple-800 font-medium dark:text-purple-200">月度概览</div>
-            <div class="text-sm text-purple-600 dark:text-purple-300">
-              本月共有 {{ monthlyOverview?.totalRiders || 0 }} 名骑手，平均完成率 {{ Math.round((monthlyOverview?.averageCompletionRate || 0) * 100) }}%
-            </div>
-          </div>
-        </div>
       </div>
     </NCard>
   </div>
@@ -1012,7 +956,7 @@ onUnmounted(() => {
   transform: rotate(10deg) scale(1.1);
 }
 
-/* 天气信息动画 */
+/* 工作提醒动画 */
 .text-center > div {
   transition: all 0.3s ease;
 }

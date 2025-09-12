@@ -31,9 +31,11 @@ import {
 } from '@/service/api/attendance';
 import { useAuthStore } from '@/store/modules/auth';
 import { useRiderStore } from '@/store/modules/rider';
+import { useI18n } from 'vue-i18n';
 
 const authStore = useAuthStore();
 const riderStore = useRiderStore();
+const { t } = useI18n();
 
 // 骑手ID - 使用统一的 riderStore 获取
 const riderId = computed(() => riderStore.riderId || authStore.userInfo.userId);
@@ -79,9 +81,7 @@ const updateTime = () => {
 // 获取骑手信息
 async function fetchRiderInfo() {
   try {
-    console.log('开始获取骑手信息, riderId:', riderId.value);
     const { data } = await getRiderInfo(riderId.value);
-    console.log('骑手信息获取成功:', data);
     if (data) {
       // 兼容两种数据格式：标准格式(data.data)和简单格式(data)
       const infoData = (data as any).data || data;
@@ -134,7 +134,6 @@ async function fetchTodayAttendance() {
 async function fetchAttendanceRecords() {
   loading.value = true;
   try {
-    console.log('开始获取考勤记录, riderId:', riderId.value);
     
     // 构建请求参数
     const params: Api.Attendance.GetRiderAttendanceRequest = {
@@ -165,19 +164,10 @@ async function fetchAttendanceRecords() {
       params.isAbsent = 0;
     }
 
-    console.log('考勤记录请求参数:', params);
-    console.log('筛选条件:', {
-      startDate: filterForm.value.startDate,
-      endDate: filterForm.value.endDate,
-      status: filterForm.value.status,
-      processedStartDate: params.startDate,
-      processedEndDate: params.endDate
-    });
     
     // 只有当开始日期和结束日期都有值且不为空字符串时才使用日期范围查询API
     let data;
     if (params.startDate && params.endDate && params.startDate.trim() !== '' && params.endDate.trim() !== '') {
-      console.log('使用日期范围查询API');
       const dateRangeParams = {
         startDate: params.startDate,
         endDate: params.endDate,
@@ -187,35 +177,27 @@ async function fetchAttendanceRecords() {
         ...(params.isLate !== undefined && { isLate: params.isLate }),
         ...(params.isAbsent !== undefined && { isAbsent: params.isAbsent })
       };
-      console.log('日期范围查询参数:', dateRangeParams);
       const response = await getRiderAttendanceByDateRange(riderId.value, dateRangeParams);
       data = response.data;
     } else {
-      console.log('使用普通查询API');
       const response = await getRiderAttendanceRecordsList(riderId.value, params);
       data = response.data;
     }
-    console.log('考勤记录API响应:', data);
-    console.log('API响应类型:', typeof data);
-    console.log('API响应是否为数组:', Array.isArray(data));
     if (data && typeof data === 'object') {
-      console.log('API响应键:', Object.keys(data));
-      if (data.data) {
-        console.log('data.data类型:', typeof data.data);
-        console.log('data.data是否为数组:', Array.isArray(data.data));
-        console.log('data.data内容:', data.data);
-      }
-      if (data && typeof data === 'object' && 'records' in data) {
-        console.log('data.records类型:', typeof (data as any).records);
-        console.log('data.records是否为数组:', Array.isArray((data as any).records));
-        console.log('data.records内容:', (data as any).records);
+      if (data.data && Array.isArray(data.data)) {
+        attendanceList.value = data.data;
+      } else if ((data as any).records && Array.isArray((data as any).records)) {
+        attendanceList.value = (data as any).records;
+      } else if (Array.isArray(data)) {
+        // 如果data本身就是数组
+        attendanceList.value = data;
       }
     }
 
     if (data) {
       // 兼容两种数据格式：标准格式(data.data)和简单格式(data)
       const responseData = data.data || data;
-      
+
       // 根据API类型定义，处理分页响应格式
       if (Array.isArray(responseData)) {
         // 如果返回的是数组，说明没有分页信息，使用数组长度作为总数
@@ -252,7 +234,6 @@ async function fetchAttendanceRecords() {
 // 获取考勤统计
 async function fetchAttendanceStats() {
   try {
-    console.log('开始获取考勤统计, riderId:', riderId.value);
     const currentDate = new Date();
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -262,9 +243,7 @@ async function fetchAttendanceStats() {
       endDate: lastDayOfMonth.toISOString().split('T')[0]
     };
 
-    console.log('考勤统计请求参数:', params);
     const { data } = await getRiderAttendanceStats(riderId.value, params);
-    console.log('考勤统计获取成功:', data);
     
     if (data) {
       // 兼容两种数据格式：标准格式(data.data)和简单格式(data)
@@ -308,17 +287,15 @@ async function handleCheckInWithRetry() {
     if (isCheckedIn.value && !isCheckedOut.value) {
       window.$message?.warning('今日已打卡，请先签退后再打卡');
     }
-    console.log('已经防止重复点击', loading.value, isCheckedIn.value);
     return;
   }
 
   try {
     loading.value = true;
     checkInRetryCount.value = 0;
-    
+
     // 使用签到接口而不是创建考勤记录接口
     const { data } = await riderCheckInAttendance(riderId.value);
-    console.log('if', data);
     if (data) {
       window.$message?.success(data.message || '打卡成功！');
       isCheckedIn.value = true;
@@ -342,14 +319,16 @@ async function handleCheckInWithRetry() {
     if (error?.response?.data?.message) {
       const errorMessage = error.response.data.message;
       // 处理乐观并发错误和重复操作
-      if (errorMessage.includes('已有考勤记录') || 
-          errorMessage.includes('已签到') || 
-          errorMessage.includes('重复') ||
-          errorMessage.includes('already') ||
-          errorMessage.includes('expected to affect 1 row') ||
-          errorMessage.includes('actually affected 0 row') ||
-          errorMessage.includes('乐观并发') ||
-          errorMessage.includes('concurrency')) {
+      if (
+        errorMessage.includes('已有考勤记录') ||
+        errorMessage.includes('已签到') ||
+        errorMessage.includes('重复') ||
+        errorMessage.includes('already') ||
+        errorMessage.includes('expected to affect 1 row') ||
+        errorMessage.includes('actually affected 0 row') ||
+        errorMessage.includes('乐观并发') ||
+        errorMessage.includes('concurrency')
+      ) {
         // 数据库并发异常，可能是重复操作，刷新页面状态
         window.$message?.warning('检测到重复操作，正在刷新状态...');
         // 刷新考勤记录和状态
@@ -447,16 +426,20 @@ async function handleCheckOutWithRetry() {
     
     if (error?.response?.data?.message) {
       const errorMessage = error.response.data.message;
-      if (errorMessage.includes('未签到') || 
-          errorMessage.includes('not checked in') ||
-          errorMessage.includes('需要先签到')) {
+      if (
+        errorMessage.includes('未签到') ||
+        errorMessage.includes('not checked in') ||
+        errorMessage.includes('需要先签到')
+      ) {
         window.$message?.error('请先完成签到再进行签退');
-      } else if (errorMessage.includes('已签退') || 
-                 errorMessage.includes('already checked out') ||
-                 errorMessage.includes('expected to affect 1 row') ||
-                 errorMessage.includes('actually affected 0 row') ||
-                 errorMessage.includes('乐观并发') ||
-                 errorMessage.includes('concurrency')) {
+      } else if (
+        errorMessage.includes('已签退') ||
+        errorMessage.includes('already checked out') ||
+        errorMessage.includes('expected to affect 1 row') ||
+        errorMessage.includes('actually affected 0 row') ||
+        errorMessage.includes('乐观并发') ||
+        errorMessage.includes('concurrency')
+      ) {
         // 数据库并发异常，可能是重复操作，刷新页面状态
         window.$message?.warning('检测到重复操作，正在刷新状态...');
         // 刷新考勤记录和状态
@@ -537,14 +520,12 @@ async function showDetail(record: Api.Attendance.AttendanceRecord) {
 
 // 搜索
 function handleSearch() {
-  console.log('执行搜索，筛选条件:', filterForm.value);
   pagination.value.page = 1;
   fetchAttendanceRecords();
 }
 
 // 实时筛选（当筛选条件改变时自动搜索）
 function handleFilterChange() {
-  console.log('筛选条件改变，自动触发搜索:', filterForm.value);
   pagination.value.page = 1;
   fetchAttendanceRecords();
 }
@@ -563,7 +544,6 @@ function clearFilter(type: 'startDate' | 'endDate' | 'status') {
 
 // 重置筛选
 function handleReset() {
-  console.log('重置筛选条件');
   filterForm.value = {
     startDate: null,
     endDate: null,
@@ -605,13 +585,6 @@ const statistics = computed(() => {
   const late = attendanceList.value.filter(record => record.isLate === 1).length;
   const absent = attendanceList.value.filter(record => record.isAbsent === 1).length;
 
-  console.log('统计数据计算:', {
-    total,
-    present,
-    late,
-    absent,
-    attendanceRate: total > 0 ? Math.round((present / total) * 100) : 0
-  });
 
   return {
     total,
@@ -793,22 +766,13 @@ const hasActiveFilters = computed(() => {
 
 // 页面加载
 onMounted(async () => {
-  console.log('考勤页面开始初始化...');
-  console.log('当前认证状态:', {
-    token: authStore.token,
-    userId: authStore.userInfo.userId,
-    userName: authStore.userInfo.userName
-  });
-
   // 检查用户信息是否已初始化
   if (!authStore.userInfo.userId && authStore.token) {
-    console.log('用户信息未初始化，开始初始化...');
     await authStore.initUserInfo();
   }
 
   // 如果仍然没有用户信息，使用模拟数据
   if (!authStore.userInfo.userId) {
-    console.log('使用模拟用户数据');
     Object.assign(authStore.userInfo, {
       userId: `rider_${Date.now()}`,
       userName: '测试骑手',
@@ -817,13 +781,8 @@ onMounted(async () => {
     });
   }
 
-  console.log('初始化后的用户信息:', authStore.userInfo);
-  console.log('骑手ID:', riderId.value);
-
   try {
-    console.log('开始并行获取数据...');
     await Promise.all([fetchRiderInfo(), fetchTodayAttendance(), fetchAttendanceRecords(), fetchAttendanceStats()]);
-    console.log('所有数据获取完成');
   } catch (error) {
     console.error('数据获取过程中出现错误:', error);
   }
@@ -842,8 +801,8 @@ onMounted(async () => {
           <Icon icon="mdi:clock-check" class="text-2xl text-white" />
         </div>
         <div>
-          <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">考勤管理</h1>
-          <p class="mt-2px text-gray-600 dark:text-gray-400">管理您的出勤记录，保持工作纪律</p>
+          <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ t('rider.attendance.title') }}</h1>
+          <p class="mt-2px text-gray-600 dark:text-gray-400">{{ t('rider.attendance.subtitle') }}</p>
         </div>
       </div>
     </NCard>

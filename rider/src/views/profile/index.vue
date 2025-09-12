@@ -5,9 +5,11 @@ import { Icon } from '@iconify/vue';
 import { getRiderInfo, updateRiderInfo } from '@/service/api/rider';
 import { useAuthStore } from '../../store/modules/auth';
 import { useRiderStore } from '../../store/modules/rider';
+import { useI18n } from 'vue-i18n';
 
 const authStore = useAuthStore();
 const riderStore = useRiderStore();
+const { t } = useI18n();
 
 // 骑手ID将通过currentRiderId计算属性动态获取
 
@@ -68,18 +70,11 @@ const rules: FormRules = {
   ]
 };
 
-
 async function fetchRiderInfo() {
   try {
-    console.log('🔄 开始获取骑手信息...');
-    console.log('🆔 骑手ID：', currentRiderId.value);
-    
     const response = await getRiderInfo(currentRiderId.value);
-    console.log('📥 获取骑手信息API响应：', response);
-    
     const { data } = response;
-    console.log('📥 获取到的数据：', data);
-    
+
     if (data) {
       // 更新表单数据
       Object.assign(formModel, data);
@@ -91,9 +86,6 @@ async function fetchRiderInfo() {
       originalData.value.riderId = data.riderId || '';
       originalData.value.vehicleNumber = data.vehicleNumber || '';
       
-      console.log('✅ 获取骑手信息成功！');
-      console.log('📝 更新后的formModel：', formModel);
-      console.log('📝 更新后的originalData：', originalData.value);
     } else {
       console.warn('⚠️ 获取到的数据为空');
     }
@@ -134,29 +126,14 @@ async function handleSave() {
     const { name, phoneNumber, vehicleNumber } = formModel;
     
     try {
-      console.log('🚀 开始保存骑手信息...');
-      console.log('🆔 骑手ID：', formModel.riderId);
-      console.log('📤 发送的数据：', {
-        riderId: formModel.riderId,
-        name,
-        phoneNumber,
-        vehicleNumber
-      });
-      
-      console.log('🌐 调用updateRiderInfo API...');
       const response = await updateRiderInfo(formModel.riderId, {
         name,
         phoneNumber,
         vehicleNumber
       });
       
-      console.log('📥 完整API响应：', response);
-      console.log('📥 响应类型：', typeof response);
-      console.log('📥 响应结构：', Object.keys(response));
       
       const { data: updatedData } = response;
-      console.log('📥 响应数据：', updatedData);
-      console.log('📥 数据类型：', typeof updatedData);
 
       if (updatedData) {
         window.$message?.success('个人信息保存成功！');
@@ -174,12 +151,8 @@ async function handleSave() {
         // 🔄 同步更新authStore中的用户姓名
         if (updatedData.name && updatedData.name !== authStore.userInfo.userName) {
           authStore.updateUserInfo({ userName: updatedData.name });
-          console.log('🔄 已同步更新authStore中的用户姓名:', updatedData.name);
         }
         
-        console.log('✅ 保存成功！');
-        console.log('📝 更新后的formModel：', formModel);
-        console.log('📝 更新后的originalData：', originalData.value);
       } else {
         console.warn('⚠️ API返回数据为空');
         window.$message?.warning('保存成功，但未返回更新后的数据');
@@ -214,8 +187,8 @@ const handleCancel = () => {
           <Icon icon="mdi:account-circle" class="text-2xl text-white" />
         </div>
         <div>
-          <h1 class="text-2xl text-gray-800 font-bold dark:text-gray-200">个人信息管理</h1>
-          <p class="mt-2px text-gray-600 dark:text-gray-400">管理您的个人基本信息和账户设置，确保信息准确无误</p>
+          <h1 class="text-2xl text-gray-800 font-bold dark:text-gray-200">{{ t('rider.profile.title') }}</h1>
+          <p class="mt-2px text-gray-600 dark:text-gray-400">{{ t('rider.profile.subtitle') }}</p>
         </div>
       </div>
     </NCard>

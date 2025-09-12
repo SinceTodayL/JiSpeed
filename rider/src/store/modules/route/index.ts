@@ -175,12 +175,8 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
     /** Init auth route */
   async function initAuthRoute() {
     // 骑手模块：即使没有用户信息也要初始化路由
-    console.log('=== 初始化认证路由 ===');
-    console.log('当前用户信息:', authStore.userInfo);
-    console.log('认证路由模式:', authRouteMode.value);
 
     // 骑手模块：强制使用静态路由模式，确保路由立即可用
-    console.log('骑手模块：强制使用静态路由模式');
     initStaticAuthRoute();
 
     tabStore.initHomeTab();
@@ -190,19 +186,12 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   function initStaticAuthRoute() {
     const { authRoutes: staticAuthRoutes } = createStaticRoutes();
 
-    console.log('=== 初始化静态认证路由 ===');
-    console.log('静态路由总数:', staticAuthRoutes.length);
-    console.log('静态路由详情:', staticAuthRoutes.map(r => ({ name: r.name, path: r.path, roles: r.meta?.roles })));
 
     // 骑手模块：始终添加所有路由，不进行角色过滤
-    console.log('骑手模块：添加所有静态路由');
     addAuthRoutes(staticAuthRoutes);
-
-    console.log('已添加的认证路由数量:', authRoutes.value.length);
 
     // 骑手模块：确保设置默认的首页路由
     if (!routeHome.value) {
-      console.log('设置默认首页路由为: home');
       setRouteHome('home');
     }
 
@@ -215,32 +204,16 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
 
   /** handle constant and auth routes */
   function handleConstantAndAuthRoutes() {
-    console.log('=== 处理常量和认证路由 ===');
-    console.log('常量路由数量:', constantRoutes.value.length);
-    console.log('认证路由数量:', authRoutes.value.length);
 
     const allRoutes = [...constantRoutes.value, ...authRoutes.value];
-    console.log('总路由数量:', allRoutes.length);
-    console.log('所有路由:', allRoutes.map(r => ({ name: r.name, path: r.path, meta: r.meta })));
 
     const sortRoutes = sortRoutesByOrder(allRoutes);
-    console.log('排序后路由数量:', sortRoutes.length);
-
     const vueRoutes = getAuthVueRoutes(sortRoutes);
-    console.log('Vue路由数量:', vueRoutes.length);
-    console.log('Vue路由详情:', vueRoutes.map(r => ({ name: r.name, path: r.path, component: r.component })));
 
     resetVueRoutes();
-    console.log('已重置Vue路由');
-
     addRoutesToVueRouter(vueRoutes);
-    console.log('已添加路由到Vue Router');
-
     getGlobalMenus(sortRoutes);
-    console.log('已生成全局菜单');
-
     getCacheRoutes(vueRoutes);
-    console.log('已设置缓存路由');
   }
 
   /**

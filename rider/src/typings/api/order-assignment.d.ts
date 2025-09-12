@@ -137,29 +137,35 @@ declare namespace Api {
     /** 骑手接受订单请求 */
     export interface AcceptOrderRequest {
       /** 订单ID */
-      orderId: string;
+      OrderId: string;
       /** 骑手ID */
-      riderId: string;
+      RiderId: string;
     }
 
     /** 骑手拒绝订单请求 */
     export interface RejectOrderRequest {
       /** 订单ID */
-      orderId: string;
+      OrderId: string;
       /** 骑手ID */
-      riderId: string;
+      RiderId: string;
       /** 拒绝原因 */
-      reason?: string;
+      Reason?: string;
     }
 
     /** 更新订单状态请求 */
     export interface UpdateOrderStatusRequest {
       /** 订单ID */
-      orderId: string;
+      OrderId: string;
       /** 新状态 */
-      newStatus: number;
+      NewStatus: number;
       /** 备注 */
-      remark?: string;
+      Remark?: string;
+    }
+
+    /** 更新分配状态请求 */
+    export interface UpdateAssignmentStatusRequest {
+      /** 接单状态 */
+      AcceptedStatus: number;
     }
 
     /** 获取骑手分配列表请求 */
@@ -206,6 +212,15 @@ declare namespace Api {
 
     /** 更新订单状态响应 */
     export type UpdateOrderStatusResponse = ApiResponse<boolean>;
+
+    /** 更新分配状态响应 */
+    export type UpdateAssignmentStatusResponse = ApiResponse<{
+      assignId: string;
+      orderId: string;
+      riderId: string;
+      acceptedStatus: number;
+      acceptedAt?: string;
+    }>;
 
     /** 订单分配信息响应 */
     export type OrderAssignmentInfoResponse = ApiResponse<OrderAssignmentInfo>;

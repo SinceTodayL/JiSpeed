@@ -186,6 +186,46 @@ const local: App.I18n.Schema = {
     exception_404: '404',
     exception_500: '500'
   },
+  rider: {
+    home: {
+      title: '我的统计',
+      subtitle: '欢迎回来，{name}！',
+      description: '今天是 {date}，祝您工作顺利！',
+      vehicleNumber: '车辆编号',
+      refreshData: '刷新数据'
+    },
+    delivery: {
+      title: '配送订单管理',
+      subtitle: '智能配送，高效管理，让每一单都完美送达',
+      realTime: '实时同步',
+      secure: '安全可靠',
+      totalOrders: '总订单数',
+      pendingOrders: '待接单',
+      acceptedOrders: '已接单',
+      deliveredOrders: '已配送',
+      refresh: '刷新数据',
+      goOnline: '上线',
+      goOffline: '下线',
+      orderList: '订单列表',
+      orderListDesc: '实时管理您的配送订单',
+      realTimeUpdate: '实时更新'
+    },
+    attendance: {
+      title: '考勤管理',
+      subtitle: '管理您的出勤记录，保持工作纪律',
+      checkIn: '签到',
+      checkOut: '签退',
+      todayStatus: '今日状态',
+      workHours: '工作时长',
+      attendance: '出勤',
+      late: '迟到',
+      absent: '缺勤'
+    },
+    profile: {
+      title: '个人信息管理',
+      subtitle: '管理您的个人基本信息和账户设置，确保信息准确无误'
+    }
+  },
   page: {
     login: {
       common: {
