@@ -4,37 +4,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JiSpeed</title>
-  <script type="module" crossorigin src="/user/assets/index-BVfraztI.js"></script>
-  <link rel="stylesheet" crossorigin href="/user/assets/index-BOQNZZuD.css">
+  <title>JiSpeed 济时达外卖</title>
+  <script type="module" crossorigin src="/user/assets/index-DiJGuJFZ.js"></script>
+  <link rel="stylesheet" crossorigin href="/user/assets/index-DdCSBLsj.css">
 </head>
 
 <body>
-  <div id="app"></div>
-  <script>
-    (function() {
-      try {
-        var search = window.location.search;
-        if (search) {
-          var params = new URLSearchParams(search);
-          var userId = params.get('id') || params.get('userId');
-          var token = params.get('token');
-          if (userId && token) {
-            localStorage.setItem('userId', userId);
-            localStorage.setItem('token', token);
-            localStorage.setItem('userType', '1');
-            // 清理地址栏中的查询参数，保持整洁
-            var url = new URL(window.location.href);
-            url.search = '';
-            window.history.replaceState({}, document.title, url.toString());
-          }
-        }
-      } catch (e) {
-        // 静默失败以避免影响应用启动
-        console && console.warn && console.warn('URL 参数预处理失败', e);
-      }
-    })();
-  </script>
+  <div id="app"></div>
 </body>
 
 </html>
