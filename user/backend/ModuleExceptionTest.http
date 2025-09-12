@@ -1,0 +1,194 @@
+@baseUrl = http://localhost:5188
+@contentType = application/json
+
+### 测试骑手模块异常
+
+### 骑手未找到异常
+GET {{baseUrl}}/api/moduleexceptiontest/rider/not-found
+Accept: {{contentType}}
+
+### 骑手状态错误异常
+GET {{baseUrl}}/api/moduleexceptiontest/rider/status-error
+Accept: {{contentType}}
+
+### 骑手运力已满异常
+GET {{baseUrl}}/api/moduleexceptiontest/rider/capacity-exceeded
+Accept: {{contentType}}
+
+### 骑手超出服务区域异常
+GET {{baseUrl}}/api/moduleexceptiontest/rider/out-of-service-area
+Accept: {{contentType}}
+
+### 测试订单模块异常
+
+### 订单未找到异常
+GET {{baseUrl}}/api/moduleexceptiontest/order/not-found
+Accept: {{contentType}}
+
+### 订单状态错误异常
+GET {{baseUrl}}/api/moduleexceptiontest/order/status-error
+Accept: {{contentType}}
+
+### 订单已取消异常
+GET {{baseUrl}}/api/moduleexceptiontest/order/cancelled
+Accept: {{contentType}}
+
+### 订单已分配异常
+GET {{baseUrl}}/api/moduleexceptiontest/order/already-assigned
+Accept: {{contentType}}
+
+### 测试配送模块异常
+
+### 配送未找到异常
+GET {{baseUrl}}/api/moduleexceptiontest/delivery/not-found
+Accept: {{contentType}}
+
+### 配送状态错误异常
+GET {{baseUrl}}/api/moduleexceptiontest/delivery/status-error
+Accept: {{contentType}}
+
+### 配送区域不支持异常
+GET {{baseUrl}}/api/moduleexceptiontest/delivery/area-not-supported
+Accept: {{contentType}}
+
+### 配送路线规划失败异常
+GET {{baseUrl}}/api/moduleexceptiontest/delivery/route-failed
+Accept: {{contentType}}
+
+### 测试商家模块异常
+
+### 商家未找到异常
+GET {{baseUrl}}/api/moduleexceptiontest/merchant/not-found
+Accept: {{contentType}}
+
+### 商家已关闭异常
+GET {{baseUrl}}/api/moduleexceptiontest/merchant/closed
+Accept: {{contentType}}
+
+### 商家状态错误异常
+GET {{baseUrl}}/api/moduleexceptiontest/merchant/status-error
+Accept: {{contentType}}
+
+### 商品未找到异常
+GET {{baseUrl}}/api/moduleexceptiontest/merchant/product-not-found
+Accept: {{contentType}}
+
+### 商品缺货异常
+GET {{baseUrl}}/api/moduleexceptiontest/merchant/product-out-of-stock
+Accept: {{contentType}}
+
+### 测试用户模块异常
+
+### 用户未找到异常
+GET {{baseUrl}}/api/moduleexceptiontest/user/not-found
+Accept: {{contentType}}
+
+### 用户状态错误异常
+GET {{baseUrl}}/api/moduleexceptiontest/user/status-error
+Accept: {{contentType}}
+
+### 用户地址未找到异常
+GET {{baseUrl}}/api/moduleexceptiontest/user/address-not-found
+Accept: {{contentType}}
+
+### 用户余额不足异常
+GET {{baseUrl}}/api/moduleexceptiontest/user/insufficient-balance
+Accept: {{contentType}}
+
+### 用户已存在异常
+GET {{baseUrl}}/api/moduleexceptiontest/user/already-exists
+Accept: {{contentType}}
+
+### 用户登录失败异常
+GET {{baseUrl}}/api/moduleexceptiontest/user/login-failed
+Accept: {{contentType}}
+
+### 测试支付模块异常
+
+### 支付失败异常
+GET {{baseUrl}}/api/moduleexceptiontest/payment/failed
+Accept: {{contentType}}
+
+### 支付超时异常
+GET {{baseUrl}}/api/moduleexceptiontest/payment/timeout
+Accept: {{contentType}}
+
+### 退款失败异常
+GET {{baseUrl}}/api/moduleexceptiontest/payment/refund-failed
+Accept: {{contentType}}
+
+### 交易未找到异常
+GET {{baseUrl}}/api/moduleexceptiontest/payment/transaction-not-found
+Accept: {{contentType}}
+
+### 重复支付异常
+GET {{baseUrl}}/api/moduleexceptiontest/payment/duplicate-payment
+Accept: {{contentType}}
+
+### 测试认证模块异常
+
+### 未授权异常
+GET {{baseUrl}}/api/moduleexceptiontest/auth/unauthorized
+Accept: {{contentType}}
+
+### 禁止访问异常
+GET {{baseUrl}}/api/moduleexceptiontest/auth/forbidden
+Accept: {{contentType}}
+
+### 账号已禁用异常
+GET {{baseUrl}}/api/moduleexceptiontest/auth/account-disabled
+Accept: {{contentType}}
+
+### 无效凭证异常
+GET {{baseUrl}}/api/moduleexceptiontest/auth/invalid-credentials
+Accept: {{contentType}}
+
+### 令牌过期异常
+GET {{baseUrl}}/api/moduleexceptiontest/auth/token-expired
+Accept: {{contentType}}
+
+### 测试评价模块异常
+
+### 评价未找到异常
+GET {{baseUrl}}/api/moduleexceptiontest/rating/not-found
+Accept: {{contentType}}
+
+### 重复评价异常
+GET {{baseUrl}}/api/moduleexceptiontest/rating/duplicate
+Accept: {{contentType}}
+
+### 评价权限错误异常
+GET {{baseUrl}}/api/moduleexceptiontest/rating/permission-error
+Accept: {{contentType}}
+
+### 评价内容违规异常
+GET {{baseUrl}}/api/moduleexceptiontest/rating/content-violation
+Accept: {{contentType}}
+
+### 测试系统错误
+
+### 数据库错误异常
+GET {{baseUrl}}/api/moduleexceptiontest/system/database-error
+Accept: {{contentType}}
+
+### 网络错误异常
+GET {{baseUrl}}/api/moduleexceptiontest/system/network-error
+Accept: {{contentType}}
+
+### 系统服务不可用异常
+GET {{baseUrl}}/api/moduleexceptiontest/system/service-unavailable
+Accept: {{contentType}}
+
+### 配置错误异常
+GET {{baseUrl}}/api/moduleexceptiontest/system/configuration-error
+Accept: {{contentType}}
+
+### 测试通用错误
+
+### 通用错误异常
+GET {{baseUrl}}/api/moduleexceptiontest/common/general-error
+Accept: {{contentType}}
+
+### 参数验证失败异常
+GET {{baseUrl}}/api/moduleexceptiontest/common/validation-failed
+Accept: {{contentType}}
