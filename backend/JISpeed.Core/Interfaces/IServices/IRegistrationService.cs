@@ -1,12 +1,19 @@
 using JISpeed.Core.Entities.Common;
+using JISpeed.Core.Interfaces.IRepositories;
 
 namespace JISpeed.Core.Interfaces.IServices
 {
     
     public interface IRegistrationService
     {
-        Task<PreRegistrationResult> PreRegisterUserAsync(ApplicationUser request,string passwordHash);
+        Task<PreRegistrationResult> PreRegisterUserAsync( 
+            string passwordHash, string email,
+            string userName, string? phoneNumber,
+            string id, int userType,
+            DateTime createdAt);
         Task<RegistrationResult> RegisterUserAsync(string Id, string token);
+
+        
 
         Task<bool> CreateBusinessEntityAsync(ApplicationUser applicationUser);
 
@@ -42,17 +49,13 @@ namespace JISpeed.Core.Interfaces.IServices
     {
         
         /// 是否成功
-        
         public bool IsSuccess { get; set; }
-
         
         /// 错误信息
-        
         public List<string> Errors { get; set; } = new List<string>();
 
         
         /// ApplicationUser ID
-        
         public string? ApplicationUserId { get; set; }
 
         
@@ -79,5 +82,13 @@ namespace JISpeed.Core.Interfaces.IServices
                 Errors = errors.ToList()
             };
         }
+    }
+
+    public enum UserType
+    {
+        User = 1,
+        Merchant =2,
+        Rider = 3,
+        Admin =4
     }
 }

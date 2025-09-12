@@ -1,0 +1,379 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using JISpeed.Core.Entities.Order;
+using JISpeed.Core.Interfaces.IRepositories.Order;
+using JISpeed.Infrastructure.Data;
+using JISpeed.Infrastructure.Repositories.Common;
+
+namespace JISpeed.Infrastructure.Repositories.Order
+{
+    // 投诉仓储实现 - 处理投诉管理的数据访问操作
+    public class ComplaintRepository : BaseRepository<Complaint, string>, IComplaintRepository
+    {
+        public ComplaintRepository(OracleDbContext context) : base(context)
+        {
+        }
+
+        // 重写：根据主键查询投诉
+        public override async Task<Complaint?> GetByIdAsync(string id)
+        {
+            return await _context.Complaints
+                .Include(c => c.Order)
+                .ThenInclude(o => o.User)
+                .Include(c => c.Complainant)
+                .FirstOrDefaultAsync(c => c.ComplaintId == id);
+        }
+
+        // 重写：查询投诉包含详细信息
+        public override async Task<Complaint?> GetWithDetailsAsync(string id)
+        {
+            return await _context.Complaints
+                .Include(c => c.Order)
+                .ThenInclude(o => o.User)
+                .Include(c => c.Complainant)
+                .Include(c => c.Order)
+                .ThenInclude(o => o.OrderDishes)
+                .ThenInclude(od => od.Dish)
+                .FirstOrDefaultAsync(c => c.ComplaintId == id);
+        }
+
+        // 重写：获取所有投诉
+        public async Task<List<Complaint>> GetAllAsync(int? size, int? page)
+        {
+            int pageSize = size ?? 20;
+            int currentPage = page ?? 1;
+            return await _context.Complaints
+                .Include(c => c.Order)
+                .ThenInclude(o => o.User)
+                .Include(c => c.Complainant)
+                .OrderByDescending(c => c.CreatedAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        // === 业务专用查询方法 ===
+
+        // 根据订单ID查询投诉
+        public async Task<IEnumerable<Complaint>> GetByOrderIdAsync(string orderId)
+        {
+            return await _context.Complaints
+                .Include(c => c.Order)
+                .ThenInclude(o => o.User)
+                .Include(c => c.Complainant)
+                .Where(c => c.OrderId == orderId)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+        }
+
+
+        // 根据用户ID查询投诉列表
+        public async Task<List<Complaint>> GetByUserIdAsync(string userId)
+        {
+            // 只查询Complaint基本信息，不加载Order关联数据
+            return await _context.Complaints
+                .Where(c => c.ComplainantId == userId)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+        }
+
+
+        /// 根据用户ID查询投诉列表（分页）
+
+        /// <param name="userId">用户ID</param>
+        /// <param name="page">页码</param>
+        /// <param name="size">每页大小</param>
+        /// <returns>投诉列表</returns>
+        public async Task<List<Complaint>> GetByUserIdAsync(string userId, int page, int size)
+        {
+            // 只查询Complaint基本信息，不加载Order关联数据
+            var query = _context.Complaints
+                .Where(c => c.ComplainantId == userId)
+                .OrderByDescending(c => c.CreatedAt);
+
+            if (page > 0 && size > 0)
+            {
+                return await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            }
+
+            return await query.ToListAsync();
+        }
+
+
+        /// 根据用户ID获取投诉数量
+
+        /// <param name="userId">用户ID</param>
+        /// <returns>投诉数量</returns>
+        public async Task<int> GetCountByUserIdAsync(string userId)
+        {
+            return await _context.Complaints
+                .Where(c => c.ComplainantId == userId)
+                .CountAsync();
+        }
+
+        public async Task<List<Complaint>> GetByUserIdAndStatusAsync(
+                string userId,
+                int? status,
+                int? size, int? page)
+        {
+            int pageSize = size ?? 20;
+            int currentPage = page ?? 1;
+            return status switch
+            {
+                // 处理中
+                0 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .Where(c => c.ComplainantId == userId && c.CmplStatus == 0)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                // 已解决
+                1 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .Where(c => c.ComplainantId == userId && c.CmplStatus == 1)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                // 已关闭
+                2 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .Where(c => c.ComplainantId == userId && c.CmplStatus == 2)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                //全部
+                _ => await _context.Complaints
+                    .Include(c => c.Order)
+                    .Where(c => c.ComplainantId == userId)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync()
+            };
+        }
+
+        // 根据商家ID查询投诉列表
+        public async Task<List<Complaint>> GetByMerchantIdAsync(string merchantId)
+        {
+            return await _context.Complaints
+                .Include(c => c.Order)
+                .ThenInclude(o => o.User)
+                .Include(c => c.Order)
+                .ThenInclude(o => o.OrderDishes)
+                .ThenInclude(od => od.Dish)
+                .Include(c => c.Complainant)
+                .Where(c => c.Order.MerchantId == merchantId)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+        }
+        public async Task<List<Complaint>> GetByMerchantIdAndStatusAsync(
+            string merchantId,
+            int? status,
+            int? size, int? page)
+        {
+            int pageSize = size ?? 20;
+            int currentPage = page ?? 1;
+            return status switch
+            {
+                // 处理中
+                0 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .Where(c => c.Order.MerchantId == merchantId && c.CmplStatus == 0)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                // 已解决
+                1 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .Where(c => c.Order.MerchantId == merchantId && c.CmplStatus == 1)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                // 已关闭
+                2 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .Where(c => c.Order.MerchantId == merchantId && c.CmplStatus == 2)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                //全部
+                _ => await _context.Complaints
+                    .Include(c => c.Order)
+                    .Where(c => c.Order.MerchantId == merchantId)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync()
+            };
+        }
+
+        public async Task<List<Complaint>> GetAllByFilterAsync(
+            int? status,
+            int? size, int? page)
+        {
+            int pageSize = size ?? 20;
+            int currentPage = page ?? 1;
+            return status switch
+            {
+                // 处理中
+                0 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                // 已解决
+                1 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                // 已关闭
+                2 => await _context.Complaints
+                    .Include(c => c.Order)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(),
+                //全部
+                _ => await _context.Complaints
+                    .Include(c => c.Order)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync()
+            };
+        }
+
+
+        // 根据投诉状态查询
+        public async Task<IEnumerable<Complaint>> GetByStatusAsync(string status)
+        {
+            int statusCode = int.Parse(status);
+            return await _context.Complaints
+                .Include(c => c.Order)
+                .ThenInclude(o => o.User)
+                .Include(c => c.Complainant)
+                .Where(c => c.CmplStatus == statusCode)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+        }
+
+        // 根据投诉类型查询
+        public async Task<IEnumerable<Complaint>> GetByTypeAsync(string type)
+        {
+            int roleCode = int.Parse(type);
+            return await _context.Complaints
+                .Include(c => c.Order)
+                .ThenInclude(o => o.User)
+                .Include(c => c.Complainant)
+                .Where(c => c.CmplRole == roleCode)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+        }
+
+        // 根据投诉时间范围查询
+        public async Task<IEnumerable<Complaint>> GetByComplaintTimeRangeAsync(DateTime startTime, DateTime endTime)
+        {
+            return await _context.Complaints
+                .Include(c => c.Order)
+                .ThenInclude(o => o.User)
+                .Include(c => c.Complainant)
+                .Where(c => c.CreatedAt >= startTime && c.CreatedAt <= endTime)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+        }
+
+        // 根据处理时间范围查询 - 由于实体没有处理时间，使用创建时间替代
+        public async Task<IEnumerable<Complaint>> GetByHandleTimeRangeAsync(DateTime startTime, DateTime endTime)
+        {
+            return await _context.Complaints
+                .Include(c => c.Order)
+                .ThenInclude(o => o.User)
+                .Include(c => c.Complainant)
+                .Where(c => c.CreatedAt >= startTime && c.CreatedAt <= endTime)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+        }
+
+        // 获取待处理的投诉
+        public async Task<IEnumerable<Complaint>> GetPendingComplaintsAsync()
+        {
+            return await _context.Complaints
+                .Include(c => c.Order)
+                .ThenInclude(o => o.User)
+                .Include(c => c.Complainant)
+                .Where(c => c.CmplStatus == 1 || c.CmplStatus == 2) // 1: 待处理, 2: 处理中
+                .OrderBy(c => c.CreatedAt)
+                .ToListAsync();
+        }
+
+        // 获取已处理的投诉
+        public async Task<IEnumerable<Complaint>> GetHandledComplaintsAsync()
+        {
+            return await _context.Complaints
+                .Include(c => c.Order)
+                .ThenInclude(o => o.User)
+                .Include(c => c.Complainant)
+                .Where(c => c.CmplStatus == 3 || c.CmplStatus == 4) // 3: 已解决, 4: 已关闭
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+        }
+
+        // 根据关键字搜索投诉内容
+        public async Task<IEnumerable<Complaint>> SearchByContentAsync(string keyword)
+        {
+            return await _context.Complaints
+                .Include(c => c.Order)
+                .ThenInclude(o => o.User)
+                .Include(c => c.Complainant)
+                .Where(c => c.CmplDescription != null && c.CmplDescription.Contains(keyword))
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+        }
+
+        // 根据关键字搜索处理结果 - 由于实体没有处理结果字段，搜索描述
+        public async Task<IEnumerable<Complaint>> SearchByHandleResultAsync(string keyword)
+        {
+            return await _context.Complaints
+                .Include(c => c.Order)
+                .ThenInclude(o => o.User)
+                .Include(c => c.Complainant)
+                .Where(c => c.CmplDescription != null && c.CmplDescription.Contains(keyword))
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+        }
+
+        // 统计投诉状态分布
+        public async Task<Dictionary<string, int>> GetStatusCountAsync()
+        {
+            var statusCounts = await _context.Complaints
+                .GroupBy(c => c.CmplStatus)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            return statusCounts.ToDictionary(sc => sc.Status.ToString(), sc => sc.Count);
+        }
+
+        // 统计投诉类型分布
+        public async Task<Dictionary<string, int>> GetTypeCountAsync()
+        {
+            var typeCounts = await _context.Complaints
+                .GroupBy(c => c.CmplRole)
+                .Select(g => new { Type = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            return typeCounts.ToDictionary(tc => tc.Type.ToString(), tc => tc.Count);
+        }
+    }
+}

@@ -33,6 +33,6 @@ namespace JISpeed.Core.Entities.Rider
             ShiftEnd = shiftEnd;
         }
 
-        private Schedule() { }
+        public Schedule() { }
     }
 }

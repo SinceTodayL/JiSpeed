@@ -49,11 +49,11 @@ namespace JISpeed.Core.Entities.Order
             ApplicationId = applicationId;
             RefundAmount = refundAmount;
             Reason = reason;
-            ApplyAt = DateTime.UtcNow; //默认申请时间为当前时间
+            ApplyAt = DateTime.Now; //默认申请时间为当前时间
             AuditStatus = 0; //默认审核状态为未审核
             FinishAt = null; //默认退款完成时间为空
         }
 
-        private Refund() { }
+        public Refund() { }
     }
 }

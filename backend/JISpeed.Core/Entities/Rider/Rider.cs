@@ -27,7 +27,7 @@ namespace JISpeed.Core.Entities.Rider
         
         //身份验证用户关联
         public string? ApplicationUserId { get; set; }
-        
+
         //导航属性
         [ForeignKey("ApplicationUserId")]
         public virtual ApplicationUser? ApplicationUser { get; set; }
@@ -35,7 +35,8 @@ namespace JISpeed.Core.Entities.Rider
         public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
         public virtual ICollection<Performance> Performances { get; set; } = new List<Performance>();
         public virtual ICollection<RiderSchedule> RiderSchedules { get; set; } = new List<RiderSchedule>();
-        
+        public virtual ICollection<RiderLocation> Locations { get; set; } = new List<RiderLocation>();
+
         //主构造函数
         public Rider(string riderId, string name, string phoneNumber, string? applicationUserId = null)
         {

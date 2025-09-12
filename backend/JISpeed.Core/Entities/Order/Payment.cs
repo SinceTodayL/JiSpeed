@@ -42,6 +42,6 @@ namespace JISpeed.Core.Entities.Order
             PayTime = null; //默认支付时间为空
         }
 
-        private Payment() { }
+        public Payment() { }
     }
 }

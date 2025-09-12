@@ -48,6 +48,6 @@ namespace JISpeed.Core.Entities.Reconciliation
             IsResolved = isResolved;
         }
 
-        private Reconciliation() { }
+        public Reconciliation() { }
     }
 }

@@ -20,7 +20,8 @@ namespace JISpeed.Core.Entities.Junctions
         [StringLength(32)]
         [Column(TypeName = "CHAR(32)")]
         public required string DishId { get; set; } //菜品ID pk,fk->Dish(dishId)
-
+        
+        public required int Quantity { get; set; } // 订单中该菜品的数量
         //导航属性
         [ForeignKey("OrderId")]
         public virtual required Order Order { get; set; }
@@ -28,13 +29,14 @@ namespace JISpeed.Core.Entities.Junctions
         [ForeignKey("DishId")]
         public virtual required Dish Dish { get; set; }
 
-        public OrderDish(string orderId, string dishId)
+        public OrderDish(string orderId, string dishId,int quantity)
         {
             OrderId = orderId;
             DishId = dishId;
+            Quantity = quantity;
         }
 
-        private OrderDish() { }
+        public OrderDish() { }
 
     }
 }

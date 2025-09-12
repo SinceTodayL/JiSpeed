@@ -16,7 +16,7 @@ namespace JISpeed.Application.Services.Email
     {
         private readonly ILogger<EmailService> _logger;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SmtpSettings _smtpSettings;
+        private readonly SmtpSettings? _smtpSettings;
 
         public EmailService(
             ILogger<EmailService> logger,
@@ -34,15 +34,13 @@ namespace JISpeed.Application.Services.Email
             {
                 // 1. 生成邮箱验证Token并编码
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                _logger.LogInformation("Token生成成功:{Token}",token);
                 var encodedToken = WebUtility.UrlEncode(token);
-                _logger.LogInformation("Token编码成功:{EncodedToken}",encodedToken);
-
 
                 // 2. 构造验证链接
                 string verificationLink =
                     $"{_smtpSettings.FrontendBaseUrl}/verify-email?userId={user.Id}&token={encodedToken}";
-                _logger.LogInformation("验证链接构造成功");
+                _logger.LogInformation($"验证链接构造成功，VerificationLink：{verificationLink}");
+                
 
                 // 3. 构建HTML邮件内容（目前先用text来代替）
                 string htmlBody = $"欢迎注册济时达平台！\n\n" +
@@ -117,7 +115,7 @@ namespace JISpeed.Application.Services.Email
         }
     
 
-    public async Task<bool> IsValidEmailAsync(string email)
+    public bool IsValidEmailAsync(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
                 return false;
@@ -146,7 +144,7 @@ namespace JISpeed.Application.Services.Email
 
             try
             {
-                return Regex.IsMatch(email,
+                return  Regex.IsMatch(email,
                     @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
                     RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
             }

@@ -18,7 +18,7 @@ namespace JISpeed.Api.Common
         public T? Data { get; set; }
 
         //服务器响应时间戳（UTC毫秒）
-        public long Timestamp { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        public long Timestamp { get; set; } = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
         //创建成功响应
         //data: 业务数据

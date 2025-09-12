@@ -1,10 +1,17 @@
 using JISpeed.Core.Configurations;
 using JISpeed.Core.Entities.Common;
 using JISpeed.Core.Interfaces.IServices;
+using JISpeed.Core.Interfaces.IRepositories;
+using JISpeed.Core.Interfaces.IRepositories.Admin;
+using JISpeed.Core.Interfaces.IRepositories.Common;
+using JISpeed.Core.Interfaces.IRepositories.Merchant;
+using JISpeed.Core.Interfaces.IRepositories.Rider;
+using JISpeed.Core.Interfaces.IRepositories.User;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using JISpeed.Infrastructure.Redis;
 using Newtonsoft.Json;
+
 
 
 namespace JISpeed.Application.Services.Common
@@ -13,53 +20,66 @@ namespace JISpeed.Application.Services.Common
     {
         private readonly IEmailService _emailService;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IUserService _userService;
         private readonly ILogger<RegistrationService> _logger;
         private readonly RedisService _redisService;
-        private readonly IRiderService _riderService;
-        private readonly IMerchantService _merchantService;
-        private readonly IAdminService _adminService;
+        private readonly IRiderRepository _riderRepository;
+        private readonly IMerchantRepository _merchantRepository;
+        private readonly IAdminRepository _adminRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly IApplicationUserRepository _applicationUserRepository;
 
         public RegistrationService(
             IEmailService emailService,
             ILogger<RegistrationService> logger,
-            IUserService userService,
             UserManager<ApplicationUser> userManager,
             RedisService redisService,
-            IRiderService riderService,
-            IMerchantService merchantService,
-            IAdminService adminService
+            IRiderRepository riderRepository,
+            IMerchantRepository merchantRepository,
+            IAdminRepository adminRepository,
+            IUserRepository userRepository,
+            IApplicationUserRepository applicationUserRepository
             )
         {
             _emailService = emailService;
             _logger = logger;
             _userManager = userManager;
             _redisService = redisService;
-            _userService = userService;
-            _riderService = riderService;
-            _merchantService = merchantService;
-            _adminService = adminService;
+            _riderRepository = riderRepository;
+            _merchantRepository = merchantRepository;
+            _adminRepository = adminRepository;
+            _userRepository = userRepository;
+            _applicationUserRepository = applicationUserRepository;
         }
 
         // 预注册
-        public async Task<PreRegistrationResult> PreRegisterUserAsync(ApplicationUser newUser, string passwordHash)
+        public async Task<PreRegistrationResult> PreRegisterUserAsync(
+            string passwordHash, string email,
+            string userName, string? phoneNumber,
+            string id, int userType,
+            DateTime createdAt
+        )
         {
             try
             {
                 // 1. 参数验证
-                if (newUser.Email == null)
+
+                var existingEmail = await _applicationUserRepository.GetByEmailAndUserTypeAsync(email, userType);
+                var existingUser = await _userManager.FindByNameAsync(userName);
+
+                if (existingEmail!=null || existingUser != null)
                 {
-                    _logger.LogWarning("邮箱为空");
-                    return PreRegistrationResult.Failure("邮箱为空");
-                }
-                var existingUser = await _userManager.FindByEmailAsync(newUser.Email);
-                if (existingUser != null)
-                {
-                    _logger.LogWarning("用户已存在: {Email}", newUser.Email);
+                    _logger.LogWarning("用户已存在: {Email}", email);
                     return PreRegistrationResult.Failure("用户存在");
                 }
-
+               
                 // 2. 发送验证邮箱
+                var newUser = new ApplicationUser(
+                    id: id,
+                    userName: userName,
+                    userType: userType,
+                    email: email,
+                    createdAt: createdAt,
+                    phoneNumber: phoneNumber);
                 var token = await _emailService.SendVerificationEmailAsync(newUser);
                 if (token == null)
                 {
@@ -72,7 +92,7 @@ namespace JISpeed.Application.Services.Common
                 {
                     User = newUser,
                     PasswordHash = passwordHash, // 存储哈希而非明文
-                    token = token
+                    Token = token
                 };
 
                 // 5. 存入Redis，准备验证
@@ -121,11 +141,14 @@ namespace JISpeed.Application.Services.Common
                 }
 
 
-                // 4. 解码令牌并验证（使用数据库用户对象）
-                if (token != preRegData.token)
+                // 4. 验证令牌（忽略URL传输中可能改变的字符，包括+转换成的空格）
+                var sanitizedToken = token.Replace(" ", "").Replace("+", "").Replace("/", "").Replace("=", "");
+                var sanitizedPreToken = preRegData.Token.Replace("+", "").Replace("/", "").Replace("=", "");
+
+                if (sanitizedToken != sanitizedPreToken)
                 {
                     // 输出具体错误原因（关键调试信息）
-                    _logger.LogWarning("令牌验证失败，用户ID: {UserId}，token：{Token}，preToken:{pretoken}", userId, token,preRegData.token);
+                    _logger.LogWarning("令牌验证失败，用户ID: {UserId}，token：{Token}，preToken:{pretoken}", userId, token,preRegData.Token);
                     return RegistrationResult.Failure("令牌验证失败");
                 }
                 // 5. 完善用户信息并保存到数据库
@@ -182,24 +205,24 @@ namespace JISpeed.Application.Services.Common
                 _logger.LogInformation("开始创建业务实体, UserType: {UserType}, ApplicationUserId: {UserId}",
                     user.UserType, user.Id);
                 // 顾客
-                if (user.UserType == 1)
+                if (user.UserType == (int)UserType.User)
                 {
-                    await _userService.CreateUserEntityAsync(user);
+                    await _userRepository.CreateFromApplicationUserAsync(user);
                 }
                 // 商家
-                else if (user.UserType == 2)
+                else if (user.UserType == (int)UserType.Merchant)
                 {
-                    await _merchantService.CreateUserEntityAsync(user);
+                    await _merchantRepository.CreateFromApplicationUserAsync(user);
                 }
                 // 骑手
-                else if (user.UserType == 3)
+                else if (user.UserType == (int)UserType.Rider)
                 {
-                    await _riderService.CreateUserEntityAsync(user);
+                    await _riderRepository.CreateFromApplicationUserAsync(user);
                 }
                 // 管理员
-                else if (user.UserType == 4)
+                else if (user.UserType == (int)UserType.Admin)
                 {
-                    await _adminService.CreateUserEntityAsync(user);
+                    await _adminRepository.CreateFromApplicationUserAsync(user);
                 }
                 else
                 {

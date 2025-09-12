@@ -21,6 +21,9 @@ namespace JISpeed.Core.Entities.Merchant
 
         public required DateTime SubmittedAt { get; set; } //提交时间
 
+        [StringLength(65535)]
+        public string? ApplicationMaterials { get; set; } //申请材料
+
         public required int AuditStatus { get; set; } //审核状态
 
         public DateTime? AuditAt { get; set; } //审核时间 (可为空)
@@ -48,10 +51,10 @@ namespace JISpeed.Core.Entities.Merchant
             ApplyId = Guid.NewGuid().ToString("N"); //生成唯一的申请ID
             CompanyName = companyName;
             MerchantId = merchantId;
-            SubmittedAt = DateTime.UtcNow; //设置提交时间为当前时间
+            SubmittedAt = DateTime.Now; //设置提交时间为当前时间
             AuditStatus = 0; //默认审核状态为0（待审核）
         }
 
-        private Application() { }
+        public Application() { }
     }
 }

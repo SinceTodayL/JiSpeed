@@ -8,10 +8,10 @@ using JISpeed.Core.Exceptions;
 
 namespace JISpeed.Api.Middleware
 {
-    /// <summary>
+
     /// 全局异常处理中间件
     /// 统一处理应用程序中的所有未捕获异常，并返回标准化的API响应格式
-    /// </summary>
+
     public class GlobalExceptionMiddleware
     {
         private readonly RequestDelegate _next;

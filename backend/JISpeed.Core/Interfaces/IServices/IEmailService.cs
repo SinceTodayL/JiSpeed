@@ -6,6 +6,6 @@ namespace JISpeed.Core.Interfaces.IServices
     public interface IEmailService
     {
         Task <string?> SendVerificationEmailAsync(ApplicationUser newUser);
-        Task<bool> IsValidEmailAsync(string email);
+        bool IsValidEmailAsync(string email);
     }
 }

@@ -1,127 +1,130 @@
-using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace JISpeed.Api.DTOs
 {
 
-    // 用户详细信息DTO - 用于返回给前端的用户信息
+    /// 用户详细信息DTO
 
     public class UserDetailDto
     {
-
-        // 用户ID
-
         public string UserId { get; set; } = string.Empty;
-
-
-        // 用户昵称
-
         public string Nickname { get; set; } = string.Empty;
-
-
-        // 头像URL
-
         public string AvatarUrl { get; set; } = string.Empty;
-
-
-        // 性别：1-男性，2-女性，3-其他
-
         public int Gender { get; set; }
-
-
-        // 生日
-
         public DateTime? Birthday { get; set; }
-
-
-        // 用户等级
-
         public int Level { get; set; }
-
-
-        // 默认地址信息
-
-        public AddressDto? DefaultAddress { get; set; }
-
-
-        // 用户注册的身份验证账号信息
-
         public string? UserName { get; set; }
-
-
-        // 用户邮箱
-
         public string? Email { get; set; }
-
-
-        // 手机号
-
         public string? PhoneNumber { get; set; }
-
-
-        // 统计信息
-
+        public AddressDto? DefaultAddress { get; set; }
         public UserStatsDto Stats { get; set; } = new UserStatsDto();
     }
 
 
-    // 地址信息DTO
+    /// 地址信息DTO
 
     public class AddressDto
     {
-
-        // 地址ID
-
         public string AddressId { get; set; } = string.Empty;
-
-
-        // 收货人姓名
-
         public string ReceiverName { get; set; } = string.Empty;
-
-
-        // 收货人手机号
-
         public string ReceiverPhone { get; set; } = string.Empty;
-
-
-        // 详细地址
-
         public string DetailAddress { get; set; } = string.Empty;
-
-
-        // 地址标签（如：家、公司等）
-
-        public string? Label { get; set; }
     }
 
 
-    // 用户统计信息DTO
+    /// 用户统计信息DTO
 
     public class UserStatsDto
     {
-
-        // 订单总数
-
         public int TotalOrders { get; set; }
-
-
-        // 收藏数量
-
         public int FavoriteCount { get; set; }
-
-
-        // 购物车商品数量
-
         public int CartItemCount { get; set; }
-
-
-        // 可用优惠券数量
-
         public int AvailableCouponCount { get; set; }
-
-
-        // 地址数量
-
         public int AddressCount { get; set; }
+    }
+
+
+    /// 用户收藏DTO
+
+    public class UserFavoriteDto
+    {
+        public string DishId { get; set; } = string.Empty;
+        public string MerchantId { get; set; } = string.Empty;
+        public string FavorAt { get; set; } = string.Empty;
+    }
+
+
+    /// 用户地址DTO
+
+    public class UserAddressDto
+    {
+        public string AddressId { get; set; } = string.Empty;
+        public string ReceiverName { get; set; } = string.Empty;
+        public string ReceiverPhone { get; set; } = string.Empty;
+        public string DetailedAddress { get; set; } = string.Empty;
+        public int IsDefault { get; set; }
+    }
+
+
+    /// 用户购物车项DTO
+
+    public class UserCartItemDto
+    {
+        public string DishId { get; set; } = string.Empty;
+        public string CartId { get; set; } = string.Empty;
+        public string AddedAt { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+        public string MerchantId { get; set; } = string.Empty;
+
+        public int Quantity { get; set; } = 1;
+    }
+
+
+    /// 用户评论DTO
+
+    public class UserReviewDto
+    {
+        public string ReviewId { get; set; } = string.Empty;
+        public string OrderId { get; set; } = string.Empty;
+        public string DishId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+        public int Rating { get; set; }
+        public string Content { get; set; } = string.Empty;
+        public int IsAnonymous { get; set; }
+        public string ReviewAt { get; set; } = string.Empty;
+    }
+
+
+    /// 用户投诉DTO
+
+    public class UserComplaintDto
+    {
+        public string ComplaintId { get; set; } = string.Empty;
+        public string OrderId { get; set; } = string.Empty;
+        public string ComplainantId { get; set; } = string.Empty;
+        public int Role { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string CreatedAt { get; set; } = string.Empty;
+    }
+
+
+    /// 用户配置文件DTO
+
+    public class UserProfileDto
+    {
+        public string UserId { get; set; } = string.Empty;
+        public string Account { get; set; } = string.Empty;
+        public int Status { get; set; }
+        public string CreatedAt { get; set; } = string.Empty;
+        public string? DeletedAt { get; set; }
+        public string LastLoginAt { get; set; } = string.Empty;
+        public string LastLoginIp { get; set; } = string.Empty;
+        public string NickName { get; set; } = string.Empty;
+        public string AvatarUrl { get; set; } = string.Empty;
+        public int Gender { get; set; }
+        public string? Birthday { get; set; }
+        public int Level { get; set; }
+        public string? DefaultAddrId { get; set; }
     }
 }

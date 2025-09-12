@@ -15,7 +15,7 @@ namespace JISpeed.Core.Entities.Common
         public int Status { get; set; } = 1;
         
         // 创建时间
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
         
         
         // 导航属性 - 各类型的具体实体

@@ -49,6 +49,6 @@ namespace JISpeed.Core.Entities.Merchant
             SettledAt = settledAt;
         }
 
-        private Settlement() { }
+        public Settlement() { }
     }
 }

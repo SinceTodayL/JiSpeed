@@ -48,7 +48,7 @@ namespace JISpeed.Core.Constants
         #endregion
 
 
-        #region 订单 (10000-10999)：订单相关的错误
+        #region 骑手 (10000-10999)：骑手相关的错误
         // 骑手未找到：未找到请求的骑手ID
         public const int RiderNotFound = 10001;
 

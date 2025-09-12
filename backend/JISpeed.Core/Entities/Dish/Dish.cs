@@ -27,6 +27,9 @@ namespace JISpeed.Core.Entities.Dish
         [StringLength(20)]
         public required string DishName { get; set; } //菜品名
 
+        [StringLength(65535)]
+        public string? Description { get; set; } //菜品描述
+        
         [Column(TypeName = "DECIMAL(10, 2)")]
         public required decimal Price { get; set; } //售价
 
@@ -37,6 +40,8 @@ namespace JISpeed.Core.Entities.Dish
         public string? CoverUrl { get; set; } //封面图URL
 
         public required int MonthlySales { get; set; } //月销量
+
+        public required int StockQuantity { get; set; } //库存数量
 
         [Column(TypeName = "DECIMAL(5, 2)")]
         public required decimal Rating { get; set; } //好评率
@@ -79,6 +84,6 @@ namespace JISpeed.Core.Entities.Dish
             ReviewQuantity = reviewQuantity;
         }
         
-        private Dish() { } // EF Core 需要一个无参构造函数
+        public Dish() { } // EF Core 需要一个无参构造函数
     }
 }

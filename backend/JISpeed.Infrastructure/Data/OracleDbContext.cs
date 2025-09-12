@@ -67,6 +67,7 @@ namespace JISpeed.Infrastructure.Data
         public DbSet<RiderSchedule> RiderSchedules { get; set; }
         public DbSet<Schedule> Schedules { get; set; }
         public DbSet<ScheduleAttendance> ScheduleAttendances { get; set; }
+        public DbSet<RiderLocation> RiderLocations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -318,6 +319,13 @@ namespace JISpeed.Infrastructure.Data
                 .HasForeignKey<Order>(o => o.AssignId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            // Order 和 Merchant 多对一关系
+            modelBuilder.Entity<Merchant>()
+                .HasMany(m => m.Orders)
+                .WithOne(o => o.Merchant)
+                .HasForeignKey(o => o.MerchantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             // User 和 Coupon 一对多关系
             modelBuilder.Entity<User>()
                 .HasMany(u => u.Coupons)
@@ -484,7 +492,8 @@ namespace JISpeed.Infrastructure.Data
             modelBuilder.Entity<RiderSchedule>().ToTable("RIDER_SCHEDULE");
             modelBuilder.Entity<Schedule>().ToTable("SCHEDULE");
             modelBuilder.Entity<ScheduleAttendance>().ToTable("SCHEDULE_ATTENDANCE");
-
+            modelBuilder.Entity<RiderLocation>().ToTable("RIDER_LOCATION");
+            
             // 配置 Oracle 特定的列类型
             modelBuilder.Entity<User>()
                 .Property(u => u.UserId)
@@ -507,7 +516,7 @@ namespace JISpeed.Infrastructure.Data
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             // 在保存前处理审计信息等
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             
             // 遍历所有被添加或修改的实体
             // 如果需要自动添加审计信息，可以在这里处理

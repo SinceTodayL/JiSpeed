@@ -46,6 +46,6 @@ namespace JISpeed.Core.Entities.Admin
             TargetRole = targetRole;
         }
 
-        private Announcement() { }
+        public Announcement() { }
     }
 }

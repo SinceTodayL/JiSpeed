@@ -31,6 +31,6 @@ namespace JISpeed.Core.Entities.Rider
             ScheduleId = scheduleId;
         }
 
-        private RiderSchedule() { } 
+        public RiderSchedule() { } 
     }
 }
