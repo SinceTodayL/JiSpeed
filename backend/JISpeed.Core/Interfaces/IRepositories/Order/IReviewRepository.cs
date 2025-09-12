@@ -13,6 +13,9 @@ namespace JISpeed.Core.Interfaces.IRepositories.Order
         // 根据订单ID查询评价
         Task<Review?> GetByOrderIdAsync(string orderId);
 
+        // 批量根据订单ID查询评价
+        Task<List<Review>> GetByOrderIdsAsync(List<string> orderIds);
+
         // 根据用户ID查询评价列表
         Task<IEnumerable<Review>> GetByUserIdAsync(string userId);
 

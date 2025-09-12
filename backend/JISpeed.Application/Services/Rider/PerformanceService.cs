@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using JISpeed.Core.Entities.Rider;
 using JISpeed.Core.Interfaces.IRepositories.Rider;
+using JISpeed.Core.Interfaces.IRepositories.Order;
 using JISpeed.Core.Interfaces.IServices;
 using JISpeed.Core.Exceptions;
 using JISpeed.Core.Constants;
@@ -16,17 +17,20 @@ namespace JISpeed.Application.Services.Rider
         private readonly IPerformanceRepository _performanceRepository;
         private readonly IRiderRepository _riderRepository;
         private readonly IAssignmentRepository _assignmentRepository;
+        private readonly IReviewRepository _reviewRepository;
         private readonly ILogger<PerformanceService> _logger;
 
         public PerformanceService(
             IPerformanceRepository performanceRepository,
             IRiderRepository riderRepository,
             IAssignmentRepository assignmentRepository,
+            IReviewRepository reviewRepository,
             ILogger<PerformanceService> logger)
         {
             _performanceRepository = performanceRepository;
             _riderRepository = riderRepository;
             _assignmentRepository = assignmentRepository;
+            _reviewRepository = reviewRepository;
             _logger = logger;
         }
 
@@ -55,7 +59,7 @@ namespace JISpeed.Application.Services.Rider
                 // 标准化月份（只保留年月，日设为1）
                 var standardizedMonth = new DateTime(month.Year, month.Month, 1);
 
-                // 获取绩效数据
+                // 直接获取Performance表中的数据
                 var performance = await _performanceRepository.GetByCompositeKeyAsync(riderId, standardizedMonth);
 
                 _logger.LogInformation("成功获取骑手月度绩效, RiderId: {RiderId}, Month: {Month}, Found: {Found}",
@@ -102,13 +106,22 @@ namespace JISpeed.Application.Services.Rider
                 var endMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
                 var startMonth = endMonth.AddMonths(-monthCount + 1);
 
-                // 获取绩效趋势数据
-                var performances = await _performanceRepository.GetByRiderIdAndMonthRangeAsync(riderId, startMonth, endMonth);
+                // 直接查询Performance表中的数据
+                var performances = new List<Performance>();
+
+                for (var month = startMonth; month <= endMonth; month = month.AddMonths(1))
+                {
+                    var performance = await _performanceRepository.GetByCompositeKeyAsync(riderId, month);
+                    if (performance != null)
+                    {
+                        performances.Add(performance);
+                    }
+                }
 
                 _logger.LogInformation("成功获取骑手绩效趋势, RiderId: {RiderId}, MonthCount: {MonthCount}, RecordCount: {RecordCount}",
                     riderId, monthCount, performances.Count());
 
-                return performances;
+                return performances.OrderByDescending(p => p.StatsMonth);
             }
             catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
             {
@@ -176,7 +189,7 @@ namespace JISpeed.Application.Services.Rider
                 // 标准化月份（只保留年月，日设为1）
                 var standardizedMonth = new DateTime(month.Year, month.Month, 1);
 
-                // 获取绩效优秀骑手列表
+                // 直接获取Performance表中的数据
                 var topPerformers = await _performanceRepository.GetTopPerformersByMonthAsync(standardizedMonth, topCount);
 
                 _logger.LogInformation("成功获取绩效优秀骑手列表, Month: {Month}, TopCount: {TopCount}, RecordCount: {RecordCount}",
@@ -184,7 +197,7 @@ namespace JISpeed.Application.Services.Rider
 
                 return topPerformers;
             }
-            catch (Exception ex) when (!(ex is ValidationException))
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "获取绩效优秀骑手列表时发生异常, Month: {Month}, TopCount: {TopCount}",
                     month.ToString("yyyy-MM"), topCount);
@@ -202,7 +215,7 @@ namespace JISpeed.Application.Services.Rider
                 // 标准化月份（只保留年月，日设为1）
                 var standardizedMonth = new DateTime(month.Year, month.Month, 1);
 
-                // 获取月度绩效概览
+                // 直接获取Performance表中的概览数据
                 var overview = await _performanceRepository.GetMonthlyPerformanceOverviewAsync(standardizedMonth);
 
                 _logger.LogInformation("成功获取月度绩效概览, Month: {Month}", standardizedMonth.ToString("yyyy-MM"));
@@ -250,7 +263,10 @@ namespace JISpeed.Application.Services.Rider
 
                 // 获取该月骑手的所有订单分配
                 var allAssignments = await _assignmentRepository.GetByRiderIdAsync(riderId);
-                var monthlyAssignments = allAssignments.Where(a => a.AssignedAt >= startDate && a.AssignedAt <= endDate).ToList();
+                var monthlyAssignments = allAssignments
+                     .Where(a => a.AssignedAt >= startDate && a.AssignedAt <= endDate)
+                     .Where(a => a.AcceptedStatus == 1) // 只计算已接单的订单
+                     .ToList();
 
                 // 计算绩效指标
                 int totalOrders = monthlyAssignments.Count;
@@ -265,33 +281,52 @@ namespace JISpeed.Application.Services.Rider
                     var onTimeOrders = monthlyAssignments.Count(a => a.TimeOut == null || a.TimeOut <= 0);
                     onTimeRate = (decimal)onTimeOrders / totalOrders * 100;
 
-                    // 计算收入 - 从订单中获取实际金额
-                    income = monthlyAssignments.Sum(a => a.Order?.OrderAmount ?? 0) * 0.3m; // 假设骑手获得订单金额的30%
+                    // 计算收入 - 从订单中获取实际金额，骑手获得订单金额的10%
+                    income = monthlyAssignments.Sum(a => a.Order?.OrderAmount ?? 0) * 0.1m;
 
-                    // 获取订单评价数据
-                    var orderIds = monthlyAssignments.Select(a => a.Order?.OrderId).Where(id => id != null).ToList();
+                    // 获取订单评价数据 - 优化：使用批量查询替代N+1查询
+                    var orderIds = monthlyAssignments
+                        .Select(a => a.Order?.OrderId)
+                        .Where(id => id != null)
+                        .Cast<string>()
+                        .ToList();
 
-                    // 这里应该调用评价仓储来获取这些订单的评价数据
-                    // var reviews = await _reviewRepository.GetReviewsByOrderIdsAsync(orderIds);
+                    if (orderIds.Any())
+                    {
+                        // 优化：批量查询所有评价，避免N+1查询
+                        var reviews = await _reviewRepository.GetByOrderIdsAsync(orderIds);
 
-                    // 由于可能没有评价仓储，我们暂时使用模拟数据
-                    // 在实际实现中，应该基于真实评价数据计算
-                    int goodReviews = (int)(totalOrders * 0.85); // 假设85%的订单有好评
-                    int badReviews = (int)(totalOrders * 0.05); // 假设5%的订单有差评
+                        // 计算好评率和差评率
+                        if (reviews.Any())
+                        {
+                            // 4-5星为好评，1-2星为差评，3星为中性评价
+                            var goodReviews = reviews.Count(r => r.Rating >= 4);
+                            var badReviews = reviews.Count(r => r.Rating <= 2);
+                            var totalReviews = reviews.Count;
 
-                    goodReviewRate = totalOrders > 0 ? (decimal)goodReviews / totalOrders * 100 : 0;
-                    badReviewRate = totalOrders > 0 ? (decimal)badReviews / totalOrders * 100 : 0;
+                            goodReviewRate = (decimal)goodReviews / totalReviews * 100;
+                            badReviewRate = (decimal)badReviews / totalReviews * 100;
+
+                            _logger.LogInformation("骑手 {RiderId} 在 {Month} 的评价统计: 总评价数={TotalReviews}, 好评数={GoodReviews}, 差评数={BadReviews}, 好评率={GoodReviewRate}%, 差评率={BadReviewRate}%",
+                                riderId, standardizedMonth.ToString("yyyy-MM"), totalReviews, goodReviews, badReviews, goodReviewRate, badReviewRate);
+                        }
+                        else
+                        {
+                            _logger.LogInformation("骑手 {RiderId} 在 {Month} 没有找到任何评价数据", riderId, standardizedMonth.ToString("yyyy-MM"));
+                            goodReviewRate = 0;
+                            badReviewRate = 0;
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogInformation("骑手 {RiderId} 在 {Month} 没有关联的订单", riderId, standardizedMonth.ToString("yyyy-MM"));
+                        goodReviewRate = 0;
+                        badReviewRate = 0;
+                    }
                 }
 
                 // 创建或更新绩效记录
-                var performance = existingPerformance ?? new Performance(
-                    riderId,
-                    standardizedMonth,
-                    totalOrders,
-                    onTimeRate,
-                    goodReviewRate,
-                    badReviewRate,
-                    income)
+                var performance = existingPerformance ?? new Performance()
                 {
                     RiderId = riderId,
                     StatsMonth = standardizedMonth,
@@ -303,7 +338,11 @@ namespace JISpeed.Application.Services.Rider
                     Rider = rider
                 };
 
-                if (existingPerformance != null)
+                if (existingPerformance == null)
+                {
+                    await _performanceRepository.CreateAsync(performance);
+                }
+                else
                 {
                     // 更新现有记录
                     existingPerformance.TotalOrders = totalOrders;
@@ -311,19 +350,12 @@ namespace JISpeed.Application.Services.Rider
                     existingPerformance.GoodReviewRate = goodReviewRate;
                     existingPerformance.BadReviewRate = badReviewRate;
                     existingPerformance.Income = income;
-
-                    performance = await _performanceRepository.UpdateAsync(existingPerformance);
-                    await _performanceRepository.SaveChangesAsync();
-                }
-                else
-                {
-                    // 创建新记录
-                    performance = await _performanceRepository.CreateAsync(performance);
-                    await _performanceRepository.SaveChangesAsync();
+                    await _performanceRepository.UpdateAsync(existingPerformance);
+                    performance = existingPerformance;
                 }
 
-                _logger.LogInformation("成功计算并生成月度绩效数据, RiderId: {RiderId}, Month: {Month}, TotalOrders: {TotalOrders}",
-                    riderId, standardizedMonth.ToString("yyyy-MM"), totalOrders);
+                _logger.LogInformation("成功计算并生成月度绩效数据, RiderId: {RiderId}, Month: {Month}, TotalOrders: {TotalOrders}, Income: {Income}",
+                    riderId, standardizedMonth.ToString("yyyy-MM"), totalOrders, income);
 
                 return performance;
             }

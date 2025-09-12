@@ -74,6 +74,22 @@ namespace JISpeed.Infrastructure.Repositories.Order
                 .FirstOrDefaultAsync(r => r.OrderId == orderId);
         }
 
+        // 批量根据订单ID查询评价
+        public async Task<List<Review>> GetByOrderIdsAsync(List<string> orderIds)
+        {
+            if (orderIds == null || !orderIds.Any())
+                return new List<Review>();
+
+            return await _context.Reviews
+                .Include(r => r.Order)
+                .ThenInclude(o => o.User)
+                .Include(r => r.User)
+                .Include(r => r.DishReviews)
+                .ThenInclude(dr => dr.Dish)
+                .Where(r => orderIds.Contains(r.OrderId))
+                .ToListAsync();
+        }
+
         // 根据用户ID查询评价列表
         public async Task<IEnumerable<Review>> GetByUserIdAsync(string userId)
         {
