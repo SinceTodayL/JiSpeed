@@ -160,10 +160,6 @@ namespace JISpeed.Api.DTOs
         public required string CategoryId { get; set; }
         // 分类名称
         public required string CategoryName { get; set; }
-        // 父级分类ID (可为空，表示顶级分类)
-        public string? ParentId { get; set; }
-        //排序顺序
-        public required int SortOrder { get; set; }
     }
 
     public class SettlementDetailDto

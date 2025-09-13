@@ -279,6 +279,27 @@ namespace JISpeed.Application.Services.Merchant
             }
         }
 
+        public async  Task<List<Category>> GetCategory()
+        {
+            try
+            {
+
+                var data = await _categoryRepository.GetAllAsync();
+
+                if (data == null||!data.Any())
+                {
+                   
+                    throw new NotFoundException(ErrorCodes.ResourceNotFound, "无相关数据");
+                }
+                return data;
+            }
+            catch (Exception ex) when (!(ex is ValidationException || ex is NotFoundException))
+            {
+                _logger.LogError(ex, "获取商家菜品统计信息时发生异常");
+                throw new BusinessException("获取商家菜品统计信息失败");
+            }
+        }
+
         public async Task<List<(Review Review, User User)>> GetReviewsByDishIdAsync(string dishId)
         {
             try

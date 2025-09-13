@@ -38,6 +38,8 @@ namespace JISpeed.Core.Interfaces.IServices
             string dishId);
 
         Task<List<Category>> GetMerchantCategory(string merchantId);
+        Task<List<Category>> GetCategory();
+
 
         Task<List<(Review Review, User User)>> GetReviewsByDishIdAsync(string dishId);
         

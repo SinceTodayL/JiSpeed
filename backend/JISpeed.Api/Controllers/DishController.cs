@@ -32,7 +32,8 @@ namespace JISpeed.Api.Controllers
 
         [HttpGet("{merchantId}/dishesByCategory")]
         // [Authorize]
-        public async Task<ActionResult<ApiResponse<List<CategoryWithDishesDto>>>> GetAllDishesByCategory(string merchantId)
+        public async Task<ActionResult<ApiResponse<List<CategoryWithDishesDto>>>> GetAllDishesByCategory(
+            string merchantId)
         {
             try
             {
@@ -45,6 +46,7 @@ namespace JISpeed.Api.Controllers
                         ErrorCodes.MissingParameter,
                         "商家ID不能为空"));
                 }
+
                 var dishes = await _dishService.GetByFiltersAsync(merchantId, null, null, null, null, null, null);
                 var groupedResult = dishes
                     .GroupBy(dish => new
@@ -106,6 +108,7 @@ namespace JISpeed.Api.Controllers
                     "系统繁忙，请稍后再试"));
             }
         }
+
         [HttpGet("{merchantId}/dishes")]
         // [Authorize]
         public async Task<ActionResult<ApiResponse<List<DishesDto>>>> GetMerchantAllDishes(
@@ -127,7 +130,9 @@ namespace JISpeed.Api.Controllers
                         ErrorCodes.MissingParameter,
                         "商家ID不能为空"));
                 }
-                var data = await _dishService.GetByFiltersAsync(merchantId, categoryId, orderByRating, orderByHighPrice, orderByLowPrice, size, page);
+
+                var data = await _dishService.GetByFiltersAsync(merchantId, categoryId, orderByRating, orderByHighPrice,
+                    orderByLowPrice, size, page);
                 var dataList = _mapper.Map<List<DishesDto>>(data) ?? new List<DishesDto>();
                 _logger.LogInformation("成功获取用户详细信息, MerchantId: {MerchantId}", merchantId);
                 return Ok(ApiResponse<List<DishesDto>>.Success(dataList, "商家菜品信息获取成功"));
@@ -178,6 +183,7 @@ namespace JISpeed.Api.Controllers
                         ErrorCodes.MissingParameter,
                         "参数能为空"));
                 }
+
                 var data = await _dishService.GetDisheEntitiesAsync(merchantId, dishId);
                 if (data == null)
                 {
@@ -185,6 +191,7 @@ namespace JISpeed.Api.Controllers
                         ErrorCodes.ProductNotFound,
                         "菜品未找到"));
                 }
+
                 var response = _mapper.Map<DishesDto>(data);
                 _logger.LogInformation("成功获取菜品详细信息, MerchantId: {MerchantId}", merchantId);
                 return Ok(ApiResponse<DishesDto>.Success(response, "商家菜品信息获取成功"));
@@ -236,7 +243,8 @@ namespace JISpeed.Api.Controllers
                         "商家ID不能为空"));
                 }
 
-                var res = await _dishService.CreateDishEntityAsync(merchantId, dto.CategoryId, dto.DishName, dto.Price, dto.OriginPrice, dto.CoverUrl, dto.Description, dto.StockQuantity);
+                var res = await _dishService.CreateDishEntityAsync(merchantId, dto.CategoryId, dto.DishName, dto.Price,
+                    dto.OriginPrice, dto.CoverUrl, dto.Description, dto.StockQuantity);
                 _logger.LogInformation("成功新增菜品, MerchantId: {MerchantId}", merchantId);
                 return Ok(ApiResponse<bool>.Success(res));
             }
@@ -293,6 +301,7 @@ namespace JISpeed.Api.Controllers
                         ErrorCodes.MissingParameter,
                         "菜品ID不能为空"));
                 }
+
                 var res = await _dishService.DeleteDishEntityAsync(merchantId, dishId);
 
                 _logger.LogInformation("成功删除菜品, DishId: {DishId}", dishId);
@@ -328,6 +337,7 @@ namespace JISpeed.Api.Controllers
                     "系统繁忙，请稍后再试"));
             }
         }
+
         [HttpPatch("{merchantId}/{dishId}")]
         // [Authorize]
         public async Task<ActionResult<ApiResponse<bool>>> ModifyDish(
@@ -354,7 +364,8 @@ namespace JISpeed.Api.Controllers
                         "菜品ID不能为空"));
                 }
 
-                var res = await _dishService.ModifyDishEntityAsync(merchantId, dishId, dto.CategoryId, dto.DishName, dto.Price, dto.OriginPrice, dto.OnSale, dto.CoverUrl, dto.Description, dto.StockQuantity);
+                var res = await _dishService.ModifyDishEntityAsync(merchantId, dishId, dto.CategoryId, dto.DishName,
+                    dto.Price, dto.OriginPrice, dto.OnSale, dto.CoverUrl, dto.Description, dto.StockQuantity);
                 _logger.LogInformation("成功修改菜品, DishId: {DishId}", dishId);
 
                 return Ok(ApiResponse<bool>.Success(res));
@@ -404,6 +415,7 @@ namespace JISpeed.Api.Controllers
                         ErrorCodes.MissingParameter,
                         "参数能为空"));
                 }
+
                 var data = await _dishService.GetMerchantCategory(merchantId);
                 if (!data.Any())
                 {
@@ -411,6 +423,7 @@ namespace JISpeed.Api.Controllers
                         ErrorCodes.ProductNotFound,
                         "无分类"));
                 }
+
                 var response = _mapper.Map<List<CategoryDto>>(data);
                 _logger.LogInformation("成功获取商家分类信息, MerchantId: {MerchantId}", merchantId);
                 return Ok(ApiResponse<List<CategoryDto>>.Success(response, "商家分类信息获取成功"));
@@ -445,13 +458,13 @@ namespace JISpeed.Api.Controllers
             }
         }
 
-        
+
         [HttpGet("{merchantId}/dishes/{dishId}/reviews")]
-    public async Task<ActionResult<ApiResponse<List<DishReviewDto>>>> GetDishReviews(
-        string merchantId,
-        string dishId,
-        [FromQuery] int? size,
-        [FromQuery] int? page)
+        public async Task<ActionResult<ApiResponse<List<DishReviewDto>>>> GetDishReviews(
+            string merchantId,
+            string dishId,
+            [FromQuery] int? size,
+            [FromQuery] int? page)
         {
             // 1. 调用 App 服务层，获取包含 Review 和 User 实体的列表
             var allReviewData = await _dishService.GetReviewsByDishIdAsync(dishId);
@@ -475,7 +488,7 @@ namespace JISpeed.Api.Controllers
             {
                 // 确保元组中的 Review 实体不为空
                 var review = data.Review;
-                
+
                 // user 实体可以为 null
                 var user = data.User;
                 // 检查 User 是否为 null，以处理可能的匿名情况
@@ -498,6 +511,50 @@ namespace JISpeed.Api.Controllers
 
             // 4. 返回封装好的 ApiResponse
             return Ok(ApiResponse<List<DishReviewDto>>.Success(reviewsDto));
+        }
+
+        [HttpGet("categories")]
+        // [Authorize]
+        public async Task<ActionResult<ApiResponse<List<CategoryDto>>>> GetAllCategories()
+        {
+            try
+            {
+
+                var data = await _dishService.GetCategory();
+                if (!data.Any())
+                {
+                    return NotFound(ApiResponse<object>.Fail(
+                        ErrorCodes.ProductNotFound,
+                        "无分类"));
+                }
+
+                var response = _mapper.Map<List<CategoryDto>>(data);
+                return Ok(ApiResponse<List<CategoryDto>>.Success(response, "商家分类信息获取成功"));
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(
+                    ErrorCodes.ValidationFailed,
+                    ex.Message));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(
+                    ErrorCodes.MerchantNotFound,
+                    ex.Message));
+            }
+            catch (BusinessException ex)
+            {
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.GeneralError,
+                    ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<object>.Fail(
+                    ErrorCodes.SystemError,
+                    "系统繁忙，请稍后再试"));
+            }
         }
     }
 }
