@@ -10,13 +10,21 @@ defineOptions({
   name: 'CodeLogin'
 });
 
+interface Props {
+  selectedRole?: 'user' | 'rider' | 'merchant' | 'admin';
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  selectedRole: 'user'
+});
+
 const { toggleLoginModule } = useRouterPush();
 const { formRef, validate } = useNaiveForm();
 const { label, isCounting, loading, getCaptcha } = useCaptcha();
 const authStore = useAuthStore();
 
-// 登录角色选择
-const loginRole = ref<'user' | 'rider' | 'merchant' | 'admin'>('user');
+// 登录角色选择 - 现在从 props 获取
+const loginRole = ref<'user' | 'rider' | 'merchant' | 'admin'>(props.selectedRole);
 
 // 登录方式选择
 const loginMethod = ref<'phone' | 'email'>('phone');
