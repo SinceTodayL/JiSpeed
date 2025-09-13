@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { getRiderInfo } from '@/service/api/rider';
 import {
+  generateRiderPerformance,
   getMonthlyPerformanceOverview,
   getRiderPerformance,
   getRiderPerformanceRanking,
@@ -12,11 +13,9 @@ import { useEcharts } from '@/hooks/common/echarts';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { useAuthStore } from '../../store/modules/auth';
 import { useRiderStore } from '../../store/modules/rider';
-import { useI18n } from 'vue-i18n';
 
 const authStore = useAuthStore();
 const riderStore = useRiderStore();
-const { t } = useI18n();
 
 // 骑手ID - 使用统一的 riderStore 获取
 const riderId = computed(() => riderStore.riderId || authStore.userInfo.userId);
@@ -27,10 +26,6 @@ const riderDetail = ref<Api.Rider.RiderInfoData | null>(null);
 
 // 绩效数据
 const performanceData = ref<Api.Rider.TimeData | null>(null);
-
-// 监控绩效数据变化
-watch(performanceData, (newData, oldData) => {
-}, { deep: true });
 const performanceTrend = ref<Api.Rider.PerformanceTrendData[] | null>(null);
 const performanceRanking = ref<Api.Rider.RankingData | null>(null);
 const monthlyOverview = ref<Api.Rider.OverviewData | null>(null);
@@ -39,7 +34,18 @@ const monthlyOverview = ref<Api.Rider.OverviewData | null>(null);
 const topPerformers = ref<Api.Rider.PerformanceTrendData[]>([]);
 const topPerformersLoading = ref(false);
 
+// 考勤状态
+const attendanceStatus = ref<'未签到' | '已签到' | '已签退'>('未签到');
+const checkInTime = ref<string>('');
+const checkOutTime = ref<string>('');
 
+// 天气信息
+const weatherInfo = ref({
+  temperature: 25,
+  condition: '晴天',
+  humidity: 65,
+  windSpeed: 3.2
+});
 
 // 当前年月
 const currentDate = new Date();
@@ -47,235 +53,234 @@ const currentYear = currentDate.getFullYear();
 const currentMonth = currentDate.getMonth() + 1;
 
 // 折线图配置
-const { domRef: lineChartRef, updateOptions: updateLineChart } = useEcharts(() => {
-  const trendData = performanceTrend.value || [];
-  
-  return {
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'cross',
-        label: {
-          backgroundColor: '#6a7985'
+const { domRef: lineChartRef, updateOptions: updateLineChart } = useEcharts(() => ({
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: {
+      type: 'cross',
+      label: {
+        backgroundColor: '#6a7985'
+      }
+    }
+  },
+  legend: {
+    data: ['完成订单', '准时率', '好评率']
+  },
+  grid: {
+    left: '3%',
+    right: '4%',
+    bottom: '3%',
+    containLabel: true
+  },
+  xAxis: {
+    type: 'category',
+    boundaryGap: false,
+    data: performanceTrend.value?.map((item: any) => item.statsMonth) || []
+  },
+  yAxis: [
+    {
+      type: 'value',
+      name: '订单数量',
+      position: 'left'
+    },
+    {
+      type: 'value',
+      name: '百分比',
+      position: 'right',
+      min: 0,
+      max: 100,
+      axisLabel: {
+        formatter: '{value}%'
+      }
+    }
+  ],
+  series: [
+    {
+      color: '#8e9dff',
+      name: '完成订单',
+      type: 'line',
+      smooth: true,
+      areaStyle: {
+        color: {
+          type: 'linear',
+          x: 0,
+          y: 0,
+          x2: 0,
+          y2: 1,
+          colorStops: [
+            { offset: 0.25, color: '#8e9dff' },
+            { offset: 1, color: '#fff' }
+          ]
         }
-      }
-    },
-    legend: {
-      data: ['完成订单', '准时率', '好评率']
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      boundaryGap: false,
-      data: trendData.map((item: any) => item.statsMonth) || []
-    },
-    yAxis: [
-      {
-        type: 'value',
-        name: '订单数量',
-        position: 'left'
       },
-      {
-        type: 'value',
-        name: '百分比',
-        position: 'right',
-        min: 0,
-        max: 100,
-        axisLabel: {
-          formatter: '{value}%'
+      emphasis: { focus: 'series' },
+      data: performanceTrend.value?.map((item: any) => item.totalOrders) || []
+    },
+    {
+      color: '#26deca',
+      name: '准时率',
+      type: 'line',
+      smooth: true,
+      yAxisIndex: 1,
+      areaStyle: {
+        color: {
+          type: 'linear',
+          x: 0,
+          y: 0,
+          x2: 0,
+          y2: 1,
+          colorStops: [
+            { offset: 0.25, color: '#26deca' },
+            { offset: 1, color: '#fff' }
+          ]
         }
-      }
-    ],
-    series: [
-      {
-        color: '#8e9dff',
-        name: '完成订单',
-        type: 'line',
-        smooth: true,
-        areaStyle: {
-          color: {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [
-              { offset: 0.25, color: '#8e9dff' },
-              { offset: 1, color: '#fff' }
-            ]
-          }
-        },
-        emphasis: { focus: 'series' },
-        data: trendData.map((item: any) => item.totalOrders) || []
       },
-      {
-        color: '#26deca',
-        name: '准时率',
-        type: 'line',
-        smooth: true,
-        yAxisIndex: 1,
-        areaStyle: {
-          color: {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [
-              { offset: 0.25, color: '#26deca' },
-              { offset: 1, color: '#fff' }
-            ]
-          }
-        },
-        emphasis: { focus: 'series' },
-        data: trendData.map((item: any) => Math.round(item.onTimeRate * 100)) || []
+      emphasis: { focus: 'series' },
+      data: performanceTrend.value?.map((item: any) => Math.round(item.onTimeRate * 100)) || []
+    },
+    {
+      color: '#fedc69',
+      name: '好评率',
+      type: 'line',
+      smooth: true,
+      yAxisIndex: 1,
+      areaStyle: {
+        color: {
+          type: 'linear',
+          x: 0,
+          y: 0,
+          x2: 0,
+          y2: 1,
+          colorStops: [
+            { offset: 0.25, color: '#fedc69' },
+            { offset: 1, color: '#fff' }
+          ]
+        }
       },
-      {
-        color: '#fedc69',
-        name: '好评率',
-        type: 'line',
-        smooth: true,
-        yAxisIndex: 1,
-        areaStyle: {
-          color: {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [
-              { offset: 0.25, color: '#fedc69' },
-              { offset: 1, color: '#fff' }
-            ]
-          }
-        },
-        emphasis: { focus: 'series' },
-        data: trendData.map((item: any) => Math.round(item.goodReviewRate * 100)) || []
-      }
-    ]
-  };
-});
+      emphasis: { focus: 'series' },
+      data: performanceTrend.value?.map((item: any) => Math.round(item.goodReviewRate * 100)) || []
+    }
+  ]
+}));
 
 // 饼图配置
-const { domRef: pieChartRef, updateOptions: updatePieChart } = useEcharts(() => {
-  const perfData = performanceData.value;
-  
-  return {
-    tooltip: {
-      trigger: 'item',
-      formatter: '{a} <br/>{b}: {c} ({d}%)'
-    },
-    legend: {
-      bottom: '1%',
-      left: 'center',
-      itemStyle: { borderWidth: 0 }
-    },
-    series: [
-      {
-        color: ['#5da8ff', '#8e9dff', '#fedc69', '#26deca'],
-        name: '绩效指标',
-        type: 'pie',
-        radius: ['45%', '75%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: '#fff',
-          borderWidth: 1
-        },
+const { domRef: pieChartRef, updateOptions: updatePieChart } = useEcharts(() => ({
+  tooltip: {
+    trigger: 'item',
+    formatter: '{a} <br/>{b}: {c}单 ({d}%)'
+  },
+  legend: {
+    bottom: '1%',
+    left: 'center',
+    itemStyle: { borderWidth: 0 }
+  },
+  series: [
+    {
+      color: ['#5da8ff', '#8e9dff', '#fedc69', '#26deca'],
+      name: '订单类型',
+      type: 'pie',
+      radius: ['45%', '75%'],
+      avoidLabelOverlap: false,
+      itemStyle: {
+        borderRadius: 10,
+        borderColor: '#fff',
+        borderWidth: 1
+      },
+      label: {
+        show: false,
+        position: 'center'
+      },
+      emphasis: {
         label: {
-          show: false,
-          position: 'center'
+          show: true,
+          fontSize: '12'
+        }
+      },
+      labelLine: { show: false },
+      data: [
+        { name: '已完成订单', value: performanceData.value?.totalOrders || 0, color: '#5da8ff' },
+        {
+          name: '准时订单',
+          value: Math.round((performanceData.value?.totalOrders || 0) * (performanceData.value?.onTimeRate || 0)),
+          color: '#8e9dff'
         },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: '12'
-          }
+        {
+          name: '好评订单',
+          value: Math.round((performanceData.value?.totalOrders || 0) * (performanceData.value?.goodReviewRate || 0)),
+          color: '#fedc69'
         },
-        labelLine: { show: false },
-        data: [
-          { 
-            name: '总订单', 
-            value: perfData?.totalOrders || 0, 
-            color: '#5da8ff' 
-          },
-          { 
-            name: '准时率', 
-            value: Math.round((perfData?.onTimeRate || 0) * 100), 
-            color: '#8e9dff' 
-          },
-          { 
-            name: '好评率', 
-            value: Math.round((perfData?.goodReviewRate || 0) * 100), 
-            color: '#fedc69' 
-          },
-          { 
-            name: '差评率', 
-            value: Math.round((perfData?.badReviewRate || 0) * 100), 
-            color: '#26deca' 
-          }
-        ]
-      }
-    ]
-  };
+        {
+          name: '其他',
+          value: Math.round((performanceData.value?.totalOrders || 0) * (performanceData.value?.badReviewRate || 0)),
+          color: '#26deca'
+        }
+      ]
+    }
+  ]
+}));
+
+// 计算属性
+const completionRate = computed(() => {
+  if (!performanceData.value) return 0;
+  const total = performanceData.value.totalOrders || 0;
+  // 由于API中没有completedOrders字段，我们使用onTimeRate作为完成率指标
+  const completed = Math.round(total * (performanceData.value.onTimeRate || 0));
+  return total > 0 ? Math.round((completed / total) * 100) : 0;
 });
 
-// 直接使用原始数据，不做复杂计算
 const onTimeRatePercent = computed(() => {
-  return performanceData.value?.onTimeRate || 0;
+  return performanceData.value?.onTimeRate ? Math.round(performanceData.value.onTimeRate * 100) : 0;
 });
 
 const goodReviewRatePercent = computed(() => {
-  return performanceData.value?.goodReviewRate || 0;
+  return performanceData.value?.goodReviewRate ? Math.round(performanceData.value.goodReviewRate * 100) : 0;
 });
 
-const badReviewRatePercent = computed(() => {
-  return performanceData.value?.badReviewRate || 0;
+const attendanceStatusColor = computed(() => {
+  switch (attendanceStatus.value) {
+    case '已签到':
+      return 'success';
+    case '已签退':
+      return 'info';
+    default:
+      return 'warning';
+  }
 });
 
-
-// 统计卡片数据 - 使用真实API数据
+// 统计卡片数据
 const cardData = computed(() => {
-  const data = performanceData.value;
-  if (!data) return [];
-  
   return [
+    {
+      key: 'completedOrders',
+      title: '本月完成订单',
+      value: Math.round((performanceData.value?.totalOrders || 0) * (performanceData.value?.onTimeRate || 0)),
+      unit: '单',
+      color: { start: '#ec4786', end: '#b955a4' },
+      icon: 'mdi:truck-delivery'
+    },
     {
       key: 'totalOrders',
       title: '本月总订单',
-      value: data.totalOrders || 0,
+      value: performanceData.value?.totalOrders || 0,
       unit: '单',
-      color: { start: '#ff6b6b', end: '#ee5a24' },
-      icon: 'mdi:package-variant'
+      color: { start: '#865ec0', end: '#5144b4' },
+      icon: 'mdi:clock-outline'
     },
     {
-      key: 'onTimeRate',
-      title: '准时率',
-      value: Math.round((data.onTimeRate || 0) * 100),
+      key: 'completionRate',
+      title: '完成率',
+      value: completionRate.value,
       unit: '%',
-      color: { start: '#00d2ff', end: '#3a7bd5' },
-      icon: 'mdi:clock-check'
+      color: { start: '#56cdf3', end: '#719de3' },
+      icon: 'mdi:chart-line'
     },
     {
-      key: 'goodReviewRate',
-      title: '好评率',
-      value: Math.round((data.goodReviewRate || 0) * 100),
-      unit: '%',
-      color: { start: '#11998e', end: '#38ef7d' },
-      icon: 'mdi:thumb-up'
-    },
-    {
-      key: 'income',
+      key: 'monthlyIncome',
       title: '本月收入',
-      value: data.income || 0,
+      value: Math.round(performanceData.value?.income || 0),
       unit: '¥',
-      color: { start: '#ffd700', end: '#ffb347' },
-      icon: 'mdi:currency-cny'
+      color: { start: '#fcbc25', end: '#f68057' },
+      icon: 'ant-design:money-collect-outlined'
     }
   ];
 });
@@ -283,10 +288,9 @@ const cardData = computed(() => {
 // 获取骑手详细信息
 async function fetchRiderDetail() {
   try {
-    const response = await getRiderInfo(riderId.value);
-    
-    if (response.data) {
-      riderDetail.value = response.data;
+    const { data } = await getRiderInfo(riderId.value);
+    if (data) {
+      riderDetail.value = data;
     }
   } catch (error) {
     console.error('获取骑手详细信息失败', error);
@@ -302,9 +306,9 @@ async function fetchRiderPerformance() {
       month: currentMonth
     };
 
-    const response = await getRiderPerformance(params);
-    if (response.data) {
-      performanceData.value = response.data as unknown as Api.Rider.TimeData;
+    const { data } = await getRiderPerformance(params);
+    if (data) {
+      performanceData.value = data.data;
     }
   } catch (error) {
     console.error('获取骑手绩效数据失败', error);
@@ -319,16 +323,14 @@ async function fetchPerformanceTrend() {
       months: 7 // 获取最近7个月的趋势
     };
 
-    const response = await getRiderPerformanceTrend(params);
-    
-    if (response.data) {
-      performanceTrend.value = response.data as unknown as Api.Rider.PerformanceTrendData[];
+    const { data } = await getRiderPerformanceTrend(params);
+    if (data) {
+      performanceTrend.value = data.data;
+      // 更新图表
+      nextTick(() => {
+        updateLineChart();
+      });
     }
-    
-    // 更新图表
-    nextTick(() => {
-      updateLineChart();
-    });
   } catch (error) {
     console.error('获取绩效趋势失败', error);
   }
@@ -343,10 +345,9 @@ async function fetchPerformanceRanking() {
       month: currentMonth
     };
 
-    const response = await getRiderPerformanceRanking(params);
-    
-    if (response.data) {
-      performanceRanking.value = response.data as unknown as Api.Rider.RankingData;
+    const { data } = await getRiderPerformanceRanking(params);
+    if (data) {
+      performanceRanking.value = data.data;
     }
   } catch (error) {
     console.error('获取绩效排名失败', error);
@@ -361,10 +362,9 @@ async function fetchMonthlyOverview() {
       month: currentMonth
     };
 
-    const response = await getMonthlyPerformanceOverview(params);
-    
-    if (response.data) {
-      monthlyOverview.value = response.data as unknown as Api.Rider.OverviewData;
+    const { data } = await getMonthlyPerformanceOverview(params);
+    if (data) {
+      monthlyOverview.value = data.data;
     }
   } catch (error) {
     console.error('获取月度概览失败', error);
@@ -381,10 +381,9 @@ async function fetchTopPerformers() {
       topCount: 10
     };
 
-    const response = await getTopPerformers(params);
-    
-    if (response.data) {
-      topPerformers.value = response.data as unknown as Api.Rider.PerformanceTrendData[] || [];
+    const { data } = await getTopPerformers(params);
+    if (data) {
+      topPerformers.value = data.data || [];
     }
   } catch (error) {
     console.error('获取优秀骑手排行榜失败', error);
@@ -394,61 +393,93 @@ async function fetchTopPerformers() {
   }
 }
 
+// 生成骑手月度绩效
+async function generatePerformance() {
+  try {
+    const params = {
+      riderId: riderId.value,
+      year: currentYear,
+      month: currentMonth
+    };
 
+    const { data } = await generateRiderPerformance(params);
+    if (data) {
+      window.$message?.success('绩效生成成功！');
+      // 重新获取绩效数据
+      await fetchRiderPerformance();
+      await fetchPerformanceRanking();
+    }
+  } catch (error) {
+    console.error('生成绩效失败', error);
+    window.$message?.error('生成绩效失败，请稍后重试');
+  }
+}
 
+// 模拟获取考勤状态
+function fetchAttendanceStatus() {
+  const now = new Date();
+  const currentHour = now.getHours();
 
+  // 模拟考勤逻辑
+  if (currentHour < 8) {
+    attendanceStatus.value = '未签到';
+    checkInTime.value = '';
+    checkOutTime.value = '';
+  } else if (currentHour >= 8 && currentHour < 18) {
+    attendanceStatus.value = '已签到';
+    checkInTime.value = '08:30';
+    checkOutTime.value = '';
+  } else {
+    attendanceStatus.value = '已签退';
+    checkInTime.value = '08:30';
+    checkOutTime.value = '18:30';
+  }
+}
+
+// 模拟获取天气信息
+function fetchWeatherInfo() {
+  // 这里可以接入真实的天气API
+  weatherInfo.value = {
+    temperature: Math.floor(Math.random() * 15) + 20, // 20-35度
+    condition: ['晴天', '多云', '阴天', '小雨'][Math.floor(Math.random() * 4)],
+    humidity: Math.floor(Math.random() * 30) + 50, // 50-80%
+    windSpeed: Math.random() * 5 + 1 // 1-6级风
+  };
+}
+
+// 签到功能
+function handleCheckIn() {
+  if (attendanceStatus.value === '未签到') {
+    attendanceStatus.value = '已签到';
+    checkInTime.value = new Date().toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    window.$message?.success('签到成功！');
+  } else {
+    window.$message?.warning('您已经签到过了！');
+  }
+}
+
+// 签退功能
+function handleCheckOut() {
+  if (attendanceStatus.value === '已签到') {
+    attendanceStatus.value = '已签退';
+    checkOutTime.value = new Date().toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    window.$message?.success('签退成功！');
+  } else if (attendanceStatus.value === '未签到') {
+    window.$message?.warning('请先签到！');
+  } else {
+    window.$message?.warning('您已经签退过了！');
+  }
+}
 
 // 获取渐变色
 function getGradientColor(color: { start: string; end: string }) {
   return `linear-gradient(to bottom right, ${color.start}, ${color.end})`;
-}
-
-// 自动刷新定时器
-let refreshTimer: NodeJS.Timeout | null = null;
-
-// 刷新所有数据
-async function refreshAllData() {
-  if (loading.value) return;
-  
-  loading.value = true;
-  
-  try {
-    await Promise.all([
-      fetchRiderDetail(),
-      fetchRiderPerformance(),
-      fetchPerformanceTrend(),
-      fetchPerformanceRanking(),
-      fetchMonthlyOverview(),
-      fetchTopPerformers()
-    ]);
-
-    // 更新图表
-    nextTick(() => {
-      updateLineChart();
-      updatePieChart();
-    });
-    
-  } catch (error) {
-    console.error('❌ 刷新首页数据失败:', error);
-  } finally {
-    loading.value = false;
-  }
-}
-
-// 启动自动刷新
-function startAutoRefresh() {
-  // 每5分钟自动刷新一次数据
-  refreshTimer = setInterval(() => {
-    refreshAllData();
-  }, 5 * 60 * 1000);
-}
-
-// 停止自动刷新
-function stopAutoRefresh() {
-  if (refreshTimer) {
-    clearInterval(refreshTimer);
-    refreshTimer = null;
-  }
 }
 
 // 页面加载
@@ -456,14 +487,20 @@ onMounted(async () => {
   loading.value = true;
 
   // 检查用户信息是否已初始化
+  console.log('=== 骑手首页加载 ===');
+  console.log('当前用户信息:', authStore.userInfo);
+  console.log('当前token:', authStore.token);
 
   // 如果没有用户信息但有token，尝试初始化
   if (!authStore.userInfo.userId && authStore.token) {
+    console.log('检测到token但用户信息为空，尝试初始化用户信息...');
     await authStore.initUserInfo();
+    console.log('初始化后的用户信息:', authStore.userInfo);
   }
 
   // 如果仍然没有用户信息，使用模拟数据
   if (!authStore.userInfo.userId) {
+    console.log('用户信息初始化失败，使用模拟数据');
     // 设置模拟用户信息
     Object.assign(authStore.userInfo, {
       userId: `rider_${Date.now()}`,
@@ -471,6 +508,7 @@ onMounted(async () => {
       roles: ['rider'],
       buttons: []
     });
+    console.log('设置的模拟用户信息:', authStore.userInfo);
   }
 
   try {
@@ -481,6 +519,8 @@ onMounted(async () => {
       fetchPerformanceRanking(),
       fetchMonthlyOverview(),
       fetchTopPerformers(),
+      fetchAttendanceStatus(),
+      fetchWeatherInfo()
     ]);
 
     // 更新图表
@@ -488,61 +528,43 @@ onMounted(async () => {
       updateLineChart();
       updatePieChart();
     });
-    
-    // 启动自动刷新
-    startAutoRefresh();
   } finally {
     loading.value = false;
   }
 });
-
-// 页面卸载时清理定时器
-onUnmounted(() => {
-  stopAutoRefresh();
-});
 </script>
 
 <template>
-  <div class="min-h-full p-24px bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+  <div class="h-full p-24px">
     <!-- 欢迎横幅 -->
-    <NCard :bordered="false" class="mb-24px bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
-      <div class="flex items-center gap-3">
-        <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-          <SvgIcon :local-icon="'home'" class="text-2xl text-white" />
-        </div>
+    <NCard :bordered="false" class="mb-24px">
+      <div class="flex items-center justify-between">
         <div class="flex-1">
           <h1 class="text-2xl text-gray-800 font-bold dark:text-gray-200">
-            {{ t('rider.home.subtitle', { name: riderDetail?.name || '骑手' }) }}
+            欢迎回来，{{ riderDetail?.name || '骑手' }}！
           </h1>
-          <p class="mt-2px text-gray-600 dark:text-gray-400">
-            {{ t('rider.home.description', { date: new Date().toLocaleDateString('zh-CN') }) }}
+          <p class="mt-8px text-gray-600 dark:text-gray-400">
+            今天是 {{ new Date().toLocaleDateString('zh-CN') }}，祝您工作顺利！
           </p>
         </div>
         <div class="flex items-center space-x-16px">
+          <!-- 天气信息 -->
+          <div class="text-center">
+            <div class="text-sm text-gray-500">天气</div>
+            <div class="text-lg font-semibold">{{ weatherInfo.temperature }}°C</div>
+            <div class="text-xs text-gray-400">{{ weatherInfo.condition }}</div>
+          </div>
           <!-- 车辆信息 -->
           <div class="text-center">
-            <div class="text-sm text-gray-500">{{ t('rider.home.vehicleNumber') }}</div>
+            <div class="text-sm text-gray-500">车辆编号</div>
             <div class="text-lg font-semibold">{{ riderDetail?.vehicleNumber || '暂无' }}</div>
           </div>
-          <!-- 刷新按钮 -->
-          <NButton 
-            type="primary" 
-            size="medium" 
-            :loading="loading"
-            @click="refreshAllData"
-            class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-          >
-            <template #icon>
-              <SvgIcon icon="mdi:refresh" />
-            </template>
-            {{ t('rider.home.refreshData') }}
-          </NButton>
         </div>
       </div>
     </NCard>
 
     <!-- 统计卡片 -->
-    <NCard :bordered="false" size="small" class="mb-24px bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-16px shadow-lg">
+    <NCard :bordered="false" size="small" class="mb-24px">
       <NGrid cols="s:1 m:2 l:4" responsive="screen" :x-gap="16" :y-gap="16">
         <NGi v-for="item in cardData" :key="item.key">
           <div
@@ -566,25 +588,68 @@ onUnmounted(() => {
     <!-- 图表区域 -->
     <NGrid :cols="24" :x-gap="16" :y-gap="16" class="mb-24px">
       <NGi :span="16">
-        <NCard :bordered="false" class="rounded-16px shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
+        <NCard :bordered="false">
           <template #header>
-            <span>本月绩效趋势</span>
+            <div class="flex items-center justify-between">
+              <span>本月绩效趋势</span>
+              <NButton size="small" type="primary" @click="generatePerformance">
+                <template #icon>
+                  <SvgIcon icon="mdi:chart-line-variant" />
+                </template>
+                生成绩效
+              </NButton>
+            </div>
           </template>
           <div ref="lineChartRef" class="h-360px overflow-hidden"></div>
         </NCard>
       </NGi>
       <NGi :span="8">
-        <NCard title="订单类型分布" :bordered="false" class="rounded-16px shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
+        <NCard title="订单类型分布" :bordered="false">
           <div ref="pieChartRef" class="h-360px overflow-hidden"></div>
         </NCard>
       </NGi>
     </NGrid>
 
-    <!-- 绩效指标和排行榜 -->
+    <!-- 考勤状态和绩效指标 -->
     <NGrid :cols="24" :x-gap="16" :y-gap="16" class="mb-24px">
+      <!-- 考勤状态 -->
+      <NGi :span="8">
+        <NCard title="今日考勤" :bordered="false">
+          <div class="text-center">
+            <NTag :type="attendanceStatusColor" size="large" class="mb-16px">
+              {{ attendanceStatus }}
+            </NTag>
+            <div class="text-sm space-y-8px">
+              <div v-if="checkInTime" class="flex justify-between">
+                <span class="text-gray-500">签到时间：</span>
+                <span class="font-medium">{{ checkInTime }}</span>
+              </div>
+              <div v-if="checkOutTime" class="flex justify-between">
+                <span class="text-gray-500">签退时间：</span>
+                <span class="font-medium">{{ checkOutTime }}</span>
+              </div>
+            </div>
+            <div class="mt-16px space-y-8px">
+              <NButton v-if="attendanceStatus === '未签到'" type="success" size="small" block @click="handleCheckIn">
+                <template #icon>
+                  <SvgIcon icon="mdi:clock-check" />
+                </template>
+                签到
+              </NButton>
+              <NButton v-if="attendanceStatus === '已签到'" type="info" size="small" block @click="handleCheckOut">
+                <template #icon>
+                  <SvgIcon icon="mdi:clock-out" />
+                </template>
+                签退
+              </NButton>
+            </div>
+          </div>
+        </NCard>
+      </NGi>
+
       <!-- 绩效指标 -->
-      <NGi :span="12">
-        <NCard title="绩效指标" :bordered="false" class="rounded-16px shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
+      <NGi :span="8">
+        <NCard title="绩效指标" :bordered="false">
           <NSpace vertical :size="16">
             <div class="flex items-center justify-between">
               <span>准时率</span>
@@ -607,8 +672,8 @@ onUnmounted(() => {
       </NGi>
 
       <!-- 优秀骑手排行榜 -->
-      <NGi :span="12">
-        <NCard title="优秀骑手排行榜" :bordered="false" class="rounded-16px shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
+      <NGi :span="8">
+        <NCard title="优秀骑手排行榜" :bordered="false">
           <div v-if="topPerformersLoading" class="text-center py-16px">
             <NSpin size="small" />
             <div class="mt-8px text-sm text-gray-500">加载中...</div>
@@ -669,9 +734,9 @@ onUnmounted(() => {
           <div>
             <div class="text-blue-800 font-medium dark:text-blue-200">工作提醒</div>
             <div class="text-sm text-blue-600 dark:text-blue-300">
-              本月总订单
-              {{ performanceData?.totalOrders || 0 }} 单，准时率
-              {{ performanceData?.onTimeRate || 0 }}%
+              本月已完成
+              {{ Math.round((performanceData?.totalOrders || 0) * (performanceData?.onTimeRate || 0)) }} 个订单，完成率
+              {{ completionRate }}%
             </div>
           </div>
         </div>
@@ -681,11 +746,20 @@ onUnmounted(() => {
           <div>
             <div class="text-green-800 font-medium dark:text-green-200">完成情况</div>
             <div class="text-sm text-green-600 dark:text-green-300">
-              本月总订单 {{ performanceData?.totalOrders || 0 }} 单，收入 {{ performanceData?.income || 0 }} 元
+              本月总订单 {{ performanceData?.totalOrders || 0 }} 单，收入 {{ Math.round(performanceData?.income || 0) }} 元
             </div>
           </div>
         </div>
 
+        <div class="flex items-center rounded-lg bg-orange-50 p-12px dark:bg-orange-900/20">
+          <SvgIcon icon="mdi:weather-sunny" class="mr-12px text-orange-500" />
+          <div>
+            <div class="text-orange-800 font-medium dark:text-orange-200">天气提醒</div>
+            <div class="text-sm text-orange-600 dark:text-orange-300">
+              今日{{ weatherInfo.condition }}，温度{{ weatherInfo.temperature }}°C，注意防晒和保暖
+            </div>
+          </div>
+        </div>
       </div>
     </NCard>
   </div>
@@ -713,103 +787,12 @@ onUnmounted(() => {
   transform: translateY(-1px);
 }
 
-/* 页面整体动画 */
-.min-h-full {
-  animation: fadeIn 0.6s ease-out;
-  min-height: 180vh;
-  overflow-y: auto;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 卡片样式增强 */
-.n-card {
-  background-color: var(--n-color);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.n-card:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.05);
-}
-
-/* 统计卡片动画 */
-.grid > div,
-.n-grid .n-gi > div {
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.grid > div:hover,
-.n-grid .n-gi > div:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
-
-/* 按钮样式增强 */
-.n-button {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  border-radius: 12px;
-  font-weight: 600;
-  position: relative;
-  overflow: hidden;
-}
-
-.n-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
-}
-
-.n-button:hover::before {
-  left: 100%;
-}
-
-.n-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-}
-
-.n-button:active {
-  transform: translateY(0);
-}
-
-/* 渐变按钮特殊样式 */
-.n-button.bg-gradient-to-r {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  color: white;
-}
-
-.n-button.bg-gradient-to-r:hover {
-  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
-}
-
 /* 确保按钮内容居中 */
 .n-button .n-button__content {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   width: 100% !important;
-  gap: 8px;
 }
 
 /* 更具体的按钮样式覆盖 */
@@ -822,44 +805,6 @@ onUnmounted(() => {
 /* 确保图标和文字都居中 */
 .n-button .n-button__content .n-button__icon {
   margin-right: 4px !important;
-}
-
-/* 进度条动画 */
-.n-progress .n-progress-line-fill {
-  transition: width 0.8s ease-in-out;
-}
-
-/* 标签动画 */
-.n-tag {
-  transition: all 0.3s ease;
-  border-radius: 20px;
-  font-weight: 500;
-  padding: 4px 12px;
-}
-
-.n-tag:hover {
-  transform: scale(1.05);
-}
-
-/* 图表容器动画 */
-.h-360px {
-  transition: all 0.3s ease;
-}
-
-.h-360px:hover {
-  transform: scale(1.02);
-}
-
-/* 排行榜项目动画 */
-.space-y-8px > div {
-  transition: all 0.3s ease;
-  border-radius: 8px;
-}
-
-.space-y-8px > div:hover {
-  transform: translateX(4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  background-color: rgba(59, 130, 246, 0.05);
 }
 
 /* 提醒卡片样式 */
@@ -877,131 +822,8 @@ onUnmounted(() => {
   border-radius: 8px;
 }
 
-/* 渐变背景特殊效果 */
-.bg-gradient-to-br {
-  position: relative;
-  overflow: hidden;
-}
-
-.bg-gradient-to-br::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  animation: shimmer 3s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
-  }
-  100% {
-    transform: translateX(100%) translateY(100%) rotate(45deg);
-  }
-}
-
-/* 自定义滚动条 */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
-}
-
-/* 暗色模式滚动条 */
-.dark ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #4c51bf 0%, #553c9a 100%);
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #434190 0%, #4c1d95 100%);
-}
-
-/* 数字动画 */
-.text-28px,
-.text-20px {
-  transition: all 0.3s ease;
-}
-
-.text-28px:hover,
-.text-20px:hover {
-  transform: scale(1.1);
-  color: #3b82f6;
-}
-
-/* 图标动画 */
-.svg-icon {
-  transition: all 0.3s ease;
-}
-
-.svg-icon:hover {
-  transform: rotate(10deg) scale(1.1);
-}
-
-/* 工作提醒动画 */
-.text-center > div {
-  transition: all 0.3s ease;
-}
-
-.text-center > div:hover {
-  transform: translateY(-2px);
-  color: #3b82f6;
-}
-
-/* 加载状态动画 */
-.n-button[loading] {
-  position: relative;
-}
-
-.n-button[loading]::after {
-  content: '';
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  border: 2px solid transparent;
-  border-top: 2px solid currentColor;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .n-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  .n-gi {
-    grid-column: span 24 !important;
-  }
-
-  .flex.gap-24px {
-    flex-direction: column;
-    gap: 16px;
-  }
-
   .text-30px {
     font-size: 24px;
   }

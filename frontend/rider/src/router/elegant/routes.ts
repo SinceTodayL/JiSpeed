@@ -24,8 +24,8 @@ export const generatedRoutes: GeneratedRoute[] = [
     meta: {
       title: 'attendance',
       i18nKey: 'route.attendance',
-      icon: 'mdi:calendar-account',
-      order: 3,
+      icon: 'mdi:clock-check-outline',
+      order: 4,
       roles: ['rider']
     }
   },

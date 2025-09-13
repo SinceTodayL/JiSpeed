@@ -10,12 +10,19 @@ defineOptions({
   name: 'Register'
 });
 
+interface Props {
+  selectedRole?: 'user' | 'rider' | 'merchant' | 'admin';
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  selectedRole: 'user'
+});
+
 const { toggleLoginModule } = useRouterPush();
 const { formRef, validate } = useNaiveForm();
 const { loading: registerLoading, startLoading, endLoading } = useLoading();
 
-// User role selection
-const registerRole = ref<'user' | 'rider' | 'merchant' | 'admin'>('user');
+// 直接使用从父组件传递的角色，不需要本地状态
 
 // Contact type auto detection
 const contactType = ref('email');
@@ -47,20 +54,15 @@ const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
   };
 });
 
-// Register role options
-const registerRoleOptions = computed(() => {
-  return [
-    { label: $t('page.login.pwdLogin.user'), value: 'user' as const },
-    { 
-      label: $t('page.login.pwdLogin.rider'), 
-      value: 'rider' as const 
-    },
-    { 
-      label: $t('page.login.pwdLogin.merchant'), 
-      value: 'merchant' as const 
-    },
-    { label: $t('page.login.pwdLogin.admin'), value: 'admin' as const },
-  ];
+// 显示当前选中角色的标签
+const currentRoleLabel = computed(() => {
+  const roleLabels = {
+    user: $t('page.login.pwdLogin.user'),
+    rider: $t('page.login.pwdLogin.rider'),
+    merchant: $t('page.login.pwdLogin.merchant'),
+    admin: $t('page.login.pwdLogin.admin')
+  };
+  return roleLabels[props.selectedRole];
 });
 
 // Auto detect contact type based on input
@@ -109,7 +111,7 @@ async function handleSubmit() {
     };
     
     // Call register API
-    const { data: response, error } = await fetchRegister(registerData, userTypeMap[registerRole.value]);
+    const { data: response, error } = await fetchRegister(registerData, userTypeMap[props.selectedRole]);
     
     // 检查是否有错误
     if (error) {
@@ -142,13 +144,10 @@ async function handleSubmit() {
 <template>
   <div class="register-container">
     <NForm ref="formRef" :model="model" :rules="rules" size="large" :show-label="false" @keyup.enter="handleSubmit">
-      <NFormItem>
-        <NSelect
-          v-model:value="registerRole"
-          :options="registerRoleOptions"
-          placeholder="选择注册角色"
-        />
-      </NFormItem>
+      <!-- 显示当前注册角色 -->
+      <div class="current-role-display">
+        <span class="role-info">注册角色：<strong>{{ currentRoleLabel }}</strong></span>
+      </div>
 
       <div class="form-row">
         <NFormItem path="userName" class="form-item">
@@ -208,8 +207,22 @@ async function handleSubmit() {
 
 <style scoped>
 .register-container {
-  width: 1000px;
+  width: 100%;
   max-width: 100%;
+}
+
+/* 当前角色显示样式 */
+.current-role-display {
+  margin-bottom: 24px;
+  padding: 12px;
+  background-color: var(--n-color-target);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.role-info {
+  font-size: 14px;
+  color: var(--n-text-color);
 }
 
 .form-row {

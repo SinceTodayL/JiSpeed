@@ -8,6 +8,13 @@ defineOptions({
   name: 'ResetPwd'
 });
 
+interface Props {
+  selectedRole?: 'user' | 'rider' | 'merchant' | 'admin';
+}
+
+// 接收但不使用 selectedRole prop 以保持兼容性
+defineProps<Props>();
+
 const { toggleLoginModule } = useRouterPush();
 const { formRef, validate } = useNaiveForm();
 

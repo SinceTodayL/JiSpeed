@@ -5,24 +5,13 @@ import { request } from '../request';
  */
 
 /**
- * Get all reviews for a dish
- * @param merchantId Merchant ID
- * @param dishId Dish ID
+ * 获取菜品的所有评论
+ * @param merchantId 商家ID
+ * @param dishId 菜品ID
  */
 export function fetchDishReviews(merchantId: string, dishId: string) {
   return request<Api.Review.ReviewItem[]>({
     url: `/api/reviews/all?merchantId=${merchantId}&dishId=${dishId}`,
-    method: 'get'
-  });
-}
-
-/**
- * Get all reviews for a merchant
- * @param merchantId Merchant ID
- */
-export function fetchMerchantReviews(merchantId: string) {
-  return request<Api.Review.MerchantReviewsResponse>({
-    url: `/api/merchants/${merchantId}/reviews`,
     method: 'get'
   });
 }
