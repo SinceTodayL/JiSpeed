@@ -5,7 +5,7 @@
 import axios from 'axios'
 
 const request = axios.create({
-  baseURL: '',  // 使用相对路径，让代理正确工作
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 10000
 })
 
