@@ -35,7 +35,7 @@ const getData = async () => {
     console.log('开始获取订单数据，商家ID:', merchantStore.merchantId);
     
     // 分别获取所有状态的订单ID列表
-    const statusesToFetch = [0, 1, 2, 3, 4, 5, 6]; // 未支付、已支付、确认收货、已评价、售后中、售后结束、订单关闭
+    const statusesToFetch = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]; // 未支付、已支付、用户确认收货、已评价、售后中、售后结束、订单关闭、已派单、配送中、骑手已送达
     const allOrderPromises = statusesToFetch.map(status => 
       fetchGetAllOrders(merchantStore.merchantId, { orderStatus: status })
     );
@@ -359,17 +359,35 @@ const columns = computed(() => {
         let type: 'default' | 'success' | 'warning' | 'error' | 'info' = 'default';
         
         switch (row.orderStatus) {
+          case 0:
+            type = 'error'; // 未支付
+            break;
           case 1:
             type = 'success'; // 已支付
             break;
           case 2:
-            type = 'info'; // 确认收货
+            type = 'info'; // 用户确认收货
             break;
           case 3:
             type = 'success'; // 已评价
             break;
           case 4:
             type = 'warning'; // 售后中
+            break;
+          case 5:
+            type = 'success'; // 售后结束
+            break;
+          case 6:
+            type = 'error'; // 订单关闭
+            break;
+          case 7:
+            type = 'info'; // 已派单
+            break;
+          case 8:
+            type = 'warning'; // 配送中
+            break;
+          case 9:
+            type = 'info'; // 骑手已送达
             break;
           default:
             type = 'default';
@@ -441,23 +459,12 @@ const columns = computed(() => {
       key: 'operate',
       title: '操作',
       align: 'center' as const,
-      width: 160,
+      width: 100,
       render: (row: any) => (
         <div class="flex-center gap-8px">
           <NButton type="primary" ghost size="small" onClick={() => handleEdit(row.orderId)}>
             查看详情
           </NButton>
-          {/* 根据订单状态显示不同的操作按钮 */}
-          {row.orderStatus === 1 && (
-            <NButton type="success" ghost size="small">
-              确认订单
-            </NButton>
-          )}
-          {row.orderStatus === 4 && (
-            <NButton type="warning" ghost size="small">
-              处理售后
-            </NButton>
-          )}
         </div>
       )
     }

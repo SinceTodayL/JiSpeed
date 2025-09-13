@@ -408,34 +408,52 @@ declare namespace Api {
    * backend api module: "review"
    */
   namespace Review {
-    /** 评论数据项 */
+    /** Review data item - matches merchant reviews endpoint response */
     interface ReviewItem {
-      /** 评论ID */
-      reviewId: string;
-      /** 订单ID */
-      orderId: string;
-      /** 用户ID */
-      userId: string;
-      /** 评分 (1-5星) */
-      rating: number;
-      /** 评论内容 */
-      content: string;
-      /** 是否匿名 1:匿名 2:非匿名 */
-      isAnonymous: number;
-      /** 评论时间 */
-      reviewAt: string;
-      /** 评论状态 1:待审核 2:已通过 3:已拒绝 */
+      /** Review ID */
+      reviewId?: string;
+      /** Order ID */
+      orderId?: string;
+      /** User ID */
+      userId?: string;
+      /** Rating (1-5 stars) */
+      rating?: number;
+      /** Review content */
+      content?: string;
+      /** Is anonymous review 1:anonymous 2:non-anonymous */
+      isAnonymous?: number;
+      /** Review time */
+      reviewAt?: string;
+      /** User nickname */
+      userNickname?: string;
+      /** User avatar URL */
+      userAvatarUrl?: string;
+      /** Timestamp */
+      timestamp: number;
+      /** Review status 1:pending 2:approved 3:rejected */
       status?: number;
     }
 
-    /** 菜品评论响应 */
+    /** Dish reviews response */
     interface DishReviewResponse {
-      /** 响应码 */
+      /** Response code */
       code: number;
-      /** 响应信息 */
+      /** Response message */
       message: string;
-      /** 评论数据 */
+      /** Review data */
       data: ReviewItem[];
+    }
+
+    /** Merchant reviews response */
+    interface MerchantReviewsResponse {
+      /** Response code */
+      code: number;
+      /** Response message */
+      message: string;
+      /** Review data array */
+      data: ReviewItem[];
+      /** Timestamp */
+      timestamp: number;
     }
 
     /** 新增评论请求 */

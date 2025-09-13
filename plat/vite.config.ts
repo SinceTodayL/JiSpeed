@@ -38,7 +38,7 @@ export default defineConfig(configEnv => {
       proxy: {
         // 代理API请求到后端服务器，解决CORS跨域问题
         '/api': {
-          target: viteEnv.VITE_SERVICE_BASE_URL || 'http://121.4.90.75', // 使用环境变量或默认后端地址
+          target: viteEnv.VITE_SERVICE_BASE_URL || 'http://localhost:5090', // 使用环境变量或默认本地后端地址
           changeOrigin: true,
           secure: false, // 忽略SSL证书验证
           configure: (proxy, _options) => {

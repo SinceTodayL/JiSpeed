@@ -61,7 +61,7 @@ async function fetchPerformanceOverview() {
         {
           key: 'avgGoodReviewRate',
           title: '平均好评率',
-          value: (data.AverageGoodReviewRate || 0) * 100,
+          value: (data.AverageGoodReviewRate || 0),
           precision: 2,
           unit: '%',
           color: { start: '#fcbc25', end: '#f68057' },

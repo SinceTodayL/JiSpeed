@@ -5,9 +5,11 @@ import { Icon } from '@iconify/vue';
 import { getRiderInfo, updateRiderInfo } from '@/service/api/rider';
 import { useAuthStore } from '../../store/modules/auth';
 import { useRiderStore } from '../../store/modules/rider';
+import { useI18n } from 'vue-i18n';
 
 const authStore = useAuthStore();
 const riderStore = useRiderStore();
+const { t } = useI18n();
 
 // 骑手ID将通过currentRiderId计算属性动态获取
 
@@ -68,25 +70,45 @@ const rules: FormRules = {
   ]
 };
 
-
 async function fetchRiderInfo() {
   try {
-    const { data } = await getRiderInfo(currentRiderId.value);
-    console.log('data', data);
+    const response = await getRiderInfo(currentRiderId.value);
+    const { data } = response;
+
     if (data) {
+      // 更新表单数据
       Object.assign(formModel, data);
+      
+      // 保存原始数据，用于检测变更
+      originalData.value.applicationUserId = data.applicationUserId || '';
+      originalData.value.name = data.name || '';
+      originalData.value.phoneNumber = data.phoneNumber || '';
+      originalData.value.riderId = data.riderId || '';
+      originalData.value.vehicleNumber = data.vehicleNumber || '';
+      
+    } else {
+      console.warn('⚠️ 获取到的数据为空');
     }
   } catch (error) {
     console.error('获取骑手信息失败', error);
     window.$message?.error('获取骑手信息失败，请检查网络连接');
     // 当API调用失败时，使用模拟数据
-    Object.assign(formModel, {
+    const mockData = {
       applicationUserId: 'mock_user_001',
       name: '测试骑手',
       phoneNumber: '13800138000',
       riderId: currentRiderId.value,
       vehicleNumber: '宁A12345'
-    });
+    };
+    
+    Object.assign(formModel, mockData);
+    
+    // 保存模拟数据到原始数据
+    originalData.value.applicationUserId = mockData.applicationUserId;
+    originalData.value.name = mockData.name;
+    originalData.value.phoneNumber = mockData.phoneNumber;
+    originalData.value.riderId = mockData.riderId;
+    originalData.value.vehicleNumber = mockData.vehicleNumber;
   }
 }
 
@@ -94,41 +116,65 @@ onMounted(() => {
   fetchRiderInfo();
 });
 
-async function handleUpdate() {
+async function handleSave() {
   formRef.value?.validate(async errors => {
     if (errors) {
       return;
     }
 
-    loading.value = true;
+    submitting.value = true;
     const { name, phoneNumber, vehicleNumber } = formModel;
-
+    
     try {
-      const { data: updatedData } = await updateRiderInfo(formModel.riderId, {
+      const response = await updateRiderInfo(formModel.riderId, {
         name,
         phoneNumber,
         vehicleNumber
       });
+      
+      
+      const { data: updatedData } = response;
 
       if (updatedData) {
-        window.$message?.success('个人信息更新成功！');
+        window.$message?.success('个人信息保存成功！');
+        
+        // 更新表单数据
         Object.assign(formModel, updatedData);
-        console.log('updatedData', updatedData);
-        console.log('formModel', formModel);
+        
+        // 更新原始数据，确保hasChanges计算属性正确工作
+        originalData.value.applicationUserId = updatedData.applicationUserId || '';
+        originalData.value.name = updatedData.name || '';
+        originalData.value.phoneNumber = updatedData.phoneNumber || '';
+        originalData.value.riderId = updatedData.riderId || '';
+        originalData.value.vehicleNumber = updatedData.vehicleNumber || '';
+        
+        // 🔄 同步更新authStore中的用户姓名
+        if (updatedData.name && updatedData.name !== authStore.userInfo.userName) {
+          authStore.updateUserInfo({ userName: updatedData.name });
+        }
+        
+      } else {
+        console.warn('⚠️ API返回数据为空');
+        window.$message?.warning('保存成功，但未返回更新后的数据');
       }
     } catch (error: any) {
-      console.error('更新骑手信息失败', error);
-      const errorMessage = error?.response?.data?.message || '更新失败，请稍后重试';
+      console.error('保存骑手信息失败', error);
+      const errorMessage = error?.response?.data?.message || '保存失败，请稍后重试';
       window.$message?.error(errorMessage);
     } finally {
-      loading.value = false;
+      submitting.value = false;
     }
   });
 }
 
 // 取消编辑，恢复原始数据
 const handleCancel = () => {
-  Object.assign(formModel, originalData.value);
+  // 使用逐个赋值确保响应式更新
+  formModel.applicationUserId = originalData.value.applicationUserId;
+  formModel.name = originalData.value.name;
+  formModel.phoneNumber = originalData.value.phoneNumber;
+  formModel.riderId = originalData.value.riderId;
+  formModel.vehicleNumber = originalData.value.vehicleNumber;
 };
 </script>
 
@@ -141,8 +187,8 @@ const handleCancel = () => {
           <Icon icon="mdi:account-circle" class="text-2xl text-white" />
         </div>
         <div>
-          <h1 class="text-2xl text-gray-800 font-bold dark:text-gray-200">个人信息管理</h1>
-          <p class="mt-2px text-gray-600 dark:text-gray-400">管理您的个人基本信息和账户设置，确保信息准确无误</p>
+          <h1 class="text-2xl text-gray-800 font-bold dark:text-gray-200">{{ t('rider.profile.title') }}</h1>
+          <p class="mt-2px text-gray-600 dark:text-gray-400">{{ t('rider.profile.subtitle') }}</p>
         </div>
       </div>
     </NCard>
@@ -241,7 +287,7 @@ const handleCancel = () => {
                 :loading="submitting"
                 :disabled="!hasChanges"
                 class="bg-gradient-to-r from-blue-500 to-purple-600 border-0"
-                @click="handleUpdate"
+                @click="handleSave"
               >
                 <template #icon>
                   <Icon icon="mdi:content-save" />

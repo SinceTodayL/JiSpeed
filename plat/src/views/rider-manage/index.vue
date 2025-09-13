@@ -33,10 +33,13 @@ import {
   TrophyOutline,
   StatsChartOutline,
   EyeOutline,
-  WalletOutline
+  WalletOutline,
+  FlashOutline,
+  PauseCircleOutline,
+  TimeOutline
 } from '@vicons/ionicons5';
 import { fetchRidersList, fetchRiderInfo, fetchRiderPerformanceRanking } from '@/api/rider';
-import OrderOverview from '@/components/OrderOverview.vue';
+import { getAllOrdersWithDetails } from '@/api/order';
 
 
 defineOptions({
@@ -46,6 +49,12 @@ defineOptions({
 const message = useMessage();
 const loading = ref(false);
 const tableData = ref<any[]>([]);
+
+// 订单相关数据
+const ordersLoading = ref(false);
+const ordersData = ref<any[]>([]);
+const showOrdersModal = ref(false);
+const totalOrdersCount = ref(0); // 总订单数
 
 const pagination = ref({
   page: 1,
@@ -67,18 +76,10 @@ const searchParams = ref({
 const riderStats = computed(() => {
   const total = tableData.value.length;
   const onlineCount = tableData.value.filter(rider => rider.status === 1).length;
-  const offlineCount = tableData.value.filter(rider => rider.status === 0).length;
-  const busyCount = tableData.value.filter(rider => rider.status === 2).length;
-  const withVehicle = tableData.value.filter(rider => rider.vehicleNumber).length;
   
   return {
     total,
     onlineCount,
-    offlineCount,
-    busyCount,
-    withVehicle,
-    onlineRate: total > 0 ? Math.round((onlineCount / total) * 100) : 0,
-    vehicleRate: total > 0 ? Math.round((withVehicle / total) * 100) : 0
   };
 });
 
@@ -232,6 +233,124 @@ function handlePageChange(page: number) {
   pagination.value.page = page;
   getRidersList();
 }
+
+// 订单表格列定义
+const ordersColumns: DataTableColumns = [
+  {
+    key: 'index',
+    title: '序号',
+    align: 'center',
+    width: 60,
+    render: (row) => row.index
+  },
+  {
+    key: 'OrderId',
+    title: '订单ID',
+    width: 100,
+    render: (row) => (
+      <n-text code style="font-size: 11px;">
+        {row.OrderId?.slice(-8) || '-'}
+      </n-text>
+    )
+  },
+  {
+    key: 'OrderStatus',
+    title: '状态',
+    align: 'center',
+    width: 90,
+    render: (row) => (
+      <n-tag type={row.statusType} size="small">
+        {row.statusText}
+      </n-tag>
+    )
+  },
+  {
+    key: 'User',
+    title: '用户信息',
+    width: 120,
+    render: (row) => (
+      <div class="flex flex-col">
+        <n-text strong style="font-size: 12px;">
+          {row.User?.Nickname || '未知用户'}
+        </n-text>
+        <n-text depth="3" style="font-size: 10px;">
+          ID: {row.User?.UserId?.slice(-6) || '-'}
+        </n-text>
+      </div>
+    )
+  },
+  {
+    key: 'Merchant',
+    title: '商家信息',
+    width: 140,
+    render: (row) => (
+      <div class="flex flex-col">
+        <n-text strong style="font-size: 12px;">
+          {row.Merchant?.MerchantName || '未知商家'}
+        </n-text>
+        <n-text depth="3" style="font-size: 10px; word-break: break-all;">
+          {row.Merchant?.Location || '-'}
+        </n-text>
+      </div>
+    )
+  },
+  {
+    key: 'Assignment',
+    title: '分配信息',
+    width: 140,
+    render: (row) => {
+      if (!row.Assignment) {
+        return (
+          <n-tag type="warning" size="small">
+            未分配
+          </n-tag>
+        );
+      }
+      return (
+        <div class="flex flex-col">
+          <n-text strong style="font-size: 12px;">
+            {row.Assignment.RiderName || '未知骑手'}
+          </n-text>
+          <n-text depth="3" style="font-size: 10px;">
+            {row.Assignment.RiderPhoneNumber || '-'}
+          </n-text>
+          <n-tag 
+            type={row.Assignment.AcceptedStatus ? 'success' : 'warning'} 
+            size="small"
+            style="margin-top: 2px; font-size: 10px;"
+          >
+            {row.Assignment.AcceptedStatus ? '已接单' : '待接单'}
+          </n-tag>
+        </div>
+      );
+    }
+  },
+  {
+    key: 'Address',
+    title: '配送地址',
+    width: 160,
+    render: (row) => (
+      <div class="flex flex-col">
+        <n-text strong style="font-size: 12px;">
+          {row.Address?.RecipientName || '未知收件人'}
+        </n-text>
+        <n-text depth="3" style="font-size: 10px; word-break: break-all; max-width: 150px;">
+          {row.Address?.Address || '-'}
+        </n-text>
+      </div>
+    )
+  },
+  {
+    key: 'CreateAt',
+    title: '创建时间',
+    width: 120,
+    render: (row) => (
+      <n-text style="font-size: 11px;">
+        {row.CreateAt ? new Date(row.CreateAt).toLocaleString() : '-'}
+      </n-text>
+    )
+  }
+];
 
 const columns: DataTableColumns = [
   {
@@ -405,6 +524,133 @@ function getRankingBadgeType(rank: number) {
   return 'info';                    // 其他 - 蓝色
 }
 
+// 订单状态映射（根据新的OrderStatus枚举）
+function getOrderStatusText(status: number) {
+  const statusMap = {
+    0: '未支付',
+    1: '已支付', 
+    2: '用户确认收货',
+    3: '已经评价',
+    4: '售后中',
+    5: '售后结束',
+    6: '订单关闭',
+    7: '已派单',
+    8: '配送中'
+  };
+  return statusMap[status] || '未知状态';
+}
+
+// 订单状态颜色
+function getOrderStatusType(status: number) {
+  const typeMap = {
+    0: 'error',    // 未支付 - 红色
+    1: 'warning',  // 已支付 - 黄色
+    2: 'success',  // 用户确认收货 - 绿色
+    3: 'success',  // 已经评价 - 绿色
+    4: 'warning',  // 售后中 - 橙色
+    5: 'success',  // 售后结束 - 绿色
+    6: 'error',    // 订单关闭 - 红色
+    7: 'info',     // 已派单 - 蓝色
+    8: 'warning'   // 配送中 - 橙色
+  };
+  return typeMap[status] || 'default';
+}
+
+// 获取派单相关订单数据（只显示状态7和8的订单）
+async function getAllOrdersData() {
+  try {
+    ordersLoading.value = true;
+    
+    console.log('🚀 开始获取派单相关订单数据');
+    const response = await getAllOrdersWithDetails();
+    console.log('📥 收到订单数据响应:', response);
+    
+    if (response) {
+      // API可能直接返回数组，也可能返回包含data属性的对象
+      const orders = Array.isArray(response) ? response : response.data || [];
+
+      if (Array.isArray(orders)) {
+        // 保存总订单数
+        totalOrdersCount.value = orders.length;
+
+        // 只显示状态为7（已派单）和8（配送中）的订单
+        const filteredOrders = orders.filter(order => {
+          const status = order.OrderStatus || order.orderStatus; // 兼容大小写
+          return status === 7 || status === 8;
+        });
+
+        ordersData.value = filteredOrders.map((order, index) => {
+          // --- Deep Data Normalization ---
+          const user = order.User || order.user || {};
+          const merchant = order.Merchant || order.merchant || {};
+          const address = order.Address || order.address || {};
+          const assignment = order.Assignment || order.assignment; // Can be null/undefined
+
+          const normalizedOrder = {
+            // Keep other properties from original order
+            ...order,
+
+            // Normalize root level properties
+            OrderId: order.OrderId || order.orderId,
+            OrderStatus: order.OrderStatus || order.orderStatus,
+            CreateAt: order.CreateAt || order.createAt,
+            
+            // Re-construct nested objects with consistent (PascalCase) keys
+            User: {
+              Nickname: user.Nickname || user.nickname,
+              UserId: user.UserId || user.userId
+            },
+            Merchant: {
+              MerchantName: merchant.MerchantName || merchant.merchantName,
+              Location: merchant.Location || merchant.location
+            },
+            Address: {
+              RecipientName: address.RecipientName || address.recipientName,
+              Address: address.Address || address.address
+            },
+            // Only normalize assignment if it exists
+            Assignment: assignment ? {
+              RiderName: assignment.RiderName || assignment.riderName,
+              RiderPhoneNumber: assignment.RiderPhoneNumber || assignment.riderPhoneNumber,
+              AcceptedStatus: assignment.AcceptedStatus || assignment.acceptedStatus
+            } : null,
+          };
+
+          return {
+            ...normalizedOrder,
+            index: index + 1,
+            statusText: getOrderStatusText(normalizedOrder.OrderStatus),
+            statusType: getOrderStatusType(normalizedOrder.OrderStatus)
+          };
+        });
+
+        message.success(`成功获取 ${filteredOrders.length} 条派单订单（总订单数：${totalOrdersCount.value}）`);
+      } else {
+        message.error('获取到的订单数据格式不正确');
+        ordersData.value = [];
+        totalOrdersCount.value = 0;
+      }
+    } else {
+      message.error('获取订单数据失败');
+      ordersData.value = [];
+      totalOrdersCount.value = 0;
+    }
+  } catch (error) {
+    message.error('获取订单数据失败: ' + error.message);
+    ordersData.value = [];
+    totalOrdersCount.value = 0;
+    console.error('Error fetching orders data:', error);
+  } finally {
+    ordersLoading.value = false;
+  }
+}
+
+// 显示订单排单列表
+function showOrdersAssignment() {
+  showOrdersModal.value = true;
+  getAllOrdersData();
+}
+
 
 
 // 格式化时间显示
@@ -447,7 +693,7 @@ onMounted(() => {
     </div>
 
     <!-- 统计卡片区域 -->
-    <n-grid :cols="5" :x-gap="16" :y-gap="16" class="mb-6">
+    <n-grid :cols="2" :x-gap="16" :y-gap="16" class="mb-6">
       <n-gi>
         <n-card :bordered="false" class="shadow-sm hover:shadow-lg transition-shadow duration-300">
           <n-statistic
@@ -466,7 +712,7 @@ onMounted(() => {
       <n-gi>
         <n-card :bordered="false" class="shadow-sm hover:shadow-lg transition-shadow duration-300">
           <n-statistic
-            label="在线配送"
+            label="在线骑手数"
             :value="riderStats.onlineCount"
             value-style="color: #fa8c16; font-weight: bold;"
           >
@@ -478,62 +724,8 @@ onMounted(() => {
           </n-statistic>
         </n-card>
       </n-gi>
-      <n-gi>
-        <n-card :bordered="false" class="shadow-sm hover:shadow-lg transition-shadow duration-300">
-          <n-statistic
-            label="离线休息"
-            :value="riderStats.offlineCount"
-            value-style="color: #d9d9d9; font-weight: bold;"
-          >
-            <template #prefix>
-              <n-icon size="20" color="#d9d9d9">
-                <PauseCircleOutline />
-              </n-icon>
-            </template>
-          </n-statistic>
-        </n-card>
-      </n-gi>
-      <n-gi>
-        <n-card :bordered="false" class="shadow-sm hover:shadow-lg transition-shadow duration-300">
-          <n-statistic
-            label="忙碌配送"
-            :value="riderStats.busyCount"
-            value-style="color: #ff4d4f; font-weight: bold;"
-          >
-            <template #prefix>
-              <n-icon size="20" color="#ff4d4f">
-                <TimeOutline />
-              </n-icon>
-            </template>
-          </n-statistic>
-        </n-card>
-      </n-gi>
-      <n-gi>
-        <n-card :bordered="false" class="shadow-sm hover:shadow-lg transition-shadow duration-300">
-          <n-statistic
-            label="在线率"
-            :value="riderStats.onlineRate"
-            value-style="color: #52c41a; font-weight: bold;"
-          >
-            <template #suffix>
-              <span class="text-sm text-gray-500">%</span>
-            </template>
-            <template #prefix>
-              <n-icon size="20" color="#52c41a">
-                <StatsChartOutline />
-              </n-icon>
-            </template>
-          </n-statistic>
-        </n-card>
-      </n-gi>
     </n-grid>
 
-    <!-- 订单分配总览 -->
-    <OrderOverview 
-      :auto-refresh="true"
-      :refresh-interval="30000"
-      class="mb-6"
-    />
 
     <!-- 搜索筛选区域 -->
     <n-card title="筛选条件" class="mb-6 shadow-sm" :bordered="false">
@@ -554,6 +746,14 @@ onMounted(() => {
               </n-icon>
             </template>
             重置
+          </n-button>
+          <n-button size="small" @click="showOrdersAssignment" type="warning">
+            <template #icon>
+              <n-icon>
+                <StatsChartOutline />
+              </n-icon>
+            </template>
+            订单派送情况
           </n-button>
         </n-space>
       </template>
@@ -756,34 +956,6 @@ onMounted(() => {
           </n-gi>
         </n-grid>
 
-        <!-- 绩效排名详情 -->
-        <div v-if="Object.keys(riderRanking).length > 0">
-          <n-divider>
-            <n-icon color="#fa8c16">
-              <TrophyOutline />
-            </n-icon>
-            详细排名
-          </n-divider>
-          
-          <n-grid :cols="2" :x-gap="16" :y-gap="12">
-            <n-gi v-for="(value, key) in riderRanking" :key="key">
-              <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div class="flex items-center gap-2">
-                  <n-icon color="#fa8c16" size="16">
-                    <StatsChartOutline />
-                  </n-icon>
-                  <span class="text-gray-700 font-medium">{{ formatRankingKey(key) }}</span>
-                </div>
-                <n-badge 
-                  :value="`第${value}名`" 
-                  :type="getRankingBadgeType(value)"
-                  style="--n-font-size: 12px;"
-                />
-              </div>
-            </n-gi>
-          </n-grid>
-        </div>
-
       </div>
       
       <!-- 加载状态 -->
@@ -792,6 +964,96 @@ onMounted(() => {
           <template #description>
             <div class="text-center mt-4">
               <p class="text-gray-600">正在加载骑手信息...</p>
+              <p class="text-sm text-gray-400 mt-1">请稍候片刻</p>
+            </div>
+          </template>
+        </n-spin>
+      </div>
+    </n-modal>
+
+    <!-- 订单排单展示弹窗 -->
+    <n-modal 
+      v-model:show="showOrdersModal" 
+      preset="card" 
+      style="width: 1200px; max-height: 85vh;" 
+      class="rounded-2xl"
+      :mask-closable="false"
+    >
+      <template #header>
+        <div class="flex items-center gap-3">
+          <n-avatar 
+            :size="40"
+            style="background: linear-gradient(135deg, #fa8c16, #faad14)"
+          >
+            <n-icon size="20">
+              <StatsChartOutline />
+            </n-icon>
+          </n-avatar>
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800">
+              派单状态展示
+            </h3>
+            <p class="text-sm text-gray-500">
+              实时查看已派单和配送中的订单
+            </p>
+          </div>
+        </div>
+      </template>
+
+      <div v-if="!ordersLoading" class="space-y-4">
+        <!-- 订单统计概览 -->
+        <div class="bg-gradient-to-r from-orange-50 to-yellow-50 p-4 rounded-lg">
+          <h4 class="text-gray-800 font-medium mb-4 flex items-center gap-2">
+            <n-icon color="#fa8c16">
+              <StatsChartOutline />
+            </n-icon>
+            派单状态统计
+          </h4>
+          
+          <n-grid :cols="3" :x-gap="16">
+            <!-- 总订单数 -->
+            <n-gi>
+              <div class="text-center p-4 bg-white rounded-lg shadow-sm">
+                <div class="text-2xl font-bold text-purple-600">
+                  {{ totalOrdersCount }}
+                </div>
+                <div class="text-sm text-gray-600 mt-2">总订单数</div>
+              </div>
+            </n-gi>
+            
+            <!-- 派单状态统计 -->
+            <n-gi v-for="status in [7, 8]" :key="status">
+              <div class="text-center p-4 bg-white rounded-lg shadow-sm">
+                <div class="text-2xl font-bold" :class="{
+                  'text-blue-600': status === 7,
+                  'text-orange-600': status === 8
+                }">
+                  {{ ordersData.filter(order => order.OrderStatus === status).length }}
+                </div>
+                <div class="text-sm text-gray-600 mt-2">{{ getOrderStatusText(status) }}</div>
+              </div>
+            </n-gi>
+          </n-grid>
+        </div>
+
+        <!-- 订单列表 -->
+        <n-data-table
+          :columns="ordersColumns"
+          :data="ordersData"
+          :loading="ordersLoading"
+          :pagination="{ pageSize: 15, showSizePicker: true, pageSizes: [10, 15, 20, 30] }"
+          flex-height
+          style="min-height: 400px;"
+          :row-class-name="() => 'hover:bg-orange-50 transition-colors duration-200'"
+        />
+      </div>
+      
+      <!-- 加载状态 -->
+      <div v-else class="flex justify-center items-center h-80">
+        <n-spin size="large">
+          <template #description>
+            <div class="text-center mt-4">
+              <p class="text-gray-600">正在加载订单数据...</p>
               <p class="text-sm text-gray-400 mt-1">请稍候片刻</p>
             </div>
           </template>

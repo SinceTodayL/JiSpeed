@@ -22,7 +22,6 @@ interface CardData {
   icon: string;
 }
 
-// 基于商家真实数据的卡片数据
 const cardData = computed<CardData[]>(() => {
   const { salesStats } = merchantStore;
   
@@ -35,7 +34,6 @@ const cardData = computed<CardData[]>(() => {
     ];
   }
   
-  // 计算商家业务指标
   const totalSales = salesStats.reduce((sum, item) => sum + (Number(item.salesQty) || 0), 0);
   const totalAmount = salesStats.reduce((sum, item) => sum + (Number(item.salesAmount) || 0), 0);
   const avgDailyAmount = totalAmount / 7;

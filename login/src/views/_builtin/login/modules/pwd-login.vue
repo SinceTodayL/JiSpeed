@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/modules/auth';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { useRouterPush } from '@/hooks/common/router';
 import { $t } from '@/locales';
+import { getDefaultCredentials, ROLE_CONFIG } from '@/constants/login-defaults';
 
 defineOptions({
   name: 'PwdLogin'
@@ -26,10 +27,13 @@ interface FormModel {
   password: string;
 }
 
-// By default
+// 从配置文件获取默认账号密码
+const roleDefaultCredentials = getDefaultCredentials();
+
+// 响应式表单模型
 const model: FormModel = reactive({
-  loginKey: 'TongJi',
-  password: '6547265472'
+  loginKey: roleDefaultCredentials[loginRole.value].loginKey,
+  password: roleDefaultCredentials[loginRole.value].password
 });
 
 const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
@@ -53,39 +57,25 @@ async function handleSubmit() {
   await validate();
 
   // 根据选择的角色确定userType
-  const userTypeMap = {
-    'user': 1,
-    'merchant': 2,
-    'rider': 3,
-    'admin': 4
-  };
+  const userType = ROLE_CONFIG[loginRole.value].userType;
+  const loginResult = await authStore.login(model.loginKey, model.password, userType);
 
-  const userType = userTypeMap[loginRole.value];
-  await authStore.login(model.loginKey, model.password, userType);
-
-  // 登录成功后跳转到相应的模块
-  await redirectToModule(loginRole.value);
+  // 只有登录成功时才执行跳转（auth store内部已经处理了跳转逻辑）
+  if (!loginResult.success) {
+    // 登录失败，不做任何跳转，错误信息已在auth store中显示
+    console.log('登录失败:', loginResult.error);
+    return;
+  }
+  
+  // 登录成功，auth store已经处理了跳转逻辑，这里不需要额外操作
+  console.log('登录成功');
 }
 
-// 根据用户角色跳转到相应的模块
+// 这个函数现在不再需要，因为auth store内部已经处理了跳转逻辑
+// 保留函数定义以防其他地方引用，但不执行任何操作
 async function redirectToModule(role: 'user' | 'rider' | 'merchant' | 'admin') {
-  const moduleUrls = {
-    'user': import.meta.env.VITE_USER_FRONTEND_URL,
-    'merchant': import.meta.env.VITE_MERCHANT_FRONTEND_URL,
-    'rider': import.meta.env.VITE_RIDER_FRONTEND_URL,
-    'admin': import.meta.env.VITE_ADMIN_FRONTEND_URL
-  };
-
-  const targetUrl = moduleUrls[role];
-
-  if (targetUrl) {
-    // 延迟跳转，确保登录状态已保存
-    setTimeout(() => {
-      window.location.href = targetUrl;
-    }, 500);
-  } else {
-    console.warn(`No frontend URL configured for role: ${role}`);
-  }
+  // 跳转逻辑已移至auth store中处理
+  console.log('跳转逻辑已由auth store处理');
 }
 
 // 登录角色选项
@@ -131,6 +121,13 @@ watch(loginMethod, (newMethod) => {
     }, 0);
   }
 });
+
+// 监听角色变化，自动更新默认账号密码
+watch(loginRole, (newRole) => {
+  const defaultCredentials = roleDefaultCredentials[newRole];
+  model.loginKey = defaultCredentials.loginKey;
+  model.password = defaultCredentials.password;
+}, { immediate: true });
 
 // 检查登录前状态
 onMounted(async () => {

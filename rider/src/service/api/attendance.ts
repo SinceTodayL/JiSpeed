@@ -148,11 +148,11 @@ export function getRiderAttendanceStats(riderId: string, params: Api.Attendance.
 /**
  * 计算工作时长
  */
-export function calculateWorkHours(params: Api.Attendance.CalculateWorkHoursRequest) {
+export function calculateWorkHours(riderId: string, checkDate: string) {
   return request<Api.Attendance.WorkHoursResponse>({
-    url: `/api/Attendance/working-hours/${params.riderId}`,
+    url: `/api/Attendance/working-hours/${riderId}`,
     method: 'get',
-    params
+    params: { checkDate }
   });
 }
 
@@ -172,11 +172,10 @@ export function getAttendanceReport(params: Api.Attendance.GetAttendanceReportRe
 /**
  * 骑手签退
  */
-export function riderCheckOutAttendance(riderId: string, data: Api.Attendance.CheckOutRequest) {
+export function riderCheckOutAttendance(riderId: string) {
   return request<Api.Attendance.CheckOutResponse>({
     url: `/api/Attendance/checkout/${riderId}`,
-    method: 'post',
-    data
+    method: 'post'
   });
 }
 
@@ -205,10 +204,9 @@ export function markAbsent(data: Api.Attendance.MarkAbsentRequest) {
 /**
  * 骑手签到
  */
-export function riderCheckInAttendance(riderId: string, data: Api.Attendance.CheckInRequest) {
+export function riderCheckInAttendance(riderId: string) {
   return request<Api.Attendance.CheckInResponse>({
-    url: `/api/Attendance/rider/${riderId}`,
-    method: 'post',
-    data
+    url: `/api/Attendance/checkin/${riderId}`,
+    method: 'post'
   });
 }

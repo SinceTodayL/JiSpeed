@@ -136,38 +136,36 @@ declare namespace Api {
 
     /** 骑手接受订单请求 */
     export interface AcceptOrderRequest {
-      /** 分配ID */
-      assignmentId: string;
-      /** 接受时间 */
-      acceptedAt: string;
-      /** 预计到达时间 */
-      estimatedArrivalTime?: string;
+      /** 订单ID */
+      OrderId: string;
+      /** 骑手ID */
+      RiderId: string;
     }
 
     /** 骑手拒绝订单请求 */
     export interface RejectOrderRequest {
-      /** 分配ID */
-      assignmentId: string;
-      /** 拒绝时间 */
-      rejectedAt: string;
+      /** 订单ID */
+      OrderId: string;
+      /** 骑手ID */
+      RiderId: string;
       /** 拒绝原因 */
-      reason: string;
+      Reason?: string;
     }
 
     /** 更新订单状态请求 */
     export interface UpdateOrderStatusRequest {
+      /** 订单ID */
+      OrderId: string;
       /** 新状态 */
-      status: 'accepted' | 'rejected' | 'completed' | 'cancelled';
-      /** 更新时间 */
-      updatedAt: string;
+      NewStatus: number;
       /** 备注 */
-      remarks?: string;
-      /** 位置信息（完成时） */
-      location?: {
-        longitude: number;
-        latitude: number;
-        address?: string;
-      };
+      Remark?: string;
+    }
+
+    /** 更新分配状态请求 */
+    export interface UpdateAssignmentStatusRequest {
+      /** 接单状态 */
+      AcceptedStatus: number;
     }
 
     /** 获取骑手分配列表请求 */
@@ -207,27 +205,21 @@ declare namespace Api {
     }>;
 
     /** 骑手接受订单响应 */
-    export type AcceptOrderResponse = ApiResponse<{
-      assignmentId: string;
-      status: string;
-      acceptedAt: string;
-      message: string;
-    }>;
+    export type AcceptOrderResponse = ApiResponse<boolean>;
 
     /** 骑手拒绝订单响应 */
-    export type RejectOrderResponse = ApiResponse<{
-      assignmentId: string;
-      status: string;
-      rejectedAt: string;
-      message: string;
-    }>;
+    export type RejectOrderResponse = ApiResponse<boolean>;
 
     /** 更新订单状态响应 */
-    export type UpdateOrderStatusResponse = ApiResponse<{
-      assignmentId: string;
-      status: string;
-      updatedAt: string;
-      message: string;
+    export type UpdateOrderStatusResponse = ApiResponse<boolean>;
+
+    /** 更新分配状态响应 */
+    export type UpdateAssignmentStatusResponse = ApiResponse<{
+      assignId: string;
+      orderId: string;
+      riderId: string;
+      acceptedStatus: number;
+      acceptedAt?: string;
     }>;
 
     /** 订单分配信息响应 */
