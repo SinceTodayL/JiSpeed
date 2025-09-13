@@ -7,11 +7,33 @@ import { request } from '../request';
 // ========== 订单分配 ==========
 
 /**
+ * 自动分配订单
+ */
+export function autoAssignOrder(data: Api.OrderAssignment.AutoAssignRequest) {
+  return request<Api.OrderAssignment.AutoAssignResponse>({
+    url: '/api/orderassignment/auto-assign',
+    method: 'post',
+    data
+  });
+}
+
+/**
+ * 手动分配订单
+ */
+export function manualAssignOrder(data: Api.OrderAssignment.ManualAssignRequest) {
+  return request<Api.OrderAssignment.ManualAssignResponse>({
+    url: '/api/orderassignment/manual-assign',
+    method: 'post',
+    data
+  });
+}
+
+/**
  * 骑手接受订单
  */
-export function acceptOrder(data: Api.OrderAssignment.AcceptOrderRequest) {
+export function acceptOrder(riderId: string, data: Api.OrderAssignment.AcceptOrderRequest) {
   return request<Api.OrderAssignment.AcceptOrderResponse>({
-    url: '/api/OrderAssignment/accept-order',
+    url: `/api/orderassignment/rider/${riderId}/accept`,
     method: 'post',
     data
   });
@@ -20,9 +42,9 @@ export function acceptOrder(data: Api.OrderAssignment.AcceptOrderRequest) {
 /**
  * 骑手拒绝订单
  */
-export function rejectOrder(data: Api.OrderAssignment.RejectOrderRequest) {
+export function rejectOrder(riderId: string, data: Api.OrderAssignment.RejectOrderRequest) {
   return request<Api.OrderAssignment.RejectOrderResponse>({
-    url: '/api/OrderAssignment/reject-order',
+    url: `/api/orderassignment/rider/${riderId}/reject`,
     method: 'post',
     data
   });
@@ -31,35 +53,11 @@ export function rejectOrder(data: Api.OrderAssignment.RejectOrderRequest) {
 /**
  * 更新订单状态
  */
-export function updateOrderStatus(data: Api.OrderAssignment.UpdateOrderStatusRequest) {
+export function updateOrderStatus(assignmentId: string, data: Api.OrderAssignment.UpdateOrderStatusRequest) {
   return request<Api.OrderAssignment.UpdateOrderStatusResponse>({
-    url: '/api/OrderAssignment/update-status',
+    url: `/api/orderassignment/${assignmentId}/status`,
     method: 'put',
     data
-  });
-}
-
-/**
- * 更新分配状态（推荐使用此接口）
- */
-export function updateAssignmentStatus(riderId: string, assignId: string, data: Api.OrderAssignment.UpdateAssignmentStatusRequest) {
-  return request<Api.OrderAssignment.UpdateAssignmentStatusResponse>({
-    url: `/api/Riders/${riderId}/assignments/${assignId}`,
-    method: 'patch',
-    data
-  });
-}
-
-/**
- * 确认配送（完成订单）
- */
-export function confirmDelivery(riderId: string, assignId: string) {
-  return request<Api.OrderAssignment.UpdateAssignmentStatusResponse>({
-    url: `/api/Riders/${riderId}/assignments/${assignId}`,
-    method: 'patch',
-    data: {
-      AcceptedStatus: 3  // 3 = 确认送达
-    }
   });
 }
 
@@ -67,21 +65,12 @@ export function confirmDelivery(riderId: string, assignId: string) {
 
 /**
  * 获取订单分配信息
- * 注意：此API暂时不可用，返回404错误
  */
-export function getOrderAssignmentInfo(orderId: string) {
-  // 临时返回空数据，避免404错误
-  return Promise.resolve({
-    data: null,
-    code: 200,
-    message: '订单分配信息功能暂未实现'
+export function getOrderAssignmentInfo(assignmentId: string) {
+  return request<Api.OrderAssignment.OrderAssignmentInfoResponse>({
+    url: `/api/orderassignment/${assignmentId}`,
+    method: 'get'
   });
-  
-  // 原始API调用（暂时注释）
-  // return request<Api.OrderAssignment.OrderAssignmentInfoResponse>({
-  //   url: `/api/OrderAssignment/order/${orderId}/assignment`,
-  //   method: 'get'
-  // });
 }
 
 /**
@@ -89,7 +78,7 @@ export function getOrderAssignmentInfo(orderId: string) {
  */
 export function getRiderAssignmentList(riderId: string, params: Api.OrderAssignment.GetRiderAssignmentListRequest = {}) {
   return request<Api.OrderAssignment.RiderAssignmentListResponse>({
-    url: `/api/OrderAssignment/rider/${riderId}/assignments`,
+    url: `/api/orderassignment/rider/${riderId}/list`,
     method: 'get',
     params
   });

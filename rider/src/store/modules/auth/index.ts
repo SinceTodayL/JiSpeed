@@ -6,7 +6,7 @@ import { localStg } from '@/utils/storage';
 import { SetupStoreId } from '@/enum';
 import { useRouteStore } from '../route';
 import { useTabStore } from '../tab';
-import { clearAuthStorage, getToken, getUserId } from './shared';
+import { clearAuthStorage, getToken, getUserId, setAuthStorage } from './shared';
 
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const routeStore = useRouteStore();
@@ -64,7 +64,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
       const userIdString = String(hasUserId);
       userInfo.userId = userIdString;
       token.value = String(hasToken);
-
+      
       // 先创建基础骑手用户信息
       const riderUserInfo: Api.Auth.UserInfo = {
         userId: userIdString,
@@ -76,40 +76,20 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
       // 更新用户信息
       Object.assign(userInfo, riderUserInfo);
 
+      console.log('骑手用户信息已初始化:', riderUserInfo);
 
       // 尝试从API获取骑手的真实姓名
       try {
-        const { data } = await getRiderInfo(userIdString);
+        const { data } = await getRiderInfo({ riderId: userIdString });
         if (data && data.name) {
           // 更新用户名为真实姓名
           userInfo.userName = data.name;
+          console.log('已获取骑手真实姓名:', data.name);
         }
       } catch (error) {
         console.warn('获取骑手真实姓名失败，使用默认名称:', error);
         // 如果API调用失败，保持默认的"骑手"名称
       }
-    }
-  }
-
-  /**
-   * 更新用户信息（用于个人信息修改后的同步）
-   * @param userData 要更新的用户数据
-   */
-  function updateUserInfo(userData: Partial<Api.Auth.UserInfo>) {
-    if (userData.userName !== undefined) {
-      userInfo.userName = userData.userName;
-    }
-    
-    if (userData.userId !== undefined) {
-      userInfo.userId = userData.userId;
-    }
-    
-    if (userData.roles !== undefined) {
-      userInfo.roles = userData.roles;
-    }
-    
-    if (userData.buttons !== undefined) {
-      userInfo.buttons = userData.buttons;
     }
   }
 
@@ -120,7 +100,6 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     isLogin,
     loginLoading,
     resetStore,
-    initUserInfo,
-    updateUserInfo
+    initUserInfo
   };
 });

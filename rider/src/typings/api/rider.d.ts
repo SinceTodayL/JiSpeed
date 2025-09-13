@@ -50,16 +50,11 @@ declare namespace Api {
       phoneNumber: string;
       riderId: string;
       vehicleNumber: string;
+      [property: string]: any;
     }
 
     /** 更新骑手信息响应 */
-    export interface UpdateInfoResponse {
-      code: number;
-      data: UpdateInfoData;
-      message: string;
-      timestamp: number;
-      [property: string]: any;
-    }
+    export type UpdateInfoResponse = ApiResponse<UpdateInfoData>;
 
     /** 骑手注册请求 */
     export interface RegisterRequest {
@@ -109,6 +104,8 @@ declare namespace Api {
     export interface OrderAssignmentData {
       /** 分配ID */
       assignId: string;
+      /** 骑手ID */
+      riderId: string;
       /** 分配时间 */
       assignedAt: string;
       /** 接单状态（0:未处理, 1:已接单, 2:已拒单, 3:已完成） */
@@ -131,10 +128,8 @@ declare namespace Api {
       createAt: string;
       /** 订单状态 */
       orderStatus: number;
-      /** 配送地址 */
-      deliveryAddress: string;
-      /** 商家名称 */
-      merchantName: string;
+      /** 收货地址信息 */
+      address: OrderAddress;
     }
 
     /** 订单收货地址 */
@@ -303,6 +298,115 @@ declare namespace Api {
       [property: string]: any;
     }
 
+    // ========== 位置管理 ==========
+
+    /** 位置数据通用接口 */
+    export interface LocationData {
+      locationId: string;
+      riderId: string;
+      longitude: number;
+      latitude: number;
+      locationTime: string;
+      accuracy: number;
+      speed: number;
+      direction: number;
+      locationType: string;
+      status: number;
+      [property: string]: any;
+    }
+
+    /** 更新骑手位置请求 */
+    export interface LocationUpdateRequest {
+      riderId: string;
+      longitude: number;
+      latitude: number;
+      accuracy?: number;
+      speed?: number;
+      direction?: number;
+      locationType?: string;
+      [property: string]: any;
+    }
+
+    /** 更新骑手位置响应 */
+    export type LocationUpdateResponse = ApiResponse<LocationData>;
+
+    /** 获取骑手最新位置响应 */
+    export type LocationLatestResponse = ApiResponse<LocationData>;
+
+    /** 获取骑手历史轨迹请求 */
+    export interface LocationHistoryRequest {
+      riderId: string;
+      startTime?: string;
+      endTime?: string;
+      pageIndex?: number;
+      pageSize?: number;
+      [property: string]: any;
+    }
+
+    /** 获取骑手历史轨迹响应 */
+    export type LocationHistoryResponse = ApiResponse<LocationData[]>;
+
+    /** 获取指定区域内的骑手请求 */
+    export interface LocationAreaRequest {
+      minLongitude: number;
+      maxLongitude: number;
+      minLatitude: number;
+      maxLatitude: number;
+      status?: number;
+      [property: string]: any;
+    }
+
+    /** 获取指定区域内的骑手响应 */
+    export type LocationAreaResponse = ApiResponse<LocationData[]>;
+
+    /** 获取所有在线骑手位置请求 */
+    export interface LocationOnlineRequest {
+      pageIndex?: number;
+      pageSize?: number;
+      [property: string]: any;
+    }
+
+    /** 获取所有在线骑手位置响应 */
+    export type LocationOnlineResponse = ApiResponse<LocationData[]>;
+
+    /** 计算骑手到指定点的距离请求 */
+    export interface LocationDistanceRequest {
+      riderId: string;
+      targetLongitude: number;
+      targetLatitude: number;
+      [property: string]: any;
+    }
+
+    /** 计算骑手到指定点的距离响应 */
+    export type LocationDistanceResponse = ApiResponse<DistanceData>;
+
+    /** 距离数据 */
+    export interface DistanceData {
+      riderId: string;
+      targetLongitude: number;
+      targetLatitude: number;
+      distance: number;
+      [property: string]: any;
+    }
+
+    /** 获取骑手当前位置的地址信息响应 */
+    export type LocationAddressResponse = ApiResponse<AddressData>;
+
+    /** 地址数据 */
+    export interface AddressData {
+      riderId: string;
+      address: string;
+      [property: string]: any;
+    }
+
+    /** 更新骑手在线状态请求 */
+    export interface LocationStatusRequest {
+      status: number;
+      [property: string]: any;
+    }
+
+    /** 更新骑手在线状态响应 */
+    export type LocationStatusResponse = ApiResponse<Record<string, never>>;
 
     // ========== 绩效管理 ==========
 
@@ -469,5 +573,31 @@ declare namespace Api {
       pageSize: number;
     }>;
 
+    /** 骑手当前位置信息 */
+    export interface CurrentLocationInfo {
+      /** 骑手ID */
+      riderId: string;
+      /** 当前位置 */
+      location: {
+        longitude: number;
+        latitude: number;
+        address?: string;
+      };
+      /** 位置更新时间 */
+      locationTime: string;
+      /** 精度 */
+      accuracy: number;
+      /** 速度（km/h） */
+      speed: number;
+      /** 方向（度） */
+      direction: number;
+      /** 在线状态 */
+      onlineStatus: 'online' | 'offline' | 'busy';
+      /** 最后活跃时间 */
+      lastActiveAt: string;
+    }
+
+    /** 骑手当前位置信息响应 */
+    export type CurrentLocationInfoResponse = ApiResponse<CurrentLocationInfo>;
   }
 }

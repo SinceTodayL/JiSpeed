@@ -28,7 +28,7 @@ const statisticData = computed<StatisticData[]>(() => {
   
   if (!salesStats || salesStats.length === 0) {
     return [
-      { id: 0, label: '统计周期', value: '最近7天' },
+      { id: 0, label: '统计周期', value: '最近30天' },
       { id: 1, label: '总销售额', value: '¥0.00' },
       { id: 2, label: '日均销量', value: '0份' }
     ];
@@ -37,13 +37,13 @@ const statisticData = computed<StatisticData[]>(() => {
   // 计算统计指标
   const totalSales = salesStats.reduce((sum, item) => sum + (Number(item.salesQty) || 0), 0);
   const totalAmount = salesStats.reduce((sum, item) => sum + (Number(item.salesAmount) || 0), 0);
-  const avgSales = Math.round(totalSales / 7); // 基于7天计算日均销量
+  const avgSales = Math.round(totalSales / 30); // 基于30天计算日均销量
   
   return [
     {
       id: 0,
       label: '统计周期',
-      value: '最近7天'
+      value: '最近30天'
     },
     {
       id: 1,
@@ -124,9 +124,9 @@ const loadMerchantData = async () => {
   }
 
   try {
-    // 获取最近7天的销售统计数据
+    // 获取最近30天的销售统计数据
     const endTime = new Date().toISOString();
-    const startTime = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const startTime = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     
     const result = await fetchMerchantSalesStats(merchantId, {
       startTime,

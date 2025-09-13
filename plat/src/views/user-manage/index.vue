@@ -63,13 +63,16 @@ const userStats = computed(() => {
   const total = tableData.value.length;
   const maleCount = tableData.value.filter(user => user.gender === 1).length;
   const femaleCount = tableData.value.filter(user => user.gender === 2).length;
+  const withEmail = tableData.value.filter(user => user.email).length;
   const withPhone = tableData.value.filter(user => user.phoneNumber).length;
   
   return {
     total,
     maleCount,
     femaleCount,
+    withEmail,
     withPhone,
+    emailRate: total > 0 ? Math.round((withEmail / total) * 100) : 0,
     phoneRate: total > 0 ? Math.round((withPhone / total) * 100) : 0
   };
 });
@@ -380,7 +383,7 @@ onMounted(() => {
     </div>
 
     <!-- 统计卡片区域 -->
-    <n-grid :cols="3" :x-gap="16" :y-gap="16" class="mb-6">
+    <n-grid :cols="4" :x-gap="16" :y-gap="16" class="mb-6">
       <n-gi>
         <n-card :bordered="false" class="shadow-sm hover:shadow-lg transition-shadow duration-300">
           <n-statistic
@@ -418,6 +421,19 @@ onMounted(() => {
           >
             <template #suffix>
               <span class="text-sm text-gray-500">人</span>
+            </template>
+          </n-statistic>
+        </n-card>
+      </n-gi>
+      <n-gi>
+        <n-card :bordered="false" class="shadow-sm hover:shadow-lg transition-shadow duration-300">
+          <n-statistic
+            label="邮箱绑定率"
+            :value="userStats.emailRate"
+            value-style="color: #67c23a; font-weight: bold;"
+          >
+            <template #suffix>
+              <span class="text-sm text-gray-500">%</span>
             </template>
           </n-statistic>
         </n-card>

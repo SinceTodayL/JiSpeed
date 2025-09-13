@@ -65,6 +65,14 @@ export function handleRiderError(error: any, defaultMessage = '操作失败，�
   // 显示错误消息
   window.$message?.error(message);
 
+  // 开发环境下记录详细错误信息
+  if (import.meta.env.DEV) {
+    console.log('🔍 骑手操作错误详情:', {
+      errorCode,
+      message,
+      originalError: error
+    });
+  }
 
   return {
     errorCode,
@@ -104,6 +112,13 @@ export function handleOrderError(error: any, defaultMessage = '订单操作失�
 
   window.$message?.error(message);
 
+  if (import.meta.env.DEV) {
+    console.log('🔍 订单操作错误详情:', {
+      errorCode,
+      message,
+      originalError: error
+    });
+  }
 
   return {
     errorCode,
@@ -142,6 +157,13 @@ export function handleAttendanceError(error: any, defaultMessage = '考勤操作
 
   window.$message?.error(message);
 
+  if (import.meta.env.DEV) {
+    console.log('🔍 考勤操作错误详情:', {
+      errorCode,
+      message,
+      originalError: error
+    });
+  }
 
   return {
     errorCode,
@@ -174,6 +196,14 @@ export function handleCommonError(error: any, context = '操作') {
 
   window.$message?.error(message);
 
+  if (import.meta.env.DEV) {
+    console.log('🔍 通用错误详情:', {
+      context,
+      errorCode,
+      message,
+      originalError: error
+    });
+  }
 
   return {
     errorCode,
