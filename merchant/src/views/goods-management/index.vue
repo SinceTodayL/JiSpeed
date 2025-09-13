@@ -7,7 +7,7 @@ import { useAppStore } from '@/store/modules/app';
 import { $t } from '@/locales';
 import GoodsSearch from './modules/goods-search.vue';
 import GoodsOperateDrawer from './modules/goods-operate-drawer.vue';
-import MerchantReviewsModal from './modules/dish-reviews-modal.vue';
+import DishReviewsModal from './modules/dish-reviews-modal.vue';
 import { useMerchantStore } from '@/store/modules/merchant';
 
 const merchantStore = useMerchantStore();
@@ -22,8 +22,15 @@ const drawerVisible = ref(false);
 const operateType = ref<'add' | 'edit'>('add');
 const editingData = ref<Api.Goods.DishItem | null>(null);
 
-// Reviews related state
+// 评论相关状态
 const reviewsModalVisible = ref(false);
+const selectedDishForReviews = ref<{
+  dishId: string;
+  dishName: string;
+}>({
+  dishId: '',
+  dishName: ''
+});
 
 const searchParams = reactive<{
   dishName: string | null;
@@ -230,9 +237,16 @@ const handleSubmitted = () => {
   getData();
 };
 
-// View reviews
-const handleViewReviews = () => {
-  reviewsModalVisible.value = true;
+// 查看评论
+const handleViewReviews = (dishId: string) => {
+  const item = data.value.find(dish => dish.dishId === dishId);
+  if (item) {
+    selectedDishForReviews.value = {
+      dishId: item.dishId,
+      dishName: item.dishName
+    };
+    reviewsModalVisible.value = true;
+  }
 };
 
 // 列配置
@@ -303,7 +317,7 @@ const columns = computed(() => {
       title: '评分',
       align: 'center' as const,
       width: 100,
-      render: (row: Api.Goods.DishItem) => `${(row.rating || 0).toFixed(1)}`
+      render: (row: Api.Goods.DishItem) => `${(row.rating || 0).toFixed(1)}%`
     },
     {
       key: 'onSale',
@@ -343,7 +357,7 @@ const columns = computed(() => {
       width: 180,
       render: (row: Api.Goods.DishItem) => (
         <div class="flex-center gap-8px">
-          <NButton type="info" ghost size="small" onClick={() => handleViewReviews()}>
+          <NButton type="info" ghost size="small" onClick={() => handleViewReviews(row.dishId)}>
             查看评论
           </NButton>
           <NButton type="primary" ghost size="small" onClick={() => handleEdit(row.dishId)}>
@@ -407,9 +421,11 @@ getData();
         @submitted="handleSubmitted"
       />
       
-      <MerchantReviewsModal
+      <DishReviewsModal
         v-model:visible="reviewsModalVisible"
         :merchant-id="merchantStore.merchantId"
+        :dish-id="selectedDishForReviews.dishId"
+        :dish-name="selectedDishForReviews.dishName"
       />
     </NCard>
   </div>

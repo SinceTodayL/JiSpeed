@@ -1,4 +1,9 @@
-import type { NavigationGuardNext, RouteLocationNormalized, RouteLocationRaw, Router } from 'vue-router';
+import type {
+  NavigationGuardNext,
+  RouteLocationNormalized,
+  RouteLocationRaw,
+  Router
+} from 'vue-router';
 import type { RouteKey } from '@elegant-router/types';
 import { useRouteStore } from '@/store/modules/route';
 

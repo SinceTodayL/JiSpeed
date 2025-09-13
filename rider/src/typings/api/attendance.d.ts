@@ -32,6 +32,12 @@ declare namespace Api {
       isLate: number;
       /** 是否缺勤 */
       isAbsent: number;
+      /** 工作时长（分钟） */
+      workHours?: number;
+      /** 创建时间 */
+      createdAt: string;
+      /** 更新时间 */
+      updatedAt: string;
     }
 
     /** 考勤详情数据 */
@@ -216,15 +222,28 @@ declare namespace Api {
       checkDate: string;
       /** 签到时间 */
       checkInAt: string;
-      /** 是否迟到 */
-      isLate: number;
-      /** 是否缺勤 */
-      isAbsent: number;
+      /** 位置信息 */
+      location?: {
+        longitude: number;
+        latitude: number;
+        address?: string;
+      };
+      /** 备注 */
+      remarks?: string;
     }
 
-    /** 签退请求 - 后端不需要请求体，只需要riderId参数 */
+    /** 签退请求 */
     export interface CheckOutRequest {
-      // 后端签退接口不需要请求体数据
+      /** 签退时间 */
+      checkoutAt: string;
+      /** 位置信息 */
+      location?: {
+        longitude: number;
+        latitude: number;
+        address?: string;
+      };
+      /** 备注 */
+      remarks?: string;
     }
 
     /** 创建考勤记录请求 */
@@ -247,8 +266,6 @@ declare namespace Api {
 
     /** 标记缺勤请求 */
     export interface MarkAbsentRequest {
-      /** 骑手ID */
-      riderId: string;
       /** 考勤日期 */
       checkDate: string;
       /** 缺勤原因 */
@@ -343,7 +360,7 @@ declare namespace Api {
     export type AttendanceDetailResponse = ApiResponse<AttendanceDetail>;
 
     /** 考勤记录列表响应 */
-    export type AttendanceListResponse = ApiResponse<AttendanceRecord[] | {
+    export type AttendanceListResponse = ApiResponse<{
       records: AttendanceRecord[];
       total: number;
       pageIndex: number;
@@ -365,21 +382,11 @@ declare namespace Api {
     /** 考勤报表响应 */
     export type AttendanceReportResponse = ApiResponse<AttendanceReportData>;
 
-    /** 签到响应 - 后端返回简单格式 */
-    export interface CheckInResponse {
-      /** 响应消息 */
-      message: string;
-      /** 考勤记录数据 */
-      data: AttendanceRecord;
-    }
+    /** 签到响应 */
+    export type CheckInResponse = ApiResponse<AttendanceRecord>;
 
-    /** 签退响应 - 后端返回简单格式 */
-    export interface CheckOutResponse {
-      /** 响应消息 */
-      message: string;
-      /** 考勤记录数据 */
-      data: AttendanceRecord;
-    }
+    /** 签退响应 */
+    export type CheckOutResponse = ApiResponse<AttendanceRecord>;
 
     /** 创建考勤记录响应 */
     export type CreateAttendanceResponse = ApiResponse<AttendanceRecord>;

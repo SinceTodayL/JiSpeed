@@ -27,9 +27,7 @@ export function getRiderOrderList(riderId: string, params: Api.Rider.GetRiderOrd
   return request<Api.Rider.OrderAssignmentData[]>({
     url: `/api/Riders/${riderId}/assignments`,
     method: 'get',
-    params: {
-      status: params.status
-    }
+    params
   });
 }
 
@@ -41,7 +39,6 @@ export function getRiderOrderList(riderId: string, params: Api.Rider.GetRiderOrd
  * @returns Promise<更新后的骑手信息数据>
  */
 export function updateRiderInfo(riderId: string, data: Api.Rider.UpdateInfoRequest) {
-  
   return request<Api.Rider.UpdateInfoData>({
     url: `/api/Riders/${riderId}`,
     method: 'patch',
@@ -75,7 +72,7 @@ export function registerRider(data: Api.Rider.RegisterRequest) {
  */
 export function updateAssignStatus(riderId: string, assignId: string, data: Api.Rider.UpdateAssignStatusRequest) {
   return request<Api.Rider.UpdateAssignData>({
-    url: `/api/Riders/${riderId}/assignments/${assignId}`,
+    url: `/api/riders/${riderId}/assignments/${assignId}`,
     method: 'patch',
     data
   });

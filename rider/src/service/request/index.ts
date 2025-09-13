@@ -8,7 +8,7 @@ import { getAuthorization, handleExpiredRequest, showErrorMsg } from './shared';
 import type { RequestInstanceState } from './type';
 
 const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === 'Y';
-const { baseURL, otherBaseURL } = getServiceBaseURL(import.meta.env as Env.ImportMeta, isHttpProxy);
+const { baseURL, otherBaseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
 
 export const request = createFlatRequest<App.Service.Response, RequestInstanceState>(
   {
@@ -26,22 +26,13 @@ export const request = createFlatRequest<App.Service.Response, RequestInstanceSt
       return config;
     },
     isBackendSuccess(response) {
-      // 检查HTTP状态码是否为成功状态
-      if (response.status >= 200 && response.status < 300) {
-        // 如果后端返回标准格式（有code字段），检查业务状态码
-        if (response.data.code !== undefined) {
-          const successCode = import.meta.env.VITE_SERVICE_SUCCESS_CODE || '0000';
-          return String(response.data.code) === successCode;
-        }
-        // 如果后端返回简单格式（只有message和data），HTTP状态码成功即认为成功
-        return true;
-      }
-      return false;
+      // when the backend response code is "0000"(default), it means the request is success
+      // to change this logic by yourself, you can modify the `VITE_SERVICE_SUCCESS_CODE` in `.env` file
+      return String(response.data.code) === import.meta.env.VITE_SERVICE_SUCCESS_CODE;
     },
     async onBackendFail(response, instance) {
       const authStore = useAuthStore();
-      // 处理后端返回简单格式的情况
-      const responseCode = response.data.code ? String(response.data.code) : String(response.status);
+      const responseCode = String(response.data.code);
 
       function handleLogout() {
         authStore.resetStore();
@@ -105,12 +96,7 @@ export const request = createFlatRequest<App.Service.Response, RequestInstanceSt
       return null;
     },
     transformBackendResponse(response) {
-      // 如果后端返回标准格式（有code字段），返回data字段
-      if (response.data.code !== undefined) {
-        return response.data.data;
-      }
-      // 如果后端返回简单格式，直接返回整个响应数据
-      return response.data;
+      return response.data.data;
     },
     onError(error) {
       // when the request is fail, you can show error message
@@ -120,12 +106,7 @@ export const request = createFlatRequest<App.Service.Response, RequestInstanceSt
 
       // get backend error message and code
       if (error.code === BACKEND_ERROR_CODE) {
-        // 处理后端返回的错误信息
-        if (error.response?.data?.msg) {
-          message = error.response.data.msg;
-        } else if (error.response && (error.response.data as any)?.message) {
-          message = (error.response.data as any).message;
-        }
+        message = error.response?.data?.msg || message;
         backendErrorCode = String(error.response?.data?.code || '');
       }
 
