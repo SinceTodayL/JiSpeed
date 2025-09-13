@@ -52,12 +52,14 @@ namespace JISpeed.Api.Controllers
                     .GroupBy(dish => new
                     {
                         dish.CategoryId,
-                        CategoryName = dish.Category?.CategoryName ?? "未分类" // 处理分类为空的情况
+                        CategoryName = dish.Category?.CategoryName ?? "未分类", // 处理分类为空的情况
+                        SortOrder = dish.Category?.SortOrder ?? 100
                     })
                     .Select(group => new CategoryWithDishesDto
                     {
                         CategoryId = group.Key.CategoryId,
                         CategoryName = group.Key.CategoryName,
+                        SortOrder = group.Key.SortOrder,
                         // 将分组内的菜品转换为内层DTO
                         Dishes = group.Select(dish => new DishesDto
                         {
@@ -74,7 +76,7 @@ namespace JISpeed.Api.Controllers
                             ReviewQuantity = dish.ReviewQuantity,
                         }).ToList()
                     })
-                    .OrderBy(c => c.CategoryName) // 按分类名称排序
+                    .OrderBy(c => c.SortOrder) // 按分类名称排序
                     .ToList();
                 _logger.LogInformation("成功获取用户详细信息, MerchantId: {MerchantId}", merchantId);
                 return Ok(ApiResponse<List<CategoryWithDishesDto>>.Success(groupedResult, "商家菜品信息获取成功"));

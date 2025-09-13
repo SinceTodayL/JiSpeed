@@ -141,9 +141,12 @@ namespace JISpeed.Api.DTOs
         public required string CategoryId { get; set; }
         // 分类名称
         public required string CategoryName { get; set; }
+        public required int SortOrder { get; set; }
+
         // 该分类下的菜品列表（内层DTO）
         public List<DishesDto> Dishes { get; set; } = new();
     }
+    
 
     public class MerchantWithDishesDto
     {
