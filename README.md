@@ -10,10 +10,6 @@
 
 成员：吴瑞翔、陈奕炫、陈艺龙、徐云鹏、于闻达、徐浩然、徐清鹏、郑功灿、孙凯文
 
-## 项目可访问链接
-
-http://121.4.90.75
-
 ## 项目简介
 
 数字化时代，外卖配送行业正经历着前所未有的变革。JiSpeed-济时达外卖配送平台作为一款基于Vue3、.NET 8和Oracle数据库的技术栈，Soybean框架上构建的现代化多端配送解决方案，我们致力于通过智能订单分配、实时地图导航、和四端协同等核心功能，提供完整的外卖配送体验。
@@ -22,29 +18,23 @@ http://121.4.90.75
 
 ![image-20250913231602459](./Documents/assets/image-20250913231602459.png)
 
-**项目采用 Apifox 进行前后端连接、用 Github 进行代码协作**
+**项目采用 Apifox 进行前后端连接（前端负责人：刘震，后端负责人：徐云鹏）**
+
+**用 Github 进行代码协作**
+
+**前端框架: 引用 [Soybean Admin](https://github.com/soybeanjs/soybean-admin) 作为框架代码**
 
 
 
 ## 项目主界面展示
+
+
 
 济时达JiSpeed项目登录
 
 ![chrome_LSaZ3ur3aD](./Documents/assets/chrome_LSaZ3ur3aD.gif)
 
 
-
-### 用户部分
-
-用户主界面
-
-![chrome_E8V3dBAm6R](./Documents/assets/chrome_E8V3dBAm6R.gif)
-
-
-
-![image-20250913222210885](./Documents/assets/image-20250913222210885.png)
-
-![image-20250913222355509](./Documents/assets/image-20250913222355509.png)
 
 
 
@@ -70,7 +60,7 @@ http://121.4.90.75
 
 导航界面
 
-![image-20250913224938415](./Documents/assets/image-20250913224938415.png)
+![chrome_lRUyfvusUU](./Documents/assets/chrome_lRUyfvusUU.gif)
 
 
 
@@ -82,23 +72,23 @@ http://121.4.90.75
 
 营业数据展示
 
-![image-20250913225222425](./Documents/assets/image-20250913225222425.png)
+![image-20250914145129426](./Documents/assets/image-20250914145129426.png)
 
 商家入驻申请
 
-![image-20250913225234472](./Documents/assets/image-20250913225234472.png)
+![image-20250914145237786](./Documents/assets/image-20250914145237786.png)
 
 用户管理
 
-![image-20250913225246642](./Documents/assets/image-20250913225246642.png)
+![image-20250914145259535](./Documents/assets/image-20250914145259535.png)
 
 商家管理
 
-![image-20250913225254475](./Documents/assets/image-20250913225254475.png)
+![image-20250914145317642](./Documents/assets/image-20250914145317642.png)
 
 骑手管理
 
-![image-20250913225322779](./Documents/assets/image-20250913225322779.png)
+![image-20250914145333231](./Documents/assets/image-20250914145333231.png)
 
 订单状态展示
 
@@ -145,6 +135,20 @@ http://121.4.90.75
 商家入驻申请
 
 ![image-20250913223836529](./Documents/assets/image-20250913223836529.png)
+
+### 用户部分
+
+用户主界面
+
+![chrome_E8V3dBAm6R](./Documents/assets/chrome_E8V3dBAm6R.gif)
+
+
+
+![image-20250913222210885](./Documents/assets/image-20250913222210885.png)
+
+![image-20250913222355509](./Documents/assets/image-20250913222355509.png)
+
+
 
 
 
@@ -197,3 +201,6 @@ http://121.4.90.75
 ##### 21 平台结算单生成与导出
 
 ##### 22 平台公告与站内消息推送
+
+
+
